@@ -4,6 +4,29 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.25
+
+### Corrigé
+- Salle de l'Esprit et du Temps : quand la page Événements affiche un autre événement, le guide met en évidence la carte « Salle de l'Esprit et du Temps » (`[data-evp-feat="ev-salle"]`) au lieu de dire « fais défiler ».
+
+---
+
+## 5.3.24
+
+### Corrigé
+- Fenêtre de confirmation de la guilde (achat en boutique, défis, coffre) : le bouton « Acheter » / « Confirmer » est maintenant mis en évidence, et les données de guilde sont relues juste après.
+
+---
+
+## 5.3.23
+
+### Corrigé
+- Boucle « Changer l'équipe » / « Fermer » sur le boss de guilde : le jeu coupe les noms longs (« Misato Kats... »), la comparaison se fait maintenant sur le début du nom.
+- Essais du jour épuisés (« Plus d'essai : reviens demain ») : le guide le détecte sur la page, met le boss en pause jusqu'à minuit et rafraîchit les données de guilde.
+- Sélection d'équipe ouverte et déjà correcte : flèche sur « Fermer ».
+
+---
+
 ## 5.3.22
 
 ### Modifié

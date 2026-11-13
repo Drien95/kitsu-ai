@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.22
+// @version      5.3.25
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.22 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.25 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.22') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.25') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -482,7 +482,7 @@
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.22',
+          __v: '5.3.25',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -503,7 +503,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.22 actif';
+            return 'KitsuAI v5.3.25 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -976,11 +976,11 @@
                 const sbcOk = [...document.querySelectorAll('[data-sbc-ok]')].find(vis);
                 if (sbcOk) { const auto = [...document.querySelectorAll('[data-sbc-auto]')].find(b => vis(b) && !b.disabled); if (auto && sbcOk.disabled) return mark(auto, 'defi de doublons : clique sur Remplir', 'sbca'); if (!sbcOk.disabled) return mark(sbcOk, 'defi de doublons : valide', 'sbcok'); }
                 // Fenetre de confirmation ouverte apres un achat ou une recuperation conseillee.
-                if (/^(eco|refill|cl|bells|packs|sbc|sc[sqc]|scrolls|zeni|shop|pull)/.test(lastKey)) {
+                if (/^(eco|refill|cl|bells|packs|sbc|sc[sqc]|scrolls|zeni|shop|pull|gw)/.test(lastKey)) {
                   // Fenetre de confirmation du jeu : .ask avec les boutons [data-yes] / [data-no].
                   const box = [...document.querySelectorAll('.ask,[role="dialog"],dialog[open],.modal,.confirm,.sheet')].find(vis);
                   const yes = box && ([...box.querySelectorAll('[data-yes]')].find(b => vis(b) && !b.disabled) || [...box.querySelectorAll('button')].find(b => vis(b) && !b.disabled && /acheter|remplir|recharger|confirmer|valider|oui|echanger|échanger|d[ée]poser|utiliser|r[ée]cup[ée]rer/i.test(b.innerText || '')));
-                  if (yes) return mark(yes, `confirme : clique sur « ${(yes.innerText || 'Confirmer').trim()} »`, lastKey + '-ok');
+                  if (yes) { if (lastKey.startsWith('gw')) window.__kitsuGuildT = 0; return mark(yes, `confirme : clique sur « ${(yes.innerText || 'Confirmer').trim()} »`, lastKey + '-ok'); }
                 }
                 const S = save(), P = lsGet('kitsu_ai_plan', null);
                 const E0 = lsGet('kitsu_ai_events', null); if ((!E0 || Date.now() - E0.t > 6 * 3600000 || Object.keys(S.ev?.clear || {}).some(k => E0.combats && !E0.combats.find(r => r.id === k)?.fait)) && !KitsuAI._evBusy && !T && Date.now() - (window.__kitsuEvTry || 0) > 60000) { window.__kitsuEvTry = Date.now(); KitsuAI.events().catch(e => health.err('evenements : ' + e.message)); }
@@ -1128,7 +1128,14 @@
                   else if (evA.fight) {
                     const r = evA.fight;
                     const n = toEvents('ouvre Jouer, puis Evenements'); if (n) return n;
-                    if (r.salle) { const b = [...document.querySelectorAll(`[data-salle-fight="${r.kind}"]`)].find(vis); return mark(b || null, b ? evA.txt : evA.txt + ' : fais defiler jusqu\'a la Salle', 'salle' + r.id); }
+                    if (r.salle) {
+                      const b = [...document.querySelectorAll(`[data-salle-fight="${r.kind}"]`)].find(vis);
+                      if (b) return mark(b, evA.txt, 'salle' + r.id);
+                      // La Salle est une carte d'evenement a part : on l'ouvre d'abord.
+                      const ft = [...document.querySelectorAll(`[data-evp-feat="${r.evId}"],[data-evp-feat="ev-salle"]`)].find(vis);
+                      if (ft) return mark(ft, `${evA.txt} : ouvre la carte « Salle de l'Esprit et du Temps »`, 'sallef' + r.id);
+                      return mark(null, evA.txt + ' : fais defiler jusqu\'a la Salle', 'salle' + r.id);
+                    }
                     const dsel = `[data-evp-diff="${r.evId}|${r.kind}|${r.d}"]`, db = [...document.querySelectorAll(dsel)].find(vis);
                     if (!db) { const ft = [...document.querySelectorAll(`[data-evp-feat="${r.evId}"]`)].find(vis); return mark(ft || null, `${evA.txt} : ouvre l'evenement ${r.titre}`, 'feat' + r.id); }
                     if (!db.classList.contains('on')) return mark(db, `${evA.txt} : choisis ${r.diff}`, 'diff' + r.id);
@@ -1169,7 +1176,11 @@
                   const go = [...document.querySelectorAll(`[data-${pre}="go"]`)].find(b => vis(b) && !b.disabled);
                   if (go && (cards.length || !qv(`[data-${pre}="pick"]`))) return mark(go, `${gA.txt} : attaque`, 'g' + pre + 'go');
                   // Equipe deja en place (noms affiches sous « Ton equipe ») : on va directement sur Attaquer.
-                  const shown = (qv('.gp-team')?.innerText || '').toLowerCase(), teamOk = shown && gA.team.every(id => shown.includes(short(id).toLowerCase()));
+                  const shown = (qv('.gp-team')?.innerText || '').toLowerCase(), teamOk = shown && gA.team.every(id => shown.includes(short(id).toLowerCase().slice(0, 9)));
+                  // Plus d'essai aujourd'hui (bouton Attaquer absent ou desactive) : pause jusqu'a minuit, donnees de guilde rafraichies.
+                  const noTry = !go && (qv(`[data-${pre}="pick"]`) || cards.length) && ([...document.querySelectorAll(`[data-${pre}="go"]`)].some(vis) || /plus d.essai|reviens demain/i.test((qv('.gp-team')?.closest('section') || document.getElementById('social'))?.innerText || ''));
+                  if (noTry) { const m = new Date(); m.setHours(24, 0, 30, 0); const sz = lsGet('kitsu_ai_snooze', {}); sz[gA.id] = m.getTime(); lsSet('kitsu_ai_snooze', sz); window.__kitsuGuildT = 0; return mark(null, `${gA.txt.split(' (')[0]} : plus d'essai aujourd'hui, reviens apres minuit`, 'g' + pre + 'none'); }
+                  if (cards.length && !go) { const cl = [...document.querySelectorAll(`[data-${pre}="pick"]`)].find(vis); if (cl) return mark(cl, `${gA.txt} : equipe en place, clique sur « ${(cl.innerText || '').trim()} »`, 'g' + pre + 'close'); }
                   if (go && teamOk) return mark(go, `${gA.txt} : equipe ${gA.team.map(short).join(', ')} en place, attaque`, 'g' + pre + 'go3');
                   const pick = [...document.querySelectorAll(`[data-${pre}="pick"]`)].find(b => vis(b) && !b.disabled);
                   if (pick) return mark(pick, `${gA.txt} : change l'equipe pour ${gA.team.map(short).join(', ')}`, 'g' + pre + 'pick');

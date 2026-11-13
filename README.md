@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.22**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.25**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -694,6 +694,9 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.20 | Guilde complète : défis, coffre, boutique (avec éligibilité 3 jours), plafond de 400 points, équipe déjà en place détectée |
 | 5.3.21 | Pauses du guide effacées à chaque version ; lien Parrainage ignoré pour aller en Guilde |
 | 5.3.22 | Boss de guilde : toutes les cartes éligibles, confirmation sur 40 combats, plafond 300 000 |
+| 5.3.23 | Fin de la boucle Changer l'équipe / Fermer ; essais épuisés détectés (pause jusqu'à minuit) |
+| 5.3.24 | Confirmation des achats et récupérations de guilde guidée |
+| 5.3.25 | Salle de l'Esprit et du Temps ouverte depuis sa carte d'événement |
 
 ---
 
