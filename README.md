@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.12**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.13**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -680,6 +680,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.10 | Animation d'invocation guidée (booster, carte, Tout passer) ; toutes les invocations gratuites utilisées une fois sur la page |
 | 5.3.11 | Boutons de l'écran de résultats d'invocation (Invoquer x1, Fermer) |
 | 5.3.12 | Correctif d'une erreur du guide sur l'écran de résultats d'invocation |
+| 5.3.13 | Page Jouer : la carte « Aventure » est surlignée (et non la jauge d'énergie) |
 
 ---
 

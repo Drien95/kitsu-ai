@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.12
+// @version      5.3.13
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.12 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.13 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.12') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.13') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -466,7 +466,7 @@
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.12',
+          __v: '5.3.13',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -486,7 +486,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.12 actif';
+            return 'KitsuAI v5.3.13 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -919,9 +919,9 @@
             const goView = (v, txt, key) => {
               if (location.hash.split('/')[0] === '#' + v) return null;
               const cands = [...document.querySelectorAll(`a[href="#${v}"],a[data-view="${v}"]`)].filter(vis);
-              const a = cands.find(e => e.closest('[role="menu"],[id$="-menu"],.menu,.dropdown')) || cands.find(e => e.closest('header,nav')) || cands[0] || (v === 'shop' ? [document.getElementById('navShop')].find(vis) : null);
-              const NAME = { missions: 'QUETES', invocation: 'BANNIERES', collection: 'COLLECTION', shop: 'Boutique (panier)', social: 'Guilde', play: 'JOUER' };
-              if (a) { const r = a.getBoundingClientRect(); return mark(a, `${txt} : clique d'abord sur ${NAME[v] ? '« ' + NAME[v] + ' »' : 'le lien en surbrillance'}${r.top < 80 ? ' dans la barre du haut' : ''}`, key); }
+              const a = cands.find(e => e.classList.contains('play-card')) || cands.find(e => e.closest('[role="menu"],[id$="-menu"],.menu,.dropdown')) || cands.find(e => e.closest('header,nav') && (e.innerText || '').trim().length > 2) || cands.find(e => (e.innerText || '').trim().length > 2) || cands[0] || (v === 'shop' ? [document.getElementById('navShop')].find(vis) : null);
+              const NAME = { missions: 'QUETES', invocation: 'BANNIERES', collection: 'COLLECTION', shop: 'Boutique (panier)', social: 'Guilde', play: 'JOUER', adventure: 'JOUER', events: 'JOUER' };
+              if (a) { const r = a.getBoundingClientRect(); if (a.classList.contains('play-card')) return mark(a, `${txt} : clique sur la carte « ${{ adventure: 'Aventure', events: 'Evenements', tour: 'Tour de l\'infini', arena: 'Arene' }[v] || v} »`, key); return mark(a, `${txt} : clique d'abord sur ${NAME[v] ? '« ' + NAME[v] + ' »' : 'le lien en surbrillance'}${r.top < 80 ? ' dans la barre du haut' : ''}`, key); }
               if (['adventure', 'events', 'tour', 'arena'].includes(v)) return mark(qv('a[data-view="play"]'), txt + ' : ouvre Jouer', key + '-play');
               if (v === 'pass') { const m = [...document.querySelectorAll('a[href="#missions"]')].find(vis); if (m) return mark(m, txt + ' : ouvre Quetes, onglet Parcours/Pass', key + '-m'); }
               return mark(null, txt, key);

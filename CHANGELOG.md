@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.13
+
+### Corrigé
+- Page Jouer : le guide surlignait la jauge d'énergie de la barre du haut (qui est aussi un lien vers l'Aventure) au lieu de la carte « Aventure ». Il prend maintenant en priorité les cartes de la page Jouer, puis les liens avec un texte.
+
+---
+
 ## 5.3.12
 
 ### Corrigé
