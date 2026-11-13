@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.15**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.17**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -683,6 +683,8 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.13 | Page Jouer : la carte « Aventure » est surlignée (et non la jauge d'énergie) |
 | 5.3.14 | Boss de guilde : équipe calculée dès que des essais restent, sans attendre la roadmap |
 | 5.3.15 | Les vrais résultats priment : un combat raté (pas 3 étoiles) n'est plus reproposé pendant 24 h |
+| 5.3.16 | Cauchemar seulement sur les arcs vraiment débloqués ; équipe de guilde parmi tes meilleures cartes |
+| 5.3.17 | Caches recalculés à chaque nouvelle version du script ; jamais de flèche sur un Cauchemar verrouillé |
 
 ---
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.15
+// @version      5.3.17
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.15 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.17 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.15') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.17') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -469,7 +469,7 @@
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.15',
+          __v: '5.3.17',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -485,11 +485,12 @@
             const rprev = lsGet('kitsu_ai_rosterSig', null);
             if (!rprev) lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() });
             else if (rprev.sig !== rsig && Date.now() - rprev.t > 12 * 3600000) setTimeout(() => { if (!this._train || this._train.done) { toast('<b style="color:#38bdf8">Ton equipe a evolue</b><br>Reentrainement de l\'IA en arriere-plan (pause pendant les combats).', 8000); this.retrain({ quiet: true }).then(() => lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() })).catch(() => {}); } }, 60000);
+            if (lsGet('kitsu_ai_scriptver', null) !== this.__v) { for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_events', 'kitsu_ai_farm', 'kitsu_ai_road']) localStorage.removeItem(k); lsSet('kitsu_ai_scriptver', this.__v); setTimeout(() => this.plan().catch(() => {}), 2000); }
             setTimeout(() => this.events().catch(() => {}), 9000);
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.15 actif';
+            return 'KitsuAI v5.3.17 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -546,7 +547,8 @@
               const arcs = {}; for (const f of w.fights) (arcs[f.arc] ??= []).push(f);
               for (const fs of Object.values(arcs)) {
                 for (let m = 1; m < MODES.length; m++) {
-                  const prevDone = fs.every(f => (stars[f.id + MODES[m - 1].suf] || 0) > 0);
+                  // Le Cauchemar demande les 3 etoiles sur tous les combats de l'arc dans les 3 difficultes (regle du jeu).
+                  const prevDone = MODES[m].suf.endsWith('n') && !MODES[m - 1].suf.endsWith('n') ? fs.every(f => [0, 1, 2].every(k => (stars[f.id + MODES[k].suf] || 0) >= 3)) : fs.every(f => (stars[f.id + MODES[m - 1].suf] || 0) > 0);
                   if (!prevDone) break;
                   const nx = fs.find(f => (stars[f.id + MODES[m].suf] || 0) < 3 && (fs.indexOf(f) === 0 || (stars[fs[fs.indexOf(f) - 1].id + MODES[m].suf] || 0) > 0));
                   const hf = nx && G.findFight(nx.id + MODES[m].suf);
@@ -1198,6 +1200,7 @@
                     if (n) return mark(n, r.farm ? `rejoue « ${r.nom} » pour l'XP : +${r.xp} XP a chaque carte, ${r.cout} energie (equipe : ${r.equipe.map(short).join(', ')})` : `lance « ${r.nom} » (${r.etoiles}/3 etoiles, 3 etoiles ${Math.round(r.troisEtoiles * 100)} %)`, 'node' + r.id);
                     if (r.id.includes('@')) {
                       const { btn, nmb, m } = visMode(r.id);
+                      if (m.nm && nmb && (nmb.classList.contains('locked') || nmb.getAttribute('aria-disabled') === 'true')) { continue; }
                       if (m.nm && nmb && !nmb.classList.contains('on')) return mark(nmb, `passe cet arc en Cauchemar pour « ${r.nom} »`, 'nm' + r.id);
                       if (btn && !btn.classList.contains('on') && !btn.classList.contains('locked')) return mark(btn, `passe cet arc en ${['Normal', 'Difficile', 'Extreme'][m.lvl]} pour « ${r.nom} »`, 'mode' + r.id);
                     }
@@ -1324,7 +1327,7 @@
                 const g = await r.json();
                 if (g.event?.open && g.me?.left > 0) {
                   const lvOf = id => S.lv?.[id]?.l || 1, pol = smartPol(this.W);
-                  const elig = Object.keys(S.owned || {}).map(Number).filter(id => lvOf(id) >= (g.event.minLv || 15));
+                  const elig = pool(12, S).filter(id => lvOf(id) >= (g.event.minLv || 15));
                   let best = null;
                   for (const t of trios(elig.slice(0, 12))) {
                     let d = 0;
@@ -1379,9 +1382,9 @@
                 if (g.me?.guild && g.boss && g.me.tries?.boss?.left > 0 && gwCache?.key === gwKey) add(3, gwCache.txt.replace(/\d+ essais?/, `${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''}`));
                 else if (g.me?.guild && g.boss && g.me.tries?.boss?.left > 0) {
                   const lvOf = id => S.lv?.[id]?.l || 1, pol = smartPol(this.W), turns = g.week?.turns || 12;
-                  const elig = Object.keys(S.owned || {}).map(Number).filter(id => lvOf(id) >= (g.week?.minLv || 15));
+                  const elig = pool(12, S).filter(id => lvOf(id) >= (g.week?.minLv || 15));
                   let best = null;
-                  for (const t of trios(elig.slice(0, 12))) {
+                  for (const t of trios(elig.slice(0, 10))) {
                     let d = 0;
                     for (const sd of [1, 2, 3]) {
                       const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd);
@@ -1391,7 +1394,7 @@
                     if (!best || d > best.d) best = { t, d: d / 3 };
                     await idle();
                   }
-                  if (best) { const txt = `Guilde : boss ${g.boss.name}, ${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''} aujourd'hui. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})`; add(3, txt); lsSet('kitsu_ai_gw', { key: gwKey, txt, team: best.t }); }
+                  if (best) { const txt = `Guilde : boss ${g.boss.name}, ${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''} aujourd'hui. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})`; add(3, txt); lsSet('kitsu_ai_gw', { key: gwKey, bkey: g.boss.id + '|' + g.boss.lv, txt, team: best.t }); }
                 }
                 const ch = (g.challenges || []).filter(c => c.done && !c.claimed);
                 if (ch.length) add(1, `Guilde : ${ch.length} defi${ch.length > 1 ? 's' : ''} termine${ch.length > 1 ? 's' : ''} a recuperer (+${ch.reduce((a, c) => a + (c.pts || 0), 0)} points de guilde)`);

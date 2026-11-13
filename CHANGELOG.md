@@ -4,6 +4,22 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.17
+
+### Corrigé
+- Le Cauchemar verrouillé restait proposé après la v5.3.16 : le plan calculé par l'ancienne version était réutilisé. À chaque nouvelle version du script, plan, équipes, événements et roadmap sont recalculés.
+- Le guide ne pointe plus jamais un bouton Cauchemar verrouillé (sécurité supplémentaire, lue sur la page).
+
+---
+
+## 5.3.16
+
+### Corrigé
+- Combats de Cauchemar proposés sur un arc encore verrouillé (« Le club d'occultisme ») : le Cauchemar demande les 3 étoiles sur tous les combats de l'arc dans les 3 difficultés, et non une simple victoire en Extrême.
+- Équipe du boss de guilde de la roadmap (Edgar, Sasori, Midnight : ~66 000 dégâts) calculée sur des cartes prises au hasard : elle utilise maintenant tes 10 cartes les plus fortes (Misato, Sasori, Trunks : ~155 000). Idem pour le raid Pain.
+
+---
+
 ## 5.3.15
 
 ### Corrigé
