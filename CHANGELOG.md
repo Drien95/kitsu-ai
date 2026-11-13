@@ -4,6 +4,26 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.15
+
+### Corrigé
+- « Le roi démon ressuscité » (Difficile) proposé 3 fois de suite, 3 fois sans 3 étoiles : la simulation le donnait à 100 %, les vrais résultats disaient le contraire et n'étaient pas pris en compte.
+
+### Ajouté
+- Les vrais résultats priment : un combat déjà à 1 ou 2 étoiles qui rate les 3 étoiles n'est plus proposé pendant 24 h.
+- Écran de fin de combat après un tel échec : « pas 3 étoiles : stop sur ce combat pour aujourd'hui », et « Retour à la carte ».
+- Écran d'équipe de ce combat : « stop : déjà raté N fois aujourd'hui », bouton « Carte ».
+- Roadmap : « à reprendre plus tard », avec le nombre d'échecs du jour.
+
+---
+
+## 5.3.14
+
+### Corrigé
+- Boss de guilde jamais proposé : l'équipe n'était calculée que par la roadmap, et ce calcul avait été effacé par la mise à jour du jeu. Elle est maintenant calculée dès que le guide voit des essais restants (meilleur trio en dégâts, 2 simulations par trio), et recalculée quand le boss change.
+
+---
+
 ## 5.3.13
 
 ### Corrigé

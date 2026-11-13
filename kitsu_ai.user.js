@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.13
+// @version      5.3.15
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.13 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.15 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.13') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.15') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -359,7 +359,10 @@
         };
         // Un combat vaut d'etre (re)joue maintenant ? Jamais joue : oui s'il se gagne a 90 %. Deja 1 ou 2 etoiles : il ne reste
         // que 1 ou 2 gemmes, donc seulement si les 3 etoiles sont quasi sures (90 %), sinon on y revient quand l'equipe a monte.
-        const worthNow = (r, S) => { const st = S.pve?.stars?.[r.id] || 0; return r.victoire >= 0.9 && st < 3 && (st === 0 || r.troisEtoiles >= 0.9); };
+        // Echecs reels : combats joues ces dernieres 24 h sans faire 3 etoiles (la simulation peut se tromper,
+        // les vrais resultats priment). Un combat deja etoile qui a rate les 3 etoiles n'est plus propose pendant 24 h.
+        const realMiss = id => (lsGet(LS.log, []) || []).filter(g => g.f === id && g.done && g.etoiles !== 3 && Date.now() - (g.t || 0) < 86400000).length;
+        const worthNow = (r, S) => { const st = S.pve?.stars?.[r.id] || 0; return r.victoire >= 0.9 && st < 3 && (st === 0 || (r.troisEtoiles >= 0.9 && realMiss(r.id) === 0)); };
         // Progression d'une quete : enregistree, ou calculee par le jeu (quetes d'histoire : « termine l'arc… »).
         const questProg = (d, q, S) => { const p = q.prog?.[d.id]; if (p != null) return p; if (typeof d.val === 'function') { try { return +d.val(S) || 0; } catch {} } return 0; };
         // Recompenses a recuperer : connexion du jour, quetes terminees, paliers du pass.
@@ -466,7 +469,7 @@
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.13',
+          __v: '5.3.15',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -486,7 +489,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.13 actif';
+            return 'KitsuAI v5.3.15 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -999,6 +1002,7 @@
                   const rn = [...document.querySelectorAll('[data-result-next]')].find(vis);
                   const evN = KitsuAI._evActions(S, en).find(a => a.fight && (!a.cout || a.cout <= en));
                   if (en <= 0) return mark(rClose, 'plus d\'energie : retour a la carte', 'res-close0');
+                  const lastF = T?.f?.id; if (lastF && (S.pve?.stars?.[lastF] || 0) > 0 && (S.pve?.stars?.[lastF] || 0) < 3 && realMiss(lastF) > 0) return mark(rClose, `pas 3 etoiles : stop sur ce combat pour aujourd'hui (la 3e etoile ne vaut qu'1 gemme). Retour a la carte${next ? ` pour « ${next.nom} »` : ''}`, 'res-miss');
                   if (evN) return mark(rClose, `retour a la carte, puis ${evN.txt}`, 'res-ev');
                   const rr = [...document.querySelectorAll('[data-result-retry]')].find(vis);
                   if (next?.farm && rr && T?.f?.id === next.id) return mark(rr, `rejoue « ${next.nom} » pour l'XP (+${next.xp} XP par carte)`, 'res-farm');
@@ -1028,6 +1032,8 @@
                   const backB = [...document.querySelectorAll('[data-close-prep]')].find(vis);
                   const evFirst = KitsuAI._evActions(S, en).find(a => a.fight && (!a.cout || a.cout <= en));
                   if (backB && evFirst && evFirst.fight.id !== W.f.id) return mark(backB, `reviens a la carte : d'abord ${evFirst.txt}`, 'back-ev' + evFirst.id);
+                  const missN = realMiss(W.f.id);
+                  if (backB && !isEv && (S.pve?.stars?.[W.f.id] || 0) > 0 && (S.pve?.stars?.[W.f.id] || 0) < 3 && missN > 0) return mark(backB, `stop : tu as deja rate les 3 etoiles ici ${missN} fois aujourd'hui (il ne reste qu'1 gemme a gagner). Reviens a la carte${next ? `, joue plutot « ${next.nom} »` : ''}`, 'back-miss' + W.f.id);
                   if (backB && !isEv && pp && pp.s3 < 0.9 && !(P?.combats || []).some(r => r.id === W.f.id && worthNow(r, S))) return mark(backB, (S.pve?.stars?.[W.f.id] || 0) > 0 ? `3e etoile pas assez sure ici (${Math.round(pp.s3 * 100)} % au mieux, pour 1 gemme) : reviens plus tard, ${next ? `joue plutot « ${next.nom} »` : 'reviens a la carte'}` : `combat trop dur pour l'instant (3 etoiles ${Math.round(pp.s3 * 100)} % au mieux) : reviens a la carte${next ? ` pour « ${next.nom} »` : ''}`, 'back-wall' + W.f.id);
                   if (pp && team.length === 3 && pp.t.every(id => team.includes(id))) return mark(btnText(/combattre/i), `equipe prete (${Math.round(pp.s3 * 100)} % de 3 etoiles) : clique sur Combattre`, 'go' + sig);
                   if (!pp && team.length === 3 && guideCheck.sig === sig && guideCheck.ok >= 0.95 && guideCheck.ok >= bestS3 - 0.02 && !xpSwap) return mark(btnText(/combattre/i), isEv ? `ton equipe gagne a ${Math.round(guideCheck.ok * 100)} % : clique sur Combattre` : `ton equipe fait 3 etoiles a ${Math.round(guideCheck.ok * 100)} % : clique sur Combattre`, 'go' + sig);
@@ -1300,8 +1306,8 @@
             if (!P) P = await this.plan();
             else if (Date.now() - P.t > 10 * 60000) setTimeout(() => this.plan().catch(() => {}), 3000);
             const todo = P.combats.filter(r => worthNow(r, S));
-            const later = P.combats.filter(r => r.victoire >= 0.9 && (S.pve?.stars?.[r.id] || 0) > 0 && (S.pve?.stars?.[r.id] || 0) < 3 && r.troisEtoiles < 0.9);
-            if (later.length) add(8, `A reprendre plus tard pour la 3e etoile (pas assez sur aujourd'hui) : ${later.slice(0, 4).map(r => `${r.nom} (${S.pve.stars[r.id]}/3, 3 etoiles ${Math.round(r.troisEtoiles * 100)} %)`).join(' ; ')}`);
+            const later = P.combats.filter(r => r.victoire >= 0.9 && (S.pve?.stars?.[r.id] || 0) > 0 && (S.pve?.stars?.[r.id] || 0) < 3 && (r.troisEtoiles < 0.9 || realMiss(r.id) > 0));
+            if (later.length) add(8, `A reprendre plus tard pour la 3e etoile (pas assez sur aujourd'hui) : ${later.slice(0, 4).map(r => `${r.nom} (${S.pve.stars[r.id]}/3, 3 etoiles ${Math.round(r.troisEtoiles * 100)} %${realMiss(r.id) ? `, rate ${realMiss(r.id)} fois aujourd'hui` : ''})`).join(' ; ')}`);
             if (en > 0 && todo.length) add(3, `Joue ${Math.min(en, todo.length)} combat${en > 1 ? 's' : ''} (${en}/${enMax} energie) : ${todo.slice(0, Math.min(en, 4)).map(r => `${r.nom} avec ${r.equipe.map(short).join(', ')}`).join(' ; ')}`);
             if (en >= enMax) add(2, `Energie pleine : elle ne se recharge plus, joue maintenant`);
             else add(8, `Energie pleine dans ~${(enMax - en) * 10} min`);
@@ -1595,7 +1601,34 @@
           },
           async guildRefresh() {
             const H = { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }, out = { t: Date.now() };
-            try { const r = await fetch('/api/guilds/week', H); if (r.ok) { const g = await r.json(); out.boss = g.me?.guild && g.boss ? { left: g.me.tries?.boss?.left || 0, name: g.boss.name } : null; } } catch {}
+            try {
+              const r = await fetch('/api/guilds/week', H);
+              if (r.ok) {
+                const g = await r.json(); out.boss = g.me?.guild && g.boss ? { left: g.me.tries?.boss?.left || 0, name: g.boss.name } : null;
+                // Equipe du boss pas encore calculee (ou boss change) : on la calcule ici, sans attendre la roadmap.
+                const c0 = lsGet('kitsu_ai_gw', null), bkey = g.boss ? g.boss.id + '|' + g.boss.lv : '';
+                if (out.boss?.left > 0 && (!c0?.team || c0.bkey !== bkey) && !this._gwBusy) {
+                  this._gwBusy = true;
+                  try {
+                    await loadModules();
+                    const S = save(), lvOf = id => S.lv?.[id]?.l || 1, pol = smartPol(this.W), turns = g.week?.turns || 12;
+                    const elig = pool(12, S).filter(id => lvOf(id) >= (g.week?.minLv || 15)).slice(0, 10);
+                    let best = null;
+                    for (const t of trios(elig)) {
+                      let d = 0;
+                      for (const sd of [1, 2]) {
+                        const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd);
+                        for (let i = 0; i < 500 && st.cycle <= turns; i++) { const u = step(st); if (!u || st.cycle > turns) break; doAct(st, u, pol(st, u)); }
+                        d += hp0 - B.enemies(st)[0].hp;
+                      }
+                      if (!best || d > best.d) best = { t, d: d / 2 };
+                      await idle();
+                    }
+                    if (best) lsSet('kitsu_ai_gw', { key: c0?.key || '', bkey, team: best.t, txt: `Guilde : boss ${g.boss.name}. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})` });
+                  } finally { this._gwBusy = false; }
+                }
+              }
+            } catch (e) { health.err('guilde : ' + e.message); }
             try { const r = await fetch('/api/guilds/pain', H); if (r.ok) { const g = await r.json(); out.pain = g.event?.open ? { left: g.me?.left || 0 } : null; } } catch {}
             lsSet('kitsu_ai_guild', out);
             return out;
@@ -1604,7 +1637,7 @@
             const g = lsGet('kitsu_ai_guild', null), out = []; if (!g || Date.now() - g.t > 30 * 60000) return out;
             const pt = lsGet('kitsu_ai_pain', null)?.team, bt = lsGet('kitsu_ai_gw', null)?.team;
             if (g.pain?.left > 0 && pt?.length === 3) out.push({ id: 'pain', kind: 'pain', team: pt, txt: `Guilde : raid Pain (${g.pain.left} essai${g.pain.left > 1 ? 's' : ''})` });
-            if (g.boss?.left > 0 && bt?.length === 3) out.push({ id: 'gwboss', kind: 'gw', team: bt, txt: `Guilde : boss ${g.boss.name} (${g.boss.left} essai${g.boss.left > 1 ? 's' : ''})` });
+            if (g.boss?.left > 0 && bt?.length === 3) out.push({ id: 'gwboss', kind: 'gw', team: bt, txt: `Guilde : boss ${g.boss.name} (${g.boss.left} essai${g.boss.left > 1 ? 's' : ''}, sans energie)` });
             return out;
           },
           _towerAction(S = save(), en = 0) {

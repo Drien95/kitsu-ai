@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.13**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.15**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -358,7 +358,7 @@ Chaque carte de l'équipe reçoit **toute** l'XP du combat. XP pour passer du ni
 
 ### Le plan
 
-**Rejouer ou pas ?** Sur un combat déjà à 1 ou 2 étoiles, il ne reste que 1 ou 2 gemmes. À 78 % de 3 étoiles, cela fait moins d'une gemme par énergie, contre environ 3 pour un combat neuf. Ces combats ne sont donc reproposés que lorsque les 3 étoiles atteignent 90 % ; en attendant, la roadmap les liste dans « À reprendre plus tard pour la 3e étoile ».
+**Rejouer ou pas ?** Sur un combat déjà à 1 ou 2 étoiles, il ne reste que 1 ou 2 gemmes. À 78 % de 3 étoiles, cela fait moins d'une gemme par énergie, contre environ 3 pour un combat neuf. Ces combats ne sont donc reproposés que lorsque les 3 étoiles atteignent 90 %, **et jamais pendant 24 h après un vrai échec** (les vrais résultats priment sur la simulation) ; en attendant, la roadmap les liste dans « À reprendre plus tard pour la 3e étoile ».
 
 Pour chaque combat jouable pas encore à 3 étoiles (y compris la suite Normal, Difficile, Extrême, Cauchemar) : meilleure équipe (tri rapide de 4 simulations, puis les 6 meilleurs rejoués 16 fois), chances de victoire et de 3 étoiles, gemmes attendues, XP, coût en énergie. Ton équipe actuelle est gardée si elle fait aussi bien. Recalculé après chaque combat ; les équipes des 3 prochains combats sont précalculées pendant l'écran de résultats.
 
@@ -681,6 +681,8 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.11 | Boutons de l'écran de résultats d'invocation (Invoquer x1, Fermer) |
 | 5.3.12 | Correctif d'une erreur du guide sur l'écran de résultats d'invocation |
 | 5.3.13 | Page Jouer : la carte « Aventure » est surlignée (et non la jauge d'énergie) |
+| 5.3.14 | Boss de guilde : équipe calculée dès que des essais restent, sans attendre la roadmap |
+| 5.3.15 | Les vrais résultats priment : un combat raté (pas 3 étoiles) n'est plus reproposé pendant 24 h |
 
 ---
 
