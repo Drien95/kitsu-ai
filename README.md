@@ -2,7 +2,9 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.8**. Historique détaillé : `CHANGELOG.md`. Fichiers : `kitsu_ai.user.js` (script Tampermonkey à installer) et `kitsu_ai.js` (le même code, lisible, utilisable depuis la console).
+Version documentée : **5.3.12**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+
+Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
 ---
 
@@ -114,7 +116,7 @@ La règle : **ce qui se perd passe avant ce qui attend**.
 |---|---|---|
 | 1 | Combat en cours | Suivre le panneau orange |
 | 2 | Vérification anti-robot du jeu | Texte seulement : coche la case toi-même |
-| 3 | Animation ou fenêtre par-dessus l'écran | « Passer ▸▸ » de l'invocation, « Touche pour continuer », carte obtenue, croix des fenêtres, popup « installer l'appli » |
+| 3 | Animation ou fenêtre par-dessus l'écran | Booster à ouvrir (glisser sur les pointillés), carte à retourner, « Tout passer », « Passer ▸▸ » de l'invocation, « Touche pour continuer », carte obtenue, croix des fenêtres, popup « installer l'appli » |
 | 4 | Fenêtre parchemin ouverte | Le plus gros parchemin, puis la carte à faire monter (ou la recherche) |
 | 5 | Fenêtre défi de doublons ouverte | « Remplir », puis valider |
 | 6 | Fenêtre de confirmation du jeu (`.ask`) après un achat, une recharge ou une récupération conseillée | Le bouton de validation (`[data-yes]` : Recharger, Acheter, Confirmer) |
@@ -671,9 +673,13 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3 | Quêtes de demain et de la semaine prochaine avec préparation, projection d'entraînement, quêtes du jour faciles |
 | 5.3.1 à 5.3.4 | Quêtes d'Histoire détectées, hub de la page Quêtes, bulle sous la barre du jeu, « clique d'abord sur QUÊTES », animations et fenêtres (Passer, carte obtenue, croix, installation), détection des fenêtres en position fixe |
 | 5.3.5 | Plus de relance d'un combat déjà à 1 ou 2 étoiles si la 3e n'est pas quasi sûre ; liste « à reprendre plus tard » |
-| 5.3.8 | Fenêtres de confirmation du jeu reconnues (« Recharger », « Acheter ») |
-| 5.3.7 | Le guide pointe toujours l'exemplaire visible d'un bouton (recharge d'énergie) |
 | 5.3.6 | Après une mise à jour du jeu, tous les calculs sont refaits avec les nouvelles règles (patch synergie « même série ») |
+| 5.3.7 | Le guide pointe toujours l'exemplaire visible d'un bouton (recharge d'énergie) |
+| 5.3.8 | Fenêtres de confirmation du jeu reconnues (« Recharger », « Acheter ») |
+| 5.3.9 | Invocations gratuites : « Invoquer x1 » quand le x10 n'est pas disponible |
+| 5.3.10 | Animation d'invocation guidée (booster, carte, Tout passer) ; toutes les invocations gratuites utilisées une fois sur la page |
+| 5.3.11 | Boutons de l'écran de résultats d'invocation (Invoquer x1, Fermer) |
+| 5.3.12 | Correctif d'une erreur du guide sur l'écran de résultats d'invocation |
 
 ---
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.8
+// @version      5.3.12
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.8 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.12 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.8') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.12') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -407,7 +407,7 @@
           return out;
         };
         // Selecteurs dont le guide depend : verifies dans le code du jeu a chaque nouvelle version.
-        const SELECTORS = ['data-result-next', 'data-result-close', 'data-unslot', 'data-pick', 'data-en-refill', 'data-ds-buy', 'data-qclaim-all', 'data-claim-streak', 'data-pass-claim', 'data-evp-diff', 'data-evp-go', 'data-evp-feat', 'data-salle-fight', 'data-ev-buy', 'data-ev-use', 'data-ev-size', 'data-sbc-open', 'data-sbc-auto', 'data-sbc-ok', 'data-ev-bells', 'data-goto', 'data-arc-mode', 'data-arc-nm', 'data-fight', 'data-world', 'data-back-worlds', 'data-open', 'data-act', 'data-unit', 'data-dl-skip', 'data-skip-dlg', 'data-close-prep', 'data-gtab', 'data-gw', 'data-pain', 'data-tw', 'data-claim-album', 'data-qpage', 'data-yes', 'navShop', 'play-card'];
+        const SELECTORS = ['data-result-next', 'data-result-close', 'data-unslot', 'data-pick', 'data-en-refill', 'data-ds-buy', 'data-qclaim-all', 'data-claim-streak', 'data-pass-claim', 'data-evp-diff', 'data-evp-go', 'data-evp-feat', 'data-salle-fight', 'data-ev-buy', 'data-ev-use', 'data-ev-size', 'data-sbc-open', 'data-sbc-auto', 'data-sbc-ok', 'data-ev-bells', 'data-goto', 'data-arc-mode', 'data-arc-nm', 'data-fight', 'data-world', 'data-back-worlds', 'data-open', 'data-act', 'data-unit', 'data-dl-skip', 'data-skip-dlg', 'data-close-prep', 'data-gtab', 'data-gw', 'data-pain', 'data-tw', 'data-claim-album', 'data-qpage', 'data-yes', 'data-reopen', 'data-close-op', 'navShop', 'play-card'];
         const trios = ids => { const t = []; for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) for (let k = j + 1; k < ids.length; k++) t.push([ids[i], ids[j], ids[k]]); return t; };
 
         // Banc de test : combats de la frontiere (normaux) et boss accessibles, recalcules par version.
@@ -466,7 +466,7 @@
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.8',
+          __v: '5.3.12',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -486,7 +486,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.8 actif';
+            return 'KitsuAI v5.3.12 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -933,11 +933,14 @@
                 if (T && !T.over) { clr(); pill.innerHTML = '<b style="color:#38bdf8">Guide</b> · combat en cours : suis le panneau orange'; return; }
                 // Verification anti-robot du jeu : c'est a toi de la faire, le guide ne pointe rien.
                 if ([...document.querySelectorAll('h2,h3,b,strong,p')].some(e => vis(e) && /Petite v[ée]rification/i.test(e.innerText || ''))) return mark(null, 'verification du jeu : coche la case toi-meme, puis continue', 'botcheck');
+                { const sk = [...document.querySelectorAll('#skipAll')].find(vis); if (sk) return mark(sk, 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)', 'skipall'); const h = document.getElementById('tpHelp'); if (vis(h) && /Touche/i.test(h.innerText || '')) { const c = [...document.querySelectorAll('.tp-card')].find(vis); if (c) return mark(c, 'touche la carte pour la retourner (ou « Tout passer »)', 'tpcard'); } }
                 // Animations et fenetres a passer : invocation (Passer, puis toucher), carte gagnee, popups, installation.
-                for (const [sel, txt] of [['.wk-skip', 'invocation : clique sur « Passer »'], ['.rr-tap', 'touche l\'ecran pour continuer'], ['.rw-hint,.rw-card', 'carte obtenue : clique dessus (ou a cote) pour continuer'], ['[data-pop-close]', 'ferme cette fenetre (croix en haut a droite)'], ['[data-pwa-later]', 'fenetre « installer l\'appli » : clique sur la croix']]) {
+                for (const [sel, txt] of [['#skipAll', 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)'], ['#tpPack', 'booster : glisse la souris sur les pointilles pour l\'ouvrir'], ['.wk-skip', 'invocation : clique sur « Passer »'], ['.rr-tap', 'touche l\'ecran pour continuer'], ['.rw-hint,.rw-card', 'carte obtenue : clique dessus (ou a cote) pour continuer'], ['[data-pop-close]', 'ferme cette fenetre (croix en haut a droite)'], ['[data-pwa-later]', 'fenetre « installer l\'appli » : clique sur la croix']]) {
                   const e = [...document.querySelectorAll(sel)].find(vis);
                   if (e) return mark(e, txt, 'ov' + sel);
                 }
+                // Resultats d'invocation sans invocation gratuite restante : Fermer.
+                { const fe = [...document.querySelectorAll('[data-close-op=""]')].find(vis); if (fe && packsNow(save()).v === 0) return mark(fe, 'invocations terminees : clique sur « Fermer »', 'opclose'); }
                 // Fenetre « parchemin » : le plus gros parchemin, puis la carte a faire monter.
                 const sizes = [...document.querySelectorAll('[data-ev-size]')].filter(vis);
                 if (sizes.length) {
@@ -1087,7 +1090,13 @@
                     if (!/invocation|boosters/.test(location.hash)) return mark(qv('a[data-view="boosters"]'), evA.txt + ' : ouvre Bannieres, banniere Shonen', 'packs-nav');
                     const sh = [...document.querySelectorAll('button,a,[data-banner]')].find(e => vis(e) && /shonen/i.test(e.innerText || '') && !/x10/i.test(e.innerText || ''));
                     if (!/shonen/i.test(location.hash) && sh) return mark(sh, evA.txt + ' : choisis la banniere Shonen', 'packs-ban');
-                    return mark(qv('[data-open="10"]') || qv('[data-open]'), evA.txt, 'packs-open');
+                    // x10 seulement s'il est actif (10 invocations disponibles), sinon x1 a repeter.
+                    // Ecran de resultats d'invocation : ses propres boutons [data-reopen] (les [data-open] de la banniere sont dessous).
+                    const pickB = n => [...document.querySelectorAll(`[data-reopen="${n}"]`)].find(e => vis(e) && !e.disabled) || [...document.querySelectorAll(`[data-open="${n}"]`)].find(e => vis(e) && !e.disabled && !document.querySelector('[data-reopen]'));
+                    const x10 = pickB(10), x1 = pickB(1);
+                    if (x10) return mark(x10, evA.txt + ' : multi-invocation x10', 'packs-open10');
+                    if (x1) return mark(x1, evA.txt + ' : clique sur « Invoquer x1 » (une par une, le x10 demande 10 invocations)', 'packs-open1');
+                    return mark(null, evA.txt, 'packs-open');
                   }
                   if (evA.id.startsWith('zeni-')) { const b = [...document.querySelectorAll(`[data-ev-buy="${evA.id.slice(5)}"]`)].find(vis); if (b) return mark(b, evA.txt, evA.id); const n = toEvents('ouvre Evenements, puis le Comptoir'); if (n) return n; return mark([...document.querySelectorAll('[data-evp-shop]')].find(vis) || null, evA.txt + ' : ouvre le Comptoir', 'shop' + evA.id); }
                   if (evA.id === 'scrolls') { const b = [...document.querySelectorAll('[data-ev-use]')].find(vis); if (b) return mark(b, evA.txt, 'scrolls'); }
@@ -1149,7 +1158,7 @@
                       if (!/invocation|boosters/.test(location.hash)) return mark(qv('a[data-view="boosters"]'), eco.txt + ' : ouvre Bannieres', 'eco-nav');
                       const slug = (eco.banner || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-');
                       if (slug && !location.hash.includes(slug)) { const sel = [...document.querySelectorAll('button,a,[data-banner]')].find(e => vis(e) && (e.innerText || '').trim().toLowerCase().startsWith((eco.banner || '').toLowerCase())); return mark(sel || null, `${eco.txt} : choisis la banniere ${eco.banner}`, 'eco-ban'); }
-                      return mark(qv('[data-open="10"]'), eco.txt, 'eco-pull');
+                      return mark([...document.querySelectorAll('[data-open="10"]')].find(e => vis(e) && !e.disabled) || qv('[data-open="1"]'), eco.txt, 'eco-pull');
                     }
                   }
                 }
@@ -1239,7 +1248,7 @@
           _evActions(S = save(), en = 99) {
             const out = [], now = Date.now(), E = lsGet('kitsu_ai_events', null), rows = E?.combats || [];
             const pk = packsNow(S, now);
-            if (pk.v >= pk.cap - 2) out.push({ id: 'packs', prio: 0, txt: `${pk.v}/${pk.cap} invocations Shonen gratuites : utilise-les (pleines, elles ne se rechargent plus)` });
+            if (pk.v >= pk.cap - 2 || (pk.v > 0 && /invocation\/shonen/.test(location.hash))) out.push({ id: 'packs', prio: 0, txt: pk.v >= pk.cap - 2 ? `${pk.v}/${pk.cap} invocations Shonen gratuites : utilise-les (pleines, elles ne se rechargent plus)` : `encore ${pk.v} invocation${pk.v > 1 ? 's' : ''} Shonen gratuite${pk.v > 1 ? 's' : ''} : utilise-les toutes` });
             if ((S.ev?.bells || 0) >= 20) out.push({ id: 'bells', prio: 1, txt: `${S.ev.bells} clochettes : echange-les contre une invocation Shonen` });
             const mon = S.ev?.mon || 0, bought = k => { const b = S.ev?.buy?.[k]; return typeof b === 'number' ? b : (b?.n || 0); }, c = COMPTOIR.find(o => mon >= o.prix && !(o.id === 'energy' && bought('energy') >= 3));
             if (c) out.push({ id: 'zeni-' + c.id, prio: 2, txt: `Comptoir : ${mon} Zeni, achete ${c.txt} (${c.prix} Zeni)` });

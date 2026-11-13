@@ -4,6 +4,35 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.12
+
+### Corrigé
+- Erreur « Cannot access 'S' before initialization » dans la bulle du guide sur l'écran de résultats d'invocation (vérification de « Fermer » faite avant la lecture de la sauvegarde).
+
+---
+
+## 5.3.11
+
+### Corrigé
+- Écran de résultats d'invocation : le guide surlignait le bouton « Invoquer x1 » de la bannière, caché sous l'écran de résultats. Il utilise maintenant les boutons de cet écran (`[data-reopen]`), et « Fermer » quand il n'y a plus d'invocation gratuite.
+
+---
+
+## 5.3.10
+
+### Ajouté
+- Animation d'invocation guidée de bout en bout : booster (« glisse sur les pointillés »), carte à retourner, « Tout passer », puis « Touche pour continuer ».
+- Sur la page Invocation Shonen, le guide fait utiliser toutes les invocations gratuites restantes (« Invoquer x1 » à répéter, ou x10 à 10/10), au lieu de repartir en campagne à 7/10.
+
+---
+
+## 5.3.9
+
+### Corrigé
+- Invocations Shonen gratuites : le guide pointait « Multi-invocation x10 », désactivé tant qu'il n'y a pas 10 invocations. Il pointe maintenant « Invoquer x1 » (à répéter) quand le x10 n'est pas disponible.
+
+---
+
 ## 5.3.8
 
 ### Corrigé
