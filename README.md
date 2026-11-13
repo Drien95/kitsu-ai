@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.20**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.22**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -692,6 +692,8 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.18 | Tout est resimulé automatiquement à la fin d'un réentraînement de l'IA |
 | 5.3.19 | Guilde atteinte par COMMUNAUTÉ, Social, onglet Guilde ; meilleure équipe de boss conservée |
 | 5.3.20 | Guilde complète : défis, coffre, boutique (avec éligibilité 3 jours), plafond de 400 points, équipe déjà en place détectée |
+| 5.3.21 | Pauses du guide effacées à chaque version ; lien Parrainage ignoré pour aller en Guilde |
+| 5.3.22 | Boss de guilde : toutes les cartes éligibles, confirmation sur 40 combats, plafond 300 000 |
 
 ---
 
@@ -748,7 +750,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | Événements | Classement d'équipes complet pour chaque combat pas encore gagné |
 | Tour | Trios de tes 8 meilleures cartes, 4 montées complètes (au lancement, au plus une fois par jour) |
 | Raid Pain | Trios des 12 premières cartes éligibles x 2 |
-| Boss de guilde | Trios des 12 premières cartes éligibles x 3 |
+| Boss de guilde | Trios des 24 cartes éligibles les plus hautes x 4 combats, puis 12 meilleurs x 40 combats |
 | Rejouer pour l'XP | Les 6 combats au meilleur XP par énergie, classement d'équipes complet |
 
 ### Caches et seuils

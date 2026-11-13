@@ -4,6 +4,24 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.22
+
+### Modifié
+- Boss de guilde : recherche de l'équipe sur toutes les cartes éligibles (24 plus hautes au niveau minimum), balayage sur 4 combats, puis les 12 meilleurs trios confirmés sur 40 combats. Dégâts plafonnés à 300 000 comme dans le jeu. Les anciennes estimations sur 3 combats étaient trop optimistes (167 700 annoncés, 144 000 réels en moyenne).
+
+### Essayé, non retenu
+- Façon de jouer apprise pour le boss de guilde (entropie croisée, 47 générations, objectif = dégâts en 12 tours) : +0,8 % seulement. Les dégâts dépendent surtout de l'équipe, pas du choix des attaques. La politique boss existante est gardée.
+
+---
+
+## 5.3.21
+
+### Corrigé
+- Boss de guilde caché par une pause posée par une ancienne version : les pauses du guide sont effacées à chaque nouvelle version du script.
+- Le lien « Voir mon parrainage » (qui mène aussi à Social) n'est plus pris pour le lien Guilde : le guide passe par le menu COMMUNAUTÉ.
+
+---
+
 ## 5.3.20
 
 ### Ajouté

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.20
+// @version      5.3.22
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.20 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.22 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.20') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.22') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -482,7 +482,7 @@
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.20',
+          __v: '5.3.22',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -498,12 +498,12 @@
             const rprev = lsGet('kitsu_ai_rosterSig', null);
             if (!rprev) lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() });
             else if (rprev.sig !== rsig && Date.now() - rprev.t > 12 * 3600000) setTimeout(() => { if (!this._train || this._train.done) { toast('<b style="color:#38bdf8">Ton equipe a evolue</b><br>Reentrainement de l\'IA en arriere-plan (pause pendant les combats).', 8000); this.retrain({ quiet: true }).then(() => lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() })).catch(() => {}); } }, 60000);
-            if (lsGet('kitsu_ai_scriptver', null) !== this.__v) { for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_events', 'kitsu_ai_farm', 'kitsu_ai_road']) localStorage.removeItem(k); lsSet('kitsu_ai_scriptver', this.__v); setTimeout(() => this.plan().catch(() => {}), 2000); }
+            if (lsGet('kitsu_ai_scriptver', null) !== this.__v) { for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_events', 'kitsu_ai_farm', 'kitsu_ai_road', 'kitsu_ai_snooze']) localStorage.removeItem(k); lsSet('kitsu_ai_scriptver', this.__v); setTimeout(() => this.plan().catch(() => {}), 2000); }
             setTimeout(() => this.events().catch(() => {}), 9000);
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.20 actif';
+            return 'KitsuAI v5.3.22 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -936,7 +936,7 @@
             // Aller a une vue du jeu : lien direct s'il est visible, sinon le menu Jouer (Aventure, Evenements, Tour, Arene).
             const goView = (v, txt, key) => {
               if (location.hash.split('/')[0] === '#' + v) return null;
-              const cands = [...document.querySelectorAll(`a[href="#${v}"],a[data-view="${v}"]`)].filter(vis);
+              const cands = [...document.querySelectorAll(`a[href="#${v}"],a[data-view="${v}"]`)].filter(vis).filter(e => v !== 'social' || /social|guilde/i.test(e.innerText || ''));
               const a = cands.find(e => e.classList.contains('play-card')) || cands.find(e => e.closest('[role="menu"],[id$="-menu"],.menu,.dropdown')) || cands.find(e => e.closest('header,nav') && (e.innerText || '').trim().length > 2) || cands.find(e => (e.innerText || '').trim().length > 2) || cands[0] || (v === 'shop' ? [document.getElementById('navShop')].find(vis) : null);
               const NAME = { missions: 'QUETES', invocation: 'BANNIERES', collection: 'COLLECTION', shop: 'Boutique (panier)', social: 'Guilde', play: 'JOUER', adventure: 'JOUER', events: 'JOUER' };
               if (a) { const r = a.getBoundingClientRect(); if (a.classList.contains('play-card')) return mark(a, `${txt} : clique sur la carte « ${{ adventure: 'Aventure', events: 'Evenements', tour: 'Tour de l\'infini', arena: 'Arene' }[v] || v} »`, key); return mark(a, `${txt} : clique d'abord sur ${NAME[v] ? '« ' + NAME[v] + ' »' : 'le lien en surbrillance'}${r.top < 80 ? ' dans la barre du haut' : ''}`, key); }
@@ -1431,7 +1431,7 @@
                     if (!best || d > best.d) best = { t, d: d / 3 };
                     await idle();
                   }
-                  if (best) { const txt = `Guilde : boss ${g.boss.name}, ${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''} aujourd'hui. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})`; add(3, txt); { const old = lsGet('kitsu_ai_gw', null); if (!(old?.team && old.bkey === g.boss.id + '|' + g.boss.lv && (old.d || 0) > best.d)) lsSet('kitsu_ai_gw', { key: gwKey, bkey: g.boss.id + '|' + g.boss.lv, d: Math.round(best.d), txt, team: best.t }); } }
+                  if (best) { const txt = `Guilde : boss ${g.boss.name}, ${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''} aujourd'hui. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})`; add(3, txt); { const old = lsGet('kitsu_ai_gw', null); if (!(old?.team && old.bkey === g.boss.id + '|' + g.boss.lv)) lsSet('kitsu_ai_gw', { key: gwKey, bkey: g.boss.id + '|' + g.boss.lv, d: Math.round(best.d), txt, team: best.t }); } }
                 }
                 const gi = guildInfo(g), fmtD = t => new Date(t).toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
                 if (gi.chalPts + gi.chestPts > 0) {
@@ -1659,18 +1659,16 @@
                   try {
                     await loadModules();
                     const S = save(), lvOf = id => S.lv?.[id]?.l || 1, pol = smartPol(this.W), turns = g.week?.turns || 12;
-                    const elig = pool(12, S).filter(id => lvOf(id) >= (g.week?.minLv || 15)).slice(0, 10);
+                    // Toutes les cartes eligibles (niveau minimum de la guilde) : balayage 4 graines, puis les 12 meilleurs
+                    // trios confirmes sur 40 graines (les degats varient beaucoup d'un combat a l'autre). Plafond 300 000.
+                    const minLv = g.week?.minLv || 15, CAP = 300000;
+                    const elig = Object.keys(S.owned || {}).map(Number).filter(id => window.CHAR_BY_ID?.[id] && lvOf(id) >= minLv).sort((a, b) => lvOf(b) - lvOf(a)).slice(0, 24);
+                    const gdmg = (t, sd) => { const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd); for (let i = 0; i < 600 && st.cycle <= turns; i++) { const u = step(st); if (!u || st.cycle > turns) break; doAct(st, u, pol(st, u)); } return Math.min(CAP, hp0 - B.enemies(st)[0].hp); };
+                    const scan = []; let n = 0;
+                    for (const t of trios(elig)) { let d = 0; for (const sd of [1, 2, 3, 4]) d += gdmg(t, sd); scan.push({ t, d: d / 4 }); if (++n % 25 === 0) await idle(); }
+                    scan.sort((a, b) => b.d - a.d);
                     let best = null;
-                    for (const t of trios(elig)) {
-                      let d = 0;
-                      for (const sd of [1, 2, 3]) {
-                        const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd);
-                        for (let i = 0; i < 500 && st.cycle <= turns; i++) { const u = step(st); if (!u || st.cycle > turns) break; doAct(st, u, pol(st, u)); }
-                        d += hp0 - B.enemies(st)[0].hp;
-                      }
-                      if (!best || d / 3 > best.d) best = { t, d: d / 3 };
-                      await idle();
-                    }
+                    for (const c of scan.slice(0, 12)) { let d = 0; for (let sd = 2000; sd < 2040; sd++) d += gdmg(c.t, sd); d /= 40; if (!best || d > best.d) best = { t: c.t, d }; await idle(); }
                     if (best) lsSet('kitsu_ai_gw', { key: c0?.key || '', bkey, d: Math.round(best.d), team: best.t, txt: `Guilde : boss ${g.boss.name}. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})` });
                   } finally { this._gwBusy = false; }
                 }
