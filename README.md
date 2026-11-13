@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.17**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.18**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -265,7 +265,7 @@ Une politique **linéaire** : chaque coup possible est décrit par **19 critère
 
 ### Apprentissage (méthode d'entropie croisée)
 
-Population de jeux de poids, chacun joué sur un banc de combats ; on garde les meilleurs, on recentre, on recommence **jusqu'au plateau** (arrêt après 12 générations sans progrès, 120 maximum). Les calculs se mettent en pause pendant tes combats. Poids enregistrés dans `kitsu_ai_w3`. Réentraînement automatique en tâche de fond quand ton équipe a beaucoup changé.
+Population de jeux de poids, chacun joué sur un banc de combats ; on garde les meilleurs, on recentre, on recommence **jusqu'au plateau** (arrêt après 12 générations sans progrès, 120 maximum). Les calculs se mettent en pause pendant tes combats. Poids enregistrés dans `kitsu_ai_w3`. À la fin, la campagne, les équipes, l'équipe cible, les événements et les murs sont resimulés avec eux. Réentraînement automatique en tâche de fond quand ton équipe a beaucoup changé.
 
 ### Résultats mesurés (IA du script contre le mode AUTO du jeu)
 
@@ -685,6 +685,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.15 | Les vrais résultats priment : un combat raté (pas 3 étoiles) n'est plus reproposé pendant 24 h |
 | 5.3.16 | Cauchemar seulement sur les arcs vraiment débloqués ; équipe de guilde parmi tes meilleures cartes |
 | 5.3.17 | Caches recalculés à chaque nouvelle version du script ; jamais de flèche sur un Cauchemar verrouillé |
+| 5.3.18 | Tout est resimulé automatiquement à la fin d'un réentraînement de l'IA |
 
 ---
 

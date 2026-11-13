@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.18
+
+### Ajouté
+- À la fin d'un réentraînement de l'IA, la campagne, les équipes, l'équipe cible, les événements et les murs sont resimulés avec les nouveaux réglages.
+
+---
+
 ## 5.3.17
 
 ### Corrigé
