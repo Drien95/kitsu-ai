@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.18
+// @version      5.3.20
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.18 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.20 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.18') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.20') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -326,6 +326,19 @@
         };
         const unitEl = k => document.querySelector(`.unit[data-unit="${k}"]`);
         const short = id => (window.CHAR_BY_ID?.[id]?.n || String(id)).split(' (')[0];
+        // Guilde : points personnels. Ordre d'achat = meilleur rapport (invocations Shonen 30 pts/invocation,
+        // energie 12 pts/energie, multi x10 50 pts/invocation). La carte UR (4 000) n'est pas visee : trop loin.
+        const GSHOP = [{ id: 'inv5', nom: '5 invocations Shonen' }, { id: 'en10', nom: 'la recharge de 10 energies' }, { id: 'multi', nom: 'la multi-invocation x10' }];
+        const guildInfo = g => {
+          const me = g?.me || {}, ch = (g?.challenges || []).filter(c => c.done && !c.claimed), tiers = (g?.chest?.tiers || []).filter(t => t.reached && !t.claimed);
+          const el = g?.chest?.eligible || {}, shop = g?.shop || [], pts = me.pts || 0;
+          const opts = GSHOP.map(o => ({ ...o, ...(shop.find(x => x.id === o.id) || {}) })).filter(o => o.left > 0);
+          const buy = opts.find(o => o.price <= pts) || null;
+          return { ok: !!el.ok, contributed: !!el.contributed, eligAt: (me.joined || 0) + 3 * 86400000, weekEnd: g?.week?.ends || 0,
+            chalPts: ch.reduce((a, c) => a + (c.pts || 0), 0), chestPts: tiers.reduce((a, t) => a + (t.pts || 0), 0), chal: ch.length,
+            pts, cap: me.cap || 400, weekPts: me.weekPts || 0, capLeft: Math.max(0, (me.cap || 400) - (me.weekPts || 0)),
+            buy, shopNext: opts.length ? opts.map(o => `${o.nom} (${o.price})`).join(' > ') : '' };
+        };
         const pool = (n = 10, S = save()) => Object.keys(S.owned || {}).map(Number).map(id => {
           const c = window.CHAR_BY_ID[id], lv = S.lv?.[id]?.l || 1, st = S.stars?.[id] || 0;
           let s; try { s = G.statsAt(c, lv, st); } catch { s = { atk: c.atk, def: c.def }; }
@@ -410,7 +423,7 @@
           return out;
         };
         // Selecteurs dont le guide depend : verifies dans le code du jeu a chaque nouvelle version.
-        const SELECTORS = ['data-result-next', 'data-result-close', 'data-unslot', 'data-pick', 'data-en-refill', 'data-ds-buy', 'data-qclaim-all', 'data-claim-streak', 'data-pass-claim', 'data-evp-diff', 'data-evp-go', 'data-evp-feat', 'data-salle-fight', 'data-ev-buy', 'data-ev-use', 'data-ev-size', 'data-sbc-open', 'data-sbc-auto', 'data-sbc-ok', 'data-ev-bells', 'data-goto', 'data-arc-mode', 'data-arc-nm', 'data-fight', 'data-world', 'data-back-worlds', 'data-open', 'data-act', 'data-unit', 'data-dl-skip', 'data-skip-dlg', 'data-close-prep', 'data-gtab', 'data-gw', 'data-pain', 'data-tw', 'data-claim-album', 'data-qpage', 'data-yes', 'data-reopen', 'data-close-op', 'navShop', 'play-card'];
+        const SELECTORS = ['data-result-next', 'data-result-close', 'data-unslot', 'data-pick', 'data-en-refill', 'data-ds-buy', 'data-qclaim-all', 'data-claim-streak', 'data-pass-claim', 'data-evp-diff', 'data-evp-go', 'data-evp-feat', 'data-salle-fight', 'data-ev-buy', 'data-ev-use', 'data-ev-size', 'data-sbc-open', 'data-sbc-auto', 'data-sbc-ok', 'data-ev-bells', 'data-goto', 'data-arc-mode', 'data-arc-nm', 'data-fight', 'data-world', 'data-back-worlds', 'data-open', 'data-act', 'data-unit', 'data-dl-skip', 'data-skip-dlg', 'data-close-prep', 'data-gtab', 'data-gw', 'data-pain', 'data-tw', 'data-claim-album', 'data-qpage', 'data-yes', 'data-reopen', 'data-close-op', 'data-stab', 'navShop', 'play-card'];
         const trios = ids => { const t = []; for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) for (let k = j + 1; k < ids.length; k++) t.push([ids[i], ids[j], ids[k]]); return t; };
 
         // Banc de test : combats de la frontiere (normaux) et boss accessibles, recalcules par version.
@@ -469,7 +482,7 @@
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.18',
+          __v: '5.3.20',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -490,7 +503,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.18 actif';
+            return 'KitsuAI v5.3.20 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -927,6 +940,9 @@
               const a = cands.find(e => e.classList.contains('play-card')) || cands.find(e => e.closest('[role="menu"],[id$="-menu"],.menu,.dropdown')) || cands.find(e => e.closest('header,nav') && (e.innerText || '').trim().length > 2) || cands.find(e => (e.innerText || '').trim().length > 2) || cands[0] || (v === 'shop' ? [document.getElementById('navShop')].find(vis) : null);
               const NAME = { missions: 'QUETES', invocation: 'BANNIERES', collection: 'COLLECTION', shop: 'Boutique (panier)', social: 'Guilde', play: 'JOUER', adventure: 'JOUER', events: 'JOUER' };
               if (a) { const r = a.getBoundingClientRect(); if (a.classList.contains('play-card')) return mark(a, `${txt} : clique sur la carte « ${{ adventure: 'Aventure', events: 'Evenements', tour: 'Tour de l\'infini', arena: 'Arene' }[v] || v} »`, key); return mark(a, `${txt} : clique d'abord sur ${NAME[v] ? '« ' + NAME[v] + ' »' : 'le lien en surbrillance'}${r.top < 80 ? ' dans la barre du haut' : ''}`, key); }
+              // Lien cache dans un menu deroulant (ex. COMMUNAUTE > Social) : on montre le bouton qui ouvre le menu.
+              const hid = [...document.querySelectorAll(`a[href="#${v}"]`)].find(e => e.closest('[id$="-menu"],[role="menu"]'));
+              if (hid) { const menu = hid.closest('[id$="-menu"],[role="menu"]'), tg = menu?.id ? [...document.querySelectorAll(`[aria-controls="${menu.id}"]`)].find(vis) : null; if (tg) return mark(tg, `${txt} : ouvre « ${(tg.innerText || '').trim()} », puis « ${(hid.innerText || '').trim()} »`, key + '-menu'); }
               if (['adventure', 'events', 'tour', 'arena'].includes(v)) return mark(qv('a[data-view="play"]'), txt + ' : ouvre Jouer', key + '-play');
               if (v === 'pass') { const m = [...document.querySelectorAll('a[href="#missions"]')].find(vis); if (m) return mark(m, txt + ' : ouvre Quetes, onglet Parcours/Pass', key + '-m'); }
               return mark(null, txt, key);
@@ -1123,7 +1139,23 @@
                 // Guilde : raid Pain et boss de la semaine (essais du jour), avec l'equipe calculee dans la roadmap.
                 if (!T && Date.now() - (window.__kitsuGuildT || 0) > 5 * 60000) { window.__kitsuGuildT = Date.now(); KitsuAI.guildRefresh().catch(() => {}); }
                 const gA = KitsuAI._guildActions().find(a => !(lsGet('kitsu_ai_snooze', {})[a.id] > Date.now()));
-                if (gA) {
+                if (gA && gA.kind === 'claim') {
+                  const b = [...document.querySelectorAll(gA.btn)].find(e => vis(e) && !e.disabled);
+                  if (b) return mark(b, gA.txt, gA.id + 'btn');
+                  const any = [...document.querySelectorAll(gA.btn)].find(vis);
+                  if (any) { snooze(gA.id, 30); window.__kitsuGuildT = 0; }
+                  else {
+                    const tab = [...document.querySelectorAll(`[data-gtab="${gA.tab}"]`)].find(vis);
+                    if (tab?.classList.contains('on')) { snooze(gA.id, 10); window.__kitsuGuildT = 0; }
+                    else if (tab) return mark(tab, `${gA.txt} : onglet « ${(tab.innerText || '').trim()} »`, gA.id + 'tab');
+                    if (tab) {} else {
+                    const stab = [...document.querySelectorAll('[data-stab="guild"]')].find(vis);
+                    if (stab) return mark(stab, `${gA.txt} : ouvre l'onglet « Guilde »`, gA.id + 'stab');
+                    if (goView('social', gA.txt, gA.id + 'nav')) return;
+                    snooze(gA.id, 15);
+                    }
+                  }
+                } else if (gA) {
                   const pre = gA.kind, cards = [...document.querySelectorAll(`[data-${pre}="card"]`)].filter(vis);
                   if (cards.length) {
                     const on = cards.filter(c => c.classList.contains('on')).map(c => +c.dataset.id);
@@ -1136,12 +1168,17 @@
                   }
                   const go = [...document.querySelectorAll(`[data-${pre}="go"]`)].find(b => vis(b) && !b.disabled);
                   if (go && (cards.length || !qv(`[data-${pre}="pick"]`))) return mark(go, `${gA.txt} : attaque`, 'g' + pre + 'go');
+                  // Equipe deja en place (noms affiches sous « Ton equipe ») : on va directement sur Attaquer.
+                  const shown = (qv('.gp-team')?.innerText || '').toLowerCase(), teamOk = shown && gA.team.every(id => shown.includes(short(id).toLowerCase()));
+                  if (go && teamOk) return mark(go, `${gA.txt} : equipe ${gA.team.map(short).join(', ')} en place, attaque`, 'g' + pre + 'go3');
                   const pick = [...document.querySelectorAll(`[data-${pre}="pick"]`)].find(b => vis(b) && !b.disabled);
-                  if (pick) return mark(pick, `${gA.txt} : choisis l'equipe`, 'g' + pre + 'pick');
+                  if (pick) return mark(pick, `${gA.txt} : change l'equipe pour ${gA.team.map(short).join(', ')}`, 'g' + pre + 'pick');
                   if (go) return mark(go, `${gA.txt} : attaque`, 'g' + pre + 'go2');
                   const tab = [...document.querySelectorAll(`[data-gtab="${pre === 'pain' ? 'pain' : 'boss'}"]`)].find(vis);
                   if (tab) return mark(tab, gA.txt, 'g' + pre + 'tab');
-                  if (goView('social', gA.txt + ' : ouvre Guilde', 'g' + pre + 'nav')) return;
+                  const stab = [...document.querySelectorAll('[data-stab="guild"]')].find(vis);
+                  if (stab) return mark(stab, `${gA.txt} : ouvre l'onglet « Guilde »`, 'g' + pre + 'stab');
+                  if (goView('social', gA.txt, 'g' + pre + 'nav')) return;
                   snooze(gA.id, 15);
                 }
                 // Reflexes economie (achat d'energie, invocation) : proposes hors ecran d'equipe, mis en pause 20 min
@@ -1379,7 +1416,7 @@
                 const g = await r.json();
                 const gwKey = g.boss ? [g.boss.id, g.boss.lv, Math.round(g.boss.hp / 1e5), pool(6, S).map(id => S.lv?.[id]?.l || 1).join('.')].join('|') : '';
                 const gwCache = lsGet('kitsu_ai_gw', null);
-                if (g.me?.guild && g.boss && g.me.tries?.boss?.left > 0 && gwCache?.key === gwKey) add(3, gwCache.txt.replace(/\d+ essais?/, `${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''}`));
+                if (g.me?.guild && g.boss && g.me.tries?.boss?.left > 0 && gwCache?.team?.length === 3 && (gwCache.key === gwKey || gwCache.bkey === g.boss.id + '|' + g.boss.lv)) add(3, `Guilde : boss ${g.boss.name}, ${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''} aujourd'hui (sans energie). Equipe : ${gwCache.team.map(short).join(', ')}${gwCache.d ? ` (~${gwCache.d} degats)` : ''}`);
                 else if (g.me?.guild && g.boss && g.me.tries?.boss?.left > 0) {
                   const lvOf = id => S.lv?.[id]?.l || 1, pol = smartPol(this.W), turns = g.week?.turns || 12;
                   const elig = pool(12, S).filter(id => lvOf(id) >= (g.week?.minLv || 15));
@@ -1394,10 +1431,17 @@
                     if (!best || d > best.d) best = { t, d: d / 3 };
                     await idle();
                   }
-                  if (best) { const txt = `Guilde : boss ${g.boss.name}, ${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''} aujourd'hui. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})`; add(3, txt); lsSet('kitsu_ai_gw', { key: gwKey, bkey: g.boss.id + '|' + g.boss.lv, txt, team: best.t }); }
+                  if (best) { const txt = `Guilde : boss ${g.boss.name}, ${g.me.tries.boss.left} essai${g.me.tries.boss.left > 1 ? 's' : ''} aujourd'hui. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})`; add(3, txt); { const old = lsGet('kitsu_ai_gw', null); if (!(old?.team && old.bkey === g.boss.id + '|' + g.boss.lv && (old.d || 0) > best.d)) lsSet('kitsu_ai_gw', { key: gwKey, bkey: g.boss.id + '|' + g.boss.lv, d: Math.round(best.d), txt, team: best.t }); } }
                 }
-                const ch = (g.challenges || []).filter(c => c.done && !c.claimed);
-                if (ch.length) add(1, `Guilde : ${ch.length} defi${ch.length > 1 ? 's' : ''} termine${ch.length > 1 ? 's' : ''} a recuperer (+${ch.reduce((a, c) => a + (c.pts || 0), 0)} points de guilde)`);
+                const gi = guildInfo(g), fmtD = t => new Date(t).toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+                if (gi.chalPts + gi.chestPts > 0) {
+                  if (gi.ok) add(1, `Guilde : recupere ${gi.chalPts ? `les defis (+${gi.chalPts} points)` : ''}${gi.chalPts && gi.chestPts ? ' et ' : ''}${gi.chestPts ? `le coffre (+${gi.chestPts} points)` : ''}`);
+                  else if (gi.eligAt < gi.weekEnd) add(4, `Guilde : ${gi.chalPts + gi.chestPts} points (defis + coffre) bloques : il faut etre dans la guilde depuis 3 jours${gi.contributed ? '' : ' et avoir livre au moins 1 combat cette semaine'}. Reclamables ${fmtD(gi.eligAt)}, avant le reset ${fmtD(gi.weekEnd)}.`);
+                  else add(7, `Guilde : defis et coffre de cette semaine perdus (3 jours dans la guilde atteints ${fmtD(gi.eligAt)}, apres le reset). Ce sera bon la semaine prochaine.`);
+                }
+                if (g.boss && gi.capLeft > 0) { const per = lsGet('kitsu_ai_gw', null)?.d || 0; if (per) add(6, `Guilde : boss = 1 point par 2 500 degats, ${gi.cap} max par semaine (${gi.weekPts}/${gi.cap}). A ~${per} degats par essai, il te faut ${Math.ceil(gi.capLeft * 2500 / Math.min(per, 300000))} essais pour le plafond (3 par jour).`); }
+                const buy = gi.buy; if (buy) add(5, `Boutique de guilde : achete ${buy.nom} (${buy.price} points, tu en as ${gi.pts})`);
+                else if (gi.shopNext) add(8, `Boutique de guilde : ${gi.pts} points. Priorite : ${gi.shopNext}`);
                 if (g.me?.tries?.war?.left > 0 && g.rivalry?.active) add(5, `Guilde : ${g.me.tries.war.left} combat${g.me.tries.war.left > 1 ? 's' : ''} de guerre disponibles`);
               }
             } catch {}
@@ -1607,7 +1651,7 @@
             try {
               const r = await fetch('/api/guilds/week', H);
               if (r.ok) {
-                const g = await r.json(); out.boss = g.me?.guild && g.boss ? { left: g.me.tries?.boss?.left || 0, name: g.boss.name } : null;
+                const g = await r.json(); out.boss = g.me?.guild && g.boss ? { left: g.me.tries?.boss?.left || 0, name: g.boss.name } : null; if (g.me?.guild) out.info = guildInfo(g);
                 // Equipe du boss pas encore calculee (ou boss change) : on la calcule ici, sans attendre la roadmap.
                 const c0 = lsGet('kitsu_ai_gw', null), bkey = g.boss ? g.boss.id + '|' + g.boss.lv : '';
                 if (out.boss?.left > 0 && (!c0?.team || c0.bkey !== bkey) && !this._gwBusy) {
@@ -1619,15 +1663,15 @@
                     let best = null;
                     for (const t of trios(elig)) {
                       let d = 0;
-                      for (const sd of [1, 2]) {
+                      for (const sd of [1, 2, 3]) {
                         const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd);
                         for (let i = 0; i < 500 && st.cycle <= turns; i++) { const u = step(st); if (!u || st.cycle > turns) break; doAct(st, u, pol(st, u)); }
                         d += hp0 - B.enemies(st)[0].hp;
                       }
-                      if (!best || d > best.d) best = { t, d: d / 2 };
+                      if (!best || d / 3 > best.d) best = { t, d: d / 3 };
                       await idle();
                     }
-                    if (best) lsSet('kitsu_ai_gw', { key: c0?.key || '', bkey, team: best.t, txt: `Guilde : boss ${g.boss.name}. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})` });
+                    if (best) lsSet('kitsu_ai_gw', { key: c0?.key || '', bkey, d: Math.round(best.d), team: best.t, txt: `Guilde : boss ${g.boss.name}. Equipe : ${best.t.map(short).join(', ')} (~${Math.round(best.d)} degats, minimum ${g.week?.minDmg || 1000})` });
                   } finally { this._gwBusy = false; }
                 }
               }
@@ -1641,6 +1685,10 @@
             const pt = lsGet('kitsu_ai_pain', null)?.team, bt = lsGet('kitsu_ai_gw', null)?.team;
             if (g.pain?.left > 0 && pt?.length === 3) out.push({ id: 'pain', kind: 'pain', team: pt, txt: `Guilde : raid Pain (${g.pain.left} essai${g.pain.left > 1 ? 's' : ''})` });
             if (g.boss?.left > 0 && bt?.length === 3) out.push({ id: 'gwboss', kind: 'gw', team: bt, txt: `Guilde : boss ${g.boss.name} (${g.boss.left} essai${g.boss.left > 1 ? 's' : ''}, sans energie)` });
+            const i = g.info;
+            if (i?.ok && i.chalPts) out.unshift({ id: 'gwchal', kind: 'claim', tab: 'chal', btn: '[data-gw="chal"]', txt: `Guilde : recupere les defis (+${i.chalPts} points)` });
+            if (i?.ok && i.chestPts) out.unshift({ id: 'gwchest', kind: 'claim', tab: 'chest', btn: '[data-gw="chest"]', txt: `Guilde : ouvre le coffre (+${i.chestPts} points)` });
+            if (i?.buy) out.push({ id: 'gwbuy', kind: 'claim', tab: 'shop', btn: `[data-gw="buy"][data-id="${i.buy.id}"]`, txt: `Boutique de guilde : achete ${i.buy.nom} (${i.buy.price} points)` });
             return out;
           },
           _towerAction(S = save(), en = 0) {
@@ -1692,6 +1740,7 @@
                   if (wall?.niveauxEnPlus) { const r = wall.equipe.reduce((a, id) => a + Math.max(0, (S.lv?.[id]?.l || 1) - (h0.lv[id] || S.lv?.[id]?.l || 1)), 0) / wall.equipe.length / days; rows.push(['Prochain mur', `${wall.nom} : +${wall.niveauxEnPlus} niveaux${r > 0.2 ? `, vers le ${new Date(now + wall.niveauxEnPlus / r * day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}` : ''}`]); }
                 } else rows.push(['Entrainement', 'projection disponible apres quelques heures de jeu (mesure de ton rythme)']);
               } catch {}
+              { const gi = lsGet('kitsu_ai_guild', null)?.info; if (gi) rows.push(['Guilde', `${gi.pts} points · boss ${gi.weekPts}/${gi.cap} cette semaine · reset ${fmt(gi.weekEnd)}${gi.chalPts + gi.chestPts ? (gi.ok ? ` · ${gi.chalPts + gi.chestPts} points a recuperer` : ` · ${gi.chalPts + gi.chestPts} points reclamables ${gi.eligAt < gi.weekEnd ? fmt(gi.eligAt) : 'la semaine prochaine'}`) : ''}`]); }
               rows.push(['Tour de l\'infini', (S.acct?.lv || 1) >= 25 ? `debloquee · record ${S.tower?.best || 0}` : `niveau de compte ${S.acct?.lv || 1}/25`]);
               if (G.MARKET_OPEN === false) rows.push(['Marche', 'pas encore ouvert dans le jeu']);
               if (G.ROT_ON === false) rows.push(['Evenements tournants', 'desactives dans le jeu pour l\'instant']);

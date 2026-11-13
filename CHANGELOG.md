@@ -4,6 +4,33 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.20
+
+### Ajouté
+- Guilde complète : défis de la semaine (`[data-gw="chal"]`), coffre (`[data-gw="chest"]`) et boutique de guilde (`[data-gw="buy"]`) sont guidés, onglet par onglet.
+- Éligibilité lue dans l'API : défis et coffre ne sont proposés que si tu es dans la guilde depuis 3 jours et que tu as livré un combat. Sinon la roadmap donne la date exacte à laquelle ils deviennent réclamables, et prévient s'ils tombent après le reset du lundi 17 h.
+- Plafond des points de boss (1 point par 2 500 dégâts, 400 par semaine) : nombre d'essais nécessaires pour l'atteindre.
+- Boutique de guilde : ordre d'achat 5 invocations Shonen (150) > 10 énergies (120) > multi x10 (500). La carte UR (4 000) n'est pas visée.
+- Ligne « Guilde » dans l'onglet Avenir.
+
+### Corrigé
+- « Changer l'équipe » n'est plus proposé en boucle : le guide lit l'équipe affichée et va directement sur « Attaquer » quand elle est déjà la bonne.
+- La roadmap affichait une équipe de boss plus faible que celle calculée (elle réutilise maintenant l'équipe en cache).
+- « Défis à récupérer » n'est plus annoncé quand la réclamation est verrouillée.
+
+---
+
+## 5.3.19
+
+### Corrigé
+- Boss de guilde jamais atteint : la page Guilde est dans le menu « COMMUNAUTÉ », puis « Social », puis l'onglet « Guilde ». Le guide ouvre maintenant le menu déroulant, puis Social, puis l'onglet Guilde, puis l'onglet du boss.
+- Équipe du boss de guilde mal choisie (Trunks, Deidara, Rococo : ~47 000 dégâts) : 3 simulations par trio, et une équipe déjà calculée plus forte n'est plus écrasée. Meilleure équipe actuelle : Pain, Orochimaru, Trunks (~168 000).
+
+### Ajouté
+- Liens cachés dans un menu déroulant : le guide montre le bouton qui ouvre le menu (« ouvre « COMMUNAUTÉ », puis « Social » »).
+
+---
+
 ## 5.3.18
 
 ### Ajouté

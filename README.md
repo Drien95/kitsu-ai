@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.18**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.20**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -471,8 +471,12 @@ Seuls les exemplaires en trop comptent. Le guide signale un défi dès qu'il est
 
 | Contenu | Ce que fait le script |
 |---|---|
-| Raid Pain | Meilleur trio en dégâts (cartes du niveau minimum requis), essais restants, guidage : Guilde, onglet Pain, choix des cartes, Attaquer |
+| Raid Pain | Meilleur trio en dégâts (cartes du niveau minimum requis), essais restants, guidage : COMMUNAUTÉ, Social, onglet Guilde, onglet Pain, choix des cartes, Attaquer |
 | Boss de la semaine | 3 essais par jour, 12 tours, 1 000 dégâts minimum, 1 point par 2 500 dégâts. Meilleur trio simulé, puis même guidage |
+| Défis et coffre | Proposés seulement quand l'API dit que tu es éligible (3 jours dans la guilde + 1 combat livré). Sinon : date exacte de déblocage, et avertissement si elle tombe après le reset du lundi 17 h. Guidage : onglet Défis puis Réclamer, onglet Coffre puis Réclamer |
+| Boutique de guilde | Points personnels. Ordre : 5 invocations Shonen (150, 30 pts/invocation) > 10 énergies (120) > multi x10 (500). Carte UR (4 000/mois) non visée. Guidage : onglet Boutique puis le bon bouton |
+| Plafond boss | 400 points par semaine : la roadmap calcule le nombre d'essais nécessaires (dégâts plafonnés à 300 000 par combat) |
+| Équipe déjà en place | Le guide lit les noms sous « Ton équipe » : bonne équipe = flèche directe sur Attaquer, sinon « Changer l'équipe » |
 | Défis de guilde | Défis terminés à récupérer (roadmap) |
 | Guerre de guilde | Combats disponibles quand une rivalité est active (roadmap) |
 
@@ -686,6 +690,8 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.16 | Cauchemar seulement sur les arcs vraiment débloqués ; équipe de guilde parmi tes meilleures cartes |
 | 5.3.17 | Caches recalculés à chaque nouvelle version du script ; jamais de flèche sur un Cauchemar verrouillé |
 | 5.3.18 | Tout est resimulé automatiquement à la fin d'un réentraînement de l'IA |
+| 5.3.19 | Guilde atteinte par COMMUNAUTÉ, Social, onglet Guilde ; meilleure équipe de boss conservée |
+| 5.3.20 | Guilde complète : défis, coffre, boutique (avec éligibilité 3 jours), plafond de 400 points, équipe déjà en place détectée |
 
 ---
 
