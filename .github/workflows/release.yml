@@ -1,0 +1,27 @@
+name: release
+# A chaque merge sur main : si la version du script n'a pas encore de tag, on cree le tag vX.Y.Z
+# et une Release GitHub avec la section du CHANGELOG et le fichier kitsu_ai.user.js.
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Version du script
+        id: v
+        run: echo "v=$(grep -m1 '@version' kitsu_ai.user.js | awk '{print $3}')" >> "$GITHUB_OUTPUT"
+      - name: Tag et Release (si nouvelle version)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.v }}
+        run: |
+          if git rev-parse "v$V" >/dev/null 2>&1; then echo "v$V existe deja, rien a faire"; exit 0; fi
+          awk -v v="## $V" '$0==v{f=1;next} /^## /{if(f)exit} f' CHANGELOG.md | sed '/^---$/d' > notes.md
+          [ -s notes.md ] || echo "Version $V" > notes.md
+          gh release create "v$V" kitsu_ai.user.js --target "$GITHUB_SHA" --title "KitsuAI v$V" --notes-file notes.md

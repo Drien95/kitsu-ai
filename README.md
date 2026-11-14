@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.31**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.31**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -824,3 +824,29 @@ Les données viennent de `CHAR_BY_ID`, `MOVES` et `KitsuLinks`, puis des fiches 
 11. **Prévisions** (onglet Avenir) et outils de fiabilité (Signaler, vérification après mise à jour).
 
 Les analyses ponctuelles des tout premiers échanges (comparaison de cartes, meilleure carte de parrainage, première équipe Misato / Rococo / Salamander) ne sont pas reprises en détail : leurs résultats ont été dépassés par l'évolution de ta collection et ne sont plus conservés.
+
+## Workflow Git
+
+La branche `main` est protégée : personne n'y pousse directement, tout passe par une branche et une Pull Request.
+
+| Type de changement | Préfixe de branche | Exemple |
+|---|---|---|
+| Nouvelle fonction | `feat/` | `feat/guide-parchemins` |
+| Correction | `fix/` | `fix/bouton-combattre-evenement` |
+| Documentation | `docs/` | `docs/readme-guilde` |
+| Maintenance | `chore/` | `chore/maj-selecteurs` |
+
+1. Écrire le nom de la branche dans `.branch` et le message dans `.commitmsg` (fichiers locaux, non versionnés).
+2. Double-clic sur `publier.bat` : la branche part de la dernière version de `main`, le commit est envoyé et la page de la Pull Request s'ouvre.
+3. Sur GitHub : **Create pull request**, attendre que la vérification `verif` passe au vert, puis **Squash and merge**.
+
+### Versions, tags et releases
+
+Le numéro de version vient de l'en-tête du script (`// @version`). À chaque merge sur `main`, le workflow `.github/workflows/release.yml` regarde si cette version a déjà un tag :
+
+- si non : il crée le tag `vX.Y.Z` et une **Release GitHub** avec la section correspondante du CHANGELOG et le fichier `kitsu_ai.user.js` en pièce jointe ;
+- si oui (changement de doc, de workflow…) : rien, pas de nouvelle version.
+
+Une nouvelle version = monter `@version` dans le script, plus la ligne du README et une section `## X.Y.Z` dans le CHANGELOG (la vérification `verif` bloque le merge si l'un des trois manque). Toutes les versions : onglet **Releases** du dépôt.
+
+La vérification automatique (`.github/workflows/verif.yml`) contrôle la syntaxe de `kitsu_ai.user.js` et la cohérence de la version entre l'en-tête du script, le README et le CHANGELOG.
