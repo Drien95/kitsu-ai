@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.30
+// @version      5.3.31
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.30 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.31 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.30') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.31') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -490,7 +490,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.30',
+          __v: '5.3.31',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -511,7 +511,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.30 actif';
+            return 'KitsuAI v5.3.31 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -697,7 +697,8 @@
             try {
               const L = Math.max(target, ...pool(3, S).map(lvOf)), statL = id => { const c = window.CHAR_BY_ID[id]; try { const x = G.statsAt(c, L, S.stars?.[id] || 0); return x.atk + x.def; } catch { return c.atk + c.def; } };
               const pot = Object.keys(S.owned || {}).map(Number).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID[id]?.r)).sort((a, b) => statL(b) - statL(a)).slice(0, 10);
-              const hard = this._refFights().filter(f => !f.includes('@')).map(f => f + '@x');
+              // Tous les boss du jeu en Extreme (127) : les combats de reference saturent (151/154) avec une LR.
+              const hard = []; for (const w of G.ALL_WORLDS) w.fights.forEach(f => { if (f.boss) hard.push(f.id + '@x'); });
               const lmOf = t => Object.fromEntries(t.map(id => [id, Math.max(lvOf(id), L)]));
               let ob = null;
               const need = t => t.reduce((x, id) => x + xpTo(id, L), 0);

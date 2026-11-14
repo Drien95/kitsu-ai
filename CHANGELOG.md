@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.31
+
+### Modifié
+- Équipe cible : jugée sur les 127 boss du jeu en Extrême, au lieu des 77 combats de référence. Avec une LR, les combats de référence saturaient (151/154) : l'équipe cible restait Tobi / Osamu / Pain alors que Tobi / Kanki / Pain (Akatsuki) fait 125/127 contre 108/127.
+
+---
+
 ## 5.3.30
 
 ### Corrigé

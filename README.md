@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.30**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.31**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -702,6 +702,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.28 | Parchemins d'XP guidés par la Collection (fiche de la carte cible, plus gros parchemin, Max utile, Utiliser) |
 | 5.3.29 | Nouveaux boutons de combat d'événement (`data-ev-fight`), difficulté Ultime |
 | 5.3.30 | Bouton Combattre de l'écran d'équipe prioritaire sur ceux de la page en dessous |
+| 5.3.31 | Équipe cible jugée sur les 127 boss du jeu en Extrême |
 
 ---
 
