@@ -1,16 +1,29 @@
-# Publie le contenu de ce dossier sur https://github.com/Drien95/kitsu-ai
-# Double-clic (ou clic droit > Executer avec PowerShell). Utilise ton git et ton compte GitHub de Windows.
+# Publie le contenu de ce dossier sur https://github.com/Drien95/kitsu-ai par une branche + Pull Request.
+# main est protegee : on ne pousse jamais directement dessus.
+# Nom de branche : fichier .branch (ex. feat/guide-guilde, fix/bouton-combattre, docs/readme, chore/maj).
+# Message de commit : fichier .commitmsg. Les deux fichiers restent locaux (.gitignore).
 Set-Location -Path $PSScriptRoot
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Write-Host "git n'est pas installe : https://git-scm.com/download/win" -ForegroundColor Red; Read-Host "Entree pour fermer"; exit 1 }
-if (-not (Test-Path .git)) {
-  git init -b main | Out-Null
-  git remote add origin https://github.com/Drien95/kitsu-ai.git
-  git fetch origin 2>$null
-  if ($LASTEXITCODE -eq 0 -and (git ls-remote --heads origin main)) { git reset --soft origin/main 2>$null }
-}
+$repo = "https://github.com/Drien95/kitsu-ai"
+$branch = if (Test-Path .branch) { (Get-Content .branch -Raw).Trim() } else { "chore/maj-" + (Get-Date -Format 'yyyyMMdd-HHmm') }
+if ($branch -eq 'main') { Write-Host "Interdit : main est protegee, choisis une branche feat/, fix/, docs/ ou chore/." -ForegroundColor Red; Read-Host "Entree pour fermer"; exit 1 }
 $msg = if (Test-Path .commitmsg) { Get-Content .commitmsg -Raw } else { "Mise a jour KitsuAI" }
+git fetch --prune origin
+$cur = (git rev-parse --abbrev-ref HEAD).Trim()
+if ($cur -ne $branch) {
+  # Nouvelle branche partant de la derniere version de main, avec le contenu actuel du dossier.
+  $tmp = Join-Path $env:TEMP "kitsu-ai-publier"
+  Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+  robocopy . $tmp /E /XD .git /NFL /NDL /NJH /NJS /NP | Out-Null
+  git checkout -f -B $branch origin/main
+  robocopy $tmp . /E /XD .git /NFL /NDL /NJH /NJS /NP | Out-Null
+  Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}
 git add -A
 git commit -m $msg
-git push -u origin main
-if ($LASTEXITCODE -eq 0) { Write-Host "`nPublie sur GitHub." -ForegroundColor Green } else { Write-Host "`nEchec de l'envoi (voir le message ci-dessus)." -ForegroundColor Red }
+git push -u origin $branch
+if ($LASTEXITCODE -eq 0) {
+  Write-Host "`nBranche $branch envoyee. La page de la Pull Request s'ouvre : clique sur Create pull request, attends le test vert, puis Merge." -ForegroundColor Green
+  Start-Process "$repo/compare/main...$($branch)?expand=1"
+} else { Write-Host "`nEchec de l'envoi (voir le message ci-dessus)." -ForegroundColor Red }
 Read-Host "Entree pour fermer"
