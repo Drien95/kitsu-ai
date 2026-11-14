@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.25
+// @version      5.3.30
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.25 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.3.30 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.25') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.3.30') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -423,7 +423,7 @@
           return out;
         };
         // Selecteurs dont le guide depend : verifies dans le code du jeu a chaque nouvelle version.
-        const SELECTORS = ['data-result-next', 'data-result-close', 'data-unslot', 'data-pick', 'data-en-refill', 'data-ds-buy', 'data-qclaim-all', 'data-claim-streak', 'data-pass-claim', 'data-evp-diff', 'data-evp-go', 'data-evp-feat', 'data-salle-fight', 'data-ev-buy', 'data-ev-use', 'data-ev-size', 'data-sbc-open', 'data-sbc-auto', 'data-sbc-ok', 'data-ev-bells', 'data-goto', 'data-arc-mode', 'data-arc-nm', 'data-fight', 'data-world', 'data-back-worlds', 'data-open', 'data-act', 'data-unit', 'data-dl-skip', 'data-skip-dlg', 'data-close-prep', 'data-gtab', 'data-gw', 'data-pain', 'data-tw', 'data-claim-album', 'data-qpage', 'data-yes', 'data-reopen', 'data-close-op', 'data-stab', 'navShop', 'play-card'];
+        const SELECTORS = ['data-result-next', 'data-result-close', 'data-unslot', 'data-pick', 'data-en-refill', 'data-ds-buy', 'data-qclaim-all', 'data-claim-streak', 'data-pass-claim', 'data-evp-diff', 'data-evp-go', 'data-evp-feat', 'data-salle-fight', 'data-ev-buy', 'data-ev-use', 'data-ev-size', 'data-sbc-open', 'data-sbc-auto', 'data-sbc-ok', 'data-ev-bells', 'data-goto', 'data-arc-mode', 'data-arc-nm', 'data-fight', 'data-world', 'data-back-worlds', 'data-open', 'data-act', 'data-unit', 'data-dl-skip', 'data-skip-dlg', 'data-close-prep', 'data-gtab', 'data-gw', 'data-pain', 'data-tw', 'data-claim-album', 'data-qpage', 'data-yes', 'data-ev-fight', 'data-sc-use', 'data-sc-size', 'data-sc-q', 'data-reopen', 'data-close-op', 'data-stab', 'navShop', 'play-card'];
         const trios = ids => { const t = []; for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) for (let k = j + 1; k < ids.length; k++) t.push([ids[i], ids[j], ids[k]]); return t; };
 
         // Banc de test : combats de la frontiere (normaux) et boss accessibles, recalcules par version.
@@ -480,9 +480,17 @@
         };
         // Comptoir des Zeni : l'energie (5 pour 600, 3 fois par jour) vaut bien plus que les parchemins.
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
+        // Carte qui recoit les parchemins : la plus en retard de l'equipe cible, sinon la carte a entrainer.
+        const scrollTarget = (S = save()) => {
+          const tr = lsGet('kitsu_ai_training', null) || {}, lv = id => S.lv?.[id]?.l || 1;
+          const ids = (tr.objectif?.retard || []).map(c => c.id).concat((tr.cartes || []).map(c => c.id)).filter(id => S.owned?.[id] && lv(id) < 99);
+          if (ids.length) return ids[0];
+          const eq = (tr.objectif?.equipe || []).filter(id => S.owned?.[id] && lv(id) < 99).sort((a, b) => lv(a) - lv(b));
+          return eq[0] || null;
+        };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.25',
+          __v: '5.3.30',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -503,7 +511,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.25 actif';
+            return 'KitsuAI v5.3.30 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -921,7 +929,8 @@
             const vis = el => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden' && !el.closest('#kitsuDock,#kitsuGuide');
             // Premier element VISIBLE (le jeu a souvent deux exemplaires d'un bouton, dont un cache dans un menu).
             const qv = sel => [...document.querySelectorAll(sel)].find(vis) || null;
-            const btnText = re => [...document.querySelectorAll('button')].find(b => vis(b) && re.test(b.innerText || ''));
+            // Ecran d'equipe : son propre bouton (.pp-go / [data-go]) passe avant ceux de la page en dessous (evenements).
+            const btnText = re => { const bs = [...document.querySelectorAll('button')].filter(b => vis(b) && re.test(b.innerText || '')); return bs.find(b => b.matches('.pp-go,[data-go]')) || bs.find(b => !b.matches('[data-evp-go],[data-ev-fight]')) || bs[0]; };
             let lastKey = '', guideCheck = {};
             const mark = (el, txt, key, groups = []) => {
               clr();
@@ -962,6 +971,19 @@
                 }
                 // Resultats d'invocation sans invocation gratuite restante : Fermer.
                 { const fe = [...document.querySelectorAll('[data-close-op=""]')].find(vis); if (fe && packsNow(save()).v === 0) return mark(fe, 'invocations terminees : clique sur « Fermer »', 'opclose'); }
+                // Fiche de carte (Collection) avec parchemins d'XP : bonne carte ? plus gros parchemin, Max utile, Utiliser.
+                { const use = [...document.querySelectorAll('[data-sc-use]')].find(vis);
+                  if (use && /^sc/.test(lastKey)) {
+                    const S0 = save(), tg = scrollTarget(S0), m = use.closest('#modal,.modal') || document, cid = +(m.querySelector('[data-fav-star]')?.getAttribute('data-fav-star') || m.querySelector('.card[data-id]')?.dataset.id || 0);
+                    if (evScrolls(S0).n === 0) { const x = [...m.querySelectorAll('.modal-x,[data-close]')].find(vis); return mark(x || null, 'parchemins utilises : ferme la fiche', 'scdone'); }
+                    if (tg && cid && cid !== tg) { const x = [...m.querySelectorAll('.modal-x,[data-close]')].find(vis); return mark(x || null, `ce n'est pas la bonne carte : ferme, puis ouvre ${short(tg)}`, 'scx' + cid); }
+                    const sz = [...m.querySelectorAll('[data-sc-size]')].filter(vis), on = sz.find(b => b.classList.contains('on') && !b.disabled), big = ['l', 'm', 's'].map(k => sz.find(b => b.dataset.scSize === k && !b.disabled)).find(Boolean);
+                    if (big && on !== big) return mark(big, `parchemins pour ${short(cid)} : choisis le plus gros`, 'scsz' + big.dataset.scSize);
+                    const mx = [...m.querySelectorAll('[data-sc-q="max"]')].find(b => vis(b) && !b.disabled);
+                    if (mx && !/^scmax/.test(lastKey) && !/^scuse/.test(lastKey)) return mark(mx, `parchemins pour ${short(cid)} : clique sur « Max utile »`, 'scmax' + (on || big)?.dataset.scSize);
+                    if (!use.disabled) return mark(use, `parchemins pour ${short(cid)} : clique sur « ${(use.innerText || 'Utiliser').trim()} »`, 'scuse' + (on || big)?.dataset.scSize);
+                  }
+                }
                 // Fenetre « parchemin » : le plus gros parchemin, puis la carte a faire monter.
                 const sizes = [...document.querySelectorAll('[data-ev-size]')].filter(vis);
                 if (sizes.length) {
@@ -972,16 +994,16 @@
                   const srch = [...document.querySelectorAll('input')].find(e => vis(e) && /recherch/i.test(e.placeholder || ''));
                   return mark(srch || null, trg.length ? `cherche « ${short(trg[0]).split(' ')[0]} » et donne-lui le parchemin` : 'choisis la carte de ton equipe la plus basse', 'scq');
                 }
-                // Fenetre « defi de doublons » : Remplir, puis valider.
-                const sbcOk = [...document.querySelectorAll('[data-sbc-ok]')].find(vis);
-                if (sbcOk) { const auto = [...document.querySelectorAll('[data-sbc-auto]')].find(b => vis(b) && !b.disabled); if (auto && sbcOk.disabled) return mark(auto, 'defi de doublons : clique sur Remplir', 'sbca'); if (!sbcOk.disabled) return mark(sbcOk, 'defi de doublons : valide', 'sbcok'); }
                 // Fenetre de confirmation ouverte apres un achat ou une recuperation conseillee.
-                if (/^(eco|refill|cl|bells|packs|sbc|sc[sqc]|scrolls|zeni|shop|pull|gw)/.test(lastKey)) {
+                if (/^(eco|refill|cl|bells|packs|sbc|sc|zeni|shop|pull|gw|ev|salle|feat|diff)/.test(lastKey)) {
                   // Fenetre de confirmation du jeu : .ask avec les boutons [data-yes] / [data-no].
-                  const box = [...document.querySelectorAll('.ask,[role="dialog"],dialog[open],.modal,.confirm,.sheet')].find(vis);
+                  const box = [...document.querySelectorAll('.ask')].filter(vis).pop() || [...document.querySelectorAll('[role="dialog"],dialog[open],.confirm')].filter(e => vis(e) && e.querySelector('[data-yes]')).pop();
                   const yes = box && ([...box.querySelectorAll('[data-yes]')].find(b => vis(b) && !b.disabled) || [...box.querySelectorAll('button')].find(b => vis(b) && !b.disabled && /acheter|remplir|recharger|confirmer|valider|oui|echanger|échanger|d[ée]poser|utiliser|r[ée]cup[ée]rer/i.test(b.innerText || '')));
                   if (yes) { if (lastKey.startsWith('gw')) window.__kitsuGuildT = 0; return mark(yes, `confirme : clique sur « ${(yes.innerText || 'Confirmer').trim()} »`, lastKey + '-ok'); }
                 }
+                // Fenetre « defi de doublons » : Remplir, puis valider.
+                const sbcOk = [...document.querySelectorAll('[data-sbc-ok]')].find(vis);
+                if (sbcOk) { const auto = [...document.querySelectorAll('[data-sbc-auto]')].find(b => vis(b) && !b.disabled); if (auto && sbcOk.disabled) return mark(auto, 'defi de doublons : clique sur Remplir', 'sbca'); if (!sbcOk.disabled) return mark(sbcOk, 'defi de doublons : valide', 'sbcok'); }
                 const S = save(), P = lsGet('kitsu_ai_plan', null);
                 const E0 = lsGet('kitsu_ai_events', null); if ((!E0 || Date.now() - E0.t > 6 * 3600000 || Object.keys(S.ev?.clear || {}).some(k => E0.combats && !E0.combats.find(r => r.id === k)?.fait)) && !KitsuAI._evBusy && !T && Date.now() - (window.__kitsuEvTry || 0) > 60000) { window.__kitsuEvTry = Date.now(); KitsuAI.events().catch(e => health.err('evenements : ' + e.message)); }
                 if (!P && !prepScreen()) { mark(null, 'calcul du plan... ouvre l\'onglet Jouer'); return; }
@@ -1123,7 +1145,17 @@
                     return mark(null, evA.txt, 'packs-open');
                   }
                   if (evA.id.startsWith('zeni-')) { const b = [...document.querySelectorAll(`[data-ev-buy="${evA.id.slice(5)}"]`)].find(vis); if (b) return mark(b, evA.txt, evA.id); const n = toEvents('ouvre Evenements, puis le Comptoir'); if (n) return n; return mark([...document.querySelectorAll('[data-evp-shop]')].find(vis) || null, evA.txt + ' : ouvre le Comptoir', 'shop' + evA.id); }
-                  if (evA.id === 'scrolls') { const b = [...document.querySelectorAll('[data-ev-use]')].find(vis); if (b) return mark(b, evA.txt, 'scrolls'); }
+                  if (evA.id === 'scrolls') {
+                    const b = [...document.querySelectorAll('[data-ev-use]')].find(vis); if (b) return mark(b, evA.txt, 'scrolls');
+                    // Par la Collection : ouvrir la fiche de la carte cible.
+                    const tg = scrollTarget(S);
+                    if (tg) {
+                      const c = [...document.querySelectorAll(`#view-collection .card[data-id="${tg}"]`)].find(vis);
+                      if (c) return mark(c, `${evA.txt} : ouvre la fiche de ${short(tg)}`, 'sccard' + tg);
+                      if (location.hash.split('/')[0] === '#collection') { const q = [...document.querySelectorAll('input[type="search"],input')].find(e => vis(e) && /recherch/i.test(e.placeholder || '')); return mark(q || null, `${evA.txt} : cherche « ${short(tg).split(' ')[0]} » dans la Collection`, 'scsearch' + tg); }
+                      if (goView('collection', `${evA.txt} : ouvre Collection`, 'scnav')) return;
+                    }
+                  }
                   else if (evA.id.startsWith('sbc-')) { const b = [...document.querySelectorAll(`[data-sbc-open="${evA.id.slice(4)}"]`)].find(vis); if (b) return mark(b, evA.txt, evA.id); const n = toEvents('ouvre Evenements, section Defis de doublons'); if (n) return n; }
                   else if (evA.fight) {
                     const r = evA.fight;
@@ -1139,7 +1171,7 @@
                     const dsel = `[data-evp-diff="${r.evId}|${r.kind}|${r.d}"]`, db = [...document.querySelectorAll(dsel)].find(vis);
                     if (!db) { const ft = [...document.querySelectorAll(`[data-evp-feat="${r.evId}"]`)].find(vis); return mark(ft || null, `${evA.txt} : ouvre l'evenement ${r.titre}`, 'feat' + r.id); }
                     if (!db.classList.contains('on')) return mark(db, `${evA.txt} : choisis ${r.diff}`, 'diff' + r.id);
-                    const go = db.closest('.evx-act')?.querySelector('[data-evp-go]');
+                    const go = [...document.querySelectorAll(`[data-ev-fight="${r.evId}|${r.kind}|${r.d}"]`)].find(b => vis(b) && !b.disabled) || db.closest('.evx-act')?.querySelector('[data-ev-fight],[data-evp-go]');
                     return mark(go || null, `${evA.txt} : clique sur Combattre`, 'evgo' + r.id);
                   }
                 }
@@ -1316,7 +1348,7 @@
             const nx = this._evNext(S, en);
             if (nx) { const h = nx.fin ? (nx.fin - now) / 3600000 : 99; out.push({ id: 'ev:' + nx.id, prio: 4, fight: nx, cout: nx.cout, txt: `Evenement ${nx.titre} : ${nx.kind === 'boss' ? 'boss' : 'entrainement'} ${nx.diff}, premiere victoire +${nx.gemmes} gemmes (victoire ${Math.round(nx.victoire * 100)} %, fin dans ${h < 24 ? Math.round(h) + ' h' : Math.round(h / 24) + ' j'})` }); }
             const sc = evScrolls(S);
-            if (sc.n) out.push({ id: 'scrolls', prio: 6, txt: `${sc.n} parchemin${sc.n > 1 ? 's' : ''} (${sc.xp} XP) : utilise-les sur ${(lsGet('kitsu_ai_training', null)?.cartes?.[0]?.nom) || 'la carte la plus basse de ton equipe'}` });
+            if (sc.n) out.push({ id: 'scrolls', prio: 6, txt: `${sc.n} parchemin${sc.n > 1 ? 's' : ''} d'XP (${sc.xp} XP) : donne-les a ${scrollTarget(S) ? short(scrollTarget(S)) : 'la carte la plus basse de ton equipe'}` });
             for (const d of sbcState(S).filter(d => d.pret)) out.push({ id: 'sbc-' + d.key, prio: 2, txt: `Defi de doublons : ${d.txt} (tu en as ${d.have})` });
             return out.sort((a, b) => a.prio - b.prio);
           },

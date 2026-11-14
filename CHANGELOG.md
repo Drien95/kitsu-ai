@@ -4,6 +4,46 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.3.30
+
+### Corrigé
+- Écran d'équipe d'un événement : le contour se posait sur le bouton « Combattre » de la page Événements, caché sous l'écran d'équipe. Le bouton de l'écran d'équipe (`.pp-go`, `[data-go]`) passe maintenant en premier.
+
+---
+
+## 5.3.29
+
+### Corrigé
+- Événements : le jeu a changé ses boutons de combat (`[data-ev-fight="événement|type|difficulté"]`, « Combattre » / « Affronter le boss »). Le guide les met en évidence, y compris en difficulté Ultime.
+
+---
+
+## 5.3.28
+
+### Ajouté
+- Parchemins d'XP guidés par la Collection, dans la boucle du guide : Collection, puis la fiche de la carte cible (la plus en retard de l'équipe cible, sinon la carte à entraîner), puis le plus gros parchemin, « Max utile », « Utiliser », et la confirmation. Si la fiche ouverte n'est pas la bonne carte, le guide pointe la croix.
+- Sélecteurs de la fiche : `[data-sc-size]`, `[data-sc-q]`, `[data-sc-use]`, `[data-fav-star]` (identifiant de la carte), vue `#view-collection`.
+
+### Corrigé
+- Faux « confirme : clique sur Utiliser » sur la fiche d'une carte au hasard : seules les vraies fenêtres de confirmation (`.ask`, ou une fenêtre avec `[data-yes]`) sont prises.
+
+---
+
+## 5.3.27
+
+### Corrigé
+- Défi de doublons : le guide pointait « Valider le défi » de la fenêtre du dessous au lieu de « Déposer » dans la confirmation au-dessus. La fenêtre de confirmation `.ask` la plus haute est maintenant prise en priorité.
+
+---
+
+## 5.3.26
+
+### Corrigé
+- Défi de doublons : la fenêtre « Valider … ? » (bouton « Déposer ») n'était pas guidée, le guide restait sur « valide » derrière la fenêtre. La confirmation passe maintenant avant les étapes de la page.
+- Confirmations après les actions d'événements (Salle, achats du Comptoir, difficultés) guidées elles aussi.
+
+---
+
 ## 5.3.25
 
 ### Corrigé

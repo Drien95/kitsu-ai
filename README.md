@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.25**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.3.30**. Historique détaillé : `CHANGELOG.md`. Dépôt privé : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -697,6 +697,11 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.23 | Fin de la boucle Changer l'équipe / Fermer ; essais épuisés détectés (pause jusqu'à minuit) |
 | 5.3.24 | Confirmation des achats et récupérations de guilde guidée |
 | 5.3.25 | Salle de l'Esprit et du Temps ouverte depuis sa carte d'événement |
+| 5.3.26 | Fenêtres de confirmation des événements et des défis de doublons guidées |
+| 5.3.27 | Confirmation du dessus prise en priorité (Déposer, pas Valider le défi) |
+| 5.3.28 | Parchemins d'XP guidés par la Collection (fiche de la carte cible, plus gros parchemin, Max utile, Utiliser) |
+| 5.3.29 | Nouveaux boutons de combat d'événement (`data-ev-fight`), difficulté Ultime |
+| 5.3.30 | Bouton Combattre de l'écran d'équipe prioritaire sur ceux de la page en dessous |
 
 ---
 
