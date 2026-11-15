@@ -61,10 +61,10 @@ if (PARTS.includes('xp')) {
     const pts = paliers.map((L, i) => ({ niveau: L, xp: cum(L) - cum(l0), s2: pct(r[i].s2), s3: pct(r[i].s3), v: r[i].v }));
     const best = pts.slice(1).map(p => ({ ...p, parDixMille: Math.max(0, p.v - Math.max(pts[0].v, refR.v)) * 100 / Math.max(1, p.xp / 10000) })).sort((x, y) => y.parDixMille - x.parDixMille)[0];
     const fin = pts.at(-1), depasse = fin.v > refR.v + 0.01;
-    rows.push({ carte: nom(id), id, rarete: R[CH[id].r], niveau: l0, equipe: noms(t), paliers: pts.map(({ v, ...p }) => p), depasse, conseil: depasse && best ? { jusqua: best.niveau, xp: best.xp, gainParDixMille: +best.parDixMille.toFixed(2), s2: best.s2, s3: best.s3 } : null });
+    rows.push({ carte: nom(id), id, ids: t, rarete: R[CH[id].r], niveau: l0, equipe: noms(t), paliers: pts.map(({ v, ...p }) => p), depasse, conseil: depasse && best ? { jusqua: best.niveau, xp: best.xp, gainParDixMille: +best.parDixMille.toFixed(2), s2: best.s2, s3: best.s3 } : null });
     log(`xp ${nom(id)} niv ${l0} dans ${noms(t)} : ${pts.map(p => `${p.niveau}:${p.s2}%`).join(' ')} (ref ${pct(refR.s2)}%)`);
   }
-  out.xp = { reference: ref ? { equipe: noms(ref), s2: pct(refR.s2), s3: pct(refR.s3) } : null, cartes: rows.sort((a, b) => (b.conseil?.gainParDixMille || 0) - (a.conseil?.gainParDixMille || 0) || b.paliers.at(-1).s2 - a.paliers.at(-1).s2) };
+  out.xp = { reference: ref ? { ids: ref, equipe: noms(ref), s2: pct(refR.s2), s3: pct(refR.s3) } : null, cartes: rows.sort((a, b) => (b.conseil?.gainParDixMille || 0) - (a.conseil?.gainParDixMille || 0) || b.paliers.at(-1).s2 - a.paliers.at(-1).s2) };
 }
 // ---------- 3. Valeur des cartes des bannieres ouvertes ----------
 if (PARTS.includes('tirage')) {
@@ -83,11 +83,11 @@ if (PARTS.includes('tirage')) {
       let best = null;
       if (deja) { const t = TEAMS.find(t => t.includes(c.id)); if (t) { const r = (await evalTeams([mk(t, { stars: { [c.id]: stOf(c.id) + 1 } })]))[0]; best = { t, ...r }; } }
       else { const q = await evalTeams(cand.map(t => mk(t, { lv: { [c.id]: 99 } })), QUICK, [1]); const k = q.map((r, i) => ({ i, v: r.v })).sort((a, b2) => b2.v - a.v)[0]; const t = cand[k.i]; const r = (await evalTeams([mk(t, { lv: { [c.id]: 99 } })]))[0]; best = { t, ...r }; }
-      lignes.push({ carte: c.n, rarete: c.r, possedee: deja, equipe: best ? noms(best.t) : null, s2: best ? pct(best.s2) : null, s3: best ? pct(best.s3) : null, gain: best ? +(100 * (best.v - base.v)).toFixed(1) : null });
+      lignes.push({ carte: c.n, id: c.id, ids: best ? best.t : null, rarete: c.r, possedee: deja, equipe: best ? noms(best.t) : null, s2: best ? pct(best.s2) : null, s3: best ? pct(best.s3) : null, gain: best ? +(100 * (best.v - base.v)).toFixed(1) : null });
     }
     lignes.sort((a, b2) => (b2.gain ?? -99) - (a.gain ?? -99));
     const lr = lignes.filter(x => x.rarete === 'LR' && x.gain != null);
-    out.tirage.push({ banniere: b.series, fin: b.until, cartes: lignes, gainMoyenLR: lr.length ? +(lr.reduce((a, x) => a + Math.max(0, x.gain), 0) / lr.length).toFixed(1) : null, reference: { equipe: baseTeam ? noms(baseTeam) : null, s2: pct(base.s2), s3: pct(base.s3) } });
+    out.tirage.push({ banniere: b.series, fin: b.until, cartes: lignes, gainMoyenLR: lr.length ? +(lr.reduce((a, x) => a + Math.max(0, x.gain), 0) / lr.length).toFixed(1) : null, reference: { ids: baseTeam || null, equipe: baseTeam ? noms(baseTeam) : null, s2: pct(base.s2), s3: pct(base.s3) } });
     log(`banniere ${b.series} : meilleure carte ${lignes[0]?.carte} (+${lignes[0]?.gain}), gain moyen d'une LR ${out.tirage.at(-1).gainMoyenLR}`);
   }
 }
@@ -101,7 +101,7 @@ if (PARTS.includes('duos')) {
   const sc = tr.map((t, i) => ({ t, v: r[i].v })), moy = sc.reduce((a, x) => a + x.v, 0) / sc.length, pairs = {};
   for (const x of sc) for (const [a, b] of [[x.t[0], x.t[1]], [x.t[0], x.t[2]], [x.t[1], x.t[2]]]) { const k = a + '-' + b; (pairs[k] ||= { a, b, vs: [] }).vs.push(x.v); }
   const solo = {}; for (const id of pick) { const v = sc.filter(x => x.t.includes(id)).map(x => x.v); solo[id] = v.reduce((a, b) => a + b, 0) / v.length; }
-  out.duos = Object.values(pairs).map(p => { const s = p.vs.sort((a, b) => b - a), meilleur = s[0], m2 = s.reduce((a, b) => a + b, 0) / s.length; return { duo: `${nom(p.a)} + ${nom(p.b)}`, ids: [p.a, p.b], moyenne: pct(m2 / 1.5), meilleur: pct(meilleur / 1.5), synergie: +(100 * (m2 - (solo[p.a] + solo[p.b]) / 2) / 1.5).toFixed(1), troisieme: nom(sc.filter(x => x.t.includes(p.a) && x.t.includes(p.b)).sort((a, b) => b.v - a.v)[0].t.find(id => id !== p.a && id !== p.b)) }; }).sort((a, b) => b.synergie - a.synergie).slice(0, 15);
+  out.duos = Object.values(pairs).map(p => { const s = p.vs.sort((a, b) => b - a), meilleur = s[0], m2 = s.reduce((a, b) => a + b, 0) / s.length; return { duo: `${nom(p.a)} + ${nom(p.b)}`, ids: [p.a, p.b], moyenne: pct(m2 / 1.5), meilleur: pct(meilleur / 1.5), synergie: +(100 * (m2 - (solo[p.a] + solo[p.b]) / 2) / 1.5).toFixed(1), troisieme: nom(sc.filter(x => x.t.includes(p.a) && x.t.includes(p.b)).sort((a, b) => b.v - a.v)[0].t.find(id => id !== p.a && id !== p.b)), troisiemeId: sc.filter(x => x.t.includes(p.a) && x.t.includes(p.b)).sort((a, b) => b.v - a.v)[0].t.find(id => id !== p.a && id !== p.b) }; }).sort((a, b) => b.synergie - a.synergie).slice(0, 15);
   log(`duos : ${tr.length} trios de ${pick.length} cartes, meilleure synergie ${out.duos[0]?.duo} (+${out.duos[0]?.synergie})`);
 }
 let ancien = {}; try { ancien = readJ(D('resultats', 'conseils-ia.json')) || {}; } catch {}

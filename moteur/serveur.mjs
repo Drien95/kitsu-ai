@@ -69,7 +69,7 @@ const ACTIONS = {
 };
 // Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
 const CHAINES = { complet: { nom: 'Tout lancer', etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }], ['equipes', { n: 3 }], ['conseils', {}]] } };
-let job = null; const history = [];
+let job = null; const history = []; let CARTES = {};
 function lancer(action, o = {}) {
   if (job && !job.fin) throw new Error('une tache tourne deja : ' + job.nom);
   if (CHAINES[action]) return lancerChaine(action, o);
@@ -184,6 +184,9 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/arreter' && req.method === 'POST') { if (job && !job.fin) { if (job.chaine) job.chaine.arretee = true; job.proc.kill(); say(job.nom + ' : arrete'); } return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/script') return send(res, 200, scriptInfo(false));
       if (u.pathname === '/api/reglages' && req.method === 'POST') { const r = { ...reglages(), ...JSON.parse(await body(req)) }; mkdirSync(D('data'), { recursive: true }); writeFileSync(D('data', 'reglages.json'), JSON.stringify(r, null, 1)); say('reglages enregistres'); return send(res, 200, r); }
+      // Fiches des cartes pour l'affichage (nom, rarete, serie, adresse du portrait). Les portraits ne sont pas copies :
+      // le panneau les affiche depuis leur adresse d'origine, comme le jeu.
+      if (u.pathname === '/api/cartes') { if (CARTES.v !== ENG.version) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: ENG.version, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
       if (u.pathname === '/api/poids-historique') { const p = readJ(D('data', 'poids.json')); return send(res, 200, { actuel: p ? { regles: p.t || null, gains: p.gains || {}, equipes: Object.keys(p.equipes || {}).length, imitation: !!p.distillation, restaure: p.restaure || null } : null, copies: listerPoids() }); }
       if (u.pathname === '/api/poids-restaurer' && req.method === 'POST') { if (job && !job.fin) return send(res, 409, { err: 'attends la fin du calcul en cours' }); const { f } = JSON.parse(await body(req)); try { restaurerPoids(f); } catch (e) { return send(res, 400, { err: e.message }); } say('reglages de l\'IA restaures (' + f + ')'); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/patch-vu' && req.method === 'POST') { const f = D('data', 'patchs.json'), all = readJ(f) || []; all.forEach(p => p.vu = true); writeFileSync(f, JSON.stringify(all)); return send(res, 200, { ok: true }); }
