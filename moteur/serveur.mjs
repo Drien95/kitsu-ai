@@ -12,13 +12,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
-import { dir as D, DATA } from './lib/chemins.mjs';
+import { dir as D, DATA, CODE } from './lib/chemins.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let ENG = await loadEngine(), MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8'));
 const NCPU = os.availableParallelism?.() || os.cpus().length;
 let pool = await makePool(Math.max(1, NCPU - 1));
 const T0 = Date.now(); let nConseil = 0, lastConseil = null;
+let scriptVu = null;
+const scriptFile = () => [path.join(CODE, '..', 'kitsu_ai.user.js'), path.join(CODE, 'kitsu_ai.user.js')].find(f => existsSync(f));
+function scriptInfo() { const f = scriptFile(); if (!f) return { trouve: false, vu: scriptVu }; const t = readFileSync(f, 'utf8'); return { trouve: true, version: (t.match(/@version\s+(\S+)/) || [])[1], taille: t.length, lignes: t.split('\n').length, vu: scriptVu, url: 'https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js' }; }
 const logs = []; const say = m => { const l = `[${new Date().toLocaleTimeString('fr-FR')}] ${m}`; logs.push(l); if (logs.length > 300) logs.shift(); console.log(l); };
 // ---------- taches (une a la fois : elles utilisent tout le processeur) ----------
 const ACTIONS = {
@@ -29,17 +32,35 @@ const ACTIONS = {
   plafond: { nom: 'Mesure du plafond', cmd: ['plafond.mjs'], opts: o => ['--n', String(o.n || 10), '--k', String(o.k || 6), '--r', String(o.r || 20)] },
   bench: { nom: 'Mesure de vitesse', cmd: ['bench.mjs'] },
 };
+// Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
+const CHAINES = { complet: { nom: 'Tout lancer', etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }]] } };
 let job = null; const history = [];
 function lancer(action, o = {}) {
   if (job && !job.fin) throw new Error('une tache tourne deja : ' + job.nom);
+  if (CHAINES[action]) return lancerChaine(action, o);
+  return lancerEtape(action, o);
+}
+function lancerChaine(action, o) {
+  const C = CHAINES[action], etapes = C.etapes.map(([a, d]) => [a, { ...d, ...(o[a] || {}) }]);
+  const chaine = { nom: C.nom, etapes: etapes.map(([a]) => ACTIONS[a].nom), i: 0, debut: Date.now(), lignes: [], arretee: false };
+  const suivante = () => {
+    if (chaine.arretee || chaine.i >= etapes.length) { chaine.fin = Date.now(); job = { ...job, nom: C.nom, fin: chaine.fin, code: chaine.arretee ? 1 : 0, chaine }; say(`${C.nom} : ${chaine.arretee ? 'arretee' : 'terminee'} (${Math.round((chaine.fin - chaine.debut) / 1000)} s)`); return; }
+    const [a, d] = etapes[chaine.i];
+    lancerEtape(a, d, code => { if (code !== 0) chaine.arretee = true; chaine.i++; suivante(); }, chaine);
+  };
+  say(`${C.nom} : ${chaine.etapes.join(', puis ')}`);
+  suivante(); return job.id;
+}
+function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const A = ACTIONS[action]; if (!A) throw new Error('action inconnue');
   const fils = Math.max(1, NCPU - 2); // un fil reste libre pour le conseil en combat
   const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer'].includes(action) ? ['--fils', String(fils)] : [])];
   const p = spawn(process.execPath, args, { cwd: here });
-  job = { id: Date.now(), action, nom: A.nom, args: args.join(' '), debut: Date.now(), lignes: [], fin: null, code: null, proc: p };
+  const prev = chaine && job ? job.lignes : [];
+  job = { id: Date.now(), action, nom: chaine ? `${chaine.nom} (${chaine.i + 1}/${chaine.etapes.length} : ${A.nom})` : A.nom, args: args.join(' '), debut: chaine ? chaine.debut : Date.now(), lignes: chaine ? [...prev, `=== ${A.nom} ===`] : [], fin: null, code: null, proc: p, chaine };
   const add = d => { for (const l of String(d).split(/\r?\n/)) if (l.trim()) { job.lignes.push(l); if (job.lignes.length > 2000) job.lignes.shift(); } };
   p.stdout.on('data', add); p.stderr.on('data', add);
-  p.on('close', async code => { job.fin = Date.now(); job.code = code; history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
+  p.on('close', async code => { if (apres && !(chaine && chaine.arretee)) { history.unshift({ nom: A.nom, debut: Date.now(), fin: Date.now(), code }); return apres(code); } job.fin = Date.now(); job.code = code; history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
     if (action === 'telecharger') { try { const v = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); if (v !== ENG.version) { say(`nouveau moteur ${v} : redemarre le panneau (KitsuAI.bat) pour l'utiliser dans le conseil en combat`); } } catch {} } });
   say(`${A.nom} : lance (${args.join(' ')})`);
   return job.id;
@@ -76,7 +97,8 @@ function etat() {
     conseil: { n: nConseil, dernier: lastConseil }, port: PORT,
     sauvegarde: sv ? { t: sv.t, script: sv.script, cartes: own.length, lr: own.filter(i => CH[i]?.r === 'M').length, ur: own.filter(i => CH[i]?.r === 'L').length, ssr: own.filter(i => CH[i]?.r === 'E').length, equipe: (sv.team || []).map(i => CH[i]?.n), guilde: sv.guild?.boss ? `${sv.guild.boss.name} niv ${sv.guild.boss.lv}` : null, compte: sv.acct?.lv } : null,
     poids: pw ? { t: pw.t, gains: pw.gains } : null,
-    job: job ? { id: job.id, nom: job.nom, args: job.args, debut: job.debut, fin: job.fin, code: job.code, lignes: job.lignes.slice(-400) } : null,
+    job: job ? { id: job.id, nom: job.nom, args: job.args, debut: job.debut, fin: job.fin, code: job.code, lignes: job.lignes.slice(-400), chaine: job.chaine ? { etapes: job.chaine.etapes, i: job.chaine.i } : null } : null,
+    script: scriptInfo(), appVersion: process.env.KITSU_APP_VERSION || null,
     historique: history, resultats: res.slice(0, 40), journal: logs.slice(-60),
     dernier: readJ(D('resultats', 'dernier.json')),
   };
@@ -91,7 +113,7 @@ http.createServer(async (req, res) => {
   try {
     if (req.method === 'OPTIONS') return send(res, 204, '', 'text/plain', CORS);
     // Pour le script du jeu
-    if (u.pathname === '/ping') return send(res, 200, { ok: true, version: ENG.version, dom: MAN.dom, fils: pool.n, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
+    if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: ENG.version, dom: MAN.dom, fils: pool.n, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
     if (u.pathname === '/poids') { const p = readJ(D('data', 'poids.json')); return send(res, p ? 200 : 404, p || {}, 'application/json', CORS); }
     if (u.pathname === '/conseil' && req.method === 'POST') {
       const q = JSON.parse(await body(req));
@@ -105,7 +127,10 @@ http.createServer(async (req, res) => {
       if (!own(req)) return send(res, 403, { err: 'jeton invalide (recharge le panneau)' });
       if (u.pathname === '/api/etat') return send(res, 200, etat());
       if (u.pathname === '/api/lancer' && req.method === 'POST') { const q = JSON.parse(await body(req)); return send(res, 200, { id: lancer(q.action, q.options || {}) }); }
-      if (u.pathname === '/api/arreter' && req.method === 'POST') { if (job && !job.fin) { job.proc.kill(); say(job.nom + ' : arrete'); } return send(res, 200, { ok: true }); }
+      if (u.pathname === '/api/arreter' && req.method === 'POST') { if (job && !job.fin) { if (job.chaine) job.chaine.arretee = true; job.proc.kill(); say(job.nom + ' : arrete'); } return send(res, 200, { ok: true }); }
+      if (u.pathname === '/api/script') return send(res, 200, scriptInfo(false));
+      if (u.pathname === '/api/script/code') { const f = scriptFile(); return send(res, f ? 200 : 404, f ? readFileSync(f, 'utf8') : 'introuvable', 'text/plain; charset=utf-8'); }
+      if (u.pathname === '/api/ouvrir' && req.method === 'POST') { const url = JSON.parse(await body(req)).url; if (/^https:\/\/(github\.com\/Drien95\/kitsu-ai|kitsu\.games|www\.tampermonkey\.net)\b/.test(url)) exec(process.platform === 'win32' ? `start "" "${url}"` : `xdg-open "${url}"`); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/resultat') { const f = path.basename(u.searchParams.get('f') || ''); const p = D('resultats', f); if (!existsSync(p)) return send(res, 404, { err: 'introuvable' }); return send(res, 200, readFileSync(p), /\.json$/.test(f) ? 'application/json' : 'text/plain; charset=utf-8'); }
       if (u.pathname === '/api/sauvegarde' && req.method === 'POST') { const b = await body(req); const j = JSON.parse(b); if (!j.owned || !j.lv) return send(res, 400, { err: "ce n'est pas un export KitsuAI" }); mkdirSync(D('data'), { recursive: true }); writeFileSync(D('data', 'sauvegarde.json'), b); say(`sauvegarde importee (${Object.keys(j.owned).length} cartes)`); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/dossier' && req.method === 'POST') { const d = { resultats: 'resultats', data: 'data', moteur: '.' }[JSON.parse(await body(req)).d] || '.'; const p = D(d); mkdirSync(p, { recursive: true }); exec(process.platform === 'win32' ? `explorer "${p}"` : `xdg-open "${p}"`); return send(res, 200, { ok: true }); }

@@ -1,7 +1,7 @@
 // Telecharge le moteur du jeu (fichiers JS du site) dans moteur/engine/<version>/.
 // Ces fichiers appartiennent au jeu : ils restent sur ton PC et ne vont JAMAIS dans le depot (.gitignore).
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dir as D } from './lib/chemins.mjs';
@@ -21,7 +21,13 @@ const get = async u => {
   }
   throw new Error(`Echec apres 6 essais : ${u} (relance le .bat, les fichiers deja recus sont gardes)`);
 };
-const html = await get(ROOT + '/');
+let html;
+try { html = await get(ROOT + '/'); }
+catch (e) {
+  // Pas de connexion : on garde le moteur deja telecharge, s'il existe.
+  if (existsSync(D('engine', 'current.txt'))) { console.log(`kitsu.games injoignable (${e.message}) : moteur actuel garde (${readFileSync(D('engine', 'current.txt'), 'utf8').trim()}).`); process.exit(0); }
+  throw e;
+}
 const start = new Set([...html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.js)"/g)].map(m => m[1]));
 const dom = [...start].find(p => /\/dom-[^/]+\.js$/.test(p)) || '';
 const ver = (dom.match(/dom-([^/.]+)\.js/) || [, 'inconnue'])[1];

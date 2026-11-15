@@ -20,7 +20,7 @@ if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.on('second-instance', () => show());
 
 const node = (script, args = []) => spawn(process.execPath, [path.join(ROOT, script), ...args], {
-  cwd: ROOT, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', KITSU_DATA: DATA }, windowsHide: true,
+  cwd: ROOT, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', KITSU_DATA: DATA, KITSU_APP_VERSION: app.getVersion() }, windowsHide: true,
 });
 const ping = () => new Promise(res => { const r = http.get({ host: '127.0.0.1', port: PORT, path: '/ping', timeout: 800 }, x => { let b = ''; x.on('data', d => b += d); x.on('end', () => { try { res(JSON.parse(b)); } catch { res(null); } }); }); r.on('error', () => res(null)); r.on('timeout', () => { r.destroy(); res(null); }); });
 const loading = html => win && win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`<!doctype html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0b10;color:#f4ede3;font-family:Segoe UI,system-ui,sans-serif"><div style="text-align:center"><div style="font:italic 900 46px Impact,'Arial Narrow Bold',sans-serif;letter-spacing:1px"><span style="color:#ff4b3e">/</span> KITSU<span style="color:#ff4b3e">AI</span></div><div style="margin-top:14px;color:#9aa0ad">${html}</div></div></body></html>`));
