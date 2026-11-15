@@ -4,6 +4,21 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.11.0
+
+### Ajouté
+- **Conseils de cartes** (panneau, Calculs puis Résultats), calculés avec le moteur du jeu sur 120 combats Cauchemar Extrême (plusieurs ennemis et boss) :
+  - **Collectifs** : quand une carte de tes meilleures équipes a plus de 6 collectifs actifs, les 6 à cocher et ceux à décocher, avec le gain en 2 étoiles. Les choix sont vérifiés aussi combinés.
+  - **Plan d'XP** : pour chaque carte pas encore niveau 99, son meilleur trio et ses chances à plusieurs niveaux. L'XP n'est conseillée que si la carte finit par battre ta meilleure équipe.
+  - **Tirage** : chaque LR et UR des bannières ouvertes, avec son meilleur trio et le gain par rapport à ta meilleure équipe (une carte déjà possédée est comptée avec une étoile de plus).
+  - **Duos** : les paires qui marchent le mieux ensemble, leur meilleur troisième et leur synergie.
+- **IA par équipe** : des réglages Cauchemar propres à chacune de tes meilleures équipes, gardés seulement s'ils battent les réglages généraux sur des combats de contrôle. Le script les utilise dès que tu joues exactement cette équipe (conseil en combat, plan, guide, et calcul sur le PC).
+- **IA par imitation** : l'IA rapide apprend à reproduire les choix de l'IA qui anticipe plusieurs coups (plusieurs tirages par coup possible). Les nouveaux réglages ne sont gardés que s'ils font mieux sur des combats jamais vus pendant l'apprentissage.
+- « Tout lancer » enchaîne maintenant : moteur du jeu, entraînement, analyse complète, IA par équipe, conseils de cartes.
+- **Historique des réglages de l'IA** (Réglages) : une copie de `poids.json` est faite avant chaque entraînement ou imitation (15 dernières gardées), avec ses scores. « Restaurer » remet une copie en service, après avoir copié les réglages en place ; le script du jeu la reprend dans la minute.
+
+---
+
 ## 5.10.0
 
 ### Ajouté

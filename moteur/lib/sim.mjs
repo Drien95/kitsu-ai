@@ -42,7 +42,7 @@ export function makeSim(G, B) {
     return best;
   };
   const hasBoss = st => B.enemies(st).some(e => e.boss);
-  const smartPol = W => { const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm); return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? pm : hasBoss(st) ? pb : pn)(st, u); };
+  const smartPol = W => { const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm), pe = {}; const nmOf = st => { if (!W.equipes) return pm; const k = st.__tk ??= B.allies(st).map(x => x.id).sort((a, b) => a - b).join('-'); const e = W.equipes[k]; return e?.nm?.length === W.boss.length ? (pe[k] ??= policy(e.nm)) : pm; }; return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? nmOf(st) : hasBoss(st) ? pb : pn)(st, u); };
   // Un combat. stop2 : arret des que 2 allies sont K.O. (2 etoiles deviennent impossibles).
   const fight = (fid, team, seed, pol, { stop2 = false } = {}) => {
     const st = G.setupBattle(findF(fid), team, seed).st;
@@ -74,5 +74,32 @@ export function makeSim(G, B) {
     for (let i = 0; i < 800 && st.cycle <= boss.turns; i++) { const u = step(st); if (!u || st.cycle > boss.turns) break; doAct(st, u, pol(st, u)); }
     return Math.min(boss.cap || 300000, hp0 - B.enemies(st)[0].hp);
   };
-  return { step, doAct, policy, smartPol, fight, tower, gw };
+  // Pour l'apprentissage par imitation : les actions possibles et leurs 19 criteres.
+  const featsOf = (st, u) => { const al = B.allies(st).filter(x => x.alive), low = Math.min(...al.map(x => x.hp / x.maxHp)), foes = B.foes(st, u), charging = foes.some(e => e.charging) ? 1 : 0; const cs = cands(st, u); return { cs, fs: cs.map(c => feat(st, u, c, low, foes, charging)) }; };
+  // Professeur : a chaque decision, l'IA qui anticipe choisit (K meilleures actions de l'IA de base, R suites chacune) ;
+  // on enregistre les criteres de toutes les actions et celle choisie. Le combat continue avec le choix du professeur.
+  const teach = (fid, team, seed, W, { K = 6, R = 12, maxDec = 80 } = {}) => {
+    const base = smartPol(W), st = G.setupBattle(findF(fid), team, seed).st, samples = []; let sc = (seed * 7919) >>> 0;
+    const val = s2 => { const win = B.outcome(s2) === 'win'; let ko = 0; for (const x of B.allies(s2)) if (!x.alive) ko++; if (!win) return -ko * 0.05; const stars = Math.min(s2.cycle > 8 ? 2 : 3, Math.max(1, 3 - ko)); return stars >= 2 ? 1 + (stars === 3 ? 0.3 : 0) : 0.3; };
+    for (let d = 0; d < 400; d++) {
+      const u = step(st); if (!u) break;
+      const { cs, fs } = featsOf(st, u);
+      if (cs.length < 2 || samples.length >= maxDec) { doAct(st, u, base(st, u)); continue; }
+      const p0 = base(st, u), i0 = Math.max(0, cs.findIndex(c => c.kind === p0.kind && c.target === p0.target)), order = [i0, ...cs.map((_, i) => i).filter(i => i !== i0)].slice(0, K);
+      const ui = st.units.indexOf(u); let bi = order[0], bv = -1e9;
+      for (const i of order) {
+        let v = 0;
+        for (let r = 0; r < R; r++) {
+          const { rng, ...rest } = st; const s2 = structuredClone(rest); sc = (sc * 16807) % 2147483647; s2.rng = B.seeded(sc);
+          const c = cs[i], c2 = c.target ? { kind: c.kind, target: s2.units[st.units.indexOf(c.target)] } : { kind: c.kind };
+          doAct(s2, s2.units[ui], c2); for (let k = 0; k < 400; k++) { const v2 = step(s2); if (!v2) break; doAct(s2, v2, base(s2, v2)); } v += val(s2);
+        }
+        if (v > bv + 1e-9) { bv = v; bi = i; }
+      }
+      samples.push({ fs, pick: bi, mode: st.ai === 'nm' ? 'nm' : hasBoss(st) ? 'boss' : 'norm' });
+      doAct(st, u, cs[bi]);
+    }
+    return samples;
+  };
+  return { step, doAct, policy, smartPol, fight, tower, gw, featsOf, teach };
 }

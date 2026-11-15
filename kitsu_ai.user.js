@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.10.0
+// @version      5.11.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -21,7 +21,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.10.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.11.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.10.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.11.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -150,7 +150,8 @@
         };
         const hasBoss = st => B.enemies(st).some(e => e.boss);
         // Strategie specialisee : poids "boss" s'il y a un boss, sinon poids "normal".
-        const smartPol = W => { const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm); return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? pm : hasBoss(st) ? pb : pn)(st, u); };
+        // Reglages Cauchemar propres a une equipe (entraines sur le PC) : utilises quand c'est exactement cette equipe.
+        const smartPol = W => { const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm), pe = {}; const nmOf = st => { if (!W.equipes) return pm; const k = st.__tk ??= B.allies(st).map(x => x.id).sort((a, b) => a - b).join('-'); const e = W.equipes[k]; return e?.nm?.length === W.boss.length ? (pe[k] ??= policy(e.nm)) : pm; }; return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? nmOf(st) : hasBoss(st) ? pb : pn)(st, u); };
         const modeName = st => st.__tower ? 'tour' : st.ai === 'nm' ? 'cauchemar' : hasBoss(st) ? 'boss' : 'normale';
         const playOut = (st, pol) => { for (let i = 0; i < 200; i++) { const u = step(st); if (!u) break; doAct(st, u, pol(st, u)); } return st; };
         const runScore = (f, ids, pol, seed, S, opt) => score(playOut(mk(f, ids, seed, S, opt), pol));
@@ -229,9 +230,9 @@
           if (localPC.ok && r.poidsT && r.poidsT > (lsGet('kitsu_ai_wLocalT', 0) || 0)) {
             const p = await localAsk('/poids', null, 2000), K = window.KitsuAI;
             if (p?.W && K && ['norm', 'boss', 'nm'].every(k => Array.isArray(p.W[k]) && p.W[k].length === NF)) {
-              K.W = { ...K.W, ...Object.fromEntries(Object.entries(p.W).filter(([, v]) => Array.isArray(v) && v.length === NF)) }; lsSet(LS.w, K.W); lsSet('kitsu_ai_wLocalT', r.poidsT);
+              K.W = { ...K.W, ...Object.fromEntries(Object.entries(p.W).filter(([, v]) => Array.isArray(v) && v.length === NF)), ...(p.equipes ? { equipes: Object.fromEntries(Object.entries(p.equipes).filter(([, e]) => e?.nm?.length === NF).map(([k, e]) => [k, { nom: e.nom, nm: e.nm }])) } : {}) }; if (!p.equipes) delete K.W.equipes; lsSet(LS.w, K.W); lsSet('kitsu_ai_wLocalT', r.poidsT);
               for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_training', 'kitsu_ai_events', 'kitsu_ai_road']) localStorage.removeItem(k);
-              toast('<b style="color:#22c55e">Nouveaux reglages de l\'IA</b><br>Entraines sur ton PC (' + Object.entries(p.gains || {}).map(([k, g]) => k + ' ' + g.depart + ' -> ' + g.fin).join(', ') + '). Plan et equipes recalcules.', 9000);
+              if (p.restaure) toast('<b style="color:#22c55e">Reglages de l\'IA restaures</b><br>Copie remise en service depuis le panneau du PC. Plan et equipes recalcules.', 9000); else toast('<b style="color:#22c55e">Nouveaux reglages de l\'IA</b><br>Entraines sur ton PC (' + Object.entries(p.gains || {}).map(([k, g]) => k + ' ' + g.depart + ' -> ' + g.fin).join(', ') + (p.equipes ? ', ' + Object.keys(p.equipes).length + ' equipe(s) avec reglages propres' : '') + '). Plan et equipes recalcules.', 9000);
             }
           }
           return localPC.ok;
@@ -532,7 +533,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.10.0',
+          __v: '5.11.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -553,7 +554,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.10.0 actif';
+            return 'KitsuAI v5.11.0 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
