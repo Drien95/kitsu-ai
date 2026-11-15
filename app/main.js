@@ -3,7 +3,7 @@
 // - Affiche le panneau dans une fenetre, garde une icone pres de l'horloge (le conseil en combat continue fenetre fermee).
 // - Donnees (moteur du jeu, sauvegarde, cache, resultats) : %APPDATA%\KitsuAI, jamais effacees par une mise a jour.
 // - Mises a jour automatiques depuis les releases GitHub (electron-updater).
-const { app, BrowserWindow, Tray, Menu, shell, dialog, nativeImage, Notification } = require('electron');
+const { app, BrowserWindow, Tray, Menu, shell, dialog, nativeImage, Notification, ipcMain } = require('electron');
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -44,7 +44,7 @@ async function startServer() {
 
 function show() { if (!win) createWindow(); win.show(); win.focus(); }
 function createWindow() {
-  win = new BrowserWindow({ width: 1360, height: 900, minWidth: 900, minHeight: 600, backgroundColor: '#0a0b10', title: 'KitsuAI', icon: ICON, autoHideMenuBar: true, webPreferences: { contextIsolation: true, sandbox: true } });
+  win = new BrowserWindow({ width: 1360, height: 900, minWidth: 900, minHeight: 600, backgroundColor: '#0a0b10', title: 'KitsuAI', icon: ICON, autoHideMenuBar: true, webPreferences: { contextIsolation: true, sandbox: true, preload: path.join(__dirname, 'preload.js') } });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.on('close', e => { if (!quitting) { e.preventDefault(); win.hide(); if (Notification.isSupported() && !app.__trayHint) { app.__trayHint = 1; new Notification({ title: 'KitsuAI continue en arriere-plan', body: "Le conseil en combat reste actif. Clic droit sur l'icone pres de l'horloge pour quitter.", icon: ICON }).show(); } } });
 }
@@ -58,7 +58,7 @@ function createTray() {
     { label: 'Installer le script Tampermonkey', click: () => shell.openExternal('https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js') },
     { label: 'Dossier des donnees', click: () => shell.openPath(DATA) },
     { label: 'Wiki et aide', click: () => shell.openExternal('https://github.com/Drien95/kitsu-ai/wiki') },
-    { label: 'Rechercher une mise a jour', click: () => checkUpdates(true) },
+    { label: 'Rechercher une mise a jour', click: () => { checkUpdates(true); show(); win?.loadURL(`http://127.0.0.1:${PORT}/#nouveautes`); } },
     { label: `Version ${app.getVersion()}`, enabled: false },
     { type: 'separator' },
     { label: 'Quitter KitsuAI', click: () => { quitting = true; app.quit(); } },
@@ -67,24 +67,28 @@ function createTray() {
 }
 
 // ---------- mises a jour ----------
-autoUpdater.autoDownload = true;
+// Le panneau affiche l'etat (bouton « Mise a jour », notes de version) ; le telechargement se lance d'un clic.
+autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
-let manualCheck = false;
-autoUpdater.on('update-available', i => { if (manualCheck || win?.isVisible()) new Notification({ title: 'Mise a jour KitsuAI', body: `Version ${i.version} en cours de telechargement.`, icon: ICON }).show(); });
-autoUpdater.on('update-not-available', () => { if (manualCheck) dialog.showMessageBox({ type: 'info', title: 'KitsuAI', message: `Tu as deja la derniere version (${app.getVersion()}).` }); manualCheck = false; });
+let MAJ = { etat: 'inconnu', version: null, pct: 0, msg: '' }, manualCheck = false;
+const maj = patch => { MAJ = { ...MAJ, ...patch }; win?.webContents.send('maj', MAJ); };
+autoUpdater.on('checking-for-update', () => maj({ etat: 'recherche' }));
+autoUpdater.on('update-available', i => { maj({ etat: 'disponible', version: i.version, pct: 0 }); if (!win?.isVisible()) new Notification({ title: `KitsuAI ${i.version} disponible`, body: 'Ouvre le panneau pour voir les nouveautes et mettre a jour.', icon: ICON }).show(); });
+autoUpdater.on('update-not-available', () => { maj({ etat: 'a-jour', version: null }); if (manualCheck) dialog.showMessageBox({ type: 'info', title: 'KitsuAI', message: `Tu as deja la derniere version (${app.getVersion()}).` }); manualCheck = false; });
+autoUpdater.on('download-progress', p => maj({ etat: 'telechargement', pct: Math.round(p.percent || 0) }));
+autoUpdater.on('update-downloaded', i => { maj({ etat: 'prete', version: i.version, pct: 100 }); if (!win?.isVisible()) new Notification({ title: 'Mise a jour prete', body: `KitsuAI ${i.version} s'installera au prochain redemarrage.`, icon: ICON }).show(); });
 autoUpdater.on('error', e => {
   const m = String(e?.message || e), enCours = /latest\.yml/.test(m) && /404/.test(m), v = (m.match(/download\/v([\d.]+)\//) || [])[1];
-  if (manualCheck) dialog.showMessageBox(enCours
-    ? { type: 'info', title: 'KitsuAI', message: `La version ${v || 'suivante'} est en cours de preparation sur GitHub.`, detail: "L'installateur n'est pas encore disponible. Reessaie dans quelques minutes (KitsuAI reverifie aussi tout seul toutes les 6 h)." }
-    : { type: 'warning', title: 'KitsuAI', message: 'Recherche de mise a jour impossible.', detail: m.split('\n')[0].slice(0, 400) });
+  maj({ etat: enCours ? 'preparation' : 'erreur', version: v || MAJ.version, msg: enCours ? `La version ${v || 'suivante'} est en cours de preparation sur GitHub.` : m.split('\n')[0].slice(0, 300) });
+  if (manualCheck && !win?.isVisible()) dialog.showMessageBox({ type: 'info', title: 'KitsuAI', message: enCours ? `La version ${v || 'suivante'} est en cours de preparation sur GitHub. Reessaie dans quelques minutes.` : 'Recherche de mise a jour impossible.', detail: enCours ? '' : m.split('\n')[0].slice(0, 300) });
   manualCheck = false;
 });
-autoUpdater.on('update-downloaded', async i => {
-  manualCheck = false;
-  const r = await dialog.showMessageBox({ type: 'info', buttons: ['Redemarrer maintenant', 'Plus tard'], defaultId: 0, title: 'Mise a jour prete', message: `KitsuAI ${i.version} est pret.`, detail: "Redemarrer pour l'installer ? (sinon elle s'installera a la fermeture)" });
-  if (r.response === 0) { quitting = true; autoUpdater.quitAndInstall(); }
-});
-function checkUpdates(manual = false) { if (!app.isPackaged) return; manualCheck = manual; autoUpdater.checkForUpdates().catch(() => {}); }
+function checkUpdates(manual = false) { if (!app.isPackaged) { maj({ etat: 'dev' }); return; } manualCheck = manual; autoUpdater.checkForUpdates().catch(() => {}); }
+ipcMain.handle('app:version', () => app.getVersion());
+ipcMain.handle('maj:etat', () => MAJ);
+ipcMain.handle('maj:verifier', () => { checkUpdates(false); return true; });
+ipcMain.handle('maj:telecharger', () => { if (MAJ.etat === 'disponible' || MAJ.etat === 'erreur') { maj({ etat: 'telechargement', pct: 0 }); autoUpdater.downloadUpdate().catch(e => maj({ etat: 'erreur', msg: String(e?.message || e).split('\n')[0] })); } return true; });
+ipcMain.handle('maj:installer', () => { if (MAJ.etat === 'prete') { quitting = true; setImmediate(() => autoUpdater.quitAndInstall(false, true)); } return true; });
 
 app.whenReady().then(async () => {
   app.setAppUserModelId('io.github.drien95.kitsuai');

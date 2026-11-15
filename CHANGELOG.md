@@ -4,6 +4,20 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.9.0
+
+### Ajouté
+- **Bouton « Mise à jour »** dans la barre du panneau : il apparaît, en pulsant, dès qu'une nouvelle version est publiée.
+- **Onglet Nouveautés**, au format patch notes : grand bandeau avec le numéro de version et la date, étiquettes « Nouvelle version » et version installée, puis les notes en trois colonnes (Ajouté, Modifié, Corrigé) tirées de la Release GitHub. Versions précédentes dépliables en dessous.
+- Mise à jour d'un clic depuis le panneau : « Mettre à jour vers la vX », barre de progression du téléchargement, puis « Redémarrer et installer ». Tes données sont gardées.
+- Le menu de l'icône « Rechercher une mise à jour » ouvre directement l'onglet Nouveautés.
+
+### Modifié
+- Le téléchargement des mises à jour ne démarre plus tout seul : c'est toi qui le lances depuis le panneau (une mise à jour déjà téléchargée s'installe toujours à la fermeture).
+- Barre du haut plus compacte (libellés réduits sur les petites fenêtres).
+
+---
+
 ## 5.8.1
 
 ### Corrigé

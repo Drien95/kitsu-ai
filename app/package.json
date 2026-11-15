@@ -23,13 +23,48 @@
     "appId": "io.github.drien95.kitsuai",
     "productName": "KitsuAI",
     "copyright": "KitsuAI, outil non officiel pour kitsu.games",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["main.js", "package.json", "build/icon.png"],
-    "extraResources": [
-      { "from": "../moteur", "to": "moteur", "filter": ["**/*", "!engine/**", "!data/**", "!cache/**", "!resultats/**", "!_to_delete/**", "!*.bat", "!test-*.mjs"] },
-      { "from": "../kitsu_ai.user.js", "to": "kitsu_ai.user.js" }
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "build/icon.png"
     ],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.ico", "artifactName": "KitsuAI-Setup-${version}.${ext}" },
+    "extraResources": [
+      {
+        "from": "../moteur",
+        "to": "moteur",
+        "filter": [
+          "**/*",
+          "!engine/**",
+          "!data/**",
+          "!cache/**",
+          "!resultats/**",
+          "!_to_delete/**",
+          "!*.bat",
+          "!test-*.mjs"
+        ]
+      },
+      {
+        "from": "../kitsu_ai.user.js",
+        "to": "kitsu_ai.user.js"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "KitsuAI-Setup-${version}.${ext}"
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
@@ -42,6 +77,13 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
     },
-    "publish": [{ "provider": "github", "owner": "Drien95", "repo": "kitsu-ai", "releaseType": "release" }]
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Drien95",
+        "repo": "kitsu-ai",
+        "releaseType": "release"
+      }
+    ]
   }
 }
