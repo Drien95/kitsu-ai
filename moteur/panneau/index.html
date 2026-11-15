@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KitsuAI</title>
+<style>
+  /* Direction artistique inspiree de KITSU : fond nuit, rouge-orange, titres condenses en italique majuscule. */
+  :root {
+    --bg: #0a0b10; --panel: #12131a; --panel2: #1a1c25; --line: #262935; --txt: #f4ede3; --mute: #9aa0ad;
+    --acc: #ff4b3e; --acc2: #ff7a3d; --ok: #22c55e; --warn: #f59e0b; --bad: #ff4b3e; --gold: #fbbf24;
+    --title: italic 900 1em Impact, Haettenschweiler, "Arial Narrow Bold", "Franklin Gothic Heavy", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--txt); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(1200px 500px at 70% -10%, rgba(255,75,62,.16), transparent 60%), radial-gradient(900px 400px at -10% 110%, rgba(255,122,61,.08), transparent 60%), var(--bg); min-height: 100vh; }
+  header { display: flex; align-items: center; gap: 14px; padding: 14px 26px; border-bottom: 1px solid var(--line); background: rgba(10,11,16,.92); backdrop-filter: blur(6px); position: sticky; top: 0; z-index: 5; }
+  header svg { width: 38px; height: 38px; flex: none; }
+  header h1 { margin: 0; font: var(--title); font-size: 30px; letter-spacing: 1px; text-transform: uppercase; line-height: 1; }
+  header h1 em { color: var(--acc); font-style: inherit; }
+  header .sub { color: var(--acc); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  .pill { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--mute); }
+  .pill b { color: var(--txt); font-weight: 700; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--ok); vertical-align: 1px; box-shadow: 0 0 8px currentColor; color: var(--ok); }
+  .dot.warn { background: var(--warn); color: var(--warn); } .dot.bad { background: var(--bad); color: var(--bad); }
+  main { display: grid; grid-template-columns: 400px 1fr; gap: 18px; padding: 20px 26px 50px; max-width: 1560px; margin: 0 auto; }
+  @media (max-width: 1050px) { main { grid-template-columns: 1fr; } }
+  .card { background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 40%), var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; position: relative; overflow: hidden; }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--acc2), var(--acc)); opacity: .9; }
+  .card h2 { font: var(--title); font-size: 22px; letter-spacing: .6px; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: "/"; color: var(--acc); margin-right: 2px; }
+  .card h2 .r { margin-left: auto; font: 13px "Segoe UI", system-ui, sans-serif; text-transform: none; letter-spacing: 0; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }
+  .kv span:nth-child(odd) { color: var(--mute); }
+  .act { border-top: 1px solid var(--line); padding: 12px 0; }
+  .act:first-of-type { border-top: 0; padding-top: 0; }
+  .act .t { font-weight: 800; text-transform: uppercase; letter-spacing: .6px; font-size: 13px; margin-bottom: 2px; }
+  .act .d { color: var(--mute); font-size: 12px; margin-bottom: 8px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  label { font-size: 12px; color: var(--mute); display: inline-flex; align-items: center; gap: 5px; }
+  input[type=number], select { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 5px 7px; font: inherit; font-size: 12px; width: 70px; }
+  input[type=checkbox] { accent-color: var(--acc); }
+  select { width: auto; }
+  button { background: linear-gradient(135deg, var(--acc2), var(--acc)); color: #fff; border: 0; border-radius: 9px; padding: 7px 14px; font: inherit; font-weight: 800; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 16px rgba(255,75,62,.25); transition: transform .08s, filter .15s; }
+  button:hover { filter: brightness(1.08); } button:active { transform: translateY(1px); }
+  button.sec { background: transparent; color: var(--txt); border: 1px solid #3a3d4a; box-shadow: none; font-weight: 700; }
+  button.sec:hover { border-color: var(--acc); color: #fff; }
+  button.stop { background: #2a1214; color: #ff8a80; border: 1px solid #5a1f22; box-shadow: none; }
+  button:disabled { opacity: .4; cursor: not-allowed; filter: none; }
+  pre { background: #07080c; border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0; max-height: 380px; overflow: auto; font: 12px/1.5 "Cascadia Mono", Consolas, ui-monospace, monospace; white-space: pre-wrap; color: #d6d0c6; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--mute); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
+  tr:hover td { background: rgba(255,75,62,.04); }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .bar { height: 6px; background: var(--panel2); border-radius: 4px; overflow: hidden; min-width: 70px; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc2), var(--gold)); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tabs button { background: transparent; color: var(--mute); border: 1px solid var(--line); box-shadow: none; }
+  .tabs button.on { background: linear-gradient(135deg, var(--acc2), var(--acc)); color: #fff; border-color: transparent; }
+  .cat { margin-bottom: 18px; }
+  .cat h3 { font: var(--title); font-size: 17px; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 4px; }
+  .cat h3 small { font: 12px "Segoe UI", system-ui, sans-serif; color: var(--mute); margin-left: 6px; }
+  .drop { border: 1px dashed #3a3d4a; border-radius: 10px; padding: 12px; text-align: center; color: var(--mute); font-size: 12px; cursor: pointer; margin-top: 10px; transition: border-color .15s, color .15s; }
+  .drop:hover, .drop.hot { border-color: var(--acc); color: var(--txt); }
+  .files { max-height: 240px; overflow: auto; }
+  .files div { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12px; align-items: center; }
+  .files div span { flex: 1; }
+  .files a { color: var(--acc2); cursor: pointer; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .6px; }
+  .muted { color: var(--mute); }
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; align-items: center; justify-content: center; z-index: 10; }
+  #modal .box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; width: min(1150px, 94vw); max-height: 86vh; overflow: auto; padding: 18px; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #2a2d39; border-radius: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8c3c"/><stop offset="1" stop-color="#e8283c"/></linearGradient></defs><path d="M18 18 L36 36 L26 50 Z M82 18 L64 36 L74 50 Z M20 38 L50 32 L80 38 L72 62 L50 82 L28 62 Z" fill="url(#g)"/><path d="M30 58 L50 64 L70 58 L60 68 L50 77 L40 68 Z" fill="#f4ede3"/><path d="M33 49 L43 52 L35 55 Z M67 49 L57 52 L65 55 Z M47 72 L53 72 L50 75 Z" fill="#0a0b10"/></svg>
+  <div><h1>Kitsu<em>AI</em></h1><div class="sub">Panneau local · conseiller kitsu.games</div></div>
+  <div class="pills" id="pills"></div>
+</header>
+<main>
+  <div>
+    <div class="card">
+      <h2>Ta sauvegarde</h2>
+      <div id="sv" class="kv"></div>
+      <div class="drop" id="drop">Dépose ici <b>sauvegarde.json</b> (onglet Santé du jeu, « Exporter pour le moteur local »), ou clique pour choisir le fichier</div>
+      <input type="file" id="file" accept=".json" hidden>
+      <div class="row" style="margin-top:8px"><button class="sec" onclick="dossier('data')">Ouvrir le dossier data</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Actions</h2>
+      <div class="act">
+        <div class="t">Analyse complète</div>
+        <div class="d">Campagne, boss, Cauchemar (tous, plusieurs ennemis, boss), événements, Salle, Tour de l'infini, boss de guilde. Objectif 2 étoiles minimum.</div>
+        <div class="row">
+          <label>Niveaux <select id="o_niv"><option value="actuel,99">actuels puis 99</option><option value="actuel">actuels</option><option value="99">99</option></select></label>
+          <label>Tirages <input type="number" id="o_tir" value="3" min="1" max="10"></label>
+          <label>Cartes <input type="number" id="o_car" value="22" min="8" max="40"></label>
+          <button data-act="tout">Lancer</button>
+        </div>
+      </div>
+      <div class="act">
+        <div class="t">Entraînement de l'IA</div>
+        <div class="d">Apprend sur tes meilleures équipes et les combats disputés. Le script du jeu récupère les nouveaux réglages tout seul.</div>
+        <div class="row">
+          <label><input type="checkbox" id="o_tnm" checked> Cauchemar</label>
+          <label><input type="checkbox" id="o_tbo" checked> Boss</label>
+          <label><input type="checkbox" id="o_tno" checked> Normal</label>
+          <label>Générations <input type="number" id="o_gen" value="40" min="5" max="200"></label>
+          <button data-act="entrainer">Lancer</button>
+        </div>
+        <div id="poids" class="muted" style="font-size:12px;margin-top:6px"></div>
+      </div>
+      <div class="act">
+        <div class="t">Analyse par mode</div>
+        <div class="d">Meilleures cartes et meilleurs trios pour un seul type de combat.</div>
+        <div class="row">
+          <select id="o_mode"><option value="boss">Boss Cauchemar</option><option value="nm3">3 ennemis Cauchemar</option><option value="ext">Boss Extrême</option></select>
+          <label><input type="checkbox" id="o_lv99"> niveau 99</label>
+          <label>Cartes <input type="number" id="o_top" value="30" min="8" max="50"></label>
+          <button data-act="mode">Lancer</button>
+        </div>
+      </div>
+      <div class="act">
+        <div class="t">Mesure du plafond</div>
+        <div class="d">IA actuelle contre IA qui anticipe, sur des combats disputés.</div>
+        <div class="row"><label>Combats <input type="number" id="o_n" value="10" min="2" max="60"></label><button data-act="plafond">Lancer</button></div>
+      </div>
+      <div class="act">
+        <div class="t">Moteur du jeu</div>
+        <div class="d">À faire après une mise à jour du jeu, puis « Recharger le moteur ».</div>
+        <div class="row"><button data-act="telecharger">Mettre à jour</button><button class="sec" onclick="rechargerMoteur()">Recharger le moteur</button><button class="sec" data-act="bench">Mesure de vitesse</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Journal</h2>
+      <pre id="journal" style="max-height:200px"></pre>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Tâche en cours <span class="r"><button class="stop" id="stop" onclick="arreter()" disabled>Arrêter</button></span></h2>
+      <div id="jobh" class="muted" style="margin-bottom:8px">Aucune tâche.</div>
+      <pre id="joblog"></pre>
+    </div>
+
+    <div class="card">
+      <h2>Dernière analyse <span class="r muted" id="dt"></span></h2>
+      <div class="tabs" id="tabs"></div>
+      <div id="res"></div>
+    </div>
+
+    <div class="card">
+      <h2>Résultats <span class="r"><button class="sec" onclick="dossier('resultats')">Ouvrir le dossier</button></span></h2>
+      <div class="files" id="files"></div>
+    </div>
+  </div>
+</main>
+<div id="modal" onclick="if(event.target===this)this.style.display='none'"><div class="box" id="mbox"></div></div>
+<script>
+const TOKEN = '__TOKEN__';
+const api = (p, o = {}) => fetch(p, { ...o, headers: { 'X-Kitsu-Token': TOKEN, 'Content-Type': 'application/json', ...(o.headers || {}) } }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.err || r.status); return j; });
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dur = s => s < 60 ? s + ' s' : s < 3600 ? Math.floor(s / 60) + ' min ' + (s % 60) + ' s' : Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min';
+const quand = t => t ? new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
+let E = null, tab = null, lastLog = 0;
+const CATS = { campagne_extreme: 'Campagne (Extrême)', boss_extreme: 'Boss (Extrême)', cauchemar: 'Cauchemar, tous', cauchemar_multi: 'Cauchemar, 2 ennemis ou +', cauchemar_boss: 'Cauchemar, boss', evenements: 'Événements et Salle', tour: "Tour de l'infini", guilde: 'Boss de guilde' };
+
+async function refresh() {
+  try { E = await api('/api/etat'); } catch (e) { $('pills').innerHTML = `<span class="pill"><span class="dot bad"></span>Serveur injoignable : ${esc(e.message)}</span>`; return; }
+  const maj = E.moteurDisque && E.moteurDisque !== E.moteur;
+  $('pills').innerHTML = [
+    `<span class="pill"><span class="dot"></span>Serveur <b>127.0.0.1:${E.port}</b> · ${dur(E.uptime)}</span>`,
+    `<span class="pill"><span class="dot ${maj ? 'warn' : ''}"></span>Moteur <b>${esc(E.moteur)}</b>${maj ? ' · nouveau sur le disque, recharge-le' : ''}</span>`,
+    `<span class="pill">Processeur <b>${esc((E.cpu || '').replace(/\s+/g, ' ').trim())}</b> · ${E.fils} fils</span>`,
+    `<span class="pill">Conseils en combat <b>${E.conseil.n}</b>${E.conseil.dernier ? ` · dernier ${E.conseil.dernier.sims} suites en ${E.conseil.dernier.ms} ms` : ''}</span>`,
+  ].join('');
+  const s = E.sauvegarde;
+  $('sv').innerHTML = s ? [['Exportée', quand(s.t)], ['Cartes', `${s.cartes} (LR ${s.lr}, UR ${s.ur}, SSR ${s.ssr})`], ['Équipe', (s.equipe || []).join(', ') || '-'], ['Niveau du compte', s.compte ?? '-'], ['Boss de guilde', s.guilde || 'non exporté']].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('') : '<span>Aucune</span><span class="muted">importe ta sauvegarde pour analyser tes cartes</span>';
+  $('poids').innerHTML = E.poids ? `Derniers réglages : ${quand(E.poids.t)} · ` + Object.entries(E.poids.gains || {}).map(([k, g]) => `${{ nm: "Cauchemar", boss: "Boss", norm: "Normal" }[k] || k} : ${g.depart} puis ${g.fin}`).join(' · ') : 'Pas encore d’entraînement local.';
+  const running = E.job && !E.job.fin;
+  document.querySelectorAll('[data-act]').forEach(b => b.disabled = running);
+  $('stop').disabled = !running;
+  if (E.job) {
+    const el = Math.round(((E.job.fin || Date.now()) - E.job.debut) / 1000);
+    $('jobh').innerHTML = `<b>${esc(E.job.nom)}</b> · ${running ? 'en cours depuis ' + dur(el) : (E.job.code === 0 ? 'terminée' : 'arrêtée ou en erreur') + ' en ' + dur(el)} <span class="muted">(${esc(E.job.args)})</span>`;
+    const pre = $('joblog'), atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;
+    if (E.job.lignes.length !== lastLog) { pre.textContent = E.job.lignes.join('\n'); lastLog = E.job.lignes.length; if (atBottom) pre.scrollTop = pre.scrollHeight; }
+  }
+  $('journal').textContent = E.journal.join('\n'); $('journal').scrollTop = 1e9;
+  $('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">voir</a></div>`).join('') || '<div class="muted">Aucun résultat.</div>';
+  renderRes();
+}
+function renderRes() {
+  const D = E?.dernier; if (!D) { $('res').innerHTML = '<div class="muted">Pas encore d’analyse complète.</div>'; $('tabs').innerHTML = ''; return; }
+  $('dt').textContent = quand(D.date) + ' · moteur ' + D.version;
+  const modes = Object.keys(D.modes); if (!tab || !modes.includes(tab)) tab = modes[0];
+  $('tabs').innerHTML = modes.map(m => `<button class="${m === tab ? 'on' : ''}" onclick="tab='${m}';renderRes()">${m === '99' ? 'Tout au niveau 99' : 'Tes niveaux actuels'}</button>`).join('');
+  const M = D.modes[tab];
+  $('res').innerHTML = Object.entries(M).map(([k, c]) => {
+    const tour = k === 'tour', gu = k === 'guilde';
+    const head = tour ? '<th>Équipe</th><th class="n">Étage moyen</th><th class="n">Minimum</th>' : gu ? '<th>Équipe</th><th class="n">Dégâts</th><th class="n">Points</th>' : '<th>Équipe</th><th class="n">2+ étoiles</th><th></th><th class="n">3 étoiles</th><th class="n">Victoire</th>';
+    const rows = c.top.slice(0, 5).map((x, i) => tour ? `<tr><td>${i + 1}. ${esc(x.equipe.join(' / '))}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td></tr>`
+      : gu ? `<tr><td>${i + 1}. ${esc(x.equipe.join(' / '))}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td></tr>`
+      : `<tr><td>${i + 1}. ${esc(x.equipe.join(' / '))}</td><td class="n">${x.deuxEtoiles} %</td><td><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td></tr>`).join('');
+    return `<div class="cat"><h3>${CATS[k] || esc(c.titre)} <small>${c.combats ? c.combats + ' combats' : ''}</small></h3><table><tr>${head}</tr>${rows}</table></div>`;
+  }).join('');
+}
+async function lancer(action) {
+  const o = {};
+  if (action === 'tout') Object.assign(o, { niveaux: $('o_niv').value, tirages: +$('o_tir').value, cartes: +$('o_car').value });
+  if (action === 'entrainer') Object.assign(o, { types: [['nm', 'o_tnm'], ['boss', 'o_tbo'], ['norm', 'o_tno']].filter(([, i]) => $(i).checked).map(([k]) => k).join(','), generations: +$('o_gen').value });
+  if (action === 'mode') Object.assign(o, { mode: $('o_mode').value, lv99: $('o_lv99').checked, top: +$('o_top').value });
+  if (action === 'plafond') Object.assign(o, { n: +$('o_n').value });
+  try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; refresh(); } catch (e) { alert(e.message); }
+}
+async function arreter() { if (confirm('Arrêter la tâche en cours ?')) { await api('/api/arreter', { method: 'POST' }); refresh(); } }
+async function rechargerMoteur() { try { const r = await api('/api/redemarrer-pool', { method: 'POST' }); alert('Moteur rechargé : ' + r.version); refresh(); } catch (e) { alert(e.message); } }
+async function dossier(d) { await api('/api/dossier', { method: 'POST', body: JSON.stringify({ d }) }); }
+async function voir(f) {
+  const r = await fetch('/api/resultat?f=' + encodeURIComponent(f), { headers: { 'X-Kitsu-Token': TOKEN } }); const t = await r.text();
+  let html;
+  if (/\.csv$/.test(f)) { const L = t.trim().split('\n').map(l => l.split(';')); html = `<table><tr>${L[0].map(h => `<th>${esc(h)}</th>`).join('')}</tr>${L.slice(1).map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`; }
+  else html = `<pre style="max-height:70vh">${esc(/\.json$/.test(f) ? JSON.stringify(JSON.parse(t), null, 1) : t)}</pre>`;
+  $('mbox').innerHTML = `<h2 style="margin-top:0;font-size:15px">${esc(f)}</h2>${html}`; $('modal').style.display = 'flex';
+}
+async function importer(file) {
+  const txt = await file.text();
+  try { await api('/api/sauvegarde', { method: 'POST', body: txt }); refresh(); } catch (e) { alert('Import impossible : ' + e.message); }
+}
+document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => lancer(b.dataset.act));
+const drop = $('drop');
+drop.onclick = () => $('file').click(); $('file').onchange = e => e.target.files[0] && importer(e.target.files[0]);
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('hot'); }; drop.ondragleave = () => drop.classList.remove('hot');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hot'); e.dataTransfer.files[0] && importer(e.dataTransfer.files[0]); };
+refresh(); setInterval(refresh, 1500);
+</script>
+</body>
+</html>

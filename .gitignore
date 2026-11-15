@@ -5,3 +5,5 @@ moteur/cache/
 moteur/data/
 moteur/resultats/
 moteur/_to_delete/
+app/node_modules/
+app/dist/

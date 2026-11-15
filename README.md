@@ -2,7 +2,16 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.4.1**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.7.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+
+## Télécharger
+
+| Quoi | Lien |
+|---|---|
+| **Application Windows** (panneau, conseil en combat sur le PC, analyses, entraînement, mises à jour automatiques) | [Dernière release](https://github.com/Drien95/kitsu-ai/releases/latest), fichier `KitsuAI-Setup-X.Y.Z.exe` |
+| **Script du jeu** (Tampermonkey) | [kitsu_ai.user.js](https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js) |
+| **Documentation** | [Wiki](https://github.com/Drien95/kitsu-ai/wiki) |
+
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -705,6 +714,9 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.31 | Équipe cible jugée sur les 127 boss du jeu en Extrême |
 | 5.4.0 | Moteur local multithread (dossier moteur/), règle des étoiles, export de la sauvegarde |
 | 5.4.1 | Mode « tout » du moteur local (campagne, Cauchemar, boss, événements, Tour, guilde), élimination adaptative, cache disque |
+| 5.5.0 | Conseil en combat calculé sur le PC (serveur local, anticipation poussée), mesure du plafond |
+| 5.6.0 | Panneau local (KitsuAI.bat), entraînement local de l'IA, réglages adoptés par le script |
+| 5.7.0 | Application Windows (installateur, icône près de l'horloge, mises à jour automatiques), wiki, panneau aux couleurs de KITSU |
 
 ---
 
@@ -827,6 +839,21 @@ Les données viennent de `CHAR_BY_ID`, `MOVES` et `KitsuLinks`, puis des fiches 
 
 Les analyses ponctuelles des tout premiers échanges (comparaison de cartes, meilleure carte de parrainage, première équipe Misato / Rococo / Salamander) ne sont pas reprises en détail : leurs résultats ont été dépassés par l'évolution de ta collection et ne sont plus conservés.
 
+## Panneau local (`KitsuAI.bat`)
+
+Double-clic sur `KitsuAI.bat` : le moteur est mis à jour si besoin, le serveur démarre et le panneau s'ouvre sur http://127.0.0.1:47123. Laisse la fenêtre noire ouverte pendant que tu joues : c'est elle qui calcule le conseil en combat.
+
+| Zone du panneau | Contenu |
+|---|---|
+| En-tête | Serveur et port, moteur chargé, processeur et fils, conseils en combat |
+| Ta sauvegarde | Export du jeu (onglet Santé, « Exporter pour le moteur local ») à glisser-déposer |
+| Actions | Analyse complète, entraînement de l'IA, analyse par mode, mesure du plafond, mise à jour du moteur, mesure de vitesse |
+| Tâche en cours | Journal en direct, bouton Arrêter |
+| Dernière analyse | Meilleurs trios par catégorie, à tes niveaux et au niveau 99 |
+| Fichiers | Tous les CSV/JSON de `moteur/resultats/`, consultables dans le panneau |
+
+Une seule tâche à la fois (elle utilise tout le processeur moins deux fils, pour garder le conseil en combat fluide). Les réglages appris par l'entraînement sont récupérés tout seuls par le script du jeu.
+
 ## Moteur local (dossier `moteur/`)
 
 Le moteur de combat du jeu tourne aussi sous Node.js, directement sur le PC, en multithread. C'est beaucoup plus rapide que dans l'onglet et rien ne se perd si la page se recharge.
@@ -834,6 +861,9 @@ Le moteur de combat du jeu tourne aussi sous Node.js, directement sur le PC, en 
 | Fichier | Rôle |
 |---|---|
 | `telecharger-moteur.bat` | Télécharge le moteur du jeu dans `moteur/engine/<version>/` (une fois par version du jeu). Fichiers du jeu : jamais dans le dépôt (`.gitignore`). |
+| `serveur.bat` | Raccourci vers `KitsuAI.bat`. **Conseil en combat calculé sur le PC.** À laisser ouvert pendant que tu joues. Le panneau de combat envoie l'état du combat à `http://127.0.0.1:47123` (ta machine uniquement) ; le PC simule la suite de chaque action sur tous ses coeurs et renvoie la meilleure pour 2 étoiles ou plus, puis 3. Sans serveur, le script garde son conseil habituel. |
+| `entrainer.mjs` | Entraînement local de l'IA (`--types nm,boss,norm --generations 40`), résultat dans `data/poids.json`. |
+| `plafond.mjs` | Compare l'IA actuelle et l'IA qui anticipe sur des combats disputés (`node plafond.mjs --n 10 --k 6 --r 20`). |
 | `tout.bat` | **Analyse complète** de tes LR/UR/SSR, à tes niveaux puis au niveau 99 : campagne Extrême, boss Extrême, Cauchemar (tous, 2 ennemis ou plus, boss), événements et Salle, Tour de l'infini, boss de guilde. Prend son temps (de l'ordre de 10 à 40 min). Résultats : `moteur/resultats/tout-<date>.csv` et `.json`. Options : `--niveaux actuel`, `--tirages 5`, `--cartes 26`, `--fils 12`, `--max 40` (test rapide). |
 | `analyser.bat` | Choix du mode (boss Cauchemar, 3 ennemis Cauchemar, boss Extrême), puis meilleures cartes et meilleurs trios. Résultats aussi en CSV dans `moteur/resultats/`. |
 | `bench.mjs` | Mesure de vitesse (combats par seconde). |

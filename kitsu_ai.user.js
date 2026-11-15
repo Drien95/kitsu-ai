@@ -1,12 +1,17 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.4.1
+// @version      5.7.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
 // @run-at       document-idle
-// @grant        none
+// @updateURL    https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js
+// @downloadURL  https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js
+// @homepageURL  https://github.com/Drien95/kitsu-ai/wiki
+// @grant        GM_xmlhttpRequest
+// @connect      127.0.0.1
+// @connect      localhost
 // ==/UserScript==
 
 (function () {
@@ -16,7 +21,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.4.1 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.7.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.4.1') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.7.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -209,6 +214,29 @@
 
         // ---------- Conseiller de combat ----------
         const clone = st => { const { rng, ...rest } = st; return structuredClone(rest); };
+        // ---------- Serveur local (moteur/serveur.bat sur le PC) ----------
+        // Le pont Tampermonkey (en tete du userscript) relaie les demandes vers http://127.0.0.1:47123.
+        // Rien d'autre ne sort : uniquement l'etat du combat en cours, vers ta propre machine.
+        const localPC = { ok: false, fils: 0, msg: '', t: 0 };
+        let localSeq = 0; const localWait = {};
+        window.addEventListener('message', e => { const d = e.data; if (!d || !d.kitsuLocalRes) return; const w = localWait[d.kitsuLocalRes]; if (w) { delete localWait[d.kitsuLocalRes]; w(d.ok ? d.data : null); } });
+        const localAsk = (path, body, timeout = 3000) => new Promise(res => { const id = ++localSeq; localWait[id] = res; window.postMessage({ kitsuLocalReq: { id, path, body, timeout } }, '*'); setTimeout(() => { if (localWait[id]) { delete localWait[id]; res(null); } }, timeout + 500); });
+        const domFile = () => (assetUrl(/\/assets\/dom-[^/]+\.js$/) || '').split('/').pop();
+        const localPing = async () => {
+          const r = await localAsk('/ping', null, 1500); localPC.t = Date.now(); localPC.ok = !!r?.ok && (!r.dom || r.dom === domFile()); localPC.fils = r?.fils || 0;
+          localPC.msg = r?.ok && r.dom && r.dom !== domFile() ? 'moteur du PC pas a jour : panneau KitsuAI, « Mettre a jour » puis « Recharger le moteur »' : r?.ok ? '' : 'non lance';
+          // Reglages de l'IA entraines sur le PC (panneau local) : adoptes s'ils sont plus recents.
+          if (localPC.ok && r.poidsT && r.poidsT > (lsGet('kitsu_ai_wLocalT', 0) || 0)) {
+            const p = await localAsk('/poids', null, 2000), K = window.KitsuAI;
+            if (p?.W && K && ['norm', 'boss', 'nm'].every(k => Array.isArray(p.W[k]) && p.W[k].length === NF)) {
+              K.W = { ...K.W, ...Object.fromEntries(Object.entries(p.W).filter(([, v]) => Array.isArray(v) && v.length === NF)) }; lsSet(LS.w, K.W); lsSet('kitsu_ai_wLocalT', r.poidsT);
+              for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_training', 'kitsu_ai_events', 'kitsu_ai_road']) localStorage.removeItem(k);
+              toast('<b style="color:#22c55e">Nouveaux reglages de l\'IA</b><br>Entraines sur ton PC (' + Object.entries(p.gains || {}).map(([k, g]) => k + ' ' + g.depart + ' -> ' + g.fin).join(', ') + '). Plan et equipes recalcules.', 9000);
+            }
+          }
+          return localPC.ok;
+        };
+        setTimeout(() => { localPing(); setInterval(localPing, 60000); }, 5000);
         const TAG = { basic: 'Attaque', skill: 'Technique', ult: 'Ultime', rest: 'Repos' };
         const COSTS = { basic: 10, skill: 25, ult: 20, rest: 0 }, IDX = { basic: 0, skill: 1, ult: 2 };
         const mv = (u, k) => {
@@ -490,7 +518,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.4.1',
+          __v: '5.7.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -511,7 +539,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.4.1 actif';
+            return 'KitsuAI v5.7.0 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -838,6 +866,7 @@
               const T = this._train, tm = lsGet('kitsu_ai_teams', {});
               const rows = [
                 ['Script', 'v' + this.__v],
+                ['Calcul du PC (serveur local)', localPC.ok ? `connecte (${localPC.fils} fils)` : (localPC.msg || 'non lance') + ' : lance l\'application KitsuAI'],
                 ['Jeu', `${v.dom || '?'} · ${v.fights || '?'} combats · ${v.chars || '?'} cartes`],
                 ['Calcul en fil separe', worker ? 'actif' : worker === false ? 'indisponible (fil principal)' : 'pas encore lance'],
                 ['Plan', age(lsGet('kitsu_ai_plan', null)?.t)],
@@ -859,7 +888,7 @@
                 + `<span id="kitsuExpBtn" style="cursor:pointer;background:#1e3a8a;padding:3px 8px;border-radius:6px;font-size:11px">Exporter pour le moteur local</span>`
                 + `<span id="kitsuRepBtn" style="cursor:pointer;background:#7c2d12;padding:3px 8px;border-radius:6px;font-size:11px">Signaler (copie l'ecran)</span>`
                 + `<span id="kitsuEnBtn" style="cursor:pointer;background:${lsGet('kitsu_ai_enAlert', null) === true ? '#14532d' : '#1e293b'};padding:3px 8px;border-radius:6px;font-size:11px">Alerte energie pleine : ${lsGet('kitsu_ai_enAlert', null) === true ? (('Notification' in window && Notification.permission === 'granted') ? 'active' : 'autorisation bloquee') : 'activer'}</span></div>`;
-              document.getElementById('kitsuExpBtn').onclick = async () => { await this.exportMoteur(); toast('<b style="color:#38bdf8">sauvegarde.json telechargee</b><br>Mets-la dans moteur\\data\\ puis lance tout.bat.', 8000); };
+              document.getElementById('kitsuExpBtn').onclick = async () => { await this.exportMoteur(); toast('<b style="color:#38bdf8">sauvegarde.json telechargee</b><br>Glisse-la dans le panneau KitsuAI (zone « Ta sauvegarde »).', 8000); };
               document.getElementById('kitsuRepBtn').onclick = () => { this.signal(); toast('<b style="color:#38bdf8">Rapport copie</b><br>Colle-le dans ta conversation avec Claude (Ctrl+V).', 7000); };
               document.getElementById('kitsuEnBtn').onclick = () => { const on = lsGet('kitsu_ai_enAlert', null) === true; this.energyAlert(!on); render(); };
               document.getElementById('kitsuRecalc').onclick = async () => {
@@ -1657,6 +1686,21 @@
                   + res.slice(0, 4).map((r, i) => `<div style="opacity:${i ? .75 : 1}">${i + 1}. ${nm(r.c)} <span style="color:#fbbf24">${pct(r)} %</span> <span style="opacity:.5;font-size:10px">(${r.n})</span></div>`).join('')
                   + `<div style="margin-top:6px;opacity:.6;font-size:11px">Endurance ${st.end} · energie ${a.energy ?? 0}/100 · IA ${modeName(st)}`
                   + (charging.length ? ` · <span style="color:#f87171">${charging.join(', ')} charge !</span>` : '') + '</div>';
+                // Anticipation poussee sur le PC (serveur local) : objectif 2 etoiles, puis 3. Remplace le conseil s'il est meilleur.
+                if (Date.now() - localPC.t > 30000) localPing();
+                if (localPC.ok) {
+                  const mySig = sig, cl = cands(st, a), { rng, ...rest } = st;
+                  box.insertAdjacentHTML('afterbegin', '<div id="kitsuPC" style="font-size:11px;color:#86efac;margin-bottom:3px">PC : calcul...</div>');
+                  localAsk('/conseil', { dom: domFile(), st: JSON.stringify(rest), key: a.key, cands: cl.map(c => ({ kind: c.kind, tgt: c.target?.key })), W: this.W, budget: 700 }, 5000).then(r => {
+                    const el = document.getElementById('kitsuPC');
+                    if (last !== mySig) return;
+                    if (!r || r.err || !r.res?.length) { if (r?.err === 'version') { localPC.ok = false; localPC.msg = 'moteur du PC pas a jour : relance serveur.bat'; } if (el) el.textContent = 'PC : ' + (r?.err === 'version' ? 'moteur pas a jour (relance serveur.bat)' : 'pas de reponse'); return; }
+                    const b = r.res[0], c1 = cl.find(c => c.kind === b.kind && (c.target?.key ?? null) === (b.tgt ?? null)); if (!c1) return;
+                    const changed = c1.kind !== b0.kind || (c1.target?.key ?? null) !== (b0.target?.key ?? null);
+                    cur = { me: a.key, kind: c1.kind, tgt: c1.target?.key, all: c1.kind !== 'rest' && c1.kind !== 'basic' && !c1.target && B.kitRole(a, c1.kind).aoe > 0, label: mv(a, c1.kind).name };
+                    if (el) el.outerHTML = `<div id="kitsuPC" style="margin:0 0 5px;padding:4px 6px;border:1px solid #22c55e;border-radius:6px;font-size:12px"><b style="color:#22c55e">Calcul du PC</b> (${r.sims} suites, ${r.ms} ms)${changed ? ' <b style="color:#fbbf24">change le conseil</b>' : ' confirme'} :<br><b>${nm(c1)}</b> · 2+ etoiles ${Math.round(b.s2 * 100)} % · 3 etoiles ${Math.round(b.s3 * 100)} %${r.res[1] ? `<br><span style="opacity:.7">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
+                  });
+                }
               } catch (e) { box.textContent = 'Conseiller : ' + e.message; health.err('conseiller : ' + e.message); }
             }, 150);
           },
@@ -2022,6 +2066,15 @@
       else if (++tries > 240) { clearInterval(t); console.warn('KitsuAI : jeu non detecte'); }
     }, 500);
   }
+  // Pont vers le serveur local du PC (moteur/serveur.bat) : seulement /ping, /conseil et /poids, seulement vers 127.0.0.1.
+  window.addEventListener('message', e => {
+    const q = e.data && e.data.kitsuLocalReq; if (!q || !['/ping', '/conseil', '/poids'].includes(q.path)) return;
+    const reply = (ok, data) => window.postMessage({ kitsuLocalRes: q.id, ok, data }, '*');
+    try {
+      GM_xmlhttpRequest({ method: q.body ? 'POST' : 'GET', url: 'http://127.0.0.1:47123' + q.path, data: q.body ? JSON.stringify(q.body) : undefined, headers: { 'Content-Type': 'application/json' }, timeout: q.timeout || 3000,
+        onload: r => { try { reply(true, JSON.parse(r.responseText)); } catch { reply(false); } }, onerror: () => reply(false), ontimeout: () => reply(false) });
+    } catch { reply(false); }
+  });
   const s = document.createElement('script');
   s.textContent = '(' + kitsuMain.toString() + ')();';
   (document.head || document.documentElement).appendChild(s);

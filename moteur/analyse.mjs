@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { W_DEFAUT } from './lib/sim.mjs';
+import { dir as D } from './lib/chemins.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const MODE = arg('mode', 'boss'), TOP = +arg('top', 30), LV99 = !!arg('lv99', false);
@@ -17,7 +18,7 @@ const t0 = Date.now(), log = (...a) => console.log(`[${((Date.now() - t0) / 1000
 const { G, B, version } = await loadEngine();
 const CH = G.CHAR_BY_ID, R = { M: 'LR', L: 'UR', E: 'SSR' };
 // Cartes : ta sauvegarde (export du script) ou toutes les SSR/UR/LR du jeu.
-let save = null; const sp = arg('save', existsSync(path.join(here, 'data', 'sauvegarde.json')) ? path.join(here, 'data', 'sauvegarde.json') : null);
+let save = null; const sp = arg('save', existsSync(D('data', 'sauvegarde.json')) ? D('data', 'sauvegarde.json') : null);
 if (sp && sp !== true) save = JSON.parse(readFileSync(sp, 'utf8'));
 const W = save?.W && save.W.nm ? save.W : W_DEFAUT;
 const ids = (save ? Object.keys(save.owned || {}).map(Number) : Object.keys(CH).map(Number)).filter(i => ['M', 'L', 'E'].includes(CH[i]?.r));
@@ -54,8 +55,8 @@ const pct = (x, n) => (100 * x / n).toFixed(1) + ' %';
 console.log(`\nMeilleures cartes seules (${MODE}) :`); s1.slice(0, 10).forEach((x, i) => console.log(`${String(i + 1).padStart(2)}. ${nom(x.t[0])} : 2+ etoiles ${pct(x.s2, x.n)}`));
 console.log(`\nMeilleurs trios (${MODE}, ${fights.length} combats x 3 tirages) :`);
 res.slice(0, 10).forEach((x, i) => console.log(`${String(i + 1).padStart(2)}. ${x.t.map(nom).join(' / ')} : 2+ etoiles ${pct(x.s2, x.n)}, 3 etoiles ${pct(x.s3, x.n)}, victoire ${pct(x.win, x.n)}`));
-mkdirSync(path.join(here, 'resultats'), { recursive: true });
-const f = path.join(here, 'resultats', `${MODE}-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.csv`);
+mkdirSync(D('resultats'), { recursive: true });
+const f = D('resultats', `${MODE}-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.csv`);
 writeFileSync(f, 'rang;carte 1;carte 2;carte 3;2+ etoiles;3 etoiles;victoire\n' + res.slice(0, 50).map((x, i) => [i + 1, ...x.t.map(id => CH[id].n), pct(x.s2, x.n), pct(x.s3, x.n), pct(x.win, x.n)].join(';')).join('\n'));
-log(`termine, resultats dans ${path.relative(here, f)}`);
+log(`termine, resultats dans ${f}`);
 await pool.close(); process.exit(0);

@@ -1,0 +1,26 @@
+name: verif
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  syntaxe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntaxe du userscript
+        run: node --check kitsu_ai.user.js
+      - name: Syntaxe du moteur local et de l'application
+        run: |
+          for f in moteur/*.mjs moteur/lib/*.mjs app/main.js; do node --check "$f" || exit 1; done
+          test -f moteur/panneau/index.html
+          node -e "JSON.parse(require('fs').readFileSync('app/package.json','utf8'))"
+      - name: Version coherente (en-tete, README, CHANGELOG)
+        run: |
+          V=$(grep -m1 '@version' kitsu_ai.user.js | awk '{print $3}')
+          echo "version $V"
+          grep -q "Version documentée : \*\*$V\*\*" README.md
+          grep -q "^## $V" CHANGELOG.md

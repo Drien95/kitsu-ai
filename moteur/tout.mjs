@@ -8,12 +8,13 @@ import { fileURLToPath } from 'node:url';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { W_DEFAUT } from './lib/sim.mjs';
+import { dir as D } from './lib/chemins.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const T0 = Date.now(), log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
 const { G, B, version } = await loadEngine();
 const CH = G.CHAR_BY_ID, R = { M: 'LR', L: 'UR', E: 'SSR' };
-const sp = path.join(here, 'data', 'sauvegarde.json');
+const sp = D('data', 'sauvegarde.json');
 if (!existsSync(sp)) { console.log('Il manque moteur\\data\\sauvegarde.json : onglet Sante du panneau KitsuAI, « Exporter pour le moteur local ».'); process.exit(1); }
 const SAVE = JSON.parse(readFileSync(sp, 'utf8'));
 const W = SAVE.W?.nm ? SAVE.W : W_DEFAUT;
@@ -22,9 +23,9 @@ const SEEDS = +arg('tirages', 3), NCARDS = +arg('cartes', 22), KEEP = 10;
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
 const short = id => (CH[id]?.n || String(id));
 // ---------- cache disque (version du jeu + reglages de l'IA) ----------
-mkdirSync(path.join(here, 'cache'), { recursive: true });
+mkdirSync(D('cache'), { recursive: true });
 const wKey = JSON.stringify(W).length + ':' + JSON.stringify(W).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
-const cacheFile = path.join(here, 'cache', `${version}-${wKey}.json`);
+const cacheFile = D('cache', `${version}-${wKey}.json`);
 const cache = existsSync(cacheFile) ? new Map(Object.entries(JSON.parse(readFileSync(cacheFile, 'utf8')))) : new Map();
 let cacheHits = 0, sims = 0;
 const saveCache = () => writeFileSync(cacheFile, JSON.stringify(Object.fromEntries(cache)));
@@ -131,12 +132,12 @@ for (const nv of niveaux) {
   }
 }
 saveCache();
-mkdirSync(path.join(here, 'resultats'), { recursive: true });
+mkdirSync(D('resultats'), { recursive: true });
 const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-writeFileSync(path.join(here, 'resultats', `tout-${stamp}.json`), JSON.stringify(report, null, 1));
-writeFileSync(path.join(here, 'resultats', 'dernier.json'), JSON.stringify(report));
+writeFileSync(D('resultats', `tout-${stamp}.json`), JSON.stringify(report, null, 1));
+writeFileSync(D('resultats', 'dernier.json'), JSON.stringify(report));
 const rows = ['niveaux;categorie;rang;carte 1;carte 2;carte 3;2+ etoiles;3 etoiles;victoire;etage tour;degats guilde'];
 for (const [nv, m] of Object.entries(report.modes)) for (const [cat, c] of Object.entries(m)) c.top.forEach((x, i) => rows.push([nv, cat, i + 1, ...x.equipe, x.deuxEtoiles ?? '', x.troisEtoiles ?? '', x.victoire ?? '', x.etageMoyen ?? '', x.degats ?? ''].join(';')));
-writeFileSync(path.join(here, 'resultats', `tout-${stamp}.csv`), rows.join('\n'));
+writeFileSync(D('resultats', `tout-${stamp}.csv`), rows.join('\n'));
 log(`termine : ${sims} combats simules, ${cacheHits} repris du cache. Resultats : resultats\\tout-${stamp}.csv et .json`);
 await pool.close(); process.exit(0);

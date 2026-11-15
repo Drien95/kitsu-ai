@@ -1,0 +1,57 @@
+name: release
+# A chaque merge sur main : si la version du script (// @version) n'a pas encore de tag,
+#   1. tag vX.Y.Z + Release GitHub (section du CHANGELOG + kitsu_ai.user.js) ;
+#   2. construction de l'installateur Windows (KitsuAI-Setup-X.Y.Z.exe) sur un PC Windows de GitHub,
+#      ajoute a la meme Release avec latest.yml (utilise par la mise a jour automatique de l'application).
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.v }}
+      nouvelle: ${{ steps.r.outputs.nouvelle }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Version du script
+        id: v
+        run: echo "v=$(grep -m1 '@version' kitsu_ai.user.js | awk '{print $3}')" >> "$GITHUB_OUTPUT"
+      - name: Tag et Release (si nouvelle version)
+        id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.v }}
+        run: |
+          if git rev-parse "v$V" >/dev/null 2>&1; then echo "v$V existe deja, rien a faire"; echo "nouvelle=non" >> "$GITHUB_OUTPUT"; exit 0; fi
+          awk -v v="## $V" '$0==v{f=1;next} /^## /{if(f)exit} f' CHANGELOG.md | sed '/^---$/d' > notes.md
+          [ -s notes.md ] || echo "Version $V" > notes.md
+          printf '\n---\n**Installer :** telecharge `KitsuAI-Setup-%s.exe` ci-dessous (Windows 10/11). Les versions suivantes s installent toutes seules.\n**Script du jeu :** `kitsu_ai.user.js` (Tampermonkey).\n' "$V" >> notes.md
+          gh release create "v$V" kitsu_ai.user.js --target "$GITHUB_SHA" --title "KitsuAI v$V" --notes-file notes.md
+          echo "nouvelle=oui" >> "$GITHUB_OUTPUT"
+  windows:
+    needs: tag
+    if: needs.tag.outputs.nouvelle == 'oui'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Dependances
+        working-directory: app
+        run: npm ci
+      - name: Version de l'application = version du script
+        working-directory: app
+        run: npm version ${{ needs.tag.outputs.version }} --no-git-tag-version --allow-same-version
+      - name: Installateur Windows, publie dans la Release
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npx electron-builder --win --publish always

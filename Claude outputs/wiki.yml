@@ -1,0 +1,27 @@
+name: wiki
+# Publie docs/wiki/*.md (et le CHANGELOG) sur le wiki GitHub du depot a chaque merge sur main.
+# Prerequis : creer une premiere page du wiki a la main (onglet Wiki, « Create the first page »).
+on:
+  push:
+    branches: [main]
+    paths: ['docs/wiki/**', 'CHANGELOG.md']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Envoi vers le wiki
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          git clone "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
+          cp docs/wiki/*.md wiki/
+          { echo "# Changelog"; echo; sed '1,/^## /{/^## /!d}' CHANGELOG.md; } > wiki/Changelog.md
+          cd wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "wiki deja a jour" || (git commit -m "wiki : ${GITHUB_SHA::7}" && git push)
