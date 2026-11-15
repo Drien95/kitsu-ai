@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.3.31
+// @version      5.4.1
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -16,7 +16,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.3.31 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.4.1 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -40,7 +40,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.3.31') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.4.1') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -490,7 +490,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.3.31',
+          __v: '5.4.1',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -511,7 +511,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.3.31 actif';
+            return 'KitsuAI v5.4.1 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -819,6 +819,14 @@
             try { navigator.clipboard.writeText(txt); } catch {}
             return txt;
           },
+          // Export pour l'outil local (dossier moteur/) : cartes, niveaux, etoiles et reglages de l'IA. Aucun jeton de connexion.
+          async exportMoteur() {
+            const S = save(), data = { t: Date.now(), script: this.__v, owned: S.owned || {}, lv: S.lv || {}, stars: S.stars || {}, team: S.pve?.team || [], acct: { lv: S.acct?.lv || 1 }, W: this.W };
+            // Boss de guilde de la semaine (pour l'analyse locale), sans aucun jeton dans le fichier.
+            try { const r = await fetch('/api/guilds/week', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.boss) data.guild = { boss: { id: g.boss.id, name: g.boss.name, lv: g.boss.lv, hp: g.boss.hp, turns: g.week?.turns || 12 }, minLv: g.week?.minLv || 15 }; } } catch {}
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })); a.download = 'sauvegarde.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+            return data;
+          },
           healthPanel() {
             let hp = document.getElementById('kitsuHealth');
             if (!hp) { hp = document.createElement('div'); hp.id = 'kitsuHealth'; hp.className = 'kitsu-panel'; hp.style.display = 'block'; document.body.appendChild(hp); }
@@ -848,8 +856,10 @@
                 + rows.map(([k, x]) => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><span style="opacity:.7">${k}</span><span>${x}</span></div>`).join('')
                 + (health.errors.length ? `<div style="margin-top:6px;color:#f87171;font-size:11px">${health.errors.slice(0, 4).map(e => `${age(e.t)} : ${e.m}`).join('<br>')}</div>` : '<div style="margin-top:6px;color:#22c55e;font-size:11px">Aucune erreur recente</div>')
                 + `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span id="kitsuRecalc" style="cursor:pointer;background:#1e293b;padding:3px 8px;border-radius:6px;font-size:11px">Tout recalculer</span>`
+                + `<span id="kitsuExpBtn" style="cursor:pointer;background:#1e3a8a;padding:3px 8px;border-radius:6px;font-size:11px">Exporter pour le moteur local</span>`
                 + `<span id="kitsuRepBtn" style="cursor:pointer;background:#7c2d12;padding:3px 8px;border-radius:6px;font-size:11px">Signaler (copie l'ecran)</span>`
                 + `<span id="kitsuEnBtn" style="cursor:pointer;background:${lsGet('kitsu_ai_enAlert', null) === true ? '#14532d' : '#1e293b'};padding:3px 8px;border-radius:6px;font-size:11px">Alerte energie pleine : ${lsGet('kitsu_ai_enAlert', null) === true ? (('Notification' in window && Notification.permission === 'granted') ? 'active' : 'autorisation bloquee') : 'activer'}</span></div>`;
+              document.getElementById('kitsuExpBtn').onclick = async () => { await this.exportMoteur(); toast('<b style="color:#38bdf8">sauvegarde.json telechargee</b><br>Mets-la dans moteur\\data\\ puis lance tout.bat.', 8000); };
               document.getElementById('kitsuRepBtn').onclick = () => { this.signal(); toast('<b style="color:#38bdf8">Rapport copie</b><br>Colle-le dans ta conversation avec Claude (Ctrl+V).', 7000); };
               document.getElementById('kitsuEnBtn').onclick = () => { const on = lsGet('kitsu_ai_enAlert', null) === true; this.energyAlert(!on); render(); };
               document.getElementById('kitsuRecalc').onclick = async () => {

@@ -1,2 +1,7 @@
 .commitmsg
 .branch
+moteur/engine/
+moteur/cache/
+moteur/data/
+moteur/resultats/
+moteur/_to_delete/
