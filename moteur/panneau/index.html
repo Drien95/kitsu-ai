@@ -19,13 +19,13 @@
   body { min-height: 100vh; background: radial-gradient(1100px 520px at 85% -8%, rgba(255,75,62,.14), transparent 60%), radial-gradient(800px 420px at -5% 105%, rgba(255,122,61,.07), transparent 60%), var(--bg); }
   a { color: inherit; }
   /* --- barre du haut --- */
-  .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: stretch; gap: 26px; padding: 0 28px; height: 64px; background: rgba(7,8,12,.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: stretch; gap: 18px; padding: 0 28px; height: 64px; background: rgba(7,8,12,.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .brand svg { width: 34px; height: 34px; }
   .brand b { font: 400 26px/1 var(--head); letter-spacing: .5px; text-transform: uppercase; }
   .brand b em { font-style: normal; color: var(--acc); }
   nav { display: flex; align-items: stretch; gap: 4px; }
-  nav a { display: flex; align-items: center; gap: 8px; padding: 0 14px; text-decoration: none; color: #c9c3b9; font-weight: 800; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color .15s; }
+  nav a { display: flex; align-items: center; gap: 7px; padding: 0 11px; white-space: nowrap; text-decoration: none; color: #c9c3b9; font-weight: 800; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color .15s; }
   nav a svg { width: 16px; height: 16px; opacity: .8; }
   nav a:hover { color: #fff; }
   nav a.on { color: var(--acc2); border-bottom-color: var(--acc2); }
@@ -111,6 +111,34 @@
   #modal { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: none; align-items: center; justify-content: center; z-index: 50; }
   #modal .box { background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; width: min(1150px, 94vw); max-height: 86vh; overflow: auto; padding: 20px; }
   #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--acc2); color: var(--txt); padding: 10px 18px; border-radius: 10px; font-weight: 700; display: none; z-index: 60; }
+  /* --- mise a jour et notes de version --- */
+  .upd { display: none; } .upd.on { display: inline-flex; }
+  .upd { animation: pulse 2s ease-in-out infinite; padding: 9px 14px; font-size: 12px; white-space: nowrap; letter-spacing: 1px; }
+  @media (max-width: 1500px) { #chipVer { display: none; } }
+  @media (max-width: 1360px) { nav a span { display: none; } }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,75,62,.55); } 50% { box-shadow: 0 0 0 8px rgba(255,75,62,0); } }
+  .pn-hero { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(255,75,62,.45); padding: 34px 36px; background: radial-gradient(700px 300px at 85% 20%, rgba(255,122,61,.28), transparent 60%), radial-gradient(500px 260px at 10% 120%, rgba(255,75,62,.2), transparent 60%), linear-gradient(135deg, #151019, #0b0c12); }
+  .pn-hero::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, transparent 2px 14px); pointer-events: none; }
+  .pn-top { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; color: #d9d3c9; }
+  .pn-top b { font: 400 30px var(--head); font-style: italic; letter-spacing: .5px; color: var(--txt); }
+  .pn-top i { width: 3px; height: 22px; background: var(--acc); transform: skew(-18deg); }
+  .pn-v { font: 400 92px/1 var(--head); font-style: italic; text-transform: uppercase; margin: 18px 0 6px; background: linear-gradient(180deg, #fff, #ffd2b8); -webkit-background-clip: text; color: transparent; }
+  .pn-tag { display: inline-block; padding: 5px 12px; border-radius: 6px; background: var(--acc); color: #fff; font-weight: 800; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; margin-right: 8px; }
+  .pn-tag.ghost { background: transparent; border: 1px solid var(--line2); color: #d9d3c9; }
+  .pn-act { position: relative; z-index: 1; margin-top: 22px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .pn-act button { padding: 16px 28px; font-size: 15px; letter-spacing: 2.5px; }
+  .pn-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 1100px) { .pn-cols { grid-template-columns: 1fr; } .pn-v { font-size: 64px; } }
+  .pn-col h3 { display: flex; align-items: center; gap: 10px; font: 400 24px var(--head); font-style: italic; text-transform: uppercase; margin: 0 0 12px; }
+  .pn-col h3 span { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font: 800 16px var(--body); font-style: normal; }
+  .pn-col.add h3 span { background: rgba(47,210,122,.15); color: var(--ok); } .pn-col.mod h3 span { background: rgba(247,197,72,.15); color: var(--gold); } .pn-col.fix h3 span { background: rgba(255,75,62,.15); color: var(--acc); }
+  .pn-col ul { margin: 0; padding: 0; list-style: none; } .pn-col li { position: relative; padding: 8px 0 8px 18px; border-bottom: 1px solid var(--line); font-size: 13px; color: #e2dbd0; }
+  .pn-col li::before { content: ""; position: absolute; left: 2px; top: 15px; width: 7px; height: 7px; background: var(--acc2); transform: rotate(45deg); }
+  .pn-col li li { border: 0; padding: 3px 0 3px 16px; color: var(--mute); } .pn-col li li::before { width: 5px; height: 5px; top: 10px; background: var(--line2); }
+  code { background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font: 12px "Cascadia Mono", Consolas, monospace; color: #f3c9a8; }
+  .rel { border-bottom: 1px solid var(--line); } .rel summary { cursor: pointer; padding: 12px 0; display: flex; gap: 12px; align-items: center; list-style: none; }
+  .rel summary b { font: 400 22px var(--head); font-style: italic; } .rel summary span { color: var(--mute); font-size: 12px; }
+  .rel .body { padding: 0 0 16px; }
   ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #262a38; border-radius: 6px; } ::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
@@ -126,9 +154,10 @@
     <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Résultats</span></a>
     <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span></a>
     <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
+    <a href="#nouveautes" data-p="nouveautes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 20 12 16.6 6.5 20 8 13.4 3 9l6.4-.7z"/></svg><span>Nouveautés</span></a>
     <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal</span></a>
   </nav>
-  <div class="topr"><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div>
+  <div class="topr"><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div>
 </header>
 
 <main>
@@ -281,6 +310,20 @@
     </div>
   </section>
 
+  <!-- ===================== NOUVEAUTES ===================== -->
+  <section class="page" id="p-nouveautes">
+    <div class="pn-hero">
+      <div class="pn-top"><i></i><b>KitsuAI</b> Patch notes <span id="pnDate" style="margin-left:auto;color:var(--mute)"></span></div>
+      <div class="pn-v" id="pnV">Version</div>
+      <div id="pnTags"></div>
+      <div class="pn-act" id="pnAct"></div>
+    </div>
+    <div class="sp"></div>
+    <div class="pn-cols" id="pnCols"></div>
+    <div class="sp"></div>
+    <div class="card"><h2>Versions précédentes <span class="r"><button class="ghost" onclick="ouvrir('https://github.com/Drien95/kitsu-ai/releases')">Toutes sur GitHub</button></span></h2><div id="pnOld"></div></div>
+  </section>
+
   <!-- ===================== JOURNAL ===================== -->
   <section class="page" id="p-journal">
     <div class="eyebrow">Ce qui se passe</div>
@@ -317,7 +360,7 @@ addEventListener('hashchange', route); route();
 async function refresh() {
   try { E = await api('/api/etat'); } catch (e) { $('chipSrv').innerHTML = '<span class="dot bad"></span>Serveur injoignable'; return; }
   const run = E.job && !E.job.fin, maj = E.moteurDisque && E.moteurDisque !== E.moteur;
-  $('chipSrv').innerHTML = `<span class="dot ${maj ? 'warn' : ''}"></span>Serveur actif · ${E.fils} fils`;
+  $('chipSrv').innerHTML = `<span class="dot ${maj ? 'warn' : ''}"></span>${E.fils} fils`; $('chipSrv').title = 'Serveur local actif sur 127.0.0.1:' + E.port;
   $('chipVer').textContent = 'v' + (E.appVersion || E.script?.version || '-');
   // etapes de "tout lancer"
   const ch = E.job?.chaine;
@@ -374,6 +417,54 @@ function renderRes() {
   const head = tour ? '<th>Équipe</th><th class="n">Étage moyen</th><th class="n">Minimum</th>' : gu ? '<th>Équipe</th><th class="n">Dégâts</th><th class="n">Points</th>' : '<th>Équipe</th><th class="n">2+ étoiles</th><th></th><th class="n">3 étoiles</th><th class="n">Victoire</th>';
   $('rescat').innerHTML = `<h2>${CATS[cat] || esc(c.titre)} <span class="r">${c.combats ? c.combats + ' combats' : ''}</span></h2><table><tr><th>#</th>${head}</tr>` + c.top.map((x, i) => `<tr><td class="n" style="text-align:left;color:var(--acc)">${i + 1}</td>` + (tour ? `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td>` : gu ? `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td>` : `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.deuxEtoiles} %</td><td style="width:130px"><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td>`) + '</tr>').join('') + '</table>';
 }
+// ---------- mise a jour et notes de version ----------
+const APP = window.kitsuApp || null; let MAJ = { etat: APP ? 'inconnu' : 'navigateur' }, RELS = null, relT = 0, curV = null;
+const vcmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; };
+const md = t => { // mini Markdown : titres ###, listes (2 niveaux), gras, code, liens
+  const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\[([^\]]+)\]\((https:[^)]+)\)/g, '<a href="#" onclick="ouvrir(\'$2\');return false">$1</a>');
+  const sec = {}; let cur = 'Notes', last = null;
+  for (const l of String(t || '').split(/\r?\n/)) {
+    const h = l.match(/^#{2,4}\s+(.*)/); if (h) { cur = h[1].trim(); last = null; continue; }
+    const li = l.match(/^(\s*)[-*]\s+(.*)/); if (li) { (sec[cur] ||= []); if (li[1].length >= 2 && last) (last.sub ||= []).push(inl(li[2])); else { last = { t: inl(li[2]) }; sec[cur].push(last); } continue; }
+    if (l.trim() && !/^---/.test(l)) { (sec[cur] ||= []).push({ t: inl(l.trim()), p: 1 }); last = null; }
+  }
+  return sec;
+};
+const liste = arr => '<ul>' + arr.map(x => `<li>${x.t}${x.sub ? '<ul>' + x.sub.map(y => `<li>${y}</li>`).join('') + '</ul>' : ''}</li>`).join('') + '</ul>';
+async function chargerReleases(force) {
+  if (RELS && !force && Date.now() - relT < 1800e3) return RELS;
+  try { const r = await fetch('https://api.github.com/repos/Drien95/kitsu-ai/releases?per_page=20'); if (r.ok) { RELS = (await r.json()).filter(x => !x.draft); relT = Date.now(); } } catch {}
+  return RELS || [];
+}
+async function renderMaj() {
+  curV = curV || (APP ? await APP.version().catch(() => null) : null) || E?.appVersion || E?.script?.version;
+  const rels = await chargerReleases(), last = rels[0], lv = last?.tag_name?.replace(/^v/, '');
+  const dispo = ['disponible', 'telechargement', 'prete'].includes(MAJ.etat) || (!APP && lv && curV && vcmp(lv, curV) > 0);
+  $('btnUpd').classList.toggle('on', !!dispo); $('updV').textContent = MAJ.version || lv ? 'v' + (MAJ.version || lv) : '';
+  if (!last) { $('pnV').textContent = 'v' + (curV || '-'); $('pnCols').innerHTML = '<div class="card muted">Notes de version indisponibles (pas de connexion à GitHub).</div>'; }
+  const shown = dispo ? rels.find(r => r.tag_name === 'v' + (MAJ.version || lv)) || last : rels.find(r => r.tag_name === 'v' + curV) || last;
+  if (shown) {
+    $('pnV').textContent = shown.tag_name.replace(/^v/, 'Version ');
+    $('pnDate').textContent = new Date(shown.published_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    $('pnTags').innerHTML = (dispo ? '<span class="pn-tag">Nouvelle version</span>' : '<span class="pn-tag ghost">Version installée</span>') + `<span class="pn-tag ghost">Tu as la v${esc(curV || '-')}</span>`;
+    const sec = md(shown.body.split(/\n---\n/)[0]), K = { 'Ajouté': ['add', '+'], 'Modifié': ['mod', '~'], 'Corrigé': ['fix', '!'], 'Sécurité': ['fix', '!'] };
+    $('pnCols').innerHTML = Object.entries(sec).map(([k, v]) => `<div class="card pn-col ${(K[k] || ['mod'])[0]}"><h3><span>${(K[k] || ['', '*'])[1]}</span>${esc(k)}</h3>${liste(v)}</div>`).join('') || '<div class="card muted">Pas de détail pour cette version.</div>';
+  }
+  const act = { navigateur: dispo ? `<button onclick="ouvrir('https://github.com/Drien95/kitsu-ai/releases/latest')">Télécharger la v${esc(lv)}</button>` : '<span class="muted">Panneau ouvert dans le navigateur : les mises à jour se font depuis l’application KitsuAI.</span>',
+    disponible: `<button onclick="APP.telecharger()">Mettre à jour vers la v${esc(MAJ.version)}</button><span class="muted">Téléchargement en arrière-plan, puis redémarrage.</span>`,
+    telechargement: `<div style="min-width:320px"><div class="prog"><i style="width:${MAJ.pct || 0}%"></i></div><span class="muted">Téléchargement : ${MAJ.pct || 0} %</span></div>`,
+    prete: `<button onclick="APP.installer()">Redémarrer et installer</button><span class="muted">KitsuAI se relance tout seul, tes données sont gardées.</span>`,
+    recherche: '<span class="muted">Recherche de mise à jour...</span>',
+    preparation: `<span class="muted">${esc(MAJ.msg)} Réessaie dans quelques minutes.</span><button class="ghost" onclick="APP.verifier()">Vérifier</button>`,
+    erreur: `<span class="badc" style="font-size:13px">${esc(MAJ.msg)}</span><button class="ghost" onclick="APP.verifier()">Réessayer</button>`,
+    dev: '<span class="muted">Mode développeur : pas de mise à jour automatique.</span>',
+  }[MAJ.etat] || `<span class="okc" style="font-weight:800">Tu as la dernière version.</span><button class="ghost" onclick="APP && APP.verifier()">Vérifier</button>`;
+  $('pnAct').innerHTML = act;
+  $('pnOld').innerHTML = rels.filter(r => r !== shown).slice(0, 12).map(r => `<details class="rel"><summary><b>${esc(r.tag_name)}</b><span>${new Date(r.published_at).toLocaleDateString('fr-FR')}</span></summary><div class="body pn-cols">${Object.entries(md(r.body.split(/\n---\n/)[0])).map(([k, v]) => `<div class="pn-col ${({ 'Ajouté': 'add', 'Corrigé': 'fix' })[k] || 'mod'}"><h3 style="font-size:18px">${esc(k)}</h3>${liste(v)}</div>`).join('')}</div></details>`).join('') || '<div class="muted">Aucune.</div>';
+}
+if (APP) { APP.surMaj(s => { MAJ = s; renderMaj(); }); APP.etat().then(s => { MAJ = s; renderMaj(); }); }
+setTimeout(renderMaj, 1500); setInterval(renderMaj, 600e3);
+
 // ---------- actions ----------
 async function lancer(action) {
   const o = {};
