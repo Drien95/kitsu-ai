@@ -1,5 +1,5 @@
 // Outils communs aux calculs IA : sauvegarde, reglages de l'IA, equipes de la derniere analyse, combats.
-import { archiverPoids } from './historique.mjs';
+import { archiverPoids, reglagesAnalyse } from './historique.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dir as D } from './chemins.mjs';
 import { W_DEFAUT } from './sim.mjs';
@@ -9,7 +9,9 @@ export const T0 = Date.now();
 export const log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
 export const SAVE = readJ(D('data', 'sauvegarde.json')) || {};
 export const POIDS = readJ(D('data', 'poids.json')) || {};
-export const W0 = { ...W_DEFAUT, ...(POIDS.W || (SAVE.W?.nm ? SAVE.W : {})) };
+export const W0 = { ...W_DEFAUT, ...(POIDS.W || (SAVE.W?.nm ? SAVE.W : {})) }; delete W0.equipes;
+// Pour les conseils et analyses : avec les reglages propres a chaque equipe.
+export const WA = reglagesAnalyse(SAVE, W_DEFAUT).W;
 export const DERNIER = readJ(D('resultats', 'dernier.json'));
 export const lvOf = id => SAVE.lv?.[id]?.l || (SAVE.owned ? 1 : 99), stOf = id => SAVE.stars?.[id] || 0;
 export const team = (t, lv = lvOf) => t.map(id => ({ id, lv: typeof lv === 'function' ? lv(id) : lv, stars: stOf(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}) }));

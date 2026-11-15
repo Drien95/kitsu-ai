@@ -5,14 +5,14 @@
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { dir as D } from './lib/chemins.mjs';
-import { readJ, arg, log, SAVE, POIDS, W0, DERNIER, lvOf, stOf, topTeams, fightSets, shuffle, ecrire } from './lib/commun.mjs';
+import { readJ, arg, log, SAVE, POIDS, W0, WA, DERNIER, lvOf, stOf, topTeams, fightSets, shuffle, ecrire } from './lib/commun.mjs';
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, R = { M: 'LR', L: 'UR', E: 'SSR' };
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
 const PARTS = String(arg('parties', 'collectifs,xp,tirage,duos')).split(',');
 const sets = fightSets(G, B), BENCH = [...shuffle(sets.nmMulti, 3).slice(0, 70), ...shuffle(sets.nmBoss, 4).slice(0, 50)], QUICK = BENCH.filter((_, i) => i % 3 === 0);
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 const mk = (ids, o = {}) => ids.map(id => ({ id, lv: o.lv?.[id] ?? lvOf(id), stars: o.stars?.[id] ?? stOf(id), ...((o.lk?.[id] || SAVE.lk?.[id]) ? { lk: o.lk?.[id] || SAVE.lk[id] } : {}) }));
-const W = POIDS.W ? { ...W0 } : W0;
+const W = WA;
 const evalTeams = async (teams, fl = BENCH, seeds = [1, 2]) => { const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), W, { stop2: true }, 12); const per = fl.length; return teams.map((_, k) => { const x = r.slice(k * per, (k + 1) * per), n = x.reduce((a, y) => a + y.n, 0); const s2 = x.reduce((a, y) => a + y.s2, 0) / n, s3 = x.reduce((a, y) => a + y.s3, 0) / n; return { s2, s3, v: s2 + 0.5 * s3 }; }); };
 const pct = x => +(100 * x).toFixed(1);
 const out = { version, date: new Date().toISOString(), combats: BENCH.length };

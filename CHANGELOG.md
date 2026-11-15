@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.11.2
+
+### Corrigé
+- **Les analyses utilisent enfin les réglages entraînés sur le PC.** L'analyse complète, l'analyse par mode et la mesure du plafond prenaient les réglages envoyés par le script du jeu, pas ceux de `poids.json`, et jamais les réglages propres à chaque équipe. Les % du panneau ne reflétaient donc pas l'entraînement. Exemple mesuré sur Kanki / Pain (Akatsuki) / Pain, 957 combats Cauchemar à plusieurs ennemis : 51,6 % de 2 étoiles avec les anciens réglages, 60,1 % avec ses réglages propres.
+
+### Ajouté
+- Tableau de bord : écart avec l'analyse précédente pour chaque catégorie (en vert ou rouge) et origine des réglages utilisés (PC, script, nombre d'équipes avec réglages propres).
+
+---
+
 ## 5.11.1
 
 ### Ajouté
