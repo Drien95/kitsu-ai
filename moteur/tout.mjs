@@ -9,6 +9,7 @@ import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { W_DEFAUT } from './lib/sim.mjs';
 import { dir as D } from './lib/chemins.mjs';
+import { reglagesAnalyse } from './lib/historique.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const T0 = Date.now(), log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
@@ -17,7 +18,7 @@ const CH = G.CHAR_BY_ID, R = { M: 'LR', L: 'UR', E: 'SSR' };
 const sp = D('data', 'sauvegarde.json');
 if (!existsSync(sp)) { console.log('Il manque moteur\\data\\sauvegarde.json : onglet Sante du panneau KitsuAI, « Exporter pour le moteur local ».'); process.exit(1); }
 const SAVE = JSON.parse(readFileSync(sp, 'utf8'));
-const W = SAVE.W?.nm ? SAVE.W : W_DEFAUT;
+const { W, info: WINFO } = reglagesAnalyse(SAVE, W_DEFAUT);
 const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(i => ['M', 'L', 'E'].includes(CH[i]?.r));
 const SEEDS = +arg('tirages', 3), NCARDS = +arg('cartes', 22), KEEP = 10;
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
@@ -90,7 +91,9 @@ const CATS = [
 ];
 // ---------- boucle principale ----------
 const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), Object.entries(sv.lv || {}).map(([k, v]) => k + ':' + (v?.l || v)).sort(), Object.entries(sv.stars || {}).sort()]).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0) : 0;
-const report = { version, date: new Date().toISOString(), saveHash: hashSave(SAVE), modes: {} };
+// Analyse precedente : pour afficher l'evolution (meme categorie, meilleure equipe).
+let PREC = null; try { PREC = JSON.parse(readFileSync(D('resultats', 'dernier.json'), 'utf8')); } catch {}
+const report = { version, date: new Date().toISOString(), saveHash: hashSave(SAVE), reglages: WINFO, precedent: PREC ? { date: PREC.date, reglages: PREC.reglages || null, modes: Object.fromEntries(Object.entries(PREC.modes || {}).map(([n, M]) => [n, Object.fromEntries(Object.entries(M).map(([k, c]) => [k, c.top?.[0] ? { equipe: c.top[0].equipe, deuxEtoiles: c.top[0].deuxEtoiles, troisEtoiles: c.top[0].troisEtoiles, etageMoyen: c.top[0].etageMoyen, degats: c.top[0].degats } : null]))])) } : null, modes: {} };
 const pct = x => (100 * x).toFixed(1) + ' %';
 const niveaux = String(arg('niveaux', 'actuel,99')).split(',');
 log(`moteur ${version}, ${IDS.length} cartes LR/UR/SSR, ${pool.n} fils, ${SEEDS} tirages, cache ${cache.size} resultats`);

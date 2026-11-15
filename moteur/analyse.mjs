@@ -11,6 +11,7 @@ import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { W_DEFAUT } from './lib/sim.mjs';
 import { dir as D } from './lib/chemins.mjs';
+import { reglagesAnalyse } from './lib/historique.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const MODE = arg('mode', 'boss'), TOP = +arg('top', 30), LV99 = !!arg('lv99', false);
@@ -20,7 +21,7 @@ const CH = G.CHAR_BY_ID, R = { M: 'LR', L: 'UR', E: 'SSR' };
 // Cartes : ta sauvegarde (export du script) ou toutes les SSR/UR/LR du jeu.
 let save = null; const sp = arg('save', existsSync(D('data', 'sauvegarde.json')) ? D('data', 'sauvegarde.json') : null);
 if (sp && sp !== true) save = JSON.parse(readFileSync(sp, 'utf8'));
-const W = save?.W && save.W.nm ? save.W : W_DEFAUT;
+const { W } = reglagesAnalyse(save, W_DEFAUT);
 const ids = (save ? Object.keys(save.owned || {}).map(Number) : Object.keys(CH).map(Number)).filter(i => ['M', 'L', 'E'].includes(CH[i]?.r));
 const lvOf = id => LV99 || !save ? 99 : (save.lv?.[id]?.l || 1), stOf = id => save?.stars?.[id] || 0;
 const team = t => t.map(id => ({ id, lv: lvOf(id), stars: stOf(id) }));

@@ -32,3 +32,13 @@ export function restaurerPoids(f) {
   writeFileSync(P(), JSON.stringify({ ...p, t: Date.now(), restaure: { depuis: f, t: Date.now() } }, null, 1));
   return true;
 }
+// Reglages utilises par les analyses : ceux entraines sur le PC (poids.json) s'il y en a, sinon ceux du script,
+// plus les reglages propres a chaque equipe (appliques quand l'equipe analysee est exactement celle-la).
+export function reglagesAnalyse(save, defaut) {
+  const p = lire(P()) || {}, src = p.W?.nm ? 'pc' : save?.W?.nm ? 'script' : 'defaut';
+  const W = { ...defaut, ...(src === 'script' ? save.W : {}), ...(src === 'pc' ? p.W : {}) };
+  delete W.equipes;
+  const eq = Object.fromEntries(Object.entries(p.equipes || {}).filter(([, e]) => e?.nm?.length === W.boss?.length).map(([k, e]) => [k, { nom: e.nom, nm: e.nm }]));
+  if (Object.keys(eq).length) W.equipes = eq;
+  return { W, info: { source: src, t: src === 'pc' ? p.t || null : null, equipes: Object.keys(eq).length } };
+}

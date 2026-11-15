@@ -1,4 +1,5 @@
 // Mesure du plafond : IA actuelle contre IA qui anticipe, memes combats, memes tirages.
+import { reglagesAnalyse } from './lib/historique.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
 import { makeSim, W_DEFAUT } from './lib/sim.mjs';
@@ -7,7 +8,7 @@ import { dir as D } from './lib/chemins.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : process.argv[i + 1]; };
 const { G, B } = await loadEngine(); const S = makeSim(G, B);
 const SAVE = existsSync(D('data', 'sauvegarde.json')) ? JSON.parse(readFileSync(D('data', 'sauvegarde.json'), 'utf8')) : {};
-const W = SAVE.W?.nm ? SAVE.W : W_DEFAUT, CH = G.CHAR_BY_ID;
+const { W } = reglagesAnalyse(SAVE, W_DEFAUT), CH = G.CHAR_BY_ID;
 const id = n => +Object.keys(CH).find(k => CH[k].n === n);
 const teams = (arg('une') ? [['Kanki', 'Pain (Akatsuki)', 'Pain']] : [['Kanki', 'Pain (Akatsuki)', 'Pain'], ['Kanki', 'Tobi (Akatsuki)', 'Pain (Akatsuki)']]).map(t => t.map(id));
 const N = +arg('n', 12), K = +arg('k', 3), R = +arg('r', 3);
