@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.11.3
+
+### Ajouté
+- **Extensions locales** : le serveur charge, s'il existe, un module `prive/serveur.mjs` placé dans le dossier de données (ou à côté du moteur en développement). Il peut ajouter des routes et des calculs au panneau. Rien n'est chargé si le dossier n'existe pas, et ce dossier n'est jamais publié.
+- Les calculs lancés depuis le panneau connaissent le dossier du moteur (`KITSU_MOTEUR`), pour les calculs placés hors de l'application.
+
+---
+
 ## 5.11.2
 
 ### Corrigé

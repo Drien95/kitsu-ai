@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSy
 import { spawn, exec } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { dir as D, DATA, CODE } from './lib/chemins.mjs';
@@ -90,7 +90,7 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const A = ACTIONS[action]; if (!A) throw new Error('action inconnue');
   const fils = Math.max(1, NCPU - Math.max(1, reglages().filsReserves)); // des fils restent libres pour le conseil en combat
   const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils'].includes(action) ? ['--fils', String(fils)] : [])];
-  const p = spawn(process.execPath, args, { cwd: here });
+  const p = spawn(process.execPath, args, { cwd: here, env: { ...process.env, KITSU_MOTEUR: here } });
   const prev = chaine && job ? job.lignes : [];
   job = { id: Date.now(), action, nom: chaine ? `${chaine.nom} (${chaine.i + 1}/${chaine.etapes.length} : ${A.nom})` : A.nom, args: args.join(' '), debut: chaine ? chaine.debut : Date.now(), lignes: chaine ? [...prev, `=== ${A.nom} ===`] : [], fin: null, code: null, proc: p, chaine };
   const add = d => { for (const l of String(d).split(/\r?\n/)) if (l.trim()) { job.lignes.push(l); if (job.lignes.length > 2000) job.lignes.shift(); } };
@@ -144,10 +144,13 @@ const body = req => new Promise((res, rej) => { let b = ''; req.on('data', d => 
 const send = (res, code, obj, type = 'application/json', extra = {}) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', ...extra }); res.end(typeof obj === 'string' || Buffer.isBuffer(obj) ? obj : JSON.stringify(obj)); };
 const CORS = { 'Access-Control-Allow-Origin': 'https://kitsu.games', 'Access-Control-Allow-Headers': 'Content-Type' };
 const own = req => req.headers['x-kitsu-token'] === TOKEN && (!req.headers.origin || req.headers.origin === `http://127.0.0.1:${PORT}`);
+// Extension locale facultative (dossier prive/, jamais publie) : routes en plus, chargees seulement si le fichier existe.
+let EXT = null; const extF = [D('prive', 'serveur.mjs'), path.join(here, 'prive', 'serveur.mjs')].find(f => existsSync(f)); if (extF) { try { EXT = await import(pathToFileURL(extF).href); if (EXT.actions) Object.assign(ACTIONS, EXT.actions); say('extension locale chargee'); } catch (e) { say('extension locale : ' + e.message); } }
 http.createServer(async (req, res) => {
   const u = new URL(req.url, `http://127.0.0.1:${PORT}`);
   try {
     if (req.method === 'OPTIONS') return send(res, 204, '', 'text/plain', CORS);
+    if (EXT?.route && await EXT.route({ req, res, u, send, body, ENG, CORS, own, say, D })) return;
     // Pour le script du jeu
     if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: ENG.version, dom: MAN.dom, fils: pool.n, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
     if (u.pathname === '/poids') { const p = readJ(D('data', 'poids.json')); return send(res, p ? 200 : 404, p || {}, 'application/json', CORS); }
@@ -176,7 +179,7 @@ http.createServer(async (req, res) => {
     // Application (notifications Windows) : secret partage au demarrage
     if (u.pathname === '/app/alertes' && process.env.KITSU_APP_SECRET && req.headers['x-kitsu-app'] === process.env.KITSU_APP_SECRET) { const depuis = +(u.searchParams.get('depuis') || 0); return send(res, 200, alertes.filter(a => a.id > depuis)); }
     // Panneau
-    if (u.pathname === '/' || u.pathname === '/index.html') return send(res, 200, readFileSync(path.join(here, 'panneau', 'index.html'), 'utf8').replace('__TOKEN__', TOKEN), 'text/html; charset=utf-8');
+    if (u.pathname === '/' || u.pathname === '/index.html') return send(res, 200, readFileSync(path.join(here, 'panneau', 'index.html'), 'utf8').replace('__TOKEN__', TOKEN).replace('<!--EXT-->', EXT?.panneau?.() || ''), 'text/html; charset=utf-8');
     if (u.pathname.startsWith('/api/')) {
       if (!own(req)) return send(res, 403, { err: 'jeton invalide (recharge le panneau)' });
       if (u.pathname === '/api/etat') return send(res, 200, etat());
