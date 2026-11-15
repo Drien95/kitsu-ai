@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.8.1
+
+### Corrigé
+- Mise à jour automatique : « Cannot find latest.yml » quand l'application vérifiait pendant la fabrication de l'installateur. La Release est maintenant créée en brouillon et publiée seulement quand l'installateur et `latest.yml` sont ajoutés. Un brouillon laissé par un essai raté est remplacé au merge suivant ; la fabrication échoue clairement si `latest.yml` manque.
+- Message clair si l'installateur d'une nouvelle version n'est pas encore prêt (« en cours de préparation sur GitHub, réessaie dans quelques minutes ») au lieu de l'erreur technique ; les autres erreurs n'affichent plus que leur première ligne.
+- Tout lancer : si kitsu.games ne répond pas, la mise à jour du moteur garde le moteur déjà téléchargé au lieu d'arrêter la chaîne.
+
+---
+
 ## 5.8.0
 
 ### Ajouté
