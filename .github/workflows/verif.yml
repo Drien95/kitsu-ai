@@ -24,6 +24,25 @@ jobs:
           echo "version $V"
           grep -q "Version documentée : \*\*$V\*\*" README.md
           grep -q "^## $V" CHANGELOG.md
+  nouvelle-version:
+    # Une Pull Request qui change le code doit changer de version, sinon aucune mise a jour n'est proposee
+    # (la Release n'est creee que pour une version sans tag).
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Version pas encore publiee
+        run: |
+          git fetch --tags -q origin
+          V=$(grep -m1 '@version' kitsu_ai.user.js | awk '{print $3}')
+          CODE=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -Ev '^(docs/|README\.md$|CHANGELOG\.md$|\.github/)' || true)
+          if git rev-parse -q --verify "refs/tags/v$V" >/dev/null && [ -n "$CODE" ]; then
+            echo "::error::La version $V est deja publiee (tag v$V) mais le code change :"; echo "$CODE"
+            echo "Monte la version (// @version, README, CHANGELOG) pour que la mise a jour soit proposee."; exit 1
+          fi
+          echo "ok : version $V"
   moteur:
     # Tests du moteur local avec le vrai moteur du jeu (telecharge pour le test, jamais enregistre dans le depot).
     runs-on: ubuntu-latest
