@@ -72,7 +72,13 @@ autoUpdater.autoInstallOnAppQuit = true;
 let manualCheck = false;
 autoUpdater.on('update-available', i => { if (manualCheck || win?.isVisible()) new Notification({ title: 'Mise a jour KitsuAI', body: `Version ${i.version} en cours de telechargement.`, icon: ICON }).show(); });
 autoUpdater.on('update-not-available', () => { if (manualCheck) dialog.showMessageBox({ type: 'info', title: 'KitsuAI', message: `Tu as deja la derniere version (${app.getVersion()}).` }); manualCheck = false; });
-autoUpdater.on('error', e => { if (manualCheck) dialog.showMessageBox({ type: 'warning', title: 'KitsuAI', message: 'Recherche de mise a jour impossible.', detail: String(e?.message || e) }); manualCheck = false; });
+autoUpdater.on('error', e => {
+  const m = String(e?.message || e), enCours = /latest\.yml/.test(m) && /404/.test(m), v = (m.match(/download\/v([\d.]+)\//) || [])[1];
+  if (manualCheck) dialog.showMessageBox(enCours
+    ? { type: 'info', title: 'KitsuAI', message: `La version ${v || 'suivante'} est en cours de preparation sur GitHub.`, detail: "L'installateur n'est pas encore disponible. Reessaie dans quelques minutes (KitsuAI reverifie aussi tout seul toutes les 6 h)." }
+    : { type: 'warning', title: 'KitsuAI', message: 'Recherche de mise a jour impossible.', detail: m.split('\n')[0].slice(0, 400) });
+  manualCheck = false;
+});
 autoUpdater.on('update-downloaded', async i => {
   manualCheck = false;
   const r = await dialog.showMessageBox({ type: 'info', buttons: ['Redemarrer maintenant', 'Plus tard'], defaultId: 0, title: 'Mise a jour prete', message: `KitsuAI ${i.version} est pret.`, detail: "Redemarrer pour l'installer ? (sinon elle s'installera a la fermeture)" });

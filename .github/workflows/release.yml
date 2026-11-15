@@ -31,7 +31,10 @@ jobs:
           awk -v v="## $V" '$0==v{f=1;next} /^## /{if(f)exit} f' CHANGELOG.md | sed '/^---$/d' > notes.md
           [ -s notes.md ] || echo "Version $V" > notes.md
           printf '\n---\n**Installer :** telecharge `KitsuAI-Setup-%s.exe` ci-dessous (Windows 10/11). Les versions suivantes s installent toutes seules.\n**Script du jeu :** `kitsu_ai.user.js` (Tampermonkey).\n' "$V" >> notes.md
-          gh release create "v$V" kitsu_ai.user.js --target "$GITHUB_SHA" --title "KitsuAI v$V" --notes-file notes.md
+          # Un brouillon reste d'un essai precedent (installateur en echec) : on le remplace.
+          gh release view "v$V" --json isDraft -q .isDraft 2>/dev/null | grep -q true && gh release delete "v$V" --yes || true
+          # Brouillon : la Release n'est publiee qu'une fois l'installateur et latest.yml ajoutes (sinon la mise a jour automatique cherche un latest.yml absent).
+          gh release create "v$V" kitsu_ai.user.js --draft --target "$GITHUB_SHA" --title "KitsuAI v$V" --notes-file notes.md
           echo "nouvelle=oui" >> "$GITHUB_OUTPUT"
   windows:
     needs: tag
@@ -60,4 +63,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -la
+          test -f latest.yml || { echo "latest.yml absent : la mise a jour automatique ne marcherait pas"; exit 1; }
           gh release upload "v${{ needs.tag.outputs.version }}" *.exe *.exe.blockmap latest.yml --clobber --repo "$GITHUB_REPOSITORY"
+          gh release edit "v${{ needs.tag.outputs.version }}" --draft=false --latest --repo "$GITHUB_REPOSITORY"
