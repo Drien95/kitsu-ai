@@ -4,6 +4,22 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.10.0
+
+### Ajouté
+- **Sauvegarde automatique** : le script envoie ta collection à l'application à chaque changement (cartes, niveaux, étoiles, équipe) et au moins toutes les 30 min. Plus d'export à la main (le bouton reste disponible).
+- **Le guide utilise les calculs du PC** : le classement des trios pour un combat (écran d'équipe, plan, événements, farm) est calculé par l'application avec 24 tirages par trio au lieu de 8 dans le navigateur. Repli automatique sur le navigateur si l'application n'est pas lancée.
+- **Détection des patchs KITSU** : à chaque nouvelle version du jeu, l'application compare le moteur à la version précédente : nouvelles cartes (par série, nombre de LR), cartes modifiées (ATK, DEF, PV, VIT, multiplicateurs et valeurs des techniques), cartes retirées, nouveaux mondes et combats, événements, bannières, et lesquelles de **tes** cartes sont touchées. Bandeau « Patch KITSU détecté » sur le tableau de bord, historique dans Nouveautés.
+- **Calcul conseillé** : bandeau et bouton « Tout lancer » qui clignote quand le jeu, ta collection ou l'IA ont changé depuis la dernière analyse. Aucun calcul n'est lancé tout seul.
+- **Onglet Réglages** : démarrer avec Windows (en arrière-plan, près de l'horloge), temps de réflexion du conseil en combat (0,4 à 2 s), fils gardés libres pendant les calculs, choix des alertes.
+- **Alertes** (notifications Windows, cloche dans le panneau) : énergie pleine, boss de guilde (essais restants après 20 h), fin d'événement avec premières victoires à prendre, nouvelle bannière, patch KITSU, calcul conseillé, calcul terminé. Chacune activable dans Réglages, bouton de test.
+- **Tests automatiques** (`moteur/tests.mjs`, job `moteur` de la vérification GitHub) : chargement du moteur, même tirage même résultat, règle des étoiles, arrêt à 2 K.O. sans changement des 2 étoiles, multithread identique au fil unique, comparaison de patch, démarrage du serveur et protections.
+
+### Sécurité
+- Les envois du script (`/sauvegarde`, `/equipes`, `/jeu`) exigent un en-tête propre au script : un autre site ouvert dans le navigateur ne peut pas écrire dans ta sauvegarde. Les notifications de l'application passent par un secret généré à chaque démarrage.
+
+---
+
 ## 5.9.0
 
 ### Ajouté

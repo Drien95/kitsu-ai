@@ -2,6 +2,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('kitsuApp', {
   version: () => ipcRenderer.invoke('app:version'),
+  demarrage: on => ipcRenderer.invoke('app:demarrage', on),
   etat: () => ipcRenderer.invoke('maj:etat'),
   verifier: () => ipcRenderer.invoke('maj:verifier'),
   telecharger: () => ipcRenderer.invoke('maj:telecharger'),

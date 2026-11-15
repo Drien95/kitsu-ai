@@ -32,7 +32,7 @@ const start = new Set([...html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.js)"/g)
 const dom = [...start].find(p => /\/dom-[^/]+\.js$/.test(p)) || '';
 const ver = (dom.match(/dom-([^/.]+)\.js/) || [, 'inconnue'])[1];
 const out = D('engine', ver);
-if (existsSync(path.join(out, 'manifest.json'))) { console.log(`Moteur ${ver} deja present.`); process.exit(0); }
+if (existsSync(path.join(out, 'manifest.json'))) { console.log(`Moteur ${ver} deja present.`); if (!existsSync(path.join(out, 'resume.json'))) { try { const { loadEngine } = await import('./lib/charger.mjs'), { enregistrer } = await import('./lib/resume.mjs'); const { G, B } = await loadEngine(ver); enregistrer(G, B, ver, null); } catch {} } process.exit(0); }
 await mkdir(path.join(out, 'assets'), { recursive: true });
 await writeFile(path.join(out, 'index.html'), html);
 const seen = new Set(), queue = [...start];
@@ -48,5 +48,12 @@ while (queue.length) {
   }
 }
 await writeFile(path.join(out, 'manifest.json'), JSON.stringify({ version: ver, dom: path.basename(dom), files: [...seen].map(p => path.basename(p)), date: new Date().toISOString() }, null, 2));
+const avant = existsSync(D('engine', 'current.txt')) ? readFileSync(D('engine', 'current.txt'), 'utf8').trim() : null;
 await writeFile(D('engine', 'current.txt'), ver);
+// Patch KITSU : resume de la nouvelle version et comparaison avec la precedente.
+try {
+  const { loadEngine } = await import('./lib/charger.mjs'), { enregistrer } = await import('./lib/resume.mjs');
+  const { G, B } = await loadEngine(ver); const d = enregistrer(G, B, ver, avant);
+  if (d) console.log(`Patch KITSU : ${d.nouvellesCartes.length} nouvelles cartes, ${d.cartesModifiees.length} cartes modifiees, ${d.nouveauxMondes.length} nouveaux mondes.`);
+} catch (e) { console.log('resume du patch impossible : ' + e.message); }
 console.log(`Moteur ${ver} telecharge : ${seen.size} fichiers dans ${out}`);

@@ -25,7 +25,7 @@
   .brand b { font: 400 26px/1 var(--head); letter-spacing: .5px; text-transform: uppercase; }
   .brand b em { font-style: normal; color: var(--acc); }
   nav { display: flex; align-items: stretch; gap: 4px; }
-  nav a { display: flex; align-items: center; gap: 7px; padding: 0 11px; white-space: nowrap; text-decoration: none; color: #c9c3b9; font-weight: 800; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color .15s; }
+  nav a { display: flex; align-items: center; gap: 6px; padding: 0 9px; white-space: nowrap; text-decoration: none; color: #c9c3b9; font-weight: 800; font-size: 11.5px; letter-spacing: .5px; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color .15s; }
   nav a svg { width: 16px; height: 16px; opacity: .8; }
   nav a:hover { color: #fff; }
   nav a.on { color: var(--acc2); border-bottom-color: var(--acc2); }
@@ -114,8 +114,8 @@
   /* --- mise a jour et notes de version --- */
   .upd { display: none; } .upd.on { display: inline-flex; }
   .upd { animation: pulse 2s ease-in-out infinite; padding: 9px 14px; font-size: 12px; white-space: nowrap; letter-spacing: 1px; }
-  @media (max-width: 1500px) { #chipVer { display: none; } }
-  @media (max-width: 1360px) { nav a span { display: none; } }
+  @media (max-width: 1500px) { #chipVer { display: none; } .upd.on ~ #chipSrv { display: none; } }
+  @media (max-width: 1280px) { nav a span { display: none; } }
   @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,75,62,.55); } 50% { box-shadow: 0 0 0 8px rgba(255,75,62,0); } }
   .pn-hero { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(255,75,62,.45); padding: 34px 36px; background: radial-gradient(700px 300px at 85% 20%, rgba(255,122,61,.28), transparent 60%), radial-gradient(500px 260px at 10% 120%, rgba(255,75,62,.2), transparent 60%), linear-gradient(135deg, #151019, #0b0c12); }
   .pn-hero::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, transparent 2px 14px); pointer-events: none; }
@@ -139,6 +139,22 @@
   .rel { border-bottom: 1px solid var(--line); } .rel summary { cursor: pointer; padding: 12px 0; display: flex; gap: 12px; align-items: center; list-style: none; }
   .rel summary b { font: 400 22px var(--head); font-style: italic; } .rel summary span { color: var(--mute); font-size: 12px; }
   .rel .body { padding: 0 0 16px; }
+  /* --- bandeaux, clignotement, reglages --- */
+  .banner { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin-bottom: 14px; border: 1px solid; }
+  .banner.patch { background: linear-gradient(90deg, rgba(255,75,62,.18), rgba(255,122,61,.06)); border-color: rgba(255,75,62,.6); }
+  .banner.calc { background: linear-gradient(90deg, rgba(247,197,72,.14), rgba(247,197,72,.03)); border-color: rgba(247,197,72,.5); }
+  .banner b { font: 400 20px var(--head); font-style: italic; text-transform: uppercase; letter-spacing: .3px; }
+  .banner .t { flex: 1; font-size: 13px; color: #e6dfd4; } .banner .t div { color: var(--mute); }
+  .blink { animation: blink 1.2s ease-in-out infinite; } @keyframes blink { 0%, 100% { box-shadow: 0 0 0 0 rgba(247,197,72,.0), 0 8px 24px -10px rgba(255,75,62,.8); filter: brightness(1); } 50% { box-shadow: 0 0 0 6px rgba(247,197,72,.35), 0 8px 24px -10px rgba(255,75,62,.8); filter: brightness(1.18); } }
+  .bell { position: relative; cursor: pointer; } .bell i { position: absolute; top: -4px; right: -4px; background: var(--acc); color: #fff; font: 800 10px var(--body); font-style: normal; border-radius: 999px; padding: 1px 5px; }
+  .set { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); } .set:last-child { border-bottom: 0; }
+  .set .x { flex: 1; } .set .x b { display: block; font-weight: 800; } .set .x span { color: var(--mute); font-size: 12px; }
+  .sw { position: relative; width: 46px; height: 26px; flex: none; } .sw input { opacity: 0; width: 0; height: 0; }
+  .sw span { position: absolute; inset: 0; background: var(--panel2); border: 1px solid var(--line2); border-radius: 999px; cursor: pointer; transition: background .15s; }
+  .sw span::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #cfc8bd; transition: transform .15s; }
+  .sw input:checked + span { background: linear-gradient(135deg, var(--acc2), var(--acc)); border-color: transparent; } .sw input:checked + span::after { transform: translateX(20px); background: #fff; }
+  .sw input:disabled + span { opacity: .4; cursor: not-allowed; }
+  .patch-list li { padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; list-style: none; } .patch-list { margin: 0; padding: 0; }
   ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #262a38; border-radius: 6px; } ::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
@@ -155,14 +171,16 @@
     <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span></a>
     <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
     <a href="#nouveautes" data-p="nouveautes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 20 12 16.6 6.5 20 8 13.4 3 9l6.4-.7z"/></svg><span>Nouveautés</span></a>
+    <a href="#reglages" data-p="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Réglages</span></a>
     <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal</span></a>
   </nav>
-  <div class="topr"><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div>
+  <div class="topr"><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><span class="chip bell" id="bell" onclick="go('journal')" title="Alertes"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><i id="bellN" style="display:none"></i></span><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div>
 </header>
 
 <main>
   <!-- ===================== TABLEAU DE BORD ===================== -->
   <section class="page" id="p-accueil">
+    <div id="bandeaux"></div>
     <div class="eyebrow">KitsuAI · panneau local</div>
     <h1>Tableau de bord</h1>
     <p class="lead">Un bouton pour tout faire : mettre à jour le moteur du jeu, entraîner l'IA sur tes équipes, puis analyser toutes tes cartes. Le conseil en combat tourne en parallèle tant que KitsuAI est ouvert.</p>
@@ -321,7 +339,28 @@
     <div class="sp"></div>
     <div class="pn-cols" id="pnCols"></div>
     <div class="sp"></div>
+    <div class="card" id="pkCard"><h2>Patchs KITSU détectés <span class="r">comparaison automatique du moteur du jeu</span></h2><div id="pk"></div></div>
+    <div class="sp"></div>
     <div class="card"><h2>Versions précédentes <span class="r"><button class="ghost" onclick="ouvrir('https://github.com/Drien95/kitsu-ai/releases')">Toutes sur GitHub</button></span></h2><div id="pnOld"></div></div>
+  </section>
+
+  <!-- ===================== REGLAGES ===================== -->
+  <section class="page" id="p-reglages">
+    <div class="eyebrow">Ton application</div>
+    <h1>Réglages</h1>
+    <p class="lead">Démarrage, alertes et puissance de calcul. Les réglages sont enregistrés dans ton dossier de données.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h2>Application</h2>
+        <div class="set"><div class="x"><b>Démarrer avec Windows</b><span id="demTxt">KitsuAI se lance en arrière-plan (icône près de l'horloge), prêt pour le conseil en combat.</span></div><label class="sw"><input type="checkbox" id="r_dem"><span></span></label></div>
+        <div class="set"><div class="x"><b>Temps de réflexion du conseil en combat</b><span>Plus long = plus de simulations par coup (et un conseil plus sûr).</span></div><select id="r_ms"><option value="400">0,4 s</option><option value="700">0,7 s</option><option value="1200">1,2 s</option><option value="2000">2 s</option></select></div>
+        <div class="set"><div class="x"><b>Fils gardés libres pendant les calculs</b><span>Pour jouer sans ralentissement pendant une analyse.</span></div><select id="r_fils"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+      </div>
+      <div class="card">
+        <h2>Alertes <span class="r"><button class="ghost" onclick="api('/api/alertes-test',{method:'POST'}).then(()=>toast('Alerte de test envoyée'))">Tester</button></span></h2>
+        <div id="r_alertes"></div>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== JOURNAL ===================== -->
@@ -333,7 +372,7 @@
     <div class="sp"></div>
     <div class="grid g2">
       <div class="card"><h2>Serveur</h2><pre id="journal" style="max-height:260px"></pre></div>
-      <div class="card"><h2>Historique</h2><div class="files" id="hist"></div></div>
+      <div class="card"><h2>Historique</h2><div class="files" id="hist"></div><div class="sp"></div><h2>Alertes</h2><div class="files" id="alist"></div></div>
     </div>
   </section>
 </main>
@@ -392,10 +431,26 @@ async function refresh() {
     const M = D.modes.actuel || D.modes[Object.keys(D.modes)[0]]; $('dtres').textContent = 'analyse du ' + quand(D.date) + ' · tes niveaux';
     $('resume').innerHTML = `<table><tr><th>Catégorie</th><th>Meilleure équipe</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th></tr>` + Object.entries(M).map(([k, c]) => { const x = c.top[0]; if (!x) return ''; return `<tr><td class="cat">${CATS[k] || esc(c.titre)}</td><td>${esc(x.equipe.join(' / '))}</td>${k === 'tour' ? `<td class="n" colspan="2">étage ${x.etageMoyen}</td>` : k === 'guilde' ? `<td class="n" colspan="2">${x.degats.toLocaleString('fr-FR')} dégâts</td>` : `<td class="n">${x.deuxEtoiles} %</td><td class="n">${x.troisEtoiles} %</td>`}</tr>`; }).join('') + '</table>';
   } else $('resume').innerHTML = '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>';
+  // bandeaux : patch du jeu non vu, calcul conseille
+  const pk = (E.patchs || [])[0], cc = E.calculConseille || [];
+  $('bandeaux').innerHTML = (pk && !pk.vu && !pk.vide ? `<div class="banner patch"><b>Patch KITSU détecté</b><div class="t">${esc(resumePatch(pk))}<div>moteur ${esc(pk.de)} puis ${esc(pk.vers)}</div></div><button onclick="go('nouveautes')">Voir le détail</button><button class="ghost" onclick="api('/api/patch-vu',{method:'POST'}).then(refresh)">Vu</button></div>` : '')
+    + (cc.length && !run ? `<div class="banner calc"><b>Calcul conseillé</b><div class="t">${esc(cc.join(' ; '))}<div>Lance « Tout lancer » pour remettre les équipes à jour.</div></div></div>` : '');
+  $('btnTout').classList.toggle('blink', !!cc.length && !run);
+  // alertes
+  const al = E.alertes || [], nv = al.filter(a => a.id > (+localStorage.getItem('kitsuAlertesVues') || 0));
+  $('bellN').style.display = nv.length ? '' : 'none'; $('bellN').textContent = nv.length;
+  if (location.hash === '#journal' && nv.length) try { localStorage.setItem('kitsuAlertesVues', String(Math.max(...al.map(a => a.id)))); } catch {}
+  if (!APP) for (const a of al.filter(a => a.id > lastAlerte)) { toast(a.titre + ' : ' + a.texte); if (window.Notification?.permission === 'granted' && lastAlerte) new Notification(a.titre, { body: a.texte }); }
+  lastAlerte = Math.max(lastAlerte, ...al.map(a => a.id), 0);
+  $('alist').innerHTML = al.slice().reverse().map(a => `<div><span><b>${esc(a.titre)}</b><br><span class="muted">${esc(a.texte)}</span></span><span class="muted" style="flex:0;white-space:nowrap">${quand(a.t)}</span></div>`).join('') || '<div class="muted">Aucune alerte.</div>';
+  // patchs
+  $('pk').innerHTML = (E.patchs || []).filter(p => !p.vide).map(p => `<details class="rel" ${p === pk ? 'open' : ''}><summary><b>${esc(p.de)} puis ${esc(p.vers)}</b><span>${quand(p.date)} · ${esc(resumePatch(p))}</span></summary><div class="body">${detailPatch(p)}</div></details>`).join('') || '<div class="muted">Aucun patch détecté depuis l’installation. KitsuAI compare chaque nouvelle version du jeu à la précédente.</div>';
+  // reglages
+  renderReglages();
   // calculs
   $('poids').innerHTML = E.poids ? `Derniers réglages : ${quand(E.poids.t)} · ` + Object.entries(E.poids.gains || {}).map(([k, g]) => `${{ nm: 'Cauchemar', boss: 'Boss', norm: 'Normal' }[k] || k} ${g.depart} puis ${g.fin}`).join(' · ') : 'Pas encore d’entraînement.';
   // sauvegarde
-  $('sv').innerHTML = s ? [['Exportée', quand(s.t)], ['Cartes', `${s.cartes} (LR ${s.lr}, UR ${s.ur}, SSR ${s.ssr})`], ['Équipe', (s.equipe || []).join(', ') || '-'], ['Niveau du compte', s.compte ?? '-'], ['Boss de guilde', s.guilde || 'non exporté']].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('') : '<span>Aucune</span><span class="muted">importe ta sauvegarde</span>';
+  $('sv').innerHTML = s ? [['Mise à jour', quand(s.t) + (E.sauvegardeAuto ? ' (automatique, par le script)' : ' (import manuel)')], ['Cartes', `${s.cartes} (LR ${s.lr}, UR ${s.ur}, SSR ${s.ssr})`], ['Équipe', (s.equipe || []).join(', ') || '-'], ['Niveau du compte', s.compte ?? '-'], ['Boss de guilde', s.guilde || 'non exporté']].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('') : '<span>Aucune</span><span class="muted">importe ta sauvegarde</span>';
   // script
   $('scrTiles').innerHTML = [
     tile('Version disponible', sc.trouve ? 'v' + esc(sc.version) : '-', sc.trouve ? `${sc.lignes} lignes · ${Math.round(sc.taille / 1024)} Ko` : 'fichier introuvable'),
@@ -436,6 +491,32 @@ async function chargerReleases(force) {
   try { const r = await fetch('https://api.github.com/repos/Drien95/kitsu-ai/releases?per_page=20'); if (r.ok) { RELS = (await r.json()).filter(x => !x.draft); relT = Date.now(); } } catch {}
   return RELS || [];
 }
+let lastAlerte = 0, regInit = false;
+function resumePatch(p) { const r = []; if (p.resumeNouvelles?.length) r.push(p.resumeNouvelles.map(x => `${x.n} nouvelles cartes ${x.serie}${x.lr ? ` dont ${x.lr} LR` : ''}`).join(', ')); if (p.cartesModifiees.length) r.push(`${p.cartesModifiees.length} carte(s) modifiée(s)`); if (p.nouveauxMondes.length) r.push(p.nouveauxMondes.map(w => `nouveau monde ${w.nom} (${w.combats} combats)`).join(', ')); if (p.mondesModifies.length) r.push(`${p.mondesModifies.length} monde(s) agrandi(s)`); if (p.nouveauxEvenements.length) r.push(`${p.nouveauxEvenements.length} événement(s)`); if (p.nouvellesBannieres.length) r.push(p.nouvellesBannieres.map(b => 'bannière ' + b.serie).join(', ')); if (p.tesCartes.length) r.push(`${p.tesCartes.length} de tes cartes touchée(s)`); return r.join(' ; ') || 'aucun changement visible'; }
+function detailPatch(p) {
+  const f = v => typeof v === 'number' ? String(+v.toFixed(3)).replace('.', ',') : esc(v ?? '-');
+  const parts = [];
+  if (p.tesCartes.length) parts.push(`<div class="note" style="margin-bottom:12px"><b>Tes cartes touchées :</b> ${p.tesCartes.map(c => esc(c.n) + (c.equipe ? ' (ton équipe)' : '')).join(', ')}. Relance l'analyse.</div>`);
+  if (p.cartesModifiees.length) parts.push(`<h3 class="cat" style="margin:6px 0">Cartes modifiées</h3><ul class="patch-list">${p.cartesModifiees.slice(0, 40).map(c => `<li><b>${esc(c.n)}</b> <span class="muted">${c.r}</span> : ${c.changements.map(x => `${esc(x.quoi)} ${f(x.avant)} puis ${f(x.apres)}`).join(' ; ')}</li>`).join('')}</ul>`);
+  if (p.nouvellesCartes.length) parts.push(`<h3 class="cat" style="margin:14px 0 6px">Nouvelles cartes</h3><div class="muted" style="font-size:13px">${p.nouvellesCartes.filter(c => ['LR', 'UR'].includes(c.r)).map(c => `<b style="color:var(--txt)">${esc(c.n)}</b> (${c.r})`).join(', ')}${p.nouvellesCartes.filter(c => !['LR', 'UR'].includes(c.r)).length ? `, et ${p.nouvellesCartes.filter(c => !['LR', 'UR'].includes(c.r)).length} autres` : ''}</div>`);
+  if (p.nouveauxMondes.length || p.mondesModifies.length) parts.push(`<h3 class="cat" style="margin:14px 0 6px">Mondes</h3><ul class="patch-list">${p.nouveauxMondes.map(w => `<li>Nouveau : <b>${esc(w.nom)}</b>, ${w.combats} combats</li>`).join('')}${p.mondesModifies.map(w => `<li>${esc(w.nom)} : ${w.avant} puis ${w.apres} combats</li>`).join('')}</ul>`);
+  if (p.nouveauxEvenements.length || p.nouvellesBannieres.length) parts.push(`<h3 class="cat" style="margin:14px 0 6px">Événements et bannières</h3><ul class="patch-list">${p.nouveauxEvenements.map(e => `<li>Événement : <b>${esc(e.titre)}</b></li>`).join('')}${p.nouvellesBannieres.map(b => `<li>Bannière <b>${esc(b.serie)}</b>${b.fin ? ' jusqu’au ' + quand(b.fin) : ''}</li>`).join('')}</ul>`);
+  return parts.join('');
+}
+function renderReglages() {
+  const R = E.reglages || {}; const A = R.alertes || {};
+  if (!regInit) {
+    regInit = true; $('r_ms').value = String(R.conseilMs || 700); $('r_fils').value = String(R.filsReserves || 2);
+    const L = [['energie', 'Énergie pleine', 'Quand ton énergie ne se recharge plus.'], ['guilde', 'Boss de guilde', 'Essais restants après 20 h, avant la remise à zéro de minuit.'], ['evenements', "Fin d'événement", 'Moins de 24 h avant la fin, s’il reste des premières victoires.'], ['bannieres', 'Bannières', 'Nouvelle bannière ouverte.'], ['patch', 'Patch KITSU', 'Nouvelle version du jeu détectée.'], ['calculConseille', 'Calcul conseillé', 'Patch, collection ou IA changés depuis la dernière analyse.'], ['calcul', 'Calcul terminé', 'Fin d’une analyse ou d’un entraînement.']];
+    $('r_alertes').innerHTML = L.map(([k, t, d]) => `<div class="set"><div class="x"><b>${t}</b><span>${d}</span></div><label class="sw"><input type="checkbox" data-al="${k}" ${A[k] !== false ? 'checked' : ''}><span></span></label></div>`).join('');
+    document.querySelectorAll('[data-al]').forEach(i => i.onchange = () => sauverReg());
+    $('r_ms').onchange = $('r_fils').onchange = () => sauverReg();
+    if (APP?.demarrage) APP.demarrage().then(on => { $('r_dem').checked = !!on; }); else { $('r_dem').disabled = true; $('demTxt').textContent = 'Disponible dans l’application KitsuAI (pas dans le navigateur).'; }
+    $('r_dem').onchange = () => APP?.demarrage($('r_dem').checked).then(on => { $('r_dem').checked = !!on; toast(on ? 'KitsuAI démarrera avec Windows' : 'Démarrage avec Windows désactivé'); });
+    if (!APP && window.Notification && Notification.permission === 'default') Notification.requestPermission();
+  }
+}
+async function sauverReg() { const al = {}; document.querySelectorAll('[data-al]').forEach(i => al[i.dataset.al] = i.checked); await api('/api/reglages', { method: 'POST', body: JSON.stringify({ conseilMs: +$('r_ms').value, filsReserves: +$('r_fils').value, alertes: al }) }); toast('Réglages enregistrés'); }
 async function renderMaj() {
   curV = curV || (APP ? await APP.version().catch(() => null) : null) || E?.appVersion || E?.script?.version;
   const rels = await chargerReleases(), last = rels[0], lv = last?.tag_name?.replace(/^v/, '');
