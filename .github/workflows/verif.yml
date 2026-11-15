@@ -24,3 +24,19 @@ jobs:
           echo "version $V"
           grep -q "Version documentée : \*\*$V\*\*" README.md
           grep -q "^## $V" CHANGELOG.md
+  moteur:
+    # Tests du moteur local avec le vrai moteur du jeu (telecharge pour le test, jamais enregistre dans le depot).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Moteur du jeu et tests
+        working-directory: moteur
+        env:
+          KITSU_DATA: ${{ runner.temp }}/kitsu
+        run: |
+          mkdir -p "$KITSU_DATA"
+          if ! node telecharger.mjs || [ ! -f "$KITSU_DATA/engine/current.txt" ]; then echo "::warning::kitsu.games injoignable depuis GitHub : tests du moteur sautes"; exit 0; fi
+          node tests.mjs

@@ -9,6 +9,8 @@ const path = require('node:path');
 const fs = require('node:fs');
 const http = require('node:http');
 const { autoUpdater } = require('electron-updater');
+const { randomBytes } = require('node:crypto');
+const SECRET = randomBytes(16).toString('hex');
 
 const PORT = 47123;
 const ROOT = app.isPackaged ? path.join(process.resourcesPath, 'moteur') : path.join(__dirname, '..', 'moteur');
@@ -20,7 +22,7 @@ if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.on('second-instance', () => show());
 
 const node = (script, args = []) => spawn(process.execPath, [path.join(ROOT, script), ...args], {
-  cwd: ROOT, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', KITSU_DATA: DATA, KITSU_APP_VERSION: app.getVersion() }, windowsHide: true,
+  cwd: ROOT, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', KITSU_DATA: DATA, KITSU_APP_VERSION: app.getVersion(), KITSU_APP_SECRET: SECRET }, windowsHide: true,
 });
 const ping = () => new Promise(res => { const r = http.get({ host: '127.0.0.1', port: PORT, path: '/ping', timeout: 800 }, x => { let b = ''; x.on('data', d => b += d); x.on('end', () => { try { res(JSON.parse(b)); } catch { res(null); } }); }); r.on('error', () => res(null)); r.on('timeout', () => { r.destroy(); res(null); }); });
 const loading = html => win && win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`<!doctype html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0b10;color:#f4ede3;font-family:Segoe UI,system-ui,sans-serif"><div style="text-align:center"><div style="font:italic 900 46px Impact,'Arial Narrow Bold',sans-serif;letter-spacing:1px"><span style="color:#ff4b3e">/</span> KITSU<span style="color:#ff4b3e">AI</span></div><div style="margin-top:14px;color:#9aa0ad">${html}</div></div></body></html>`));
@@ -85,6 +87,15 @@ autoUpdater.on('error', e => {
 });
 function checkUpdates(manual = false) { if (!app.isPackaged) { maj({ etat: 'dev' }); return; } manualCheck = manual; autoUpdater.checkForUpdates().catch(() => {}); }
 ipcMain.handle('app:version', () => app.getVersion());
+// Reglages propres a l'application : demarrage avec Windows (lance en arriere-plan, sans ouvrir la fenetre).
+ipcMain.handle('app:demarrage', (_e, on) => { if (typeof on === 'boolean') app.setLoginItemSettings({ openAtLogin: on, args: ['--cache'] }); return app.getLoginItemSettings().openAtLogin; });
+// ---------- alertes : notifications Windows a partir de la file du serveur ----------
+let alerteDepuis = Date.now() - 1000;
+function lireAlertes() {
+  const r = http.get({ host: '127.0.0.1', port: PORT, path: '/app/alertes?depuis=' + alerteDepuis, headers: { 'X-Kitsu-App': SECRET }, timeout: 3000 }, x => {
+    let b = ''; x.on('data', d => b += d); x.on('end', () => { try { for (const a of JSON.parse(b)) { alerteDepuis = Math.max(alerteDepuis, a.id); if (Notification.isSupported()) { const n = new Notification({ title: a.titre, body: a.texte, icon: ICON }); n.on('click', show); n.show(); } } } catch {} });
+  }); r.on('error', () => {}); r.on('timeout', () => r.destroy());
+}
 ipcMain.handle('maj:etat', () => MAJ);
 ipcMain.handle('maj:verifier', () => { checkUpdates(false); return true; });
 ipcMain.handle('maj:telecharger', () => { if (MAJ.etat === 'disponible' || MAJ.etat === 'erreur') { maj({ etat: 'telechargement', pct: 0 }); autoUpdater.downloadUpdate().catch(e => maj({ etat: 'erreur', msg: String(e?.message || e).split('\n')[0] })); } return true; });
@@ -92,8 +103,8 @@ ipcMain.handle('maj:installer', () => { if (MAJ.etat === 'prete') { quitting = t
 
 app.whenReady().then(async () => {
   app.setAppUserModelId('io.github.drien95.kitsuai');
-  createWindow(); createTray();
-  if (await startServer()) win.loadURL(`http://127.0.0.1:${PORT}/`);
+  createWindow(); createTray(); if (process.argv.includes('--cache')) win.hide();
+  if (await startServer()) { if (!process.argv.includes('--cache')) win.loadURL(`http://127.0.0.1:${PORT}/`); else { win.loadURL(`http://127.0.0.1:${PORT}/`); win.hide(); } setInterval(lireAlertes, 15000); }
   checkUpdates(); setInterval(checkUpdates, 6 * 3600 * 1000);
 });
 app.on('window-all-closed', e => e.preventDefault());

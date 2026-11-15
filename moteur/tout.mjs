@@ -89,7 +89,8 @@ const CATS = [
   ['evenements', `Evenements ouverts et Salle (${evs.map(e => e.title || e.id).join(', ') || 'aucun'})`, evFights],
 ];
 // ---------- boucle principale ----------
-const report = { version, date: new Date().toISOString(), modes: {} };
+const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), Object.entries(sv.lv || {}).map(([k, v]) => k + ':' + (v?.l || v)).sort(), Object.entries(sv.stars || {}).sort()]).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0) : 0;
+const report = { version, date: new Date().toISOString(), saveHash: hashSave(SAVE), modes: {} };
 const pct = x => (100 * x).toFixed(1) + ' %';
 const niveaux = String(arg('niveaux', 'actuel,99')).split(',');
 log(`moteur ${version}, ${IDS.length} cartes LR/UR/SSR, ${pool.n} fils, ${SEEDS} tirages, cache ${cache.size} resultats`);

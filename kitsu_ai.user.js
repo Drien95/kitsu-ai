@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.9.0
+// @version      5.10.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -21,7 +21,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.9.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.10.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.9.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.10.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -236,7 +236,21 @@
           }
           return localPC.ok;
         };
-        setTimeout(() => { localPing(); setInterval(localPing, 60000); }, 5000);
+        // Sauvegarde automatique (a chaque changement de collection, sinon toutes les 30 min) et etat du jeu pour les alertes.
+        let lastSaveSig = '', lastSaveT = 0;
+        const localSync = async () => {
+          if (!localPC.ok || !window.KitsuAI || !G) return;
+          try {
+            const S = save(), sig = JSON.stringify([Object.keys(S.owned || {}).length, Object.values(S.lv || {}).reduce((a, x) => a + (x?.l || 0), 0), Object.values(S.stars || {}).reduce((a, x) => a + x, 0), (S.pve?.team || []).join()]);
+            if (sig !== lastSaveSig || Date.now() - lastSaveT > 30 * 60000) { const d = await window.KitsuAI.exportData(); const r = await localAsk('/sauvegarde', d, 4000); if (r?.ok) { lastSaveSig = sig; lastSaveT = Date.now(); } }
+            const now = Date.now(); let en = null; try { en = { v: G.energy(S, now).v, max: G.enMax(S, now) }; } catch {}
+            const gd = lsGet('kitsu_ai_guild', null), evr = lsGet('kitsu_ai_events', null)?.combats || [];
+            const evs = openEvents(now).map(e => ({ titre: e.banner?.series || e.title, fin: e.banner?.until || null, reste: evr.filter(r => r.evId === e.id && !r.fait && !S.ev?.clear?.[r.id] && r.kind !== 'farm').length }));
+            const bans = (G.BANNERS || []).filter(b => b.until && b.until > now && (b.opens || b.from || 0) <= now).map(b => ({ serie: b.series, fin: b.until }));
+            await localAsk('/jeu', { energie: en, guilde: gd ? { boss: gd.boss?.left || 0, raid: gd.pain?.left || 0 } : null, evenements: evs, bannieres: bans }, 3000);
+          } catch (e) { health.err('synchro PC : ' + e.message); }
+        };
+        setTimeout(() => { localPing().then(localSync); setInterval(() => localPing().then(localSync), 60000); }, 5000);
         const TAG = { basic: 'Attaque', skill: 'Technique', ult: 'Ultime', rest: 'Repos' };
         const COSTS = { basic: 10, skill: 25, ult: 20, rest: 0 }, IDX = { basic: 0, skill: 1, ult: 2 };
         const mv = (u, k) => {
@@ -518,7 +532,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.9.0',
+          __v: '5.10.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -539,7 +553,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.9.0 actif';
+            return 'KitsuAI v5.10.0 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -848,10 +862,14 @@
             return txt;
           },
           // Export pour l'outil local (dossier moteur/) : cartes, niveaux, etoiles et reglages de l'IA. Aucun jeton de connexion.
-          async exportMoteur() {
+          async exportData() {
             const S = save(), data = { t: Date.now(), script: this.__v, owned: S.owned || {}, lv: S.lv || {}, stars: S.stars || {}, team: S.pve?.team || [], acct: { lv: S.acct?.lv || 1 }, W: this.W };
             // Boss de guilde de la semaine (pour l'analyse locale), sans aucun jeton dans le fichier.
             try { const r = await fetch('/api/guilds/week', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.boss) data.guild = { boss: { id: g.boss.id, name: g.boss.name, lv: g.boss.lv, hp: g.boss.hp, turns: g.week?.turns || 12 }, minLv: g.week?.minLv || 15 }; } } catch {}
+            return data;
+          },
+          async exportMoteur() {
+            const data = await this.exportData();
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })); a.download = 'sauvegarde.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
             return data;
           },
@@ -1715,8 +1733,10 @@
             const trc = lsGet('kitsu_ai_training', null), tr0 = [...(trc?.objectif?.equipe || []), ...(trc?.cartes || []).slice(0, 2).map(c => c.id)].filter(id => S.owned?.[id]);
             const xw0 = xpWeights(), focusT = (trc?.objectif?.equipe || []).filter(id => S.owned?.[id]);
             const list = trios([...new Set([...pool(10, S), ...tr0])]);
-            const out = await simBatch(list.map(t => ({ fid, team: teamOf(t, S), seeds })), this.W);
-            const res = list.map((t, i) => ({ t, w: out[i].w / out[i].n, s: out[i].s / out[i].n, s3: out[i].s3 / out[i].n }));
+            // Calcul sur le PC (serveur local) : 24 tirages par trio au lieu de 8, sinon calcul dans le navigateur.
+            let res = null;
+            if (localPC.ok) { const r = await localAsk('/equipes', { dom: domFile(), fid, equipes: list.map(t => teamOf(t, S)), W: this.W, seeds: 24 }, 15000); if (r?.res?.length === list.length) res = list.map((t, i) => ({ t, w: r.res[i].win / r.res[i].n, s: r.res[i].s2 / r.res[i].n, s3: r.res[i].s3 / r.res[i].n, pc: 1 })); }
+            if (!res) { const out = await simBatch(list.map(t => ({ fid, team: teamOf(t, S), seeds })), this.W); res = list.map((t, i) => ({ t, w: out[i].w / out[i].n, s: out[i].s / out[i].n, s3: out[i].s3 / out[i].n })); }
             res.sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
             const c2 = lsGet('kitsu_ai_teams', {}); c2[key] = { t: Date.now(), res };
             const keys = Object.keys(c2).sort((a, b) => c2[b].t - c2[a].t).slice(0, 25);
@@ -2066,12 +2086,12 @@
       else if (++tries > 240) { clearInterval(t); console.warn('KitsuAI : jeu non detecte'); }
     }, 500);
   }
-  // Pont vers le serveur local du PC (moteur/serveur.bat) : seulement /ping, /conseil et /poids, seulement vers 127.0.0.1.
+  // Pont vers le serveur local du PC (moteur/serveur.bat) : seulement /ping, /conseil, /poids, /equipes, /sauvegarde et /jeu, seulement vers 127.0.0.1.
   window.addEventListener('message', e => {
-    const q = e.data && e.data.kitsuLocalReq; if (!q || !(/^\/ping(\?v=[\w.%-]*)?$/.test(q.path) || q.path === '/conseil' || q.path === '/poids')) return;
+    const q = e.data && e.data.kitsuLocalReq; if (!q || !(/^\/ping(\?v=[\w.%-]*)?$/.test(q.path) || ['/conseil', '/poids', '/equipes', '/sauvegarde', '/jeu'].includes(q.path))) return;
     const reply = (ok, data) => window.postMessage({ kitsuLocalRes: q.id, ok, data }, '*');
     try {
-      GM_xmlhttpRequest({ method: q.body ? 'POST' : 'GET', url: 'http://127.0.0.1:47123' + q.path, data: q.body ? JSON.stringify(q.body) : undefined, headers: { 'Content-Type': 'application/json' }, timeout: q.timeout || 3000,
+      GM_xmlhttpRequest({ method: q.body ? 'POST' : 'GET', url: 'http://127.0.0.1:47123' + q.path, data: q.body ? JSON.stringify(q.body) : undefined, headers: { 'Content-Type': 'application/json', 'X-Kitsu-Script': '1' }, timeout: q.timeout || 3000,
         onload: r => { try { reply(true, JSON.parse(r.responseText)); } catch { reply(false); } }, onerror: () => reply(false), ontimeout: () => reply(false) });
     } catch { reply(false); }
   });
