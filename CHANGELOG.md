@@ -4,6 +4,34 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.4.1
+
+### Ajouté
+- `moteur/tout.bat` (`tout.mjs`) : analyse complète de tes LR, UR et SSR, à tes niveaux actuels puis au niveau 99 :
+  - campagne (tous les combats en Extrême), boss en Extrême ;
+  - Cauchemar Extrême : tous les combats, combats à 2 ennemis ou plus, boss ;
+  - événements ouverts et Salle de l'Esprit et du Temps ;
+  - Tour de l'infini (montée complète, PV gardés entre les étages) ;
+  - boss de guilde (dégâts plafonnés à 300 000).
+  Résultats en CSV et JSON dans `moteur/resultats/` (`dernier.json` = dernière analyse).
+- Élimination adaptative : un trio est abandonné dès que sa borne haute passe sous la borne basse du 10e meilleur (mêmes combats et tirages pour tous).
+- Cache sur le disque (`moteur/cache/`, par version du jeu et réglages de l'IA) : un calcul déjà fait n'est jamais refait.
+- Export de la sauvegarde : ajoute le boss de guilde de la semaine et le niveau du compte.
+
+---
+
+## 5.4.0
+
+### Ajouté
+- Moteur local (dossier `moteur/`) : le moteur de combat du jeu tourne sous Node.js sur le PC, en multithread (un fil par coeur logique moins un), sans onglet ouvert.
+  - `telecharger-moteur.bat` : télécharge le moteur du jeu (avec reprise et nouvel essai en cas d'erreur du serveur). Ces fichiers restent sur le PC et ne vont jamais dans le dépôt.
+  - `analyser.bat` : meilleures cartes et meilleurs trios en Cauchemar (boss ou 3 ennemis) ou en Extrême. Objectif : 2 étoiles minimum, départagé par les 3 étoiles.
+  - Optimisations : élimination par tours (24 combats, puis 64 x 2 tirages, puis tous x 3), mêmes combats et mêmes tirages pour toutes les équipes, arrêt du combat dès 2 K.O. (x1,6 à x2, résultats identiques), critères communs de l'IA calculés une fois par décision.
+- Règle des étoiles lue dans le code du jeu : étoiles = max(1, 3 - K.O.), plafonnées à 2 au-delà du cycle 8. 2 étoiles ou plus = victoire avec au plus 1 K.O., quel que soit le cycle.
+- Bouton « Exporter pour le moteur local » (onglet Santé) : télécharge `sauvegarde.json` (cartes, niveaux, étoiles, réglages de l'IA, aucun jeton).
+
+---
+
 ## 5.3.31
 
 ### Modifié

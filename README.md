@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.3.31**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.4.1**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 Fichiers : `kitsu_ai.user.js` (le script Tampermonkey à installer, qui contient tout le code), `README.md`, `CHANGELOG.md`, `publier.bat` / `publier.ps1` (envoi sur GitHub : double-clic sur `publier.bat`, avec ton git et ton compte GitHub Windows ; le message de commit est dans `.commitmsg`).
 
@@ -703,6 +703,8 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.3.29 | Nouveaux boutons de combat d'événement (`data-ev-fight`), difficulté Ultime |
 | 5.3.30 | Bouton Combattre de l'écran d'équipe prioritaire sur ceux de la page en dessous |
 | 5.3.31 | Équipe cible jugée sur les 127 boss du jeu en Extrême |
+| 5.4.0 | Moteur local multithread (dossier moteur/), règle des étoiles, export de la sauvegarde |
+| 5.4.1 | Mode « tout » du moteur local (campagne, Cauchemar, boss, événements, Tour, guilde), élimination adaptative, cache disque |
 
 ---
 
@@ -824,6 +826,22 @@ Les données viennent de `CHAR_BY_ID`, `MOVES` et `KitsuLinks`, puis des fiches 
 11. **Prévisions** (onglet Avenir) et outils de fiabilité (Signaler, vérification après mise à jour).
 
 Les analyses ponctuelles des tout premiers échanges (comparaison de cartes, meilleure carte de parrainage, première équipe Misato / Rococo / Salamander) ne sont pas reprises en détail : leurs résultats ont été dépassés par l'évolution de ta collection et ne sont plus conservés.
+
+## Moteur local (dossier `moteur/`)
+
+Le moteur de combat du jeu tourne aussi sous Node.js, directement sur le PC, en multithread. C'est beaucoup plus rapide que dans l'onglet et rien ne se perd si la page se recharge.
+
+| Fichier | Rôle |
+|---|---|
+| `telecharger-moteur.bat` | Télécharge le moteur du jeu dans `moteur/engine/<version>/` (une fois par version du jeu). Fichiers du jeu : jamais dans le dépôt (`.gitignore`). |
+| `tout.bat` | **Analyse complète** de tes LR/UR/SSR, à tes niveaux puis au niveau 99 : campagne Extrême, boss Extrême, Cauchemar (tous, 2 ennemis ou plus, boss), événements et Salle, Tour de l'infini, boss de guilde. Prend son temps (de l'ordre de 10 à 40 min). Résultats : `moteur/resultats/tout-<date>.csv` et `.json`. Options : `--niveaux actuel`, `--tirages 5`, `--cartes 26`, `--fils 12`, `--max 40` (test rapide). |
+| `analyser.bat` | Choix du mode (boss Cauchemar, 3 ennemis Cauchemar, boss Extrême), puis meilleures cartes et meilleurs trios. Résultats aussi en CSV dans `moteur/resultats/`. |
+| `bench.mjs` | Mesure de vitesse (combats par seconde). |
+| `lib/` | Chargement du moteur, simulation (même IA que le script), pool de fils. |
+
+Ta collection : onglet Santé du panneau, **Exporter pour le moteur local**, puis mettre `sauvegarde.json` dans `moteur/data/`. Sans ce fichier, l'analyse porte sur toutes les SSR, UR et LR du jeu au niveau 99. Options : `--lv99` (tes cartes au niveau 99), `--top 30` (nombre de cartes gardées pour les trios), `--fils 11`.
+
+Règle des étoiles (code du jeu) : étoiles = max(1, 3 - K.O.), plafonnées à 2 au-delà du cycle 8. L'objectif de l'analyse est 2 étoiles minimum (victoire avec au plus 1 K.O.), départagé par les 3 étoiles.
 
 ## Workflow Git
 
