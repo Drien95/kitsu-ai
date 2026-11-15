@@ -15,6 +15,9 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 - **IA par équipe** : des réglages Cauchemar propres à chacune de tes meilleures équipes, gardés seulement s'ils battent les réglages généraux sur des combats de contrôle. Le script les utilise dès que tu joues exactement cette équipe (conseil en combat, plan, guide, et calcul sur le PC).
 - **IA par imitation** : l'IA rapide apprend à reproduire les choix de l'IA qui anticipe plusieurs coups (plusieurs tirages par coup possible). Les nouveaux réglages ne sont gardés que s'ils font mieux sur des combats jamais vus pendant l'apprentissage.
 - « Tout lancer » enchaîne maintenant : moteur du jeu, entraînement, analyse complète, IA par équipe, conseils de cartes.
+- **Portraits et cadres de rareté** dans le panneau : chaque équipe et chaque carte (Tableau de bord, Résultats, Conseils de cartes) s'affiche avec son portrait, affiché depuis la même adresse que dans le jeu (rien n'est copié dans le dépôt). Cadres dessinés pour KitsuAI : LR doré animé avec reflet, UR rouge, SSR violet, SR bleu, R vert. Initiales si le portrait ne charge pas.
+- **Équipe phare** en tête du Tableau de bord (Cauchemar, plusieurs ennemis) avec grands portraits et taux de 2 étoiles.
+- **Icônes de mode** dessinées pour KitsuAI (campagne, boss, Cauchemar, plusieurs ennemis, événements, tour, guilde, collectifs, XP, tirage, duos).
 - **Historique des réglages de l'IA** (Réglages) : une copie de `poids.json` est faite avant chaque entraînement ou imitation (15 dernières gardées), avec ses scores. « Restaurer » remet une copie en service, après avoir copié les réglages en place ; le script du jeu la reprend dans la minute.
 
 ---

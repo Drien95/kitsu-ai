@@ -156,6 +156,37 @@
   .sw input:disabled + span { opacity: .4; cursor: not-allowed; }
   .patch-list li { padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; list-style: none; } .patch-list { margin: 0; padding: 0; }
   ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #262a38; border-radius: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+  /* --- portraits de cartes (affiches depuis leur adresse d'origine, rien n'est copie) et cadres de rarete --- */
+  .pf { --rc: #5b6172; position: relative; display: inline-block; flex: 0 0 auto; width: 40px; height: 54px; border-radius: 8px; overflow: hidden; vertical-align: middle;
+        background: linear-gradient(160deg, #2a2e3d, #12141b); box-shadow: 0 6px 16px -8px var(--rc); }
+  .pf.r-N { --rc: #7d828f; } .pf.r-R { --rc: #3fbf6f; } .pf.r-SR { --rc: #3f8cff; } .pf.r-SSR { --rc: #b35cff; } .pf.r-UR { --rc: #ff4b3e; } .pf.r-LR { --rc: #f7c548; }
+  .pf img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; }
+  .pf::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--rc), inset 0 0 0 3px rgba(0,0,0,.45); pointer-events: none; z-index: 3; }
+  .pf .ini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 400 15px var(--head); color: #cfc8bd; }
+  .pf i { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; font: 800 8px/1 var(--body); font-style: normal; letter-spacing: 1px; text-align: center; padding: 12px 0 4px; color: var(--rc); background: linear-gradient(transparent, rgba(0,0,0,.9)); }
+  .pf.r-LR { animation: lr 2.6s ease-in-out infinite; }
+  .pf.r-LR::before { content: ""; position: absolute; inset: 0; z-index: 2; background: linear-gradient(115deg, transparent 35%, rgba(255,240,190,.38) 50%, transparent 65%); background-size: 260% 100%; animation: sheen 3.2s ease-in-out infinite; pointer-events: none; }
+  .pf.r-UR::before { content: ""; position: absolute; inset: 0; z-index: 2; background: radial-gradient(120% 60% at 50% 110%, rgba(255,75,62,.35), transparent 60%); pointer-events: none; }
+  @keyframes lr { 50% { box-shadow: 0 0 18px -2px rgba(247,197,72,.75); } }
+  @keyframes sheen { 0% { background-position: 130% 0; } 60%, 100% { background-position: -30% 0; } }
+  .pf.big { width: 118px; height: 158px; border-radius: 14px; }
+  .pf.big i { font-size: 11px; padding: 26px 0 7px; letter-spacing: 2px; } .pf.big .ini { font-size: 34px; }
+  .pf.big::after { box-shadow: inset 0 0 0 3px var(--rc), inset 0 0 0 4px rgba(0,0,0,.45); }
+  .tm { display: flex; align-items: center; gap: 5px; } .tm .tmn { margin-left: 8px; line-height: 1.35; }
+  .tm.sm .pf { width: 30px; height: 40px; border-radius: 6px; } .tm.sm .pf i { display: none; }
+  .ic { width: 18px; height: 18px; flex: 0 0 auto; vertical-align: -3px; margin-right: 8px; color: var(--acc2); }
+  .sub a .ic { width: 15px; height: 15px; margin-right: 6px; vertical-align: -2px; }
+  /* --- equipe phare (tableau de bord) --- */
+  .phare { position: relative; display: flex; gap: 22px; align-items: center; padding: 18px 20px; margin-bottom: 16px; border-radius: 14px; overflow: hidden;
+           background: repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, transparent 2px 14px), linear-gradient(100deg, rgba(255,75,62,.16), rgba(255,122,61,.04) 55%, transparent), var(--panel2); border: 1px solid rgba(255,75,62,.3); }
+  .phare::after { content: ""; position: absolute; right: -40px; top: -30px; width: 220px; height: 220px; background: linear-gradient(115deg, transparent 45%, rgba(255,75,62,.18) 45% 55%, transparent 55%); pointer-events: none; }
+  .phare .cs { display: flex; gap: 10px; }
+  .phare .pn { font: 400 13px var(--body); color: #e6dfd4; text-align: center; margin-top: 6px; max-width: 118px; font-weight: 700; }
+  .phare .tx { flex: 1; min-width: 180px; }
+  .phare .tx .k { color: var(--acc); font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+  .phare .tx .v { font: 400 46px/1 var(--head); font-style: italic; margin: 6px 0 2px; }
+  .phare .tx .s { color: var(--mute); font-size: 13px; }
+  @media (max-width: 900px) { .phare { flex-direction: column; align-items: flex-start; } .pf.big { width: 86px; height: 115px; } }
 </style>
 </head>
 <body>
@@ -189,7 +220,7 @@
         <h2>Tout lancer</h2>
         <div class="steps" id="steps"></div>
         <button class="big" id="btnTout" onclick="lancer('complet')">Tout lancer</button>
-        <div class="muted" style="font-size:12px;margin-top:10px">Durée indicative : 20 à 60 min selon ton processeur. Tu peux jouer pendant ce temps.</div>
+        <div class="muted" style="font-size:12px;margin-top:10px">Durée indicative : 30 à 75 min selon ton processeur. Tu peux jouer pendant ce temps.</div>
       </div>
       <div class="card">
         <h2>En cours <span class="r"><button class="stop" id="stop" onclick="arreter()" disabled>Arrêter</button></span></h2>
@@ -414,11 +445,41 @@ const TOKEN = '__TOKEN__', SCRIPT_URL = 'https://github.com/Drien95/kitsu-ai/rel
 const api = (p, o = {}) => fetch(p, { ...o, headers: { 'X-Kitsu-Token': TOKEN, 'Content-Type': 'application/json', ...(o.headers || {}) } }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.err || r.status); return j; });
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// ---------- cartes : portraits, raretes, icones ----------
+let CARTES = null, PAR_NOM = {};
+async function chargerCartes() { try { const r = await api('/api/cartes'); CARTES = r.c; PAR_NOM = {}; for (const [id, c] of Object.entries(CARTES)) if (!(c[0] in PAR_NOM)) PAR_NOM[c[0]] = id; HC.clear(); refresh(); } catch { setTimeout(chargerCartes, 5000); } }
+const carte = x => { const id = typeof x === 'number' || /^\d+$/.test(String(x)) ? String(x) : PAR_NOM[x]; const c = CARTES?.[id]; return c ? { id, n: c[0], r: c[1], img: c[2], s: c[3] } : { n: String(x ?? '?'), r: '', img: '' }; };
+function pf(x, big) {
+  const c = carte(x), ini = c.n.replace(/\(.*\)/, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  return `<span class="pf r-${c.r || 'N'}${big ? ' big' : ''}" title="${esc(c.n)}${c.r ? ' · ' + c.r : ''}${c.s ? ' · ' + esc(c.s) : ''}"><span class="ini">${esc(ini)}</span>${c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}${c.r ? `<i>${c.r}</i>` : ''}</span>`;
+}
+const eqList = v => Array.isArray(v) ? v : String(v || '').split(' / ').filter(Boolean);
+const equipeHTML = (v, sm) => { const L = eqList(v); return `<div class="tm${sm ? ' sm' : ''}">${L.map(x => pf(x)).join('')}<span class="tmn">${L.map(x => esc(carte(x).n)).join(' / ')}</span></div>`; };
+const carteHTML = (x, extra = '') => `<div class="tm sm">${pf(x)}<span class="tmn">${esc(carte(x).n)}${extra}</span></div>`;
+// Icones dessinees pour KitsuAI (traits, couleur du texte).
+const IC = {
+  campagne_extreme: '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>',
+  boss_extreme: '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5L3 8z"/><path d="M5 22h14"/>',
+  cauchemar: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  cauchemar_multi: '<circle cx="6" cy="14" r="3"/><circle cx="18" cy="14" r="3"/><circle cx="12" cy="7" r="3"/><path d="M4 21h16"/>',
+  cauchemar_boss: '<path d="M6 4l2 5h8l2-5"/><path d="M5 9h14v3a7 7 0 0 1-14 0z"/><path d="M9.5 13h.01M14.5 13h.01"/>',
+  evenements: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  tour: '<path d="M7 21V9h10v12M5 9h14M7 9V5h2v2h2V5h2v2h2V5h2v4M10 21v-5h4v5"/>',
+  guilde: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  collectifs: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M10.5 10.5l3 3M16 5v6M13 8h6"/>',
+  xp: '<path d="M12 20V5m-6 6l6-6 6 6"/><path d="M5 21h14"/>',
+  tirage: '<rect x="4" y="5" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/>',
+  duos: '<circle cx="8.5" cy="9" r="3.5"/><circle cx="15.5" cy="9" r="3.5"/><path d="M3 20c.8-3 3-4.5 5.5-4.5S13 17 14 20M10 20c.8-3 3-4.5 5.5-4.5S20.2 17 21 20"/>',
+};
+const ic = k => IC[k] ? `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>` : '';
+// N'ecrit le HTML que s'il a change : les portraits ne sont pas recharges toutes les 1,5 s.
+const HC = new Map(); const setH = (id, h) => { if (HC.get(id) === h) return; HC.set(id, h); $(id).innerHTML = h; };
+
 const dur = s => s < 60 ? s + ' s' : s < 3600 ? Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s' : Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min';
 const quand = t => t ? new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
 const toast = m => { const t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600); };
 const CATS = { campagne_extreme: 'Campagne (Extrême)', boss_extreme: 'Boss (Extrême)', cauchemar: 'Cauchemar, tous', cauchemar_multi: 'Cauchemar, plusieurs ennemis', cauchemar_boss: 'Cauchemar, boss', evenements: 'Événements et Salle', tour: "Tour de l'infini", guilde: 'Boss de guilde' };
-const STEPS = [['Moteur du jeu', 'mise à jour'], ["Entraînement de l'IA", 'Cauchemar, boss, normal'], ['Analyse complète', 'tes niveaux puis 99']];
+const STEPS = [['Moteur du jeu', 'mise à jour'], ["Entraînement de l'IA", 'Cauchemar, boss, normal'], ['Analyse complète', 'tes niveaux puis 99'], ['IA par équipe', 'tes 3 meilleures'], ['Conseils de cartes', 'collectifs, XP, tirage, duos']];
 let E = null, niv = null, cat = null, lastLog = -1;
 
 // ---------- navigation ----------
@@ -460,8 +521,10 @@ async function refresh() {
   const D = E.dernier;
   if (D) {
     const M = D.modes.actuel || D.modes[Object.keys(D.modes)[0]]; $('dtres').textContent = 'analyse du ' + quand(D.date) + ' · tes niveaux';
-    $('resume').innerHTML = `<table><tr><th>Catégorie</th><th>Meilleure équipe</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th></tr>` + Object.entries(M).map(([k, c]) => { const x = c.top[0]; if (!x) return ''; return `<tr><td class="cat">${CATS[k] || esc(c.titre)}</td><td>${esc(x.equipe.join(' / '))}</td>${k === 'tour' ? `<td class="n" colspan="2">étage ${x.etageMoyen}</td>` : k === 'guilde' ? `<td class="n" colspan="2">${x.degats.toLocaleString('fr-FR')} dégâts</td>` : `<td class="n">${x.deuxEtoiles} %</td><td class="n">${x.troisEtoiles} %</td>`}</tr>`; }).join('') + '</table>';
-  } else $('resume').innerHTML = '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>';
+    const ph = M.cauchemar_multi?.top?.[0] || M.cauchemar?.top?.[0], phIds = ph ? (ph.ids || ph.equipe) : null;
+    const phare = ph ? `<div class="phare"><div class="cs">${eqList(phIds).map(x => `<div>${pf(x, true)}<div class="pn">${esc(carte(x).n)}</div></div>`).join('')}</div><div class="tx"><div class="k">${ic('cauchemar_multi')}Équipe phare · Cauchemar, plusieurs ennemis</div><div class="v">${ph.deuxEtoiles} %</div><div class="s">de combats à 2 étoiles ou plus, ${ph.troisEtoiles} % à 3 étoiles</div></div></div>` : '';
+    setH('resume', phare + `<table><tr><th>Catégorie</th><th>Meilleure équipe</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th></tr>` + Object.entries(M).map(([k, c]) => { const x = c.top[0]; if (!x) return ''; return `<tr><td class="cat">${ic(k)}${CATS[k] || esc(c.titre)}</td><td>${equipeHTML(x.ids || x.equipe, 1)}</td>${k === 'tour' ? `<td class="n" colspan="2">étage ${x.etageMoyen}</td>` : k === 'guilde' ? `<td class="n" colspan="2">${x.degats.toLocaleString('fr-FR')} dégâts</td>` : `<td class="n">${x.deuxEtoiles} %</td><td class="n">${x.troisEtoiles} %</td>`}</tr>`; }).join('') + '</table>');
+  } else setH('resume', '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>');
   // bandeaux : patch du jeu non vu, calcul conseille
   const pk = (E.patchs || [])[0], cc = E.calculConseille || [];
   $('bandeaux').innerHTML = (pk && !pk.vu && !pk.vide ? `<div class="banner patch"><b>Patch KITSU détecté</b><div class="t">${esc(resumePatch(pk))}<div>moteur ${esc(pk.de)} puis ${esc(pk.vers)}</div></div><button onclick="go('nouveautes')">Voir le détail</button><button class="ghost" onclick="api('/api/patch-vu',{method:'POST'}).then(refresh)">Vu</button></div>` : '')
@@ -496,35 +559,35 @@ let consTab = 'collectifs';
 function renderCons() {
   const C = E?.conseils; if (!C) return;
   const T = { collectifs: 'Collectifs', xp: "Plan d'XP", tirage: 'Tirage', duos: 'Duos' }, ks = Object.keys(T).filter(k => C[k]); if (!ks.includes(consTab)) consTab = ks[0]; if (!consTab) return;
-  $('tabsCons').innerHTML = ks.map(k => `<a class="${k === consTab ? 'on' : ''}" onclick="consTab='${k}';renderCons()">${T[k]}</a>`).join('');
-  const pc = (a, b) => `${a} %${b != null ? ` <span class="muted">→</span> <b style="color:${b > a ? 'var(--ok,#22c55e)' : 'inherit'}">${b} %</b>` : ''}`; let h = `<h2>${T[consTab]} <span class="r">${quand(C.date)} · ${C.combats} combats Cauchemar Extrême</span></h2>`;
+  setH('tabsCons', ks.map(k => `<a class="${k === consTab ? 'on' : ''}" onclick="consTab='${k}';renderCons()">${ic(k)}${T[k]}</a>`).join(''));
+  const pc = (a, b) => `${a} %${b != null ? ` <span class="muted">→</span> <b style="color:${b > a ? 'var(--ok,#22c55e)' : 'inherit'}">${b} %</b>` : ''}`; let h = `<h2>${ic(consTab)}${T[consTab]} <span class="r">${quand(C.date)} · ${C.combats} combats Cauchemar Extrême</span></h2>`;
   if (consTab === 'collectifs') {
     const L = C.collectifs.flatMap(e => [...e.cartes.map(c => ({ e, c })), ...(e.ensemble ? [{ e, c: { carte: 'Les deux ensemble', actifs: '', utile: e.ensemble.utile, seul: e.ensemble.seul, conseil: [], retirer: [], avant: e.ensemble.avant, apres: e.ensemble.apres, tous: 1 } }] : [])]);
-    h += L.length ? `<table><tr><th>Équipe</th><th>Carte</th><th>Coche ces 6 collectifs</th><th class="n">2+ étoiles</th></tr>` + L.map(({ e, c }) => `<tr><td>${esc(e.equipe)}</td><td>${esc(c.carte)}${c.tous ? '' : `<div class="muted" style="font-size:11px">${c.actifs} collectifs actifs</div>`}</td><td style="font-size:12px">${c.tous ? `<span class="muted">${c.utile ? 'les choix ci-dessus combinés' : `combinés, ils ne font pas mieux : change seulement ${esc(c.seul || 'la meilleure carte')}`}</span>` : c.utile ? c.conseil.map(esc).join('<br>') : '<span class="muted">ton choix actuel est déjà le meilleur</span>'}${c.utile && c.retirer.length ? `<div class="muted" style="margin-top:4px">décoche : ${c.retirer.map(esc).join(', ')}</div>` : ''}</td><td class="n">${pc(c.avant.s2, c.utile ? c.apres.s2 : null)}</td></tr>`).join('') + '</table>' : '<div class="muted">Aucune carte de tes meilleures équipes n’a plus de 6 collectifs actifs : rien à choisir.</div>';
+    h += L.length ? `<table><tr><th>Équipe</th><th>Carte</th><th>Coche ces 6 collectifs</th><th class="n">2+ étoiles</th></tr>` + L.map(({ e, c }) => `<tr><td>${equipeHTML(e.ids || e.equipe, 1)}</td><td>${c.tous ? esc(c.carte) : carteHTML(c.id || c.carte, `<div class="muted" style="font-size:11px">${c.actifs} collectifs actifs</div>`)}</td><td style="font-size:12px">${c.tous ? `<span class="muted">${c.utile ? 'les choix ci-dessus combinés' : `combinés, ils ne font pas mieux : change seulement ${esc(c.seul || 'la meilleure carte')}`}</span>` : c.utile ? c.conseil.map(esc).join('<br>') : '<span class="muted">ton choix actuel est déjà le meilleur</span>'}${c.utile && c.retirer.length ? `<div class="muted" style="margin-top:4px">décoche : ${c.retirer.map(esc).join(', ')}</div>` : ''}</td><td class="n">${pc(c.avant.s2, c.utile ? c.apres.s2 : null)}</td></tr>`).join('') + '</table>' : '<div class="muted">Aucune carte de tes meilleures équipes n’a plus de 6 collectifs actifs : rien à choisir.</div>';
   }
   if (consTab === 'xp') {
     const X = C.xp, ref = X.reference;
-    h += `<p class="muted">Référence : ${esc(ref?.equipe || '-')} (${ref?.s2} % de 2+ étoiles). Une carte vaut l’XP seulement si son meilleur trio dépasse cette équipe.</p><table><tr><th>Carte</th><th>Meilleur trio</th><th>2+ étoiles selon le niveau</th><th>Conseil</th></tr>` + X.cartes.map(c => `<tr><td>${esc(c.carte)} <span class="muted">${c.rarete} niv ${c.niveau}</span></td><td>${esc(c.equipe)}</td><td style="font-size:12px">${c.paliers.map(p => `${p.niveau} : ${p.s2} %`).join(' · ')}</td><td>${c.conseil ? `<b>monter au ${c.conseil.jusqua}</b><div class="muted" style="font-size:11px">${c.conseil.xp.toLocaleString('fr-FR')} XP</div>` : '<span class="muted">pas prioritaire</span>'}</td></tr>`).join('') + '</table>';
+    h += `<p class="muted">Référence : ${esc(ref?.equipe || '-')} (${ref?.s2} % de 2+ étoiles). Une carte vaut l’XP seulement si son meilleur trio dépasse cette équipe.</p><table><tr><th>Carte</th><th>Meilleur trio</th><th>2+ étoiles selon le niveau</th><th>Conseil</th></tr>` + X.cartes.map(c => `<tr><td>${carteHTML(c.id || c.carte, ` <span class="muted">niv ${c.niveau}</span>`)}</td><td>${equipeHTML(c.ids || c.equipe, 1)}</td><td style="font-size:12px">${c.paliers.map(p => `${p.niveau} : ${p.s2} %`).join(' · ')}</td><td>${c.conseil ? `<b>monter au ${c.conseil.jusqua}</b><div class="muted" style="font-size:11px">${c.conseil.xp.toLocaleString('fr-FR')} XP</div>` : '<span class="muted">pas prioritaire</span>'}</td></tr>`).join('') + '</table>';
   }
   if (consTab === 'tirage') {
-    h += C.tirage.map(b => `<h3 style="margin-top:14px">${esc(b.banniere)} <span class="muted" style="font-weight:400;font-size:12px">jusqu’au ${new Date(b.fin).toLocaleDateString('fr-FR')} · gain moyen d’une LR : ${b.gainMoyenLR ?? '-'} pts</span></h3><table><tr><th>Carte</th><th>Meilleur trio avec elle</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th><th class="n">Gain</th></tr>` + b.cartes.map(c => `<tr><td>${esc(c.carte)} <span class="muted">${c.rarete}${c.possedee ? ' · déjà à toi (+1 étoile)' : ''}</span></td><td>${esc(c.equipe || '-')}</td><td class="n">${c.s2 ?? '-'} %</td><td class="n">${c.s3 ?? '-'} %</td><td class="n" style="color:${(c.gain || 0) > 0 ? 'var(--ok,#22c55e)' : 'var(--mute)'}">${c.gain > 0 ? '+' : ''}${c.gain ?? '-'}</td></tr>`).join('') + '</table>').join('') + `<p class="muted" style="margin-top:8px">Gain = points de score (2+ étoiles, plus la moitié des 3 étoiles) par rapport à ta meilleure équipe actuelle (${esc(C.tirage[0]?.reference?.equipe || '-')}). Carte supposée niveau 99.</p>`;
+    h += C.tirage.map(b => `<h3 style="margin-top:14px">${esc(b.banniere)} <span class="muted" style="font-weight:400;font-size:12px">jusqu’au ${new Date(b.fin).toLocaleDateString('fr-FR')} · gain moyen d’une LR : ${b.gainMoyenLR ?? '-'} pts</span></h3><table><tr><th>Carte</th><th>Meilleur trio avec elle</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th><th class="n">Gain</th></tr>` + b.cartes.map(c => `<tr><td>${carteHTML(c.id || c.carte, c.possedee ? '<div class="muted" style="font-size:11px">déjà à toi (+1 étoile)</div>' : '')}</td><td>${c.equipe ? equipeHTML(c.ids || c.equipe, 1) : '-'}</td><td class="n">${c.s2 ?? '-'} %</td><td class="n">${c.s3 ?? '-'} %</td><td class="n" style="color:${(c.gain || 0) > 0 ? 'var(--ok,#22c55e)' : 'var(--mute)'}">${c.gain > 0 ? '+' : ''}${c.gain ?? '-'}</td></tr>`).join('') + '</table>').join('') + `<p class="muted" style="margin-top:8px">Gain = points de score (2+ étoiles, plus la moitié des 3 étoiles) par rapport à ta meilleure équipe actuelle (${esc(C.tirage[0]?.reference?.equipe || '-')}). Carte supposée niveau 99.</p>`;
   }
   if (consTab === 'duos') {
-    h += `<table><tr><th>Duo</th><th>Meilleur 3e</th><th class="n">Synergie</th><th class="n">Moyenne</th><th class="n">Meilleur trio</th></tr>` + C.duos.map(d => `<tr><td>${esc(d.duo)}</td><td>${esc(d.troisieme)}</td><td class="n" style="color:${d.synergie > 0 ? 'var(--ok,#22c55e)' : 'inherit'}">${d.synergie > 0 ? '+' : ''}${d.synergie}</td><td class="n">${d.moyenne}</td><td class="n">${d.meilleur}</td></tr>`).join('') + '</table><p class="muted" style="margin-top:8px">Synergie = ce que le duo apporte de plus que ses deux cartes séparément, sur tous les trios testés.</p>';
+    h += `<table><tr><th>Duo</th><th>Meilleur 3e</th><th class="n">Synergie</th><th class="n">Moyenne</th><th class="n">Meilleur trio</th></tr>` + C.duos.map(d => `<tr><td>${d.ids ? equipeHTML(d.ids, 1) : esc(d.duo)}</td><td>${carteHTML(d.troisiemeId || d.troisieme)}</td><td class="n" style="color:${d.synergie > 0 ? 'var(--ok,#22c55e)' : 'inherit'}">${d.synergie > 0 ? '+' : ''}${d.synergie}</td><td class="n">${d.moyenne}</td><td class="n">${d.meilleur}</td></tr>`).join('') + '</table><p class="muted" style="margin-top:8px">Synergie = ce que le duo apporte de plus que ses deux cartes séparément, sur tous les trios testés.</p>';
   }
-  $('cons').innerHTML = h;
+  setH('cons', h);
 }
 function renderRes() {
   renderCons();
-  const D = E?.dernier; if (!D) { $('rescat').innerHTML = '<div class="muted">Pas encore d’analyse complète.</div>'; $('tabsNiv').innerHTML = $('tabsCat').innerHTML = ''; return; }
+  const D = E?.dernier; if (!D) { setH('rescat', '<div class="muted">Pas encore d’analyse complète.</div>'); $('tabsNiv').innerHTML = ''; setH('tabsCat', ''); return; }
   $('resinfo').textContent = `Analyse du ${quand(D.date)}, moteur ${D.version}. Les 10 meilleurs trios par catégorie.`;
   const ns = Object.keys(D.modes); if (!ns.includes(niv)) niv = ns.includes('actuel') ? 'actuel' : ns[0];
   $('tabsNiv').innerHTML = ns.map(m => `<a class="${m === niv ? 'on' : ''}" onclick="niv='${m}';renderRes()">${m === '99' ? 'Tout au niveau 99' : 'Tes niveaux actuels'}</a>`).join('');
   const M = D.modes[niv], cs = Object.keys(M); if (!cs.includes(cat)) cat = cs[0];
-  $('tabsCat').innerHTML = cs.map(k => `<a class="${k === cat ? 'on' : ''}" onclick="cat='${k}';renderRes()">${CATS[k] || k}</a>`).join('');
+  setH('tabsCat', cs.map(k => `<a class="${k === cat ? 'on' : ''}" onclick="cat='${k}';renderRes()">${ic(k)}${CATS[k] || k}</a>`).join(''));
   const c = M[cat], tour = cat === 'tour', gu = cat === 'guilde';
   const head = tour ? '<th>Équipe</th><th class="n">Étage moyen</th><th class="n">Minimum</th>' : gu ? '<th>Équipe</th><th class="n">Dégâts</th><th class="n">Points</th>' : '<th>Équipe</th><th class="n">2+ étoiles</th><th></th><th class="n">3 étoiles</th><th class="n">Victoire</th>';
-  $('rescat').innerHTML = `<h2>${CATS[cat] || esc(c.titre)} <span class="r">${c.combats ? c.combats + ' combats' : ''}</span></h2><table><tr><th>#</th>${head}</tr>` + c.top.map((x, i) => `<tr><td class="n" style="text-align:left;color:var(--acc)">${i + 1}</td>` + (tour ? `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td>` : gu ? `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td>` : `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.deuxEtoiles} %</td><td style="width:130px"><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td>`) + '</tr>').join('') + '</table>';
+  setH('rescat', `<h2>${CATS[cat] || esc(c.titre)} <span class="r">${c.combats ? c.combats + ' combats' : ''}</span></h2><table><tr><th>#</th>${head}</tr>` + c.top.map((x, i) => `<tr><td class="n" style="text-align:left;color:var(--acc)">${i + 1}</td>` + (tour ? `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td>` : gu ? `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td>` : `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.deuxEtoiles} %</td><td style="width:130px"><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td>`) + '</tr>').join('') + '</table>');
 }
 // ---------- mise a jour et notes de version ----------
 const APP = window.kitsuApp || null; let MAJ = { etat: APP ? 'inconnu' : 'navigateur' }, RELS = null, relT = 0, curV = null;
@@ -565,8 +628,8 @@ async function chargerPoids() {
   const A = r.actuel;
   $('r_poids').innerHTML = `<table><tr><th>Copie</th><th>Réglages du</th><th>Scores de l'entraînement</th><th>Extras</th><th></th></tr>`
     + (A ? `<tr><td><b style="color:var(--ok)">En service</b>${A.restaure ? `<div class="muted" style="font-size:11px">restaurés ${quand(A.restaure.t)}</div>` : ''}</td><td>${A.regles ? quand(A.regles) : '-'}</td><td style="font-size:12px">${esc(g(A))}</td><td style="font-size:12px">${esc(ex(A))}</td><td></td></tr>` : '')
-    + r.copies.map(x => `<tr><td>${quand(x.archive)}<div class="muted" style="font-size:11px">${esc(RA[x.raison] || x.raison)}</div></td><td>${x.regles ? quand(x.regles) : '-'}</td><td style="font-size:12px">${esc(g(x))}</td><td style="font-size:12px">${esc(ex(x))}</td><td style="text-align:right"><button class="ghost" onclick="restaurerPoids('${esc(x.f)}')">Restaurer</button></td></tr>`).join('')
-    + '</table>' + (r.copies.length ? '' : '<div class="muted" style="margin-top:8px">Aucune copie pour l’instant : la première sera faite au prochain entraînement.</div>');
+    + (r.copies || []).map(x => `<tr><td>${quand(x.archive)}<div class="muted" style="font-size:11px">${esc(RA[x.raison] || x.raison)}</div></td><td>${x.regles ? quand(x.regles) : '-'}</td><td style="font-size:12px">${esc(g(x))}</td><td style="font-size:12px">${esc(ex(x))}</td><td style="text-align:right"><button class="ghost" onclick="restaurerPoids('${esc(x.f)}')">Restaurer</button></td></tr>`).join('')
+    + '</table>' + ((r.copies || []).length ? '' : '<div class="muted" style="margin-top:8px">Aucune copie pour l’instant : la première sera faite au prochain entraînement.</div>');
 }
 async function restaurerPoids(f) {
   if (!confirm('Remettre ces réglages de l’IA en service ? Les réglages actuels sont copiés avant.')) return;
@@ -648,7 +711,7 @@ const drop = $('drop'); drop.onclick = () => $('file').click(); $('file').onchan
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('hot'); }; drop.ondragleave = () => drop.classList.remove('hot');
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hot'); e.dataTransfer.files[0] && importer(e.dataTransfer.files[0]); };
 addEventListener('keydown', e => { if (e.key === 'Escape') $('modal').style.display = 'none'; });
-refresh(); setInterval(refresh, 1500);
+refresh(); setInterval(refresh, 1500); chargerCartes();
 </script>
 </body>
 </html>
