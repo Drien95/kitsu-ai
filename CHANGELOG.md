@@ -4,6 +4,20 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.8.0
+
+### Ajouté
+- **Tout lancer** : un seul bouton enchaîne la mise à jour du moteur du jeu, l'entraînement de l'IA (Cauchemar, boss, normal) puis l'analyse complète (tes niveaux puis 99). Les étapes s'affichent avec leur état (terminé, en cours), arrêt possible à tout moment.
+- **Onglet Script** : version disponible, version installée dans le navigateur (le script l'envoie au serveur), état de la connexion au PC ; boutons Installer ou mettre à jour, Copier le script, Voir le code, Installer Tampermonkey, Ouvrir kitsu.games ; marche à suivre.
+
+### Modifié
+- Panneau entièrement réorganisé sur le modèle du site KITSU : navigation en haut (Tableau de bord, Calculs, Résultats, Script, Sauvegarde, Journal) soulignée en orange, grands titres Anton en italique précédés d'une barre oblique rouge, sur-titre rouge, tuiles d'état façon blocs ATK/DEF, police Manrope.
+- Tableau de bord : Tout lancer, tâche en cours (dernière ligne, progression), tuiles (moteur, processeur, script, sauvegarde, conseils en combat) et meilleure équipe par catégorie.
+- Résultats : onglets par niveaux et par catégorie, top 10 complet, fichiers consultables.
+- Le serveur n'ouvre que des liens vers le dépôt, kitsu.games et tampermonkey.net.
+
+---
+
 ## 5.7.0
 
 ### Ajouté

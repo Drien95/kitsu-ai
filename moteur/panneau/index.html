@@ -4,97 +4,172 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KitsuAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Direction artistique inspiree de KITSU : fond nuit, rouge-orange, titres condenses en italique majuscule. */
+  /* Direction artistique inspiree de KITSU : nuit, rouge-orange, titres Anton italiques, navigation en haut soulignee. */
   :root {
-    --bg: #0a0b10; --panel: #12131a; --panel2: #1a1c25; --line: #262935; --txt: #f4ede3; --mute: #9aa0ad;
-    --acc: #ff4b3e; --acc2: #ff7a3d; --ok: #22c55e; --warn: #f59e0b; --bad: #ff4b3e; --gold: #fbbf24;
-    --title: italic 900 1em Impact, Haettenschweiler, "Arial Narrow Bold", "Franklin Gothic Heavy", sans-serif;
+    --bg: #07080c; --bg2: #0d0f15; --panel: #11131a; --panel2: #171a23; --line: #232633; --line2: #33374a;
+    --txt: #f4ede3; --mute: #8f96a6; --acc: #ff4b3e; --acc2: #ff7a3d; --ok: #2fd27a; --warn: #f5a524; --gold: #f7c548;
+    --head: "Anton", Impact, "Arial Narrow Bold", sans-serif; --body: "Manrope", "Segoe UI", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; color: var(--txt); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: radial-gradient(1200px 500px at 70% -10%, rgba(255,75,62,.16), transparent 60%), radial-gradient(900px 400px at -10% 110%, rgba(255,122,61,.08), transparent 60%), var(--bg); min-height: 100vh; }
-  header { display: flex; align-items: center; gap: 14px; padding: 14px 26px; border-bottom: 1px solid var(--line); background: rgba(10,11,16,.92); backdrop-filter: blur(6px); position: sticky; top: 0; z-index: 5; }
-  header svg { width: 38px; height: 38px; flex: none; }
-  header h1 { margin: 0; font: var(--title); font-size: 30px; letter-spacing: 1px; text-transform: uppercase; line-height: 1; }
-  header h1 em { color: var(--acc); font-style: inherit; }
-  header .sub { color: var(--acc); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-  .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
-  .pill { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--mute); }
-  .pill b { color: var(--txt); font-weight: 700; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--ok); vertical-align: 1px; box-shadow: 0 0 8px currentColor; color: var(--ok); }
-  .dot.warn { background: var(--warn); color: var(--warn); } .dot.bad { background: var(--bad); color: var(--bad); }
-  main { display: grid; grid-template-columns: 400px 1fr; gap: 18px; padding: 20px 26px 50px; max-width: 1560px; margin: 0 auto; }
-  @media (max-width: 1050px) { main { grid-template-columns: 1fr; } }
-  .card { background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 40%), var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; position: relative; overflow: hidden; }
-  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--acc2), var(--acc)); opacity: .9; }
-  .card h2 { font: var(--title); font-size: 22px; letter-spacing: .6px; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
-  .card h2::before { content: "/"; color: var(--acc); margin-right: 2px; }
-  .card h2 .r { margin-left: auto; font: 13px "Segoe UI", system-ui, sans-serif; text-transform: none; letter-spacing: 0; }
-  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }
-  .kv span:nth-child(odd) { color: var(--mute); }
-  .act { border-top: 1px solid var(--line); padding: 12px 0; }
-  .act:first-of-type { border-top: 0; padding-top: 0; }
-  .act .t { font-weight: 800; text-transform: uppercase; letter-spacing: .6px; font-size: 13px; margin-bottom: 2px; }
-  .act .d { color: var(--mute); font-size: 12px; margin-bottom: 8px; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  label { font-size: 12px; color: var(--mute); display: inline-flex; align-items: center; gap: 5px; }
-  input[type=number], select { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 5px 7px; font: inherit; font-size: 12px; width: 70px; }
-  input[type=checkbox] { accent-color: var(--acc); }
-  select { width: auto; }
-  button { background: linear-gradient(135deg, var(--acc2), var(--acc)); color: #fff; border: 0; border-radius: 9px; padding: 7px 14px; font: inherit; font-weight: 800; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 16px rgba(255,75,62,.25); transition: transform .08s, filter .15s; }
-  button:hover { filter: brightness(1.08); } button:active { transform: translateY(1px); }
-  button.sec { background: transparent; color: var(--txt); border: 1px solid #3a3d4a; box-shadow: none; font-weight: 700; }
-  button.sec:hover { border-color: var(--acc); color: #fff; }
-  button.stop { background: #2a1214; color: #ff8a80; border: 1px solid #5a1f22; box-shadow: none; }
-  button:disabled { opacity: .4; cursor: not-allowed; filter: none; }
-  pre { background: #07080c; border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0; max-height: 380px; overflow: auto; font: 12px/1.5 "Cascadia Mono", Consolas, ui-monospace, monospace; white-space: pre-wrap; color: #d6d0c6; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-  th { color: var(--mute); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
-  tr:hover td { background: rgba(255,75,62,.04); }
-  td.n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
-  .bar { height: 6px; background: var(--panel2); border-radius: 4px; overflow: hidden; min-width: 70px; }
+  html, body { margin: 0; background: var(--bg); color: var(--txt); font: 14px/1.5 var(--body); }
+  body { min-height: 100vh; background: radial-gradient(1100px 520px at 85% -8%, rgba(255,75,62,.14), transparent 60%), radial-gradient(800px 420px at -5% 105%, rgba(255,122,61,.07), transparent 60%), var(--bg); }
+  a { color: inherit; }
+  /* --- barre du haut --- */
+  .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: stretch; gap: 26px; padding: 0 28px; height: 64px; background: rgba(7,8,12,.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .brand svg { width: 34px; height: 34px; }
+  .brand b { font: 400 26px/1 var(--head); letter-spacing: .5px; text-transform: uppercase; }
+  .brand b em { font-style: normal; color: var(--acc); }
+  nav { display: flex; align-items: stretch; gap: 4px; }
+  nav a { display: flex; align-items: center; gap: 8px; padding: 0 14px; text-decoration: none; color: #c9c3b9; font-weight: 800; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color .15s; }
+  nav a svg { width: 16px; height: 16px; opacity: .8; }
+  nav a:hover { color: #fff; }
+  nav a.on { color: var(--acc2); border-bottom-color: var(--acc2); }
+  .topr { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--line2); border-radius: 999px; background: var(--panel); font-size: 12px; font-weight: 700; color: #d9d3c9; white-space: nowrap; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); } .dot.bad { background: var(--acc); box-shadow: 0 0 8px var(--acc); }
+  /* --- pages --- */
+  main { max-width: 1320px; margin: 0 auto; padding: 30px 28px 70px; }
+  .page { display: none; } .page.on { display: block; }
+  .eyebrow { color: var(--acc); font-size: 12px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; }
+  .eyebrow::before { content: ""; display: inline-block; width: 7px; height: 7px; background: var(--acc); transform: rotate(45deg); margin-right: 8px; vertical-align: 1px; }
+  h1 { font: 400 64px/1 var(--head); font-style: italic; text-transform: uppercase; letter-spacing: .5px; margin: 8px 0 6px; }
+  h1::before { content: "/ "; color: var(--acc); }
+  .lead { color: var(--mute); max-width: 720px; margin: 0 0 26px; }
+  .lead::after { content: ""; display: block; width: 46px; height: 2px; background: var(--acc); margin-top: 14px; }
+  h2 { font: 400 26px/1.1 var(--head); font-style: italic; text-transform: uppercase; letter-spacing: .4px; margin: 0 0 14px; display: flex; align-items: center; gap: 10px; }
+  h2::before { content: "/"; color: var(--acc); }
+  h2 .r { margin-left: auto; font: 600 13px var(--body); font-style: normal; text-transform: none; letter-spacing: 0; color: var(--mute); display: flex; gap: 8px; align-items: center; }
+  .card { background: linear-gradient(180deg, rgba(255,255,255,.025), transparent 40%), var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+  .card.hot { border-color: rgba(255,75,62,.55); box-shadow: 0 0 0 1px rgba(255,75,62,.15), 0 20px 60px -30px rgba(255,75,62,.5); }
+  .grid { display: grid; gap: 18px; }
+  .g2 { grid-template-columns: 1.15fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g5 { grid-template-columns: repeat(5, 1fr); } .gc { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 1100px) { .g2, .gc { grid-template-columns: 1fr; } .g5 { grid-template-columns: repeat(3, 1fr); } .g3 { grid-template-columns: 1fr; } nav a span { display: none; } }
+  .sp { height: 18px; }
+  /* --- tuiles de stats (comme les blocs ATK / DEF du jeu) --- */
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-height: 104px; display: flex; flex-direction: column; }
+  .tile .k { color: var(--mute); font-size: 11px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; }
+  .tile .v { font: 400 30px/1.15 var(--head); margin-top: 6px; letter-spacing: .3px; }
+  .tile .s { color: var(--mute); font-size: 12px; margin-top: auto; }
+  .tile.ok .v { color: var(--txt); } .tile.warn { border-color: rgba(245,165,36,.45); } .tile.warn .v { color: var(--warn); } .tile.bad { border-color: rgba(255,75,62,.5); } .tile.bad .v { color: var(--acc); }
+  /* --- boutons --- */
+  button, .btn { font: 800 13px var(--body); letter-spacing: 1.4px; text-transform: uppercase; border: 0; border-radius: 10px; padding: 11px 18px; cursor: pointer; color: #fff; background: linear-gradient(135deg, var(--acc2), var(--acc)); box-shadow: 0 8px 24px -10px rgba(255,75,62,.8); transition: filter .15s, transform .06s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  button:hover, .btn:hover { filter: brightness(1.08); } button:active { transform: translateY(1px); }
+  button.ghost { background: transparent; color: var(--txt); border: 1px solid var(--line2); box-shadow: none; }
+  button.ghost:hover { border-color: var(--acc2); }
+  button.stop { background: #22100f; color: #ff9b8f; border: 1px solid #5c201b; box-shadow: none; }
+  button.big { width: 100%; padding: 18px; font-size: 16px; letter-spacing: 2.5px; border-radius: 12px; }
+  button:disabled { opacity: .38; cursor: not-allowed; filter: none; box-shadow: none; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  label { font-size: 12px; font-weight: 700; color: var(--mute); display: inline-flex; align-items: center; gap: 6px; }
+  input[type=number], select { background: var(--panel2); color: var(--txt); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 9px; font: 600 13px var(--body); width: 78px; }
+  select { width: auto; } input[type=checkbox] { accent-color: var(--acc); width: 15px; height: 15px; }
+  /* --- etapes et progression --- */
+  .steps { display: flex; gap: 8px; margin: 14px 0 18px; flex-wrap: wrap; }
+  .step { flex: 1; min-width: 150px; border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; background: var(--panel2); }
+  .step b { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+  .step span { font-size: 12px; color: var(--mute); }
+  .step.on { border-color: var(--acc2); background: rgba(255,122,61,.08); } .step.done { border-color: rgba(47,210,122,.5); } .step.done b { color: var(--ok); }
+  .prog { height: 6px; background: var(--panel2); border-radius: 6px; overflow: hidden; margin: 10px 0 12px; }
+  .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--acc2), var(--acc)); transition: width .4s; }
+  .prog.run i { width: 40%; animation: slide 1.6s linear infinite; } @keyframes slide { from { margin-left: -40%; } to { margin-left: 100%; } }
+  pre { background: #050608; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 0; max-height: 300px; overflow: auto; font: 12px/1.55 "Cascadia Mono", Consolas, monospace; white-space: pre-wrap; color: #d8d2c8; }
+  .last { font: 600 13px var(--body); color: #e6dfd4; background: var(--panel2); border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* --- tableaux --- */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  th { color: var(--mute); font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+  td.n { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:hover td { background: rgba(255,75,62,.035); }
+  .cat { font: 400 18px var(--head); font-style: italic; text-transform: uppercase; letter-spacing: .3px; }
+  .bar { height: 6px; background: var(--panel2); border-radius: 4px; overflow: hidden; min-width: 90px; }
   .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc2), var(--gold)); }
-  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-  .tabs button { background: transparent; color: var(--mute); border: 1px solid var(--line); box-shadow: none; }
-  .tabs button.on { background: linear-gradient(135deg, var(--acc2), var(--acc)); color: #fff; border-color: transparent; }
-  .cat { margin-bottom: 18px; }
-  .cat h3 { font: var(--title); font-size: 17px; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 4px; }
-  .cat h3 small { font: 12px "Segoe UI", system-ui, sans-serif; color: var(--mute); margin-left: 6px; }
-  .drop { border: 1px dashed #3a3d4a; border-radius: 10px; padding: 12px; text-align: center; color: var(--mute); font-size: 12px; cursor: pointer; margin-top: 10px; transition: border-color .15s, color .15s; }
-  .drop:hover, .drop.hot { border-color: var(--acc); color: var(--txt); }
-  .files { max-height: 240px; overflow: auto; }
-  .files div { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12px; align-items: center; }
+  .sub { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 16px; flex-wrap: wrap; }
+  .sub a { padding: 10px 14px; text-decoration: none; font-weight: 800; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #bdb7ad; border-bottom: 2px solid transparent; cursor: pointer; }
+  .sub a.on { color: var(--txt); border-bottom-color: var(--acc); }
+  /* --- divers --- */
+  .act h3 { font: 400 22px var(--head); font-style: italic; text-transform: uppercase; margin: 0 0 4px; letter-spacing: .3px; }
+  .act p { color: var(--mute); margin: 0 0 14px; font-size: 13px; }
+  .act .row { margin-top: auto; }
+  .act { display: flex; flex-direction: column; }
+  .kv { display: grid; grid-template-columns: 170px 1fr; gap: 8px 16px; }
+  .kv span:nth-child(odd) { color: var(--mute); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding-top: 2px; }
+  .drop { border: 2px dashed var(--line2); border-radius: 14px; padding: 30px; text-align: center; color: var(--mute); cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop:hover, .drop.hot { border-color: var(--acc2); background: rgba(255,122,61,.05); color: var(--txt); }
+  .drop b { color: var(--txt); }
+  .files div { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); align-items: center; font-size: 13px; }
   .files div span { flex: 1; }
-  .files a { color: var(--acc2); cursor: pointer; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .6px; }
-  .muted { color: var(--mute); }
-  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; align-items: center; justify-content: center; z-index: 10; }
-  #modal .box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; width: min(1150px, 94vw); max-height: 86vh; overflow: auto; padding: 18px; }
-  ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #2a2d39; border-radius: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+  .files a { color: var(--acc2); cursor: pointer; font-weight: 800; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .muted { color: var(--mute); } .okc { color: var(--ok); } .warnc { color: var(--warn); } .badc { color: var(--acc); }
+  .note { background: rgba(255,122,61,.07); border: 1px solid rgba(255,122,61,.3); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #e9ded0; }
+  ol.how { margin: 0; padding-left: 20px; color: #d9d3c9; } ol.how li { margin: 6px 0; }
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: none; align-items: center; justify-content: center; z-index: 50; }
+  #modal .box { background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; width: min(1150px, 94vw); max-height: 86vh; overflow: auto; padding: 20px; }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--acc2); color: var(--txt); padding: 10px 18px; border-radius: 10px; font-weight: 700; display: none; z-index: 60; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #262a38; border-radius: 6px; } ::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
 <body>
-<header>
-  <svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8c3c"/><stop offset="1" stop-color="#e8283c"/></linearGradient></defs><path d="M18 18 L36 36 L26 50 Z M82 18 L64 36 L74 50 Z M20 38 L50 32 L80 38 L72 62 L50 82 L28 62 Z" fill="url(#g)"/><path d="M30 58 L50 64 L70 58 L60 68 L50 77 L40 68 Z" fill="#f4ede3"/><path d="M33 49 L43 52 L35 55 Z M67 49 L57 52 L65 55 Z M47 72 L53 72 L50 75 Z" fill="#0a0b10"/></svg>
-  <div><h1>Kitsu<em>AI</em></h1><div class="sub">Panneau local · conseiller kitsu.games</div></div>
-  <div class="pills" id="pills"></div>
+<header class="top">
+  <a class="brand" href="#accueil">
+    <svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8c3c"/><stop offset="1" stop-color="#e8283c"/></linearGradient></defs><path d="M18 18 L36 36 L26 50 Z M82 18 L64 36 L74 50 Z M20 38 L50 32 L80 38 L72 62 L50 82 L28 62 Z" fill="url(#g)"/><path d="M30 58 L50 64 L70 58 L60 68 L50 77 L40 68 Z" fill="#f4ede3"/><path d="M33 49 L43 52 L35 55 Z M67 49 L57 52 L65 55 Z M47 72 L53 72 L50 75 Z" fill="#07080c"/></svg>
+    <b>Kitsu<em>AI</em></b>
+  </a>
+  <nav id="nav">
+    <a href="#accueil" data-p="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tableau de bord</span></a>
+    <a href="#calculs" data-p="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Calculs</span></a>
+    <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Résultats</span></a>
+    <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span></a>
+    <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
+    <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal</span></a>
+  </nav>
+  <div class="topr"><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div>
 </header>
-<main>
-  <div>
-    <div class="card">
-      <h2>Ta sauvegarde</h2>
-      <div id="sv" class="kv"></div>
-      <div class="drop" id="drop">Dépose ici <b>sauvegarde.json</b> (onglet Santé du jeu, « Exporter pour le moteur local »), ou clique pour choisir le fichier</div>
-      <input type="file" id="file" accept=".json" hidden>
-      <div class="row" style="margin-top:8px"><button class="sec" onclick="dossier('data')">Ouvrir le dossier data</button></div>
-    </div>
 
+<main>
+  <!-- ===================== TABLEAU DE BORD ===================== -->
+  <section class="page" id="p-accueil">
+    <div class="eyebrow">KitsuAI · panneau local</div>
+    <h1>Tableau de bord</h1>
+    <p class="lead">Un bouton pour tout faire : mettre à jour le moteur du jeu, entraîner l'IA sur tes équipes, puis analyser toutes tes cartes. Le conseil en combat tourne en parallèle tant que KitsuAI est ouvert.</p>
+    <div class="grid g2">
+      <div class="card hot">
+        <h2>Tout lancer</h2>
+        <div class="steps" id="steps"></div>
+        <button class="big" id="btnTout" onclick="lancer('complet')">Tout lancer</button>
+        <div class="muted" style="font-size:12px;margin-top:10px">Durée indicative : 20 à 60 min selon ton processeur. Tu peux jouer pendant ce temps.</div>
+      </div>
+      <div class="card">
+        <h2>En cours <span class="r"><button class="stop" id="stop" onclick="arreter()" disabled>Arrêter</button></span></h2>
+        <div id="jobh" class="muted">Aucune tâche en cours.</div>
+        <div class="prog" id="prog"><i></i></div>
+        <div class="last" id="lastline">Prêt.</div>
+        <a class="muted" style="font-size:12px;cursor:pointer" onclick="go('journal')">Voir le journal complet</a>
+      </div>
+    </div>
+    <div class="sp"></div>
+    <div class="grid g5" id="tiles"></div>
+    <div class="sp"></div>
     <div class="card">
-      <h2>Actions</h2>
-      <div class="act">
-        <div class="t">Analyse complète</div>
-        <div class="d">Campagne, boss, Cauchemar (tous, plusieurs ennemis, boss), événements, Salle, Tour de l'infini, boss de guilde. Objectif 2 étoiles minimum.</div>
+      <h2>Meilleures équipes <span class="r" id="dtres"></span></h2>
+      <div id="resume"></div>
+    </div>
+  </section>
+
+  <!-- ===================== CALCULS ===================== -->
+  <section class="page" id="p-calculs">
+    <div class="eyebrow">Calculs sur ton processeur</div>
+    <h1>Calculs</h1>
+    <p class="lead">Chaque calcul utilise tous les coeurs moins deux. Une seule tâche à la fois.</p>
+    <div class="grid gc">
+      <div class="card act">
+        <h3>Analyse complète</h3>
+        <p>Campagne, boss, Cauchemar (tous, plusieurs ennemis, boss), événements, Salle, Tour de l'infini, boss de guilde. Objectif 2 étoiles minimum.</p>
         <div class="row">
           <label>Niveaux <select id="o_niv"><option value="actuel,99">actuels puis 99</option><option value="actuel">actuels</option><option value="99">99</option></select></label>
           <label>Tirages <input type="number" id="o_tir" value="3" min="1" max="10"></label>
@@ -102,9 +177,9 @@
           <button data-act="tout">Lancer</button>
         </div>
       </div>
-      <div class="act">
-        <div class="t">Entraînement de l'IA</div>
-        <div class="d">Apprend sur tes meilleures équipes et les combats disputés. Le script du jeu récupère les nouveaux réglages tout seul.</div>
+      <div class="card act">
+        <h3>Entraînement de l'IA</h3>
+        <p>Apprend sur tes meilleures équipes et les combats disputés. Le script du jeu récupère les nouveaux réglages tout seul.</p>
         <div class="row">
           <label><input type="checkbox" id="o_tnm" checked> Cauchemar</label>
           <label><input type="checkbox" id="o_tbo" checked> Boss</label>
@@ -112,11 +187,11 @@
           <label>Générations <input type="number" id="o_gen" value="40" min="5" max="200"></label>
           <button data-act="entrainer">Lancer</button>
         </div>
-        <div id="poids" class="muted" style="font-size:12px;margin-top:6px"></div>
+        <div id="poids" class="muted" style="font-size:12px;margin-top:10px"></div>
       </div>
-      <div class="act">
-        <div class="t">Analyse par mode</div>
-        <div class="d">Meilleures cartes et meilleurs trios pour un seul type de combat.</div>
+      <div class="card act">
+        <h3>Analyse par mode</h3>
+        <p>Meilleures cartes et meilleurs trios pour un seul type de combat, en 1 à 3 minutes.</p>
         <div class="row">
           <select id="o_mode"><option value="boss">Boss Cauchemar</option><option value="nm3">3 ennemis Cauchemar</option><option value="ext">Boss Extrême</option></select>
           <label><input type="checkbox" id="o_lv99"> niveau 99</label>
@@ -124,121 +199,210 @@
           <button data-act="mode">Lancer</button>
         </div>
       </div>
-      <div class="act">
-        <div class="t">Mesure du plafond</div>
-        <div class="d">IA actuelle contre IA qui anticipe, sur des combats disputés.</div>
+      <div class="card act">
+        <h3>Mesure du plafond</h3>
+        <p>Compare l'IA actuelle et l'IA qui anticipe sur des combats de Cauchemar disputés.</p>
         <div class="row"><label>Combats <input type="number" id="o_n" value="10" min="2" max="60"></label><button data-act="plafond">Lancer</button></div>
       </div>
-      <div class="act">
-        <div class="t">Moteur du jeu</div>
-        <div class="d">À faire après une mise à jour du jeu, puis « Recharger le moteur ».</div>
-        <div class="row"><button data-act="telecharger">Mettre à jour</button><button class="sec" onclick="rechargerMoteur()">Recharger le moteur</button><button class="sec" data-act="bench">Mesure de vitesse</button></div>
+      <div class="card act">
+        <h3>Moteur du jeu</h3>
+        <p>À faire après une mise à jour de KITSU, puis recharger le moteur pour le conseil en combat.</p>
+        <div class="row"><button data-act="telecharger">Mettre à jour</button><button class="ghost" onclick="rechargerMoteur()">Recharger le moteur</button></div>
+      </div>
+      <div class="card act">
+        <h3>Mesure de vitesse</h3>
+        <p>Combats simulés par seconde sur ce PC.</p>
+        <div class="row"><button class="ghost" data-act="bench">Mesurer</button></div>
       </div>
     </div>
+  </section>
 
+  <!-- ===================== RESULTATS ===================== -->
+  <section class="page" id="p-resultats">
+    <div class="eyebrow">Dernière analyse complète</div>
+    <h1>Résultats</h1>
+    <p class="lead" id="resinfo">Les 10 meilleurs trios par catégorie.</p>
+    <div class="sub" id="tabsNiv"></div>
+    <div class="sub" id="tabsCat"></div>
+    <div class="card" id="rescat"></div>
+    <div class="sp"></div>
     <div class="card">
-      <h2>Journal</h2>
-      <pre id="journal" style="max-height:200px"></pre>
-    </div>
-  </div>
-
-  <div>
-    <div class="card">
-      <h2>Tâche en cours <span class="r"><button class="stop" id="stop" onclick="arreter()" disabled>Arrêter</button></span></h2>
-      <div id="jobh" class="muted" style="margin-bottom:8px">Aucune tâche.</div>
-      <pre id="joblog"></pre>
-    </div>
-
-    <div class="card">
-      <h2>Dernière analyse <span class="r muted" id="dt"></span></h2>
-      <div class="tabs" id="tabs"></div>
-      <div id="res"></div>
-    </div>
-
-    <div class="card">
-      <h2>Résultats <span class="r"><button class="sec" onclick="dossier('resultats')">Ouvrir le dossier</button></span></h2>
+      <h2>Fichiers <span class="r"><button class="ghost" onclick="dossier('resultats')">Ouvrir le dossier</button></span></h2>
       <div class="files" id="files"></div>
     </div>
-  </div>
+  </section>
+
+  <!-- ===================== SCRIPT ===================== -->
+  <section class="page" id="p-script">
+    <div class="eyebrow">Tampermonkey</div>
+    <h1>Script du jeu</h1>
+    <p class="lead">Le script ajoute le guide, le panneau de combat et la roadmap sur kitsu.games. Il envoie l'état du combat à KitsuAI pour le conseil calculé sur ton PC.</p>
+    <div class="grid g3" id="scrTiles"></div>
+    <div class="sp"></div>
+    <div class="grid g2">
+      <div class="card">
+        <h2>Actions</h2>
+        <div class="row">
+          <button onclick="ouvrir(SCRIPT_URL)">Installer ou mettre à jour</button>
+          <button class="ghost" onclick="copierScript()">Copier le script</button>
+          <button class="ghost" onclick="voirScript()">Voir le code</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="ghost" onclick="ouvrir('https://www.tampermonkey.net/')">Installer Tampermonkey</button>
+          <button class="ghost" onclick="ouvrir('https://kitsu.games/')">Ouvrir kitsu.games</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Installation</h2>
+        <ol class="how">
+          <li>Installe l'extension Tampermonkey dans ton navigateur.</li>
+          <li>Clique sur <b>Installer ou mettre à jour</b> : Tampermonkey affiche la page d'installation, valide.</li>
+          <li>Au premier combat, Tampermonkey demande l'accès à <b>127.0.0.1</b> : accepte (c'est ton PC).</li>
+          <li>Recharge kitsu.games. Le dock KitsuAI apparaît en bas à droite.</li>
+        </ol>
+        <div class="note" style="margin-top:12px">Sans réseau, <b>Copier le script</b> puis Tampermonkey, <b>Créer un nouveau script</b>, colle, enregistre.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SAUVEGARDE ===================== -->
+  <section class="page" id="p-sauvegarde">
+    <div class="eyebrow">Ta collection</div>
+    <h1>Sauvegarde</h1>
+    <p class="lead">Les analyses et l'entraînement utilisent tes cartes, leurs niveaux et leurs étoiles, exportés depuis le jeu. Aucun jeton de connexion n'est exporté.</p>
+    <div class="grid g2">
+      <div class="card"><h2>Export actuel <span class="r"><button class="ghost" onclick="dossier('data')">Ouvrir le dossier</button></span></h2><div class="kv" id="sv"></div></div>
+      <div class="card">
+        <h2>Importer</h2>
+        <div class="drop" id="drop">Dépose ici <b>sauvegarde.json</b><br><span style="font-size:12px">ou clique pour choisir le fichier</span></div>
+        <input type="file" id="file" accept=".json" hidden>
+        <ol class="how" style="margin-top:14px"><li>Sur kitsu.games, dock KitsuAI, onglet <b>Santé</b>.</li><li>Bouton <b>Exporter pour le moteur local</b> : <b>sauvegarde.json</b> est téléchargé.</li><li>Glisse-le ici, puis lance <b>Tout lancer</b>.</li></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== JOURNAL ===================== -->
+  <section class="page" id="p-journal">
+    <div class="eyebrow">Ce qui se passe</div>
+    <h1>Journal</h1>
+    <p class="lead" id="jobh2">Aucune tâche.</p>
+    <div class="card"><h2>Tâche <span class="r"><button class="stop" id="stop2" onclick="arreter()" disabled>Arrêter</button></span></h2><pre id="joblog" style="max-height:460px"></pre></div>
+    <div class="sp"></div>
+    <div class="grid g2">
+      <div class="card"><h2>Serveur</h2><pre id="journal" style="max-height:260px"></pre></div>
+      <div class="card"><h2>Historique</h2><div class="files" id="hist"></div></div>
+    </div>
+  </section>
 </main>
 <div id="modal" onclick="if(event.target===this)this.style.display='none'"><div class="box" id="mbox"></div></div>
+<div id="toast"></div>
 <script>
-const TOKEN = '__TOKEN__';
+const TOKEN = '__TOKEN__', SCRIPT_URL = 'https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js';
 const api = (p, o = {}) => fetch(p, { ...o, headers: { 'X-Kitsu-Token': TOKEN, 'Content-Type': 'application/json', ...(o.headers || {}) } }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.err || r.status); return j; });
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const dur = s => s < 60 ? s + ' s' : s < 3600 ? Math.floor(s / 60) + ' min ' + (s % 60) + ' s' : Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min';
+const dur = s => s < 60 ? s + ' s' : s < 3600 ? Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s' : Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min';
 const quand = t => t ? new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
-let E = null, tab = null, lastLog = 0;
-const CATS = { campagne_extreme: 'Campagne (Extrême)', boss_extreme: 'Boss (Extrême)', cauchemar: 'Cauchemar, tous', cauchemar_multi: 'Cauchemar, 2 ennemis ou +', cauchemar_boss: 'Cauchemar, boss', evenements: 'Événements et Salle', tour: "Tour de l'infini", guilde: 'Boss de guilde' };
+const toast = m => { const t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600); };
+const CATS = { campagne_extreme: 'Campagne (Extrême)', boss_extreme: 'Boss (Extrême)', cauchemar: 'Cauchemar, tous', cauchemar_multi: 'Cauchemar, plusieurs ennemis', cauchemar_boss: 'Cauchemar, boss', evenements: 'Événements et Salle', tour: "Tour de l'infini", guilde: 'Boss de guilde' };
+const STEPS = [['Moteur du jeu', 'mise à jour'], ["Entraînement de l'IA", 'Cauchemar, boss, normal'], ['Analyse complète', 'tes niveaux puis 99']];
+let E = null, niv = null, cat = null, lastLog = -1;
 
+// ---------- navigation ----------
+function go(p) { location.hash = p; }
+function route() { const p = (location.hash || '#accueil').slice(1); document.querySelectorAll('.page').forEach(x => x.classList.toggle('on', x.id === 'p-' + p)); document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.p === p)); if (!document.querySelector('.page.on')) go('accueil'); }
+addEventListener('hashchange', route); route();
+
+// ---------- rafraichissement ----------
 async function refresh() {
-  try { E = await api('/api/etat'); } catch (e) { $('pills').innerHTML = `<span class="pill"><span class="dot bad"></span>Serveur injoignable : ${esc(e.message)}</span>`; return; }
-  const maj = E.moteurDisque && E.moteurDisque !== E.moteur;
-  $('pills').innerHTML = [
-    `<span class="pill"><span class="dot"></span>Serveur <b>127.0.0.1:${E.port}</b> · ${dur(E.uptime)}</span>`,
-    `<span class="pill"><span class="dot ${maj ? 'warn' : ''}"></span>Moteur <b>${esc(E.moteur)}</b>${maj ? ' · nouveau sur le disque, recharge-le' : ''}</span>`,
-    `<span class="pill">Processeur <b>${esc((E.cpu || '').replace(/\s+/g, ' ').trim())}</b> · ${E.fils} fils</span>`,
-    `<span class="pill">Conseils en combat <b>${E.conseil.n}</b>${E.conseil.dernier ? ` · dernier ${E.conseil.dernier.sims} suites en ${E.conseil.dernier.ms} ms` : ''}</span>`,
-  ].join('');
-  const s = E.sauvegarde;
-  $('sv').innerHTML = s ? [['Exportée', quand(s.t)], ['Cartes', `${s.cartes} (LR ${s.lr}, UR ${s.ur}, SSR ${s.ssr})`], ['Équipe', (s.equipe || []).join(', ') || '-'], ['Niveau du compte', s.compte ?? '-'], ['Boss de guilde', s.guilde || 'non exporté']].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('') : '<span>Aucune</span><span class="muted">importe ta sauvegarde pour analyser tes cartes</span>';
-  $('poids').innerHTML = E.poids ? `Derniers réglages : ${quand(E.poids.t)} · ` + Object.entries(E.poids.gains || {}).map(([k, g]) => `${{ nm: "Cauchemar", boss: "Boss", norm: "Normal" }[k] || k} : ${g.depart} puis ${g.fin}`).join(' · ') : 'Pas encore d’entraînement local.';
-  const running = E.job && !E.job.fin;
-  document.querySelectorAll('[data-act]').forEach(b => b.disabled = running);
-  $('stop').disabled = !running;
+  try { E = await api('/api/etat'); } catch (e) { $('chipSrv').innerHTML = '<span class="dot bad"></span>Serveur injoignable'; return; }
+  const run = E.job && !E.job.fin, maj = E.moteurDisque && E.moteurDisque !== E.moteur;
+  $('chipSrv').innerHTML = `<span class="dot ${maj ? 'warn' : ''}"></span>Serveur actif · ${E.fils} fils`;
+  $('chipVer').textContent = 'v' + (E.appVersion || E.script?.version || '-');
+  // etapes de "tout lancer"
+  const ch = E.job?.chaine;
+  $('steps').innerHTML = STEPS.map(([t, s], i) => { const st = ch ? (i < ch.i ? 'done' : i === ch.i && run ? 'on' : (E.job.fin && i < ch.i) ? 'done' : '') : ''; return `<div class="step ${st}"><b>${i + 1}. ${t}</b><span>${st === 'done' ? 'terminé' : st === 'on' ? 'en cours' : s}</span></div>`; }).join('');
+  document.querySelectorAll('[data-act], #btnTout').forEach(b => b.disabled = run); $('stop').disabled = $('stop2').disabled = !run;
+  // tache en cours
   if (E.job) {
-    const el = Math.round(((E.job.fin || Date.now()) - E.job.debut) / 1000);
-    $('jobh').innerHTML = `<b>${esc(E.job.nom)}</b> · ${running ? 'en cours depuis ' + dur(el) : (E.job.code === 0 ? 'terminée' : 'arrêtée ou en erreur') + ' en ' + dur(el)} <span class="muted">(${esc(E.job.args)})</span>`;
-    const pre = $('joblog'), atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;
-    if (E.job.lignes.length !== lastLog) { pre.textContent = E.job.lignes.join('\n'); lastLog = E.job.lignes.length; if (atBottom) pre.scrollTop = pre.scrollHeight; }
+    const el = Math.round(((E.job.fin || Date.now()) - E.job.debut) / 1000), etat = run ? 'en cours depuis ' + dur(el) : (E.job.code === 0 ? 'terminée en ' : 'arrêtée ou en erreur après ') + dur(el);
+    $('jobh').innerHTML = `<b style="color:var(--txt)">${esc(E.job.nom)}</b> · ${etat}`; $('jobh2').innerHTML = $('jobh').innerHTML;
+    $('prog').className = 'prog' + (run ? ' run' : ''); $('prog').firstElementChild.style.width = run ? '' : (E.job.code === 0 ? '100%' : '0');
+    const L = E.job.lignes.filter(l => l.trim()); $('lastline').textContent = L[L.length - 1] || '...';
+    if (E.job.lignes.length !== lastLog) { const pre = $('joblog'), b = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30; pre.textContent = E.job.lignes.join('\n'); lastLog = E.job.lignes.length; if (b) pre.scrollTop = pre.scrollHeight; }
   }
   $('journal').textContent = E.journal.join('\n'); $('journal').scrollTop = 1e9;
-  $('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">voir</a></div>`).join('') || '<div class="muted">Aucun résultat.</div>';
+  $('hist').innerHTML = (E.historique || []).map(h => `<div><span>${esc(h.nom)}</span><span class="${h.code === 0 ? 'okc' : 'badc'}" style="flex:0">${h.code === 0 ? 'OK' : 'erreur'}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(h.fin)}</span></div>`).join('') || '<div class="muted">Rien pour l’instant.</div>';
+  // tuiles
+  const s = E.sauvegarde, sc = E.script || {}, vu = sc.vu, scOk = vu && vu.v === sc.version && Date.now() - vu.t < 180000;
+  const tile = (k, v, sub, cls = '') => `<div class="tile ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  $('tiles').innerHTML = [
+    tile('Moteur du jeu', esc(E.moteur), maj ? 'nouvelle version téléchargée, recharge-le' : `${E.mondes.length} mondes · ${E.cartes} cartes`, maj ? 'warn' : ''),
+    tile('Processeur', E.fils + ' fils', esc((E.cpu || '').replace(/\(R\)|\(TM\)|Processor|\s+/g, ' ').trim())),
+    tile('Script du jeu', vu ? 'v' + esc(vu.v) : 'non vu', !vu ? 'ouvre kitsu.games avec le script' : scOk ? 'à jour et connecté' : vu.v !== sc.version ? `disponible : v${esc(sc.version)}` : 'pas de nouvelles depuis ' + dur(Math.round((Date.now() - vu.t) / 1000)), !vu ? 'warn' : vu.v !== sc.version ? 'warn' : ''),
+    tile('Sauvegarde', s ? s.cartes + ' cartes' : 'aucune', s ? `LR ${s.lr} · UR ${s.ur} · SSR ${s.ssr} · ${quand(s.t)}` : 'à importer depuis le jeu', s ? '' : 'bad'),
+    tile('Conseils en combat', E.conseil.n, E.conseil.dernier ? `dernier : ${E.conseil.dernier.sims} suites en ${E.conseil.dernier.ms} ms` : 'en attente d’un combat'),
+  ].join('');
+  // resume
+  const D = E.dernier;
+  if (D) {
+    const M = D.modes.actuel || D.modes[Object.keys(D.modes)[0]]; $('dtres').textContent = 'analyse du ' + quand(D.date) + ' · tes niveaux';
+    $('resume').innerHTML = `<table><tr><th>Catégorie</th><th>Meilleure équipe</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th></tr>` + Object.entries(M).map(([k, c]) => { const x = c.top[0]; if (!x) return ''; return `<tr><td class="cat">${CATS[k] || esc(c.titre)}</td><td>${esc(x.equipe.join(' / '))}</td>${k === 'tour' ? `<td class="n" colspan="2">étage ${x.etageMoyen}</td>` : k === 'guilde' ? `<td class="n" colspan="2">${x.degats.toLocaleString('fr-FR')} dégâts</td>` : `<td class="n">${x.deuxEtoiles} %</td><td class="n">${x.troisEtoiles} %</td>`}</tr>`; }).join('') + '</table>';
+  } else $('resume').innerHTML = '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>';
+  // calculs
+  $('poids').innerHTML = E.poids ? `Derniers réglages : ${quand(E.poids.t)} · ` + Object.entries(E.poids.gains || {}).map(([k, g]) => `${{ nm: 'Cauchemar', boss: 'Boss', norm: 'Normal' }[k] || k} ${g.depart} puis ${g.fin}`).join(' · ') : 'Pas encore d’entraînement.';
+  // sauvegarde
+  $('sv').innerHTML = s ? [['Exportée', quand(s.t)], ['Cartes', `${s.cartes} (LR ${s.lr}, UR ${s.ur}, SSR ${s.ssr})`], ['Équipe', (s.equipe || []).join(', ') || '-'], ['Niveau du compte', s.compte ?? '-'], ['Boss de guilde', s.guilde || 'non exporté']].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('') : '<span>Aucune</span><span class="muted">importe ta sauvegarde</span>';
+  // script
+  $('scrTiles').innerHTML = [
+    tile('Version disponible', sc.trouve ? 'v' + esc(sc.version) : '-', sc.trouve ? `${sc.lignes} lignes · ${Math.round(sc.taille / 1024)} Ko` : 'fichier introuvable'),
+    tile('Version installée', vu ? 'v' + esc(vu.v) : 'inconnue', vu ? 'vue ' + quand(vu.t) : 'ouvre kitsu.games avec le script', !vu || vu.v !== sc.version ? 'warn' : ''),
+    tile('Connexion au PC', scOk ? 'active' : vu ? 'en veille' : 'aucune', scOk ? 'le conseil en combat est calculé ici' : 'le script contacte KitsuAI toutes les minutes', scOk ? '' : 'warn'),
+  ].join('');
+  // resultats
+  $('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
 }
 function renderRes() {
-  const D = E?.dernier; if (!D) { $('res').innerHTML = '<div class="muted">Pas encore d’analyse complète.</div>'; $('tabs').innerHTML = ''; return; }
-  $('dt').textContent = quand(D.date) + ' · moteur ' + D.version;
-  const modes = Object.keys(D.modes); if (!tab || !modes.includes(tab)) tab = modes[0];
-  $('tabs').innerHTML = modes.map(m => `<button class="${m === tab ? 'on' : ''}" onclick="tab='${m}';renderRes()">${m === '99' ? 'Tout au niveau 99' : 'Tes niveaux actuels'}</button>`).join('');
-  const M = D.modes[tab];
-  $('res').innerHTML = Object.entries(M).map(([k, c]) => {
-    const tour = k === 'tour', gu = k === 'guilde';
-    const head = tour ? '<th>Équipe</th><th class="n">Étage moyen</th><th class="n">Minimum</th>' : gu ? '<th>Équipe</th><th class="n">Dégâts</th><th class="n">Points</th>' : '<th>Équipe</th><th class="n">2+ étoiles</th><th></th><th class="n">3 étoiles</th><th class="n">Victoire</th>';
-    const rows = c.top.slice(0, 5).map((x, i) => tour ? `<tr><td>${i + 1}. ${esc(x.equipe.join(' / '))}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td></tr>`
-      : gu ? `<tr><td>${i + 1}. ${esc(x.equipe.join(' / '))}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td></tr>`
-      : `<tr><td>${i + 1}. ${esc(x.equipe.join(' / '))}</td><td class="n">${x.deuxEtoiles} %</td><td><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td></tr>`).join('');
-    return `<div class="cat"><h3>${CATS[k] || esc(c.titre)} <small>${c.combats ? c.combats + ' combats' : ''}</small></h3><table><tr>${head}</tr>${rows}</table></div>`;
-  }).join('');
+  const D = E?.dernier; if (!D) { $('rescat').innerHTML = '<div class="muted">Pas encore d’analyse complète.</div>'; $('tabsNiv').innerHTML = $('tabsCat').innerHTML = ''; return; }
+  $('resinfo').textContent = `Analyse du ${quand(D.date)}, moteur ${D.version}. Les 10 meilleurs trios par catégorie.`;
+  const ns = Object.keys(D.modes); if (!ns.includes(niv)) niv = ns.includes('actuel') ? 'actuel' : ns[0];
+  $('tabsNiv').innerHTML = ns.map(m => `<a class="${m === niv ? 'on' : ''}" onclick="niv='${m}';renderRes()">${m === '99' ? 'Tout au niveau 99' : 'Tes niveaux actuels'}</a>`).join('');
+  const M = D.modes[niv], cs = Object.keys(M); if (!cs.includes(cat)) cat = cs[0];
+  $('tabsCat').innerHTML = cs.map(k => `<a class="${k === cat ? 'on' : ''}" onclick="cat='${k}';renderRes()">${CATS[k] || k}</a>`).join('');
+  const c = M[cat], tour = cat === 'tour', gu = cat === 'guilde';
+  const head = tour ? '<th>Équipe</th><th class="n">Étage moyen</th><th class="n">Minimum</th>' : gu ? '<th>Équipe</th><th class="n">Dégâts</th><th class="n">Points</th>' : '<th>Équipe</th><th class="n">2+ étoiles</th><th></th><th class="n">3 étoiles</th><th class="n">Victoire</th>';
+  $('rescat').innerHTML = `<h2>${CATS[cat] || esc(c.titre)} <span class="r">${c.combats ? c.combats + ' combats' : ''}</span></h2><table><tr><th>#</th>${head}</tr>` + c.top.map((x, i) => `<tr><td class="n" style="text-align:left;color:var(--acc)">${i + 1}</td>` + (tour ? `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td>` : gu ? `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td>` : `<td>${esc(x.equipe.join(' / '))}</td><td class="n">${x.deuxEtoiles} %</td><td style="width:130px"><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td>`) + '</tr>').join('') + '</table>';
 }
+// ---------- actions ----------
 async function lancer(action) {
   const o = {};
   if (action === 'tout') Object.assign(o, { niveaux: $('o_niv').value, tirages: +$('o_tir').value, cartes: +$('o_car').value });
   if (action === 'entrainer') Object.assign(o, { types: [['nm', 'o_tnm'], ['boss', 'o_tbo'], ['norm', 'o_tno']].filter(([, i]) => $(i).checked).map(([k]) => k).join(','), generations: +$('o_gen').value });
   if (action === 'mode') Object.assign(o, { mode: $('o_mode').value, lv99: $('o_lv99').checked, top: +$('o_top').value });
   if (action === 'plafond') Object.assign(o, { n: +$('o_n').value });
-  try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; refresh(); } catch (e) { alert(e.message); }
+  if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;
+  try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; toast('Lancé'); refresh(); } catch (e) { alert(e.message); }
 }
 async function arreter() { if (confirm('Arrêter la tâche en cours ?')) { await api('/api/arreter', { method: 'POST' }); refresh(); } }
-async function rechargerMoteur() { try { const r = await api('/api/redemarrer-pool', { method: 'POST' }); alert('Moteur rechargé : ' + r.version); refresh(); } catch (e) { alert(e.message); } }
+async function rechargerMoteur() { try { const r = await api('/api/redemarrer-pool', { method: 'POST' }); toast('Moteur rechargé : ' + r.version); refresh(); } catch (e) { alert(e.message); } }
 async function dossier(d) { await api('/api/dossier', { method: 'POST', body: JSON.stringify({ d }) }); }
+async function ouvrir(url) { await api('/api/ouvrir', { method: 'POST', body: JSON.stringify({ url }) }); }
+const scriptCode = () => fetch('/api/script/code', { headers: { 'X-Kitsu-Token': TOKEN } }).then(r => r.text());
+async function copierScript() { const t = await scriptCode(); try { await navigator.clipboard.writeText(t); toast('Script copié (' + Math.round(t.length / 1024) + ' Ko)'); } catch { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); toast('Script copié'); } }
+async function voirScript() { const t = await scriptCode(); $('mbox').innerHTML = `<h2>kitsu_ai.user.js <span class="r"><button class="ghost" onclick="copierScript()">Copier</button></span></h2><pre style="max-height:70vh">${esc(t)}</pre>`; $('modal').style.display = 'flex'; }
 async function voir(f) {
-  const r = await fetch('/api/resultat?f=' + encodeURIComponent(f), { headers: { 'X-Kitsu-Token': TOKEN } }); const t = await r.text();
-  let html;
+  const t = await (await fetch('/api/resultat?f=' + encodeURIComponent(f), { headers: { 'X-Kitsu-Token': TOKEN } })).text(); let html;
   if (/\.csv$/.test(f)) { const L = t.trim().split('\n').map(l => l.split(';')); html = `<table><tr>${L[0].map(h => `<th>${esc(h)}</th>`).join('')}</tr>${L.slice(1).map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`; }
   else html = `<pre style="max-height:70vh">${esc(/\.json$/.test(f) ? JSON.stringify(JSON.parse(t), null, 1) : t)}</pre>`;
-  $('mbox').innerHTML = `<h2 style="margin-top:0;font-size:15px">${esc(f)}</h2>${html}`; $('modal').style.display = 'flex';
+  $('mbox').innerHTML = `<h2>${esc(f)}</h2>${html}`; $('modal').style.display = 'flex';
 }
-async function importer(file) {
-  const txt = await file.text();
-  try { await api('/api/sauvegarde', { method: 'POST', body: txt }); refresh(); } catch (e) { alert('Import impossible : ' + e.message); }
-}
+async function importer(file) { try { await api('/api/sauvegarde', { method: 'POST', body: await file.text() }); toast('Sauvegarde importée'); refresh(); } catch (e) { alert('Import impossible : ' + e.message); } }
 document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => lancer(b.dataset.act));
-const drop = $('drop');
-drop.onclick = () => $('file').click(); $('file').onchange = e => e.target.files[0] && importer(e.target.files[0]);
+const drop = $('drop'); drop.onclick = () => $('file').click(); $('file').onchange = e => e.target.files[0] && importer(e.target.files[0]);
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('hot'); }; drop.ondragleave = () => drop.classList.remove('hot');
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hot'); e.dataTransfer.files[0] && importer(e.dataTransfer.files[0]); };
+addEventListener('keydown', e => { if (e.key === 'Escape') $('modal').style.display = 'none'; });
 refresh(); setInterval(refresh, 1500);
 </script>
 </body>
