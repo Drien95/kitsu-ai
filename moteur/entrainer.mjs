@@ -2,6 +2,7 @@
 // Objectif : 2 etoiles ou plus, puis 3 etoiles, sur des combats disputes. Resultat : data/poids.json,
 // que le script KitsuAI recupere tout seul quand le serveur local tourne.
 //   node entrainer.mjs [--types nm,boss,norm] [--generations 40] [--fils 10]
+import { archiverPoids } from './lib/historique.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,19 +32,16 @@ const GENS = +arg('generations', 40), POP = 16, ELITE = 4;
 const rn = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const gains = {};
 log(`moteur ${version}, ${pool.n} fils, ${GENS} generations max`);
-for (const kind of String(arg('types', 'nm,boss,norm')).split(',')) {
-  const T = TYPES[kind]; if (!T) continue;
-  const teams = teamsFor(T.cats).map(t => t.map(id => ({ id, lv: lv(id), stars: st(id) })));
-  if (!teams.length) { log(kind, ': aucune equipe'); continue; }
-  // Combats disputes : ceux ou l'IA actuelle ne fait pas 3 etoiles a coup sur.
-  const cand = shuffle(T.fights).slice(0, 600);
+// Entrainement d'un jeu de reglages (CEM) pour des equipes donnees, sur leurs combats disputes.
+async function entrainer(kind, teams, fightsAll, gens, etiquette) {
+  const cand = shuffle(fightsAll).slice(0, 600);
   const probe = await pool.runAll(cand.map(f => ({ team: teams[0], fights: [f], seeds: [1, 2] })), W, {}, 20);
   const hard = cand.filter((f, i) => probe[i].s3 < 2).slice(0, 120); const tr = hard.slice(0, 80), ho = hard.slice(80);
-  if (tr.length < 10) { log(kind, ': trop peu de combats disputes, rien a apprendre'); continue; }
+  if (tr.length < 10) { log(etiquette, ': trop peu de combats disputes, rien a apprendre'); return null; }
   const fit = async (w, fl, seeds) => { const Wt = { ...W, [kind]: w }; const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), Wt, { stop2: true }, 16); const n = r.reduce((a, x) => a + x.n, 0); return r.reduce((a, x) => a + x.s2 + 0.5 * x.s3, 0) / n; };
   let mu = W[kind].slice(), sd = Array(mu.length).fill(0.35), best = mu.slice(), bestHo = await fit(best, ho.length >= 10 ? ho : tr, [901, 902, 903]), stale = 0;
-  const start = bestHo; log(`${kind} : ${teams.length} equipes, ${tr.length} combats d'entrainement, ${ho.length} de controle ; depart ${(100 * start).toFixed(1)}`);
-  for (let g = 0; g < GENS && stale < 8; g++) {
+  const start = bestHo; log(`${etiquette} : ${teams.length} equipe(s), ${tr.length} combats d'entrainement, ${ho.length} de controle ; depart ${(100 * start).toFixed(1)}`);
+  for (let g = 0; g < gens && stale < 8; g++) {
     const seeds = [g * 2 + 11, g * 2 + 12], pop = [];
     // Paires opposees (mu + e, mu - e) : moins de bruit pour le meme nombre de combats.
     const eps = Array.from({ length: POP / 2 }, () => mu.map((_, j) => sd[j] * rn()));
@@ -53,11 +51,31 @@ for (const kind of String(arg('types', 'nm,boss,norm')).split(',')) {
     for (let j = 0; j < mu.length; j++) { const m = el.reduce((a, p) => a + p.w[j], 0) / ELITE; mu[j] = m; sd[j] = Math.max(0.05, Math.sqrt(el.reduce((a, p) => a + (p.w[j] - m) ** 2, 0) / ELITE) * 0.9 + 0.02); }
     let imp = false; for (const w of [pop[0].w, mu]) { const h = await fit(w, ho.length >= 10 ? ho : tr, [901, 902, 903]); if (h > bestHo + 0.005) { bestHo = h; best = w.slice(); imp = true; } }
     stale = imp ? 0 : stale + 1;
-    log(`${kind} generation ${g + 1} : meilleur ${(100 * pop[0].f).toFixed(1)} (entrainement), controle ${(100 * bestHo).toFixed(1)}${imp ? ' (amelioration)' : ''}`);
+    log(`${etiquette} generation ${g + 1} : meilleur ${(100 * pop[0].f).toFixed(1)} (entrainement), controle ${(100 * bestHo).toFixed(1)}${imp ? ' (amelioration)' : ''}`);
   }
-  W[kind] = best.map(x => +x.toFixed(4)); gains[kind] = { depart: +(100 * start).toFixed(1), fin: +(100 * bestHo).toFixed(1) };
-  mkdirSync(D('data'), { recursive: true });
-  writeFileSync(pp, JSON.stringify({ t: Date.now(), version, W, gains }, null, 1));
-  log(`${kind} : ${gains[kind].depart} -> ${gains[kind].fin} (score de controle : 2+ etoiles + moitie des 3 etoiles)`);
+  return { w: best.map(x => +x.toFixed(4)), depart: +(100 * start).toFixed(1), fin: +(100 * bestHo).toFixed(1) };
+}
+const sauver = patch => { mkdirSync(D('data'), { recursive: true }); archiverPoids('entrainement'); const old = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')) : {}; writeFileSync(pp, JSON.stringify({ ...old, ...patch, restaure: undefined, t: Date.now(), version }, null, 1)); };
+for (const kind of String(arg('types', 'nm,boss,norm')).split(',').filter(Boolean)) {
+  const T = TYPES[kind]; if (!T) continue;
+  const teams = teamsFor(T.cats).map(t => t.map(id => ({ id, lv: lv(id), stars: st(id) })));
+  if (!teams.length) { log(kind, ': aucune equipe'); continue; }
+  const r = await entrainer(kind, teams, T.fights, GENS, kind); if (!r) continue;
+  W[kind] = r.w; gains[kind] = { depart: r.depart, fin: r.fin };
+  sauver({ W, gains });
+  log(`${kind} : ${r.depart} -> ${r.fin} (score de controle : 2+ etoiles + moitie des 3 etoiles)`);
+}
+// Entrainement par equipe : des reglages Cauchemar propres a chacune de tes meilleures equipes,
+// gardes seulement s'ils battent les reglages generaux sur ses combats de controle.
+const NE = +arg('par-equipe', 0);
+if (NE > 0) {
+  const old = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')) : {}, equipes = old.equipes || {};
+  for (const t of teamsFor(['cauchemar_multi', 'cauchemar_boss', 'cauchemar']).slice(0, NE)) {
+    const key = t.slice().sort((a, b) => a - b).join('-'), nom = t.map(id => (CH[id]?.n || id)).join(' / ');
+    const r = await entrainer('nm', [t.map(id => ({ id, lv: lv(id), stars: st(id) }))], TYPES.nm.fights, Math.round(GENS * 0.6), 'equipe ' + nom);
+    if (r && r.fin > r.depart + 0.5) { equipes[key] = { nom, nm: r.w, depart: r.depart, fin: r.fin, t: Date.now() }; log(`equipe ${nom} : ${r.depart} -> ${r.fin}, reglages propres gardes`); }
+    else if (r) log(`equipe ${nom} : pas de gain net (${r.depart} -> ${r.fin}), reglages generaux gardes`);
+  }
+  sauver({ equipes });
 }
 log('termine, poids enregistres dans data/poids.json'); await pool.close(); process.exit(0);

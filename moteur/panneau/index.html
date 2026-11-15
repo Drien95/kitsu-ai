@@ -252,6 +252,27 @@
         <div class="row"><label>Combats <input type="number" id="o_n" value="10" min="2" max="60"></label><button data-act="plafond">Lancer</button></div>
       </div>
       <div class="card act">
+        <h3>Conseils de cartes</h3>
+        <p>Les 6 collectifs à cocher, quelle carte monter en niveau, ce que vaut chaque carte des bannières ouvertes, les duos qui marchent ensemble.</p>
+        <div class="row">
+          <label><input type="checkbox" id="o_ccol" checked> Collectifs</label>
+          <label><input type="checkbox" id="o_cxp" checked> XP</label>
+          <label><input type="checkbox" id="o_ctir" checked> Tirage</label>
+          <label><input type="checkbox" id="o_cduo" checked> Duos</label>
+          <button data-act="conseils">Lancer</button>
+        </div>
+      </div>
+      <div class="card act">
+        <h3>IA par équipe</h3>
+        <p>Des réglages Cauchemar propres à chacune de tes meilleures équipes, gardés seulement s'ils font mieux.</p>
+        <div class="row"><label>Équipes <input type="number" id="o_neq" value="3" min="1" max="8"></label><button data-act="equipes">Lancer</button></div>
+      </div>
+      <div class="card act">
+        <h3>IA par imitation</h3>
+        <p>L'IA rapide apprend à jouer comme l'IA qui anticipe (plusieurs coups d'avance). Long : 20 à 60 minutes.</p>
+        <div class="row"><label>Combats <input type="number" id="o_nim" value="160" min="40" max="600"></label><button data-act="imitation">Lancer</button></div>
+      </div>
+      <div class="card act">
         <h3>Moteur du jeu</h3>
         <p>À faire après une mise à jour de KITSU, puis recharger le moteur pour le conseil en combat.</p>
         <div class="row"><button data-act="telecharger">Mettre à jour</button><button class="ghost" onclick="rechargerMoteur()">Recharger le moteur</button></div>
@@ -272,6 +293,10 @@
     <div class="sub" id="tabsNiv"></div>
     <div class="sub" id="tabsCat"></div>
     <div class="card" id="rescat"></div>
+    <div class="sp"></div>
+    <div class="eyebrow">Conseils de cartes</div>
+    <div class="sub" id="tabsCons"></div>
+    <div class="card" id="cons"><div class="muted">Lance « Conseils de cartes » dans Calculs.</div></div>
     <div class="sp"></div>
     <div class="card">
       <h2>Fichiers <span class="r"><button class="ghost" onclick="dossier('resultats')">Ouvrir le dossier</button></span></h2>
@@ -360,6 +385,12 @@
         <h2>Alertes <span class="r"><button class="ghost" onclick="api('/api/alertes-test',{method:'POST'}).then(()=>toast('Alerte de test envoyée'))">Tester</button></span></h2>
         <div id="r_alertes"></div>
       </div>
+    </div>
+    <div class="sp"></div>
+    <div class="card">
+      <h2>Réglages de l'IA <span class="r"><button class="ghost" onclick="chargerPoids()">Actualiser</button></span></h2>
+      <p class="muted" style="margin-top:0">Une copie est faite avant chaque entraînement (15 dernières gardées). « Restaurer » remet une copie en service ; le script du jeu la reprend dans la minute. Les réglages en place sont copiés avant, tu peux donc toujours revenir en arrière.</p>
+      <div id="r_poids" class="muted">Chargement…</div>
     </div>
   </section>
 
@@ -461,7 +492,30 @@ async function refresh() {
   $('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
 }
+let consTab = 'collectifs';
+function renderCons() {
+  const C = E?.conseils; if (!C) return;
+  const T = { collectifs: 'Collectifs', xp: "Plan d'XP", tirage: 'Tirage', duos: 'Duos' }, ks = Object.keys(T).filter(k => C[k]); if (!ks.includes(consTab)) consTab = ks[0]; if (!consTab) return;
+  $('tabsCons').innerHTML = ks.map(k => `<a class="${k === consTab ? 'on' : ''}" onclick="consTab='${k}';renderCons()">${T[k]}</a>`).join('');
+  const pc = (a, b) => `${a} %${b != null ? ` <span class="muted">→</span> <b style="color:${b > a ? 'var(--ok,#22c55e)' : 'inherit'}">${b} %</b>` : ''}`; let h = `<h2>${T[consTab]} <span class="r">${quand(C.date)} · ${C.combats} combats Cauchemar Extrême</span></h2>`;
+  if (consTab === 'collectifs') {
+    const L = C.collectifs.flatMap(e => [...e.cartes.map(c => ({ e, c })), ...(e.ensemble ? [{ e, c: { carte: 'Les deux ensemble', actifs: '', utile: e.ensemble.utile, seul: e.ensemble.seul, conseil: [], retirer: [], avant: e.ensemble.avant, apres: e.ensemble.apres, tous: 1 } }] : [])]);
+    h += L.length ? `<table><tr><th>Équipe</th><th>Carte</th><th>Coche ces 6 collectifs</th><th class="n">2+ étoiles</th></tr>` + L.map(({ e, c }) => `<tr><td>${esc(e.equipe)}</td><td>${esc(c.carte)}${c.tous ? '' : `<div class="muted" style="font-size:11px">${c.actifs} collectifs actifs</div>`}</td><td style="font-size:12px">${c.tous ? `<span class="muted">${c.utile ? 'les choix ci-dessus combinés' : `combinés, ils ne font pas mieux : change seulement ${esc(c.seul || 'la meilleure carte')}`}</span>` : c.utile ? c.conseil.map(esc).join('<br>') : '<span class="muted">ton choix actuel est déjà le meilleur</span>'}${c.utile && c.retirer.length ? `<div class="muted" style="margin-top:4px">décoche : ${c.retirer.map(esc).join(', ')}</div>` : ''}</td><td class="n">${pc(c.avant.s2, c.utile ? c.apres.s2 : null)}</td></tr>`).join('') + '</table>' : '<div class="muted">Aucune carte de tes meilleures équipes n’a plus de 6 collectifs actifs : rien à choisir.</div>';
+  }
+  if (consTab === 'xp') {
+    const X = C.xp, ref = X.reference;
+    h += `<p class="muted">Référence : ${esc(ref?.equipe || '-')} (${ref?.s2} % de 2+ étoiles). Une carte vaut l’XP seulement si son meilleur trio dépasse cette équipe.</p><table><tr><th>Carte</th><th>Meilleur trio</th><th>2+ étoiles selon le niveau</th><th>Conseil</th></tr>` + X.cartes.map(c => `<tr><td>${esc(c.carte)} <span class="muted">${c.rarete} niv ${c.niveau}</span></td><td>${esc(c.equipe)}</td><td style="font-size:12px">${c.paliers.map(p => `${p.niveau} : ${p.s2} %`).join(' · ')}</td><td>${c.conseil ? `<b>monter au ${c.conseil.jusqua}</b><div class="muted" style="font-size:11px">${c.conseil.xp.toLocaleString('fr-FR')} XP</div>` : '<span class="muted">pas prioritaire</span>'}</td></tr>`).join('') + '</table>';
+  }
+  if (consTab === 'tirage') {
+    h += C.tirage.map(b => `<h3 style="margin-top:14px">${esc(b.banniere)} <span class="muted" style="font-weight:400;font-size:12px">jusqu’au ${new Date(b.fin).toLocaleDateString('fr-FR')} · gain moyen d’une LR : ${b.gainMoyenLR ?? '-'} pts</span></h3><table><tr><th>Carte</th><th>Meilleur trio avec elle</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th><th class="n">Gain</th></tr>` + b.cartes.map(c => `<tr><td>${esc(c.carte)} <span class="muted">${c.rarete}${c.possedee ? ' · déjà à toi (+1 étoile)' : ''}</span></td><td>${esc(c.equipe || '-')}</td><td class="n">${c.s2 ?? '-'} %</td><td class="n">${c.s3 ?? '-'} %</td><td class="n" style="color:${(c.gain || 0) > 0 ? 'var(--ok,#22c55e)' : 'var(--mute)'}">${c.gain > 0 ? '+' : ''}${c.gain ?? '-'}</td></tr>`).join('') + '</table>').join('') + `<p class="muted" style="margin-top:8px">Gain = points de score (2+ étoiles, plus la moitié des 3 étoiles) par rapport à ta meilleure équipe actuelle (${esc(C.tirage[0]?.reference?.equipe || '-')}). Carte supposée niveau 99.</p>`;
+  }
+  if (consTab === 'duos') {
+    h += `<table><tr><th>Duo</th><th>Meilleur 3e</th><th class="n">Synergie</th><th class="n">Moyenne</th><th class="n">Meilleur trio</th></tr>` + C.duos.map(d => `<tr><td>${esc(d.duo)}</td><td>${esc(d.troisieme)}</td><td class="n" style="color:${d.synergie > 0 ? 'var(--ok,#22c55e)' : 'inherit'}">${d.synergie > 0 ? '+' : ''}${d.synergie}</td><td class="n">${d.moyenne}</td><td class="n">${d.meilleur}</td></tr>`).join('') + '</table><p class="muted" style="margin-top:8px">Synergie = ce que le duo apporte de plus que ses deux cartes séparément, sur tous les trios testés.</p>';
+  }
+  $('cons').innerHTML = h;
+}
 function renderRes() {
+  renderCons();
   const D = E?.dernier; if (!D) { $('rescat').innerHTML = '<div class="muted">Pas encore d’analyse complète.</div>'; $('tabsNiv').innerHTML = $('tabsCat').innerHTML = ''; return; }
   $('resinfo').textContent = `Analyse du ${quand(D.date)}, moteur ${D.version}. Les 10 meilleurs trios par catégorie.`;
   const ns = Object.keys(D.modes); if (!ns.includes(niv)) niv = ns.includes('actuel') ? 'actuel' : ns[0];
@@ -503,6 +557,21 @@ function detailPatch(p) {
   if (p.nouveauxEvenements.length || p.nouvellesBannieres.length) parts.push(`<h3 class="cat" style="margin:14px 0 6px">Événements et bannières</h3><ul class="patch-list">${p.nouveauxEvenements.map(e => `<li>Événement : <b>${esc(e.titre)}</b></li>`).join('')}${p.nouvellesBannieres.map(b => `<li>Bannière <b>${esc(b.serie)}</b>${b.fin ? ' jusqu’au ' + quand(b.fin) : ''}</li>`).join('')}</ul>`);
   return parts.join('');
 }
+async function chargerPoids() {
+  let r; try { r = await api('/api/poids-historique'); } catch (e) { $('r_poids').textContent = 'Indisponible : ' + e.message; return; }
+  const g = x => Object.entries(x.gains || {}).map(([k, v]) => `${({ nm: 'Cauchemar', boss: 'Boss', norm: 'Normal' })[k] || k} ${v.depart} à ${v.fin}`).join(' · ') || '-';
+  const ex = x => [x.equipes ? x.equipes + ' équipe(s) avec réglages propres' : '', x.imitation ? 'imitation' : ''].filter(Boolean).join(' · ');
+  const RA = { entrainement: 'avant un entraînement', imitation: 'avant une imitation', 'avant restauration': 'avant une restauration' };
+  const A = r.actuel;
+  $('r_poids').innerHTML = `<table><tr><th>Copie</th><th>Réglages du</th><th>Scores de l'entraînement</th><th>Extras</th><th></th></tr>`
+    + (A ? `<tr><td><b style="color:var(--ok)">En service</b>${A.restaure ? `<div class="muted" style="font-size:11px">restaurés ${quand(A.restaure.t)}</div>` : ''}</td><td>${A.regles ? quand(A.regles) : '-'}</td><td style="font-size:12px">${esc(g(A))}</td><td style="font-size:12px">${esc(ex(A))}</td><td></td></tr>` : '')
+    + r.copies.map(x => `<tr><td>${quand(x.archive)}<div class="muted" style="font-size:11px">${esc(RA[x.raison] || x.raison)}</div></td><td>${x.regles ? quand(x.regles) : '-'}</td><td style="font-size:12px">${esc(g(x))}</td><td style="font-size:12px">${esc(ex(x))}</td><td style="text-align:right"><button class="ghost" onclick="restaurerPoids('${esc(x.f)}')">Restaurer</button></td></tr>`).join('')
+    + '</table>' + (r.copies.length ? '' : '<div class="muted" style="margin-top:8px">Aucune copie pour l’instant : la première sera faite au prochain entraînement.</div>');
+}
+async function restaurerPoids(f) {
+  if (!confirm('Remettre ces réglages de l’IA en service ? Les réglages actuels sont copiés avant.')) return;
+  try { await api('/api/poids-restaurer', { method: 'POST', body: JSON.stringify({ f }) }); toast('Réglages restaurés : le script du jeu les reprend dans la minute'); chargerPoids(); } catch (e) { alert(e.message); }
+}
 function renderReglages() {
   const R = E.reglages || {}; const A = R.alertes || {};
   if (!regInit) {
@@ -514,6 +583,7 @@ function renderReglages() {
     if (APP?.demarrage) APP.demarrage().then(on => { $('r_dem').checked = !!on; }); else { $('r_dem').disabled = true; $('demTxt').textContent = 'Disponible dans l’application KitsuAI (pas dans le navigateur).'; }
     $('r_dem').onchange = () => APP?.demarrage($('r_dem').checked).then(on => { $('r_dem').checked = !!on; toast(on ? 'KitsuAI démarrera avec Windows' : 'Démarrage avec Windows désactivé'); });
     if (!APP && window.Notification && Notification.permission === 'default') Notification.requestPermission();
+    chargerPoids();
   }
 }
 async function sauverReg() { const al = {}; document.querySelectorAll('[data-al]').forEach(i => al[i.dataset.al] = i.checked); await api('/api/reglages', { method: 'POST', body: JSON.stringify({ conseilMs: +$('r_ms').value, filsReserves: +$('r_fils').value, alertes: al }) }); toast('Réglages enregistrés'); }
@@ -553,6 +623,9 @@ async function lancer(action) {
   if (action === 'entrainer') Object.assign(o, { types: [['nm', 'o_tnm'], ['boss', 'o_tbo'], ['norm', 'o_tno']].filter(([, i]) => $(i).checked).map(([k]) => k).join(','), generations: +$('o_gen').value });
   if (action === 'mode') Object.assign(o, { mode: $('o_mode').value, lv99: $('o_lv99').checked, top: +$('o_top').value });
   if (action === 'plafond') Object.assign(o, { n: +$('o_n').value });
+  if (action === 'conseils') { const p = [['collectifs', 'o_ccol'], ['xp', 'o_cxp'], ['tirage', 'o_ctir'], ['duos', 'o_cduo']].filter(([, i]) => $(i).checked).map(([k]) => k); if (!p.length) return; o.parties = p.join(','); }
+  if (action === 'equipes') o.n = +$('o_neq').value;
+  if (action === 'imitation') o.combats = +$('o_nim').value;
   if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;
   try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; toast('Lancé'); refresh(); } catch (e) { alert(e.message); }
 }

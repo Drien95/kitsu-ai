@@ -5,8 +5,8 @@ Le panneau s'ouvre dans la fenêtre KitsuAI (adresse interne : `http://127.0.0.1
 | Onglet | Contenu |
 |---|---|
 | Tableau de bord | **Tout lancer** (moteur du jeu, entraînement de l'IA, analyse complète), tâche en cours, tuiles d'état (moteur, processeur, script, sauvegarde, conseils en combat), meilleure équipe par catégorie |
-| Calculs | Chaque calcul séparément avec ses options : analyse complète, entraînement, analyse par mode, mesure du plafond, mise à jour du moteur, mesure de vitesse |
-| Résultats | Top 10 par catégorie, à tes niveaux ou au niveau 99, et tous les fichiers CSV/JSON/TXT |
+| Calculs | Chaque calcul séparément avec ses options : analyse complète, entraînement, conseils de cartes, IA par équipe, IA par imitation, analyse par mode, mesure du plafond, mise à jour du moteur, mesure de vitesse |
+| Résultats | Top 10 par catégorie, à tes niveaux ou au niveau 99, conseils de cartes (collectifs, plan d’XP, tirage, duos) et tous les fichiers CSV/JSON/TXT |
 | Script | Version disponible et version installée, connexion au PC, installer ou mettre à jour, copier le script, voir le code |
 | Sauvegarde | Export actuel (cartes, équipe, boss de guilde) et import par glisser-déposer |
 | Nouveautés | Notes de version de KitsuAI (bouton Mise à jour) et **patchs KITSU détectés** (cartes nouvelles et modifiées, mondes, événements, bannières, tes cartes touchées) |

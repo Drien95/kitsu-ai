@@ -47,3 +47,26 @@ L'IA note chaque action avec 19 critères (dégâts prévus, ennemi qui charge, 
 - contrôle : chaque amélioration est vérifiée sur des combats non utilisés pour apprendre.
 
 Les nouveaux réglages (`poids.json`) sont récupérés par le script du jeu dans la minute ; plan et équipes sont recalculés.
+
+### Revenir aux réglages précédents
+
+Les nouveaux réglages ne sont gardés que s'ils font mieux sur les combats de contrôle. Avant chaque changement, une copie de `poids.json` est faite dans `data/poids-historique` (15 dernières gardées). Dans **Réglages > Réglages de l'IA**, « Restaurer » remet une copie en service ; les réglages en place sont copiés avant, et le script du jeu reprend la copie dans la minute.
+
+### IA par équipe
+
+Pour chacune de tes meilleures équipes Cauchemar, un entraînement séparé ajuste les réglages pour cette équipe seulement. Ils sont gardés s'ils gagnent au moins 0,5 point sur les combats de contrôle, sinon les réglages généraux restent. Le script les applique quand tu joues exactement ces 3 cartes.
+
+### IA par imitation
+
+L'« IA qui anticipe » essaie chaque coup prometteur sur plusieurs tirages avant de choisir : plus forte, mais trop lente pour le conseil instantané. L'imitation enregistre ses choix sur les combats disputés, puis apprend à l'IA rapide à faire les mêmes. Contrôle sur des combats jamais vus : les réglages ne changent que s'ils font mieux. Compter 20 à 60 minutes.
+
+## Conseils de cartes
+
+Calculés sur 120 combats Cauchemar Extrême (plusieurs ennemis et boss). Score : 2 étoiles ou plus, puis la moitié des 3 étoiles. Résultats dans l'onglet Résultats, rubrique « Conseils de cartes ».
+
+| Rubrique | Ce que tu y trouves |
+|---|---|
+| **Collectifs** | Le jeu n'active que 6 collectifs par carte. Pour chaque carte de tes meilleures équipes qui en a plus, les 6 à cocher, ceux à décocher et le gain. Vérifié aussi quand on change plusieurs cartes à la fois. |
+| **Plan d'XP** | Pour chaque carte pas encore niveau 99 : son meilleur trio et ses chances à plusieurs niveaux, avec l'XP nécessaire. « Pas prioritaire » si même au niveau 99 elle ne bat pas ta meilleure équipe. |
+| **Tirage** | Chaque LR et UR des bannières ouvertes, supposée niveau 99, dans son meilleur trio avec tes cartes. Gain par rapport à ta meilleure équipe. Une carte déjà à toi est comptée avec une étoile de plus. |
+| **Duos** | Les paires dont le trio moyen dépasse la valeur de leurs deux cartes prises séparément (synergie), avec leur meilleur troisième. |
