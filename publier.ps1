@@ -8,9 +8,11 @@ $repo = "https://github.com/Drien95/kitsu-ai"
 $branch = if (Test-Path .branch) { (Get-Content .branch -Raw).Trim() } else { "chore/maj-" + (Get-Date -Format 'yyyyMMdd-HHmm') }
 if ($branch -eq 'main') { Write-Host "Interdit : main est protegee, choisis une branche feat/, fix/, docs/ ou chore/." -ForegroundColor Red; Read-Host "Entree pour fermer"; exit 1 }
 $msg = if (Test-Path .commitmsg) { Get-Content .commitmsg -Raw } else { "Mise a jour KitsuAI" }
-git fetch --prune origin
+git fetch --prune --tags origin
 $cur = (git rev-parse --abbrev-ref HEAD).Trim()
-if ($cur -ne $branch) {
+# Branche deja fusionnee (supprimee sur GitHub) : on repart de la derniere version de main.
+$remote = git ls-remote --heads origin $branch
+if ($cur -ne $branch -or -not $remote) {
   # Nouvelle branche partant de la derniere version de main, avec le contenu actuel du dossier.
   $tmp = Join-Path $env:TEMP "kitsu-ai-publier"
   Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue

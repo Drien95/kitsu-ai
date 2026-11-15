@@ -4,6 +4,7 @@ import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dir as D } from './lib/chemins.mjs';
 const ROOT = 'https://kitsu.games';
 const here = path.dirname(fileURLToPath(import.meta.url));
 // Reessais (erreurs passageres du serveur, ex. 525 de Cloudflare) avec delai croissant, et 30 s max par fichier.
@@ -24,7 +25,7 @@ const html = await get(ROOT + '/');
 const start = new Set([...html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.js)"/g)].map(m => m[1]));
 const dom = [...start].find(p => /\/dom-[^/]+\.js$/.test(p)) || '';
 const ver = (dom.match(/dom-([^/.]+)\.js/) || [, 'inconnue'])[1];
-const out = path.join(here, 'engine', ver);
+const out = D('engine', ver);
 if (existsSync(path.join(out, 'manifest.json'))) { console.log(`Moteur ${ver} deja present.`); process.exit(0); }
 await mkdir(path.join(out, 'assets'), { recursive: true });
 await writeFile(path.join(out, 'index.html'), html);
@@ -41,5 +42,5 @@ while (queue.length) {
   }
 }
 await writeFile(path.join(out, 'manifest.json'), JSON.stringify({ version: ver, dom: path.basename(dom), files: [...seen].map(p => path.basename(p)), date: new Date().toISOString() }, null, 2));
-await writeFile(path.join(here, 'engine', 'current.txt'), ver);
+await writeFile(D('engine', 'current.txt'), ver);
 console.log(`Moteur ${ver} telecharge : ${seen.size} fichiers dans ${out}`);

@@ -4,6 +4,55 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.7.0
+
+### Ajouté
+- **Application Windows** (`app/`, Electron) : installateur `KitsuAI-Setup-5.7.0.exe` avec choix du dossier, raccourcis bureau et menu Démarrer, désinstallation propre. Node.js est inclus.
+  - Démarre le serveur local, télécharge le moteur du jeu au premier lancement, ouvre le panneau dans sa fenêtre.
+  - Icône près de l'horloge : le conseil en combat continue fenêtre fermée ; menu (panneau, kitsu.games, script Tampermonkey, dossier des données, wiki, mise à jour, quitter).
+  - **Mise à jour automatique** depuis les releases GitHub (au démarrage puis toutes les 6 h), installation au redémarrage.
+  - Données dans `%APPDATA%\KitsuAI` (moteur du jeu, sauvegarde, réglages, cache, résultats) : jamais effacées par une mise à jour ou la désinstallation.
+- Installateur construit par GitHub Actions sur Windows à chaque nouvelle version et ajouté à la Release (avec `latest.yml` pour les mises à jour).
+- **Wiki GitHub** (`docs/wiki/`, publié par le workflow `wiki`) : installation, panneau, conseil en combat, analyses et entraînement, script, versions, sécurité, FAQ, développement, changelog.
+- Script : `@updateURL` / `@downloadURL` vers la dernière release (mise à jour par Tampermonkey).
+
+### Modifié
+- Panneau aux couleurs de KITSU : fond nuit, rouge-orange, titres condensés en italique majuscule précédés d'une barre oblique rouge, boutons en dégradé.
+- Moteur local : dossier des données réglable (`KITSU_DATA`), utilisé par l'application.
+- `publier.bat` : repart de `main` quand la branche a déjà été fusionnée, et récupère les tags.
+- Vérification `verif` : syntaxe du moteur local et de l'application en plus du script.
+
+---
+
+## 5.6.0
+
+### Ajouté
+- **Panneau local** : `KitsuAI.bat` (à la racine du dépôt) lance le serveur et ouvre http://127.0.0.1:47123 dans le navigateur. Tout est au même endroit :
+  - état : serveur et port, moteur chargé (et alerte si un plus récent est sur le disque), processeur et nombre de fils, nombre de conseils en combat et temps du dernier ;
+  - ta sauvegarde : date d'export, cartes (LR, UR, SSR), équipe, boss de guilde ; import par glisser-déposer ;
+  - actions : analyse complète (niveaux, tirages, nombre de cartes), entraînement de l'IA (Cauchemar, boss, normal, générations), analyse par mode, mesure du plafond, mise à jour et rechargement du moteur, mesure de vitesse, arrêt de la tâche ;
+  - tâche en cours avec journal en direct, journal du serveur ;
+  - dernière analyse complète en tableaux (tes niveaux / niveau 99), fichiers de résultats consultables, ouverture des dossiers.
+- **Entraînement local de l'IA** (`moteur/entrainer.mjs`) : entropie croisée avec paires opposées, sur tes meilleures équipes (dernière analyse) et les combats disputés, objectif 2 étoiles puis 3. Résultat dans `moteur/data/poids.json`.
+- Le script adopte tout seul les réglages entraînés sur le PC (vérification chaque minute), puis recalcule plan et équipes.
+
+### Sécurité
+- Les actions du panneau exigent un jeton généré à chaque démarrage et présent uniquement dans la page du panneau, et refusent les autres origines : un autre site ouvert dans le navigateur ne peut rien lancer. Le serveur n'écoute que sur 127.0.0.1.
+
+---
+
+## 5.5.0
+
+### Ajouté
+- Conseil en combat calculé sur le PC : `moteur/serveur.bat` lance un serveur local (http://127.0.0.1:47123, uniquement cette machine). Pendant un combat, le script envoie l'état du combat ; le PC simule la suite de chaque action possible sur tous ses coeurs (élimination des actions trop faibles, environ 0,7 s par coup) et renvoie celle qui donne le plus souvent 2 étoiles ou plus, puis 3 étoiles. Le panneau orange affiche « Calcul du PC » et met la bonne action en évidence.
+- Mesure du plafond (`moteur/plafond.mjs`) : sur des combats disputés de Cauchemar, l'anticipation poussée fait 85 % de 2 étoiles ou plus contre 65 % pour l'IA actuelle (2 ennemis ou plus), et 50 % contre 40 % (boss), sur 20 parties.
+- Onglet Santé : état du serveur du PC (connecté, nombre de fils, ou moteur pas à jour).
+
+### Modifié
+- Userscript : `@grant GM_xmlhttpRequest` et `@connect 127.0.0.1` pour joindre le serveur local (Tampermonkey demandera l'autorisation une fois). Le pont n'accepte que `/ping` et `/conseil`, vers 127.0.0.1 uniquement. Sans serveur, rien ne change.
+
+---
+
 ## 5.4.1
 
 ### Ajouté

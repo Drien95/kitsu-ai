@@ -2,8 +2,9 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dir as D } from './chemins.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const engineDir = ver => path.join(here, '..', 'engine', ver || readFileSync(path.join(here, '..', 'engine', 'current.txt'), 'utf8').trim());
+export const engineDir = ver => D('engine', ver || readFileSync(D('engine', 'current.txt'), 'utf8').trim());
 function shim() {
   const g = globalThis; if (g.__kitsuShim) return; g.__kitsuShim = 1;
   const store = new Map();

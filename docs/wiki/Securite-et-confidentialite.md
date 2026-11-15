@@ -1,0 +1,13 @@
+# Sécurité et confidentialité
+
+| Question | Réponse |
+|---|---|
+| Qu'est-ce qui sort de mon PC ? | Rien. Le serveur écoute uniquement sur `127.0.0.1` (ta machine). |
+| Que reçoit le serveur ? | L'état du combat en cours, envoyé par le script, et les actions lancées depuis le panneau. |
+| Un autre site peut-il piloter KitsuAI ? | Non. Les actions du panneau exigent un jeton généré à chaque démarrage, présent uniquement dans la page du panneau, et les autres origines sont refusées. |
+| Que peut faire le script via Tampermonkey ? | Le pont n'accepte que trois demandes (`/ping`, `/conseil`, `/poids`) et seulement vers `127.0.0.1`. |
+| Ma sauvegarde contient-elle mon jeton de connexion ? | Non : cartes, niveaux, étoiles, équipe, niveau du compte, boss de guilde et réglages de l'IA uniquement. |
+| Le code du jeu est-il dans le dépôt ? | Non. Chaque installation télécharge le moteur du jeu depuis kitsu.games ; il reste sur le PC. |
+| KitsuAI joue-t-il à ma place ? | Non. Aucun clic, aucune requête forgée, aucun contournement de la vérification anti-robot, arène désactivée. |
+
+KitsuAI est un outil non officiel, sans lien avec les éditeurs de KITSU. Vérifie les conditions d'utilisation du jeu.
