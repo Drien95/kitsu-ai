@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.11.2**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.11.3**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -724,6 +724,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.11.0 | Conseils de cartes (collectifs, plan d'XP, tirage, duos), IA par équipe, IA par imitation, historique et restauration des réglages de l'IA |
 | 5.11.1 | Portraits et cadres de rareté dans le panneau, équipe phare, icônes de mode |
 | 5.11.2 | Les analyses utilisent les réglages entraînés sur le PC (et par équipe), écarts avec l'analyse précédente |
+| 5.11.3 | Extensions locales facultatives pour le serveur et le panneau |
 
 ---
 
