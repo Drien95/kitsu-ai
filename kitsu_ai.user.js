@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.12.0
+// @version      5.12.1
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -21,7 +21,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.12.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.12.1 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.12.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.12.1') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -311,8 +311,10 @@
           return { total: log.length, bins };
         };
         // Correction des pourcentages affiches, seulement quand une tranche a au moins 10 combats.
+        // Le journal (300 combats) n'est relu qu'apres un nouveau combat termine (logEnd remet le cache a zero).
+        let calibCache = null;
         const calibrate = p => {
-          const c = calibration().bins[binOf(p)];
+          const c = (calibCache ??= calibration()).bins[binOf(p)];
           if (!c || c.n < 10) return p;
           const shift = c.win / c.n - c.pred / c.n;
           return Math.max(0, Math.min(1, p + shift * Math.min(1, c.n / 30)));
@@ -328,7 +330,7 @@
           if (!curLog || curLog.done || !curLog.preds.length) return;
           curLog.result = B.outcome(T.st) === 'win' ? 'win' : 'lose'; curLog.done = true;
           curLog.etoiles = curLog.result === 'win' ? (B.allies(T.st).every(u => u.alive) && T.st.cycle <= 8 ? 3 : 'moins de 3') : 0;
-          const log = lsGet(LS.log, []); log.push(curLog); lsSet(LS.log, log.slice(-300));
+          const log = lsGet(LS.log, []); log.push(curLog); lsSet(LS.log, log.slice(-300)); calibCache = null;
         };
 
         // ---------- Interface ----------
@@ -533,7 +535,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.12.0',
+          __v: '5.12.1',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -554,7 +556,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.12.0 actif';
+            return 'KitsuAI v5.12.1 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -789,6 +791,8 @@
           // rythme necessaire contre rythme reel (gemmes gagnees ces 6 dernieres heures).
           goalTick() {
             const d = document.getElementById('kitsuDock'); if (!d || !G) return;
+            // Appele toutes les 0,4 s par le dock : relit la sauvegarde et le journal des gains (jusqu'a 500 combats) ; 5 s suffisent (echelle : heures).
+            if (Date.now() - (this._goalT || 0) < 5000 && document.getElementById('kitsuGoal')) return; this._goalT = Date.now();
             let bar = document.getElementById('kitsuGoal');
             if (!bar) { bar = document.createElement('div'); bar.id = 'kitsuGoal'; bar.style.cssText = 'padding:6px 10px;border-bottom:1px solid #1e293b;font-size:11px'; d.insertBefore(bar, d.querySelector('#kitsuDockBody')); }
             const S = save(), now = Date.now(), pulls = lsGet(LS.pulls, null);
@@ -1682,13 +1686,14 @@
                 wasOver = false; box.style.display = 'block';
                 const st = T.st, a = T.active;
                 if (cur) {
-                  clearMarks(badge);
-                  unitEl(cur.me)?.classList.add('kitsu-me');
-                  document.querySelector(`button.act[data-act="${cur.kind}"]`)?.classList.add('kitsu-btn');
-                  if (cur.tgt) {
-                    const el = unitEl(cur.tgt);
-                    if (el) { el.classList.add('kitsu-tgt'); const r = el.getBoundingClientRect(); badge.textContent = 'CIBLE : ' + cur.label; badge.style.left = (r.left + r.width / 2) + 'px'; badge.style.top = r.top + 'px'; badge.style.display = 'block'; }
-                  } else if (cur.all) B.foes(st, a || st.units[0]).forEach(e => unitEl(e.key)?.classList.add('kitsu-all'));
+                  // Toutes les 150 ms : on ne retouche les contours que s'ils ont change (retirer puis remettre un halo force le navigateur a tout redessiner).
+                  const want = [[unitEl(cur.me), 'kitsu-me'], [document.querySelector(`button.act[data-act="${cur.kind}"]`), 'kitsu-btn']];
+                  if (cur.tgt) want.push([unitEl(cur.tgt), 'kitsu-tgt']); else if (cur.all) B.foes(st, a || st.units[0]).forEach(e => want.push([unitEl(e.key), 'kitsu-all']));
+                  const ok = want.filter(([el]) => el);
+                  if (!ok.every(([el, c]) => el.classList.contains(c)) || document.querySelectorAll('.kitsu-tgt,.kitsu-all,.kitsu-me,.kitsu-btn').length !== ok.length) { clearMarks(); ok.forEach(([el, c]) => el.classList.add(c)); }
+                  const el = cur.tgt ? unitEl(cur.tgt) : null;
+                  if (el) { const r = el.getBoundingClientRect(), txt = 'CIBLE : ' + cur.label, x = (r.left + r.width / 2) + 'px', y = r.top + 'px'; if (badge.textContent !== txt) badge.textContent = txt; if (badge.style.left !== x) badge.style.left = x; if (badge.style.top !== y) badge.style.top = y; if (badge.style.display !== 'block') badge.style.display = 'block'; }
+                  else if (badge.style.display !== 'none') badge.style.display = 'none';
                 }
                 if (!a || a.side !== 'ally') { cur = null; return; }
                 const sig = a.key + '|' + (T.actions?.length || 0) + '|' + st.elapsed;
