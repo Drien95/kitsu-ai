@@ -291,6 +291,7 @@
           <label><input type="checkbox" id="o_cxp" checked> XP</label>
           <label><input type="checkbox" id="o_ctir" checked> Tirage</label>
           <label><input type="checkbox" id="o_cduo" checked> Duos</label>
+          <label><input type="checkbox" id="o_cmar" checked> Marché</label>
           <button data-act="conseils">Lancer</button>
         </div>
       </div>
@@ -570,7 +571,7 @@ async function refresh() {
 let consTab = 'collectifs';
 function renderCons() {
   const C = E?.conseils; if (!C) return;
-  const T = { collectifs: 'Collectifs', xp: "Plan d'XP", tirage: 'Tirage', duos: 'Duos' }, ks = Object.keys(T).filter(k => C[k]); if (!ks.includes(consTab)) consTab = ks[0]; if (!consTab) return;
+  const T = { collectifs: 'Collectifs', xp: "Plan d'XP", tirage: 'Tirage', duos: 'Duos', marche: 'Marché' }, ks = Object.keys(T).filter(k => C[k]); if (!ks.includes(consTab)) consTab = ks[0]; if (!consTab) return;
   setH('tabsCons', ks.map(k => `<a class="${k === consTab ? 'on' : ''}" onclick="consTab='${k}';renderCons()">${ic(k)}${T[k]}</a>`).join(''));
   const pc = (a, b) => `${a} %${b != null ? ` <span class="muted">→</span> <b style="color:${b > a ? 'var(--ok,#22c55e)' : 'inherit'}">${b} %</b>` : ''}`; let h = `<h2>${ic(consTab)}${T[consTab]} <span class="r">${quand(C.date)} · ${C.combats} combats Cauchemar Extrême</span></h2>`;
   if (consTab === 'collectifs') {
@@ -586,6 +587,12 @@ function renderCons() {
   }
   if (consTab === 'duos') {
     h += `<table><tr><th>Duo</th><th>Meilleur 3e</th><th class="n">Synergie</th><th class="n">Moyenne</th><th class="n">Meilleur trio</th></tr>` + C.duos.map(d => `<tr><td>${d.ids ? equipeHTML(d.ids, 1) : esc(d.duo)}</td><td>${carteHTML(d.troisiemeId || d.troisieme)}</td><td class="n" style="color:${d.synergie > 0 ? 'var(--ok,#22c55e)' : 'inherit'}">${d.synergie > 0 ? '+' : ''}${d.synergie}</td><td class="n">${d.moyenne}</td><td class="n">${d.meilleur}</td></tr>`).join('') + '</table><p class="muted" style="margin-top:8px">Synergie = ce que le duo apporte de plus que ses deux cartes séparément, sur tous les trios testés.</p>';
+  }
+  if (consTab === 'marche') {
+    const Mk = C.marche, g = x => `<b style="color:${x > 0 ? 'var(--ok,#22c55e)' : 'inherit'}">${x > 0 ? '+' : ''}${x} pts</b>`;
+    h += `<p class="muted">Échanges carte contre carte. Gain = ce que la carte ajoute à ton meilleur trio (référence : ${esc(Mk.reference?.equipe || '-')}, ${Mk.reference?.s2 ?? '-'} % de 2+ étoiles). ${Mk.total} lots au marché.</p>`;
+    h += Mk.offres.length ? `<h3>Offres reçues</h3><table><tr><th>Tu donnes</th><th>Tu reçois</th><th class="n">Gain</th><th>Conseil</th></tr>` + Mk.offres.map(o => `<tr><td>${carteHTML(o.donnesId)}</td><td>${carteHTML(o.recoisId)} <span class="muted">niv ${o.niveau}</span></td><td class="n">${g(o.gain)}</td><td>${esc(o.verdict)}</td></tr>`).join('') + '</table>' : '';
+    h += `<h3>Lots qui valent une offre</h3><table><tr><th>Carte</th><th class="n">Niveau</th><th>Meilleur trio avec elle</th><th class="n">Gain</th><th>Tu peux proposer</th></tr>` + Mk.lots.filter(l => l.gain > 0).map(l => `<tr><td>${carteHTML(l.id)}</td><td class="n">${l.niveau}</td><td>${equipeHTML(l.ids, 1)}</td><td class="n">${g(l.gain)}</td><td>${esc(l.proposer.join(', ') || '-')}</td></tr>`).join('') + '</table>';
   }
   setH('cons', h);
 }
@@ -700,7 +707,7 @@ async function lancer(action) {
   if (action === 'entrainer') Object.assign(o, { types: [['nm', 'o_tnm'], ['boss', 'o_tbo'], ['norm', 'o_tno'], ['tour', 'o_ttw']].filter(([, i]) => $(i).checked).map(([k]) => k).join(','), generations: +$('o_gen').value });
   if (action === 'mode') Object.assign(o, { mode: $('o_mode').value, lv99: $('o_lv99').checked, top: +$('o_top').value });
   if (action === 'plafond') Object.assign(o, { n: +$('o_n').value });
-  if (action === 'conseils') { const p = [['collectifs', 'o_ccol'], ['xp', 'o_cxp'], ['tirage', 'o_ctir'], ['duos', 'o_cduo']].filter(([, i]) => $(i).checked).map(([k]) => k); if (!p.length) return; o.parties = p.join(','); }
+  if (action === 'conseils') { const p = [['collectifs', 'o_ccol'], ['xp', 'o_cxp'], ['tirage', 'o_ctir'], ['duos', 'o_cduo'], ['marche', 'o_cmar']].filter(([, i]) => $(i).checked).map(([k]) => k); if (!p.length) return; o.parties = p.join(','); }
   if (action === 'equipes') o.n = +$('o_neq').value;
   if (action === 'imitation') o.combats = +$('o_nim').value;
   if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;

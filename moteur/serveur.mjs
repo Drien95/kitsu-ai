@@ -66,7 +66,7 @@ const ACTIONS = {
   imitation: { nom: "IA par imitation", cmd: ['distiller.mjs'], opts: o => ['--types', o.types || 'nm,boss', '--combats', String(o.combats || 160)] },
   equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--generations', String(o.generations || 25)] },
   tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
-  conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos'] },
+  conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos,marche'] },
 };
 // Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
 const CHAINES = { complet: { nom: 'Tout lancer', etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }], ['entrainer', { types: 'tour', generations: 20 }], ['equipes', { n: 3 }], ['conseils', {}]] } };

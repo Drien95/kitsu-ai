@@ -12,6 +12,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 - Étages où les montées s’arrêtent, avec les ennemis qui y sont (ils sont toujours les mêmes pour un étage), et collectifs conseillés pour la Tour. Affichés dans Résultats, catégorie Tour.
 
 - **Pain (événement de guilde)** : pendant l’événement, l’analyse complète cherche le trio qui fait le plus de dégâts en 12 cycles, au niveau de Pain exporté par le script (catégorie « Pain (guilde) » dans Résultats).
+- **Marché (échanges)** : nouvelle partie « Marché » des Conseils de cartes. Pour chaque carte au marché que tu n’as pas, ce qu’elle ajoute à ton meilleur trio, et quelles cartes de même rareté tu peux proposer sans toucher à tes équipes. Pour chaque offre reçue sur tes lots : accepter ou non. Le script exporte les lots et offres en lisant `/api/market` et `/api/market/mine`, comme la page du marché.
 
 ### Corrigé
 - **Les analyses ne tenaient pas compte des collectifs choisis** : l'analyse complète (`tout.mjs`) et la simulation de la Tour du script construisaient les équipes sans `lk`, l’entraînement de l’IA aussi. Le cache de l'analyse en tient compte désormais.

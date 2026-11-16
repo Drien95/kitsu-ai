@@ -1,14 +1,15 @@
 // Conseils de choix de cartes, calcules avec le moteur du jeu sur tes cartes :
 //   collectifs (les 6 a cocher), plan d'XP (quelle carte monter, jusqu'ou), valeur des cartes des bannieres ouvertes,
 //   duos qui marchent le mieux ensemble. Objectif : 2 etoiles minimum, puis 3, en Cauchemar Extreme.
-//   node conseils.mjs [--parties collectifs,xp,tirage,duos] [--fils 10]
+//   marche : lots du marche qui valent une offre d'echange, offres recues a accepter ou non.
+//   node conseils.mjs [--parties collectifs,xp,tirage,duos,marche] [--fils 10]
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { readJ, arg, log, SAVE, POIDS, W0, WA, DERNIER, lvOf, stOf, topTeams, fightSets, shuffle, ecrire } from './lib/commun.mjs';
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, R = { M: 'LR', L: 'UR', E: 'SSR' };
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
-const PARTS = String(arg('parties', 'collectifs,xp,tirage,duos')).split(',');
+const PARTS = String(arg('parties', 'collectifs,xp,tirage,duos,marche')).split(',');
 const sets = fightSets(G, B), BENCH = [...shuffle(sets.nmMulti, 3).slice(0, 70), ...shuffle(sets.nmBoss, 4).slice(0, 50)], QUICK = BENCH.filter((_, i) => i % 3 === 0);
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 const mk = (ids, o = {}) => ids.map(id => ({ id, lv: o.lv?.[id] ?? lvOf(id), stars: o.stars?.[id] ?? stOf(id), ...((o.lk?.[id] || SAVE.lk?.[id]) ? { lk: o.lk?.[id] || SAVE.lk[id] } : {}) }));
@@ -90,6 +91,34 @@ if (PARTS.includes('tirage')) {
     out.tirage.push({ banniere: b.series, fin: b.until, cartes: lignes, gainMoyenLR: lr.length ? +(lr.reduce((a, x) => a + Math.max(0, x.gain), 0) / lr.length).toFixed(1) : null, reference: { ids: baseTeam || null, equipe: baseTeam ? noms(baseTeam) : null, s2: pct(base.s2), s3: pct(base.s3) } });
     log(`banniere ${b.series} : meilleure carte ${lignes[0]?.carte} (+${lignes[0]?.gain}), gain moyen d'une LR ${out.tirage.at(-1).gainMoyenLR}`);
   }
+}
+// ---------- 5. Marche (echanges carte contre carte) : lots qui valent une offre, offres recues ----------
+// Valeur d'une carte pour toi : gain de ton meilleur trio quand elle y entre (a son niveau), sur les combats de reference.
+if (PARTS.includes('marche') && SAVE.market) {
+  const baseTeam = TEAMS[0], base = baseTeam ? (await evalTeams([mk(baseTeam)]))[0] : { v: 0, s2: 0, s3: 0 };
+  const top8 = [...new Set(TEAMS.flat())].concat(own.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def))).filter((x, i, a) => a.indexOf(x) === i).slice(0, 8);
+  const pairs = []; for (let a = 0; a < top8.length; a++) for (let b = a + 1; b < top8.length; b++) pairs.push([top8[a], top8[b]]);
+  const memo = new Map();
+  const valeur = async (id, lv) => {
+    const k = id + ':' + lv; if (memo.has(k)) return memo.get(k);
+    const cand = pairs.filter(p => !p.includes(id)).map(p => [id, ...p]), o = { lv: { [id]: lv }, stars: { [id]: 0 } };
+    const q = await evalTeams(cand.map(t => mk(t, o)), QUICK, [1]), i = q.map((r, j) => [r.v, j]).sort((x, y) => y[0] - x[0])[0][1];
+    const r = (await evalTeams([mk(cand[i], o)]))[0], v = { ids: cand[i], gain: +(100 * (r.v - base.v)).toFixed(1), s2: pct(r.s2) }; memo.set(k, v); return v;
+  };
+  const utiles = new Set(TEAMS.flat()), M = SAVE.market;
+  const vus = new Map(); for (const l of M.lots || []) { const c = CH[l.card]; if (!c || !['M', 'L', 'E'].includes(c.r) || SAVE.owned?.[l.card]) continue; const lv = l.lv || 1; if (!vus.has(l.card) || vus.get(l.card) < lv) vus.set(l.card, lv); }
+  const cand = [...vus.keys()].sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 25);
+  const lots = []; for (const id of cand) { const v = await valeur(id, vus.get(id)); lots.push({ carte: nom(id), id, rarete: R[CH[id].r], niveau: vus.get(id), ...v }); }
+  lots.sort((a, b) => b.gain - a.gain);
+  // A proposer en echange : tes cartes de meme rarete qui ne sont dans aucune de tes meilleures equipes.
+  const aDonner = r => own.filter(id => CH[id].r === r && !utiles.has(id)).sort((a, b) => (CH[a].atk + CH[a].def) - (CH[b].atk + CH[b].def)).slice(0, 3).map(nom);
+  const offres = [];
+  for (const lot of M.mine || []) for (const f of lot.offers || []) {
+    if (!CH[f.card]) continue; const v = await valeur(f.card, f.lv || 1), garde = utiles.has(lot.card);
+    offres.push({ donnes: nom(lot.card), donnesId: lot.card, recois: nom(f.card), recoisId: f.card, niveau: f.lv || 1, gain: v.gain, ids: v.ids, verdict: garde ? 'refuser : ta carte est dans une de tes meilleures equipes' : v.gain > 0.5 ? 'accepter' : 'sans interet pour tes equipes' });
+  }
+  out.marche = { reference: { ids: baseTeam || null, equipe: baseTeam ? noms(baseTeam) : null, s2: pct(base.s2) }, lots: lots.map(l => ({ ...l, proposer: aDonner(CH[l.id].r) })), offres, total: (M.lots || []).length };
+  log(`marche : ${(M.lots || []).length} lots, ${lots.length} cartes evaluees, meilleure ${lots[0]?.carte} (${lots[0]?.gain > 0 ? "+" : ""}${lots[0]?.gain}), ${offres.length} offre(s) recue(s)`);
 }
 // ---------- 4. Duos ----------
 if (PARTS.includes('duos')) {
