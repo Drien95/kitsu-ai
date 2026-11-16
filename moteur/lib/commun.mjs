@@ -7,7 +7,7 @@ export const readJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } 
 export const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 export const T0 = Date.now();
 export const log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
-export const SAVE = readJ(D('data', 'sauvegarde.json')) || {};
+export const SAVE = readJ(process.env.KITSU_SAVE || D('data', 'sauvegarde.json')) || {};
 export const POIDS = readJ(D('data', 'poids.json')) || {};
 export const W0 = { ...W_DEFAUT, ...(POIDS.W || (SAVE.W?.nm ? SAVE.W : {})) }; delete W0.equipes;
 // Pour les conseils et analyses : avec les reglages propres a chaque equipe.

@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.11.4**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.12.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -726,6 +726,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.11.2 | Les analyses utilisent les réglages entraînés sur le PC (et par équipe), écarts avec l'analyse précédente |
 | 5.11.3 | Extensions locales facultatives pour le serveur et le panneau |
 | 5.11.4 | Combat : le calcul du PC ne remplace plus un bon coup par « Respirer » quand tous les coups se valent |
+| 5.12.0 | Tour de l'infini : trio cherché pour la Tour, étages qui bloquent, collectifs ; les analyses tiennent compte des collectifs |
 
 ---
 

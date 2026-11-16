@@ -294,6 +294,13 @@
         </div>
       </div>
       <div class="card act">
+        <h3>Tour de l'infini</h3>
+        <p>Le meilleur trio pour la Tour, cherché sur les vrais étages (PV gardés d'un étage à l'autre), les étages où tes montées s'arrêtent et les collectifs à cocher. Quelques minutes.</p>
+        <div class="row">
+          <button data-act="tour">Lancer</button>
+        </div>
+      </div>
+      <div class="card act">
         <h3>IA par équipe</h3>
         <p>Des réglages Cauchemar propres à chacune de tes meilleures équipes, gardés seulement s'ils font mieux.</p>
         <div class="row"><label>Équipes <input type="number" id="o_neq" value="3" min="1" max="8"></label><button data-act="equipes">Lancer</button></div>
@@ -589,8 +596,10 @@ function renderRes() {
   const M = D.modes[niv], cs = Object.keys(M); if (!cs.includes(cat)) cat = cs[0];
   setH('tabsCat', cs.map(k => `<a class="${k === cat ? 'on' : ''}" onclick="cat='${k}';renderRes()">${ic(k)}${CATS[k] || k}</a>`).join(''));
   const c = M[cat], tour = cat === 'tour', gu = cat === 'guilde';
-  const head = tour ? '<th>Équipe</th><th class="n">Étage moyen</th><th class="n">Minimum</th>' : gu ? '<th>Équipe</th><th class="n">Dégâts</th><th class="n">Points</th>' : '<th>Équipe</th><th class="n">2+ étoiles</th><th></th><th class="n">3 étoiles</th><th class="n">Victoire</th>';
-  setH('rescat', `<h2>${CATS[cat] || esc(c.titre)} <span class="r">${c.combats ? c.combats + ' combats' : ''}</span></h2><table><tr><th>#</th>${head}</tr>` + c.top.map((x, i) => `<tr><td class="n" style="text-align:left;color:var(--acc)">${i + 1}</td>` + (tour ? `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td>` : gu ? `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td>` : `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.deuxEtoiles} %</td><td style="width:130px"><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td>`) + '</tr>').join('') + '</table>');
+  const head = tour ? '<th>Équipe</th><th class="n">Étage moyen</th><th class="n">Minimum</th><th class="n">Maximum</th>' : gu ? '<th>Équipe</th><th class="n">Dégâts</th><th class="n">Points</th>' : '<th>Équipe</th><th class="n">2+ étoiles</th><th></th><th class="n">3 étoiles</th><th class="n">Victoire</th>';
+  setH('rescat', `<h2>${CATS[cat] || esc(c.titre)} <span class="r">${c.combats ? c.combats + ' combats' : ''}</span></h2><table><tr><th>#</th>${head}</tr>` + c.top.map((x, i) => `<tr><td class="n" style="text-align:left;color:var(--acc)">${i + 1}</td>` + (tour ? `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.etageMoyen}</td><td class="n">${x.etageMin}</td><td class="n">${x.max ?? ''}</td>` : gu ? `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.degats.toLocaleString('fr-FR')}</td><td class="n">${Math.floor(x.degats / 2500)}</td>` : `<td>${equipeHTML(x.ids || x.equipe)}</td><td class="n">${x.deuxEtoiles} %</td><td style="width:130px"><div class="bar"><i style="width:${x.deuxEtoiles}%"></i></div></td><td class="n">${x.troisEtoiles} %</td><td class="n">${x.victoire} %</td>`) + '</tr>').join('') + '</table>'
+    + (tour && c.murs?.length ? `<h3>Où tes montées s'arrêtent (meilleur trio)</h3><table><tr><th class="n">Étage</th><th class="n">Montées</th><th>Ennemis</th></tr>` + c.murs.map(m => `<tr><td class="n">${m.etage}${m.boss ? ' (boss)' : ''}</td><td class="n">${m.part} %</td><td>${esc(m.ennemis.join(', '))}</td></tr>`).join('') + '</table>' : '')
+    + (tour && c.collectifs?.length ? `<h3>Collectifs pour la Tour</h3><table><tr><th>Carte</th><th>Collectifs conseillés</th><th class="n">Étage moyen</th></tr>` + c.collectifs.map(l => `<tr><td>${esc(l.carte)}</td><td>${l.utile ? esc(l.conseil.join(', ')) : 'garde les tiens (pas de gain net)'}</td><td class="n">${l.avant} puis ${l.apres}</td></tr>`).join('') + '</table>' : ''));
 }
 // ---------- mise a jour et notes de version ----------
 const APP = window.kitsuApp || null; let MAJ = { etat: APP ? 'inconnu' : 'navigateur' }, RELS = null, relT = 0, curV = null;

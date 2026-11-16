@@ -13,6 +13,8 @@ const fights = []; for (const w of G.ALL_WORLDS) w.fights.forEach((f, i) => { if
 const a = fights.map(f => S.fight(f, team, 7, pol)), b = fights.map(f => S.fight(f, team, 7, pol));
 t('meme tirage = meme resultat', JSON.stringify(a) === JSON.stringify(b));
 t('regle des etoiles', a.every(r => !r.win ? r.stars === 0 : r.stars === Math.min(r.cycle > 8 ? 2 : 3, Math.max(1, 3 - r.ko))));
+const tw = [1, 2].map(() => S.tower(team, 3, pol, 60));
+t('Tour : meme tirage = meme etage', tw[0] === tw[1] && tw[0] > 0, String(tw));
 const c = fights.map(f => S.fight(f, team, 7, pol, { stop2: true }));
 t('arret a 2 K.O. : memes 2 etoiles', a.filter(r => r.stars >= 2).length === c.filter(r => r.stars >= 2).length);
 const pool = await makePool(2), jobs = fights.slice(0, 12).map(f => ({ team, fights: [f], seeds: [7] }));
