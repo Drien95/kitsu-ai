@@ -1709,7 +1709,7 @@
                   + res.slice(0, 4).map((r, i) => `<div style="opacity:${i ? .75 : 1}">${i + 1}. ${nm(r.c)} <span style="color:#fbbf24">${pct(r)} %</span> <span style="opacity:.5;font-size:10px">(${r.n})</span></div>`).join('')
                   + `<div style="margin-top:6px;opacity:.6;font-size:11px">Endurance ${st.end} · energie ${a.energy ?? 0}/100 · IA ${modeName(st)}`
                   + (charging.length ? ` · <span style="color:#f87171">${charging.join(', ')} charge !</span>` : '') + '</div>';
-                // Anticipation poussee sur le PC (serveur local) : objectif 2 etoiles, puis 3. Remplace le conseil s'il est meilleur.
+                // Anticipation poussee sur le PC (serveur local) : objectif 2 etoiles, puis 3 (en Tour : victoire puis PV gardes). Remplace le conseil s'il est meilleur.
                 if (Date.now() - localPC.t > 30000) localPing();
                 if (localPC.ok) {
                   const mySig = sig, cl = cands(st, a), { rng, ...rest } = st;
@@ -1724,7 +1724,7 @@
                     const b = pcB0 && r.res[0].v - pcB0.v < 0.03 ? pcB0 : r.res[0], c1 = cl.find(c => c.kind === b.kind && (c.target?.key ?? null) === (b.tgt ?? null)); if (!c1) return;
                     const changed = c1.kind !== b0.kind || (c1.target?.key ?? null) !== (b0.target?.key ?? null);
                     cur = { me: a.key, kind: c1.kind, tgt: c1.target?.key, all: c1.kind !== 'rest' && c1.kind !== 'basic' && !c1.target && B.kitRole(a, c1.kind).aoe > 0, label: mv(a, c1.kind).name };
-                    if (el) el.outerHTML = `<div id="kitsuPC" style="margin:0 0 5px;padding:4px 6px;border:1px solid #22c55e;border-radius:6px;font-size:12px"><b style="color:#22c55e">Calcul du PC</b> (${r.sims} suites, ${r.ms} ms)${changed ? ' <b style="color:#fbbf24">change le conseil</b>' : ' confirme'} :<br><b>${nm(c1)}</b> · 2+ etoiles ${Math.round(b.s2 * 100)} % · 3 etoiles ${Math.round(b.s3 * 100)} %${r.res[1] ? `<br><span style="opacity:.7">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
+                    if (el) el.outerHTML = `<div id="kitsuPC" style="margin:0 0 5px;padding:4px 6px;border:1px solid #22c55e;border-radius:6px;font-size:12px"><b style="color:#22c55e">Calcul du PC</b> (${r.sims} suites, ${r.ms} ms)${changed ? ' <b style="color:#fbbf24">change le conseil</b>' : ' confirme'} :<br><b>${nm(c1)}</b> · ${T.tower && b.hp != null ? `victoire ${Math.round(b.win * 100)} % · PV gardes ${Math.round(100 * b.hp / Math.max(0.01, b.win))} %` : `2+ etoiles ${Math.round(b.s2 * 100)} % · 3 etoiles ${Math.round(b.s3 * 100)} %`}${r.res[1] ? `<br><span style="opacity:.7">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
                   });
                 }
               } catch (e) { box.textContent = 'Conseiller : ' + e.message; health.err('conseiller : ' + e.message); }

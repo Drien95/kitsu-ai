@@ -10,7 +10,7 @@ let polKey = '', pol = null;
 // n simulations de la suite avec l'IA de base -> taux de 2 etoiles ou plus, 3 etoiles, victoire.
 function roll(j) {
   return j.cands.map(c => {
-    let n = 0, s2 = 0, s3 = 0, win = 0;
+    let n = 0, s2 = 0, s3 = 0, win = 0, hp = 0; // hp : PV gardes par tes cartes en fin de combat (Tour : comptent pour les etages suivants)
     for (let r = 0; r < j.n; r++) {
       const st = JSON.parse(j.st); st.rng = B.seeded((j.seed + r * 7919 + c.i * 104729) >>> 0);
       const u = st.units.find(x => x.key === j.key); if (!u) break;
@@ -19,8 +19,9 @@ function roll(j) {
       const w = B.outcome(st) === 'win'; let ko = 0; for (const x of B.allies(st)) if (!x.alive) ko++;
       const stars = w ? Math.min(st.cycle > 8 ? 2 : 3, Math.max(1, 3 - ko)) : 0;
       n++; win += w; s2 += stars >= 2; s3 += stars === 3;
+      if (w) { let h = 0, m = 0; for (const x of B.allies(st)) { h += Math.max(0, x.hp); m += x.maxHp; } hp += m ? h / m : 0; }
     }
-    return { i: c.i, n, s2, s3, win };
+    return { i: c.i, n, s2, s3, win, hp };
   });
 }
 parentPort.on('message', ({ id, W, jobs, opt }) => {

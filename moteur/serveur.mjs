@@ -104,21 +104,23 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
 // ---------- conseil en combat ----------
 async function conseil({ st, key, cands, W, budget }) {
   budget = budget || reglages().conseilMs;
-  const t0 = Date.now(), stats = cands.map((c, i) => ({ ...c, i, n: 0, s2: 0, s3: 0, win: 0 }));
-  const val = r => (r.s2 + 0.5 * r.s3 + 0.2 * r.win) / Math.max(1, r.n);
+  const t0 = Date.now(), stats = cands.map((c, i) => ({ ...c, i, n: 0, s2: 0, s3: 0, win: 0, hp: 0 }));
+  // Tour de l'infini : les etoiles ne comptent pas, seuls la victoire et les PV gardes pour les etages suivants (12 % de soin seulement).
+  const tour = typeof st === 'string' && st.includes('"__tower":1');
+  const val = tour ? r => (r.win + 0.5 * r.hp) / Math.max(1, r.n) : r => (r.s2 + 0.5 * r.s3 + 0.2 * r.win) / Math.max(1, r.n);
   let alive = stats.slice(), seed = (Math.random() * 1e9) >>> 0, round = 0;
   const parts = job && !job.fin ? 1 : Math.max(1, Math.min(pool.n, 8));
   while (alive.length) {
     const per = round === 0 ? 24 : 16;
     const jobs = []; for (let p = 0; p < parts; p++) jobs.push({ type: 'roll', st, key, cands: alive.map(c => ({ i: c.i, kind: c.kind, tgt: c.tgt })), n: Math.ceil(per / parts), seed: seed + p * 1000003 + round * 7 });
     const res = await pool.runAll(jobs, W, {}, 1);
-    for (const part of res) for (const r of part) { const a = stats[r.i]; a.n += r.n; a.s2 += r.s2; a.s3 += r.s3; a.win += r.win; }
+    for (const part of res) for (const r of part) { const a = stats[r.i]; a.n += r.n; a.s2 += r.s2; a.s3 += r.s3; a.win += r.win; a.hp += r.hp || 0; }
     round++;
     if (Date.now() - t0 > budget || round >= 12) break;
     const best = Math.max(...alive.map(val)); alive = alive.filter(r => best - val(r) < 0.12 + 0.6 / Math.sqrt(r.n));
     if (alive.length < 2) break;
   }
-  const out = stats.map(r => ({ kind: r.kind, tgt: r.tgt, n: r.n, s2: r.s2 / Math.max(1, r.n), s3: r.s3 / Math.max(1, r.n), win: r.win / Math.max(1, r.n), v: val(r) })).sort((a, b) => b.v - a.v);
+  const out = stats.map(r => ({ kind: r.kind, tgt: r.tgt, n: r.n, s2: r.s2 / Math.max(1, r.n), s3: r.s3 / Math.max(1, r.n), win: r.win / Math.max(1, r.n), hp: r.hp / Math.max(1, r.n), v: val(r) })).sort((a, b) => b.v - a.v);
   return { ms: Date.now() - t0, sims: stats.reduce((a, r) => a + r.n, 0), res: out };
 }
 // ---------- etat ----------
