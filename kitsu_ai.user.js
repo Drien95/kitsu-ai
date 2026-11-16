@@ -867,6 +867,8 @@
             const S = save(), data = { t: Date.now(), script: this.__v, owned: S.owned || {}, lv: S.lv || {}, stars: S.stars || {}, team: S.pve?.team || [], acct: { lv: S.acct?.lv || 1 }, W: this.W };
             // Boss de guilde de la semaine (pour l'analyse locale), sans aucun jeton dans le fichier.
             try { const r = await fetch('/api/guilds/week', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.boss) data.guild = { boss: { id: g.boss.id, name: g.boss.name, lv: g.boss.lv, hp: g.boss.hp, turns: g.week?.turns || 12 }, minLv: g.week?.minLv || 15 }; } } catch {}
+            // Pain (evenement de guilde) : son niveau, pour que le moteur local cherche le trio qui fait le plus de degats.
+            try { const r = await fetch('/api/guilds/pain', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.event?.open && g.boss) data.pain = { lv: g.boss.lv, hp: g.boss.hp }; } } catch {}
             return data;
           },
           async exportMoteur() {

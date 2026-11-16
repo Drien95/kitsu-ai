@@ -122,19 +122,23 @@ for (const nv of niveaux) {
 Tour de l'infini (${essais} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`);
     fin.slice(0, 5).forEach((x, i) => console.log(`  ${i + 1}. ${x.t.map(short).join(' / ')} : etage moyen ${x.moy.toFixed(1)} (min ${x.min}, max ${x.max})`));
   }
-  // Boss de guilde (si exporte avec la sauvegarde).
-  if (SAVE.guild?.boss && G.setupGwBoss) {
-    const t1 = Date.now(), gb = { ...SAVE.guild.boss, turns: SAVE.guild.boss.turns || 12, cap: 300000 }, minLv = SAVE.guild.minLv || 15;
-    const el = IDS.filter(id => LVF(id) >= minLv), tr = []; const pick = el.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 20);
+  // Boss de guilde de la semaine et Pain (evenement de guilde) : trios qui font le plus de degats en N cycles.
+  const bossGuilde = async (cle, titre, gb, minLv) => {
+    const t1 = Date.now(), el = IDS.filter(id => LVF(id) >= minLv), tr = []; const pick = el.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 20);
     for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) tr.push([pick[a], pick[b], pick[c]]);
+    if (!tr.length) return;
     const r1 = await pool.runAll(tr.map(t => ({ type: 'gw', team: mkTeam(t), seeds: [1, 2], boss: gb })), W, {}, 8);
     const s1 = tr.map((t, i) => ({ t, d: r1[i].dmg.reduce((a, b) => a + b, 0) / 2 })).sort((a, b) => b.d - a.d).slice(0, 15);
     const r2 = await pool.runAll(s1.map(x => ({ type: 'gw', team: mkTeam(x.t), seeds: Array.from({ length: 20 }, (_, i) => 100 + i), boss: gb })), W, {}, 1);
     const g = s1.map((x, i) => ({ t: x.t, d: r2[i].dmg.reduce((a, b) => a + b, 0) / 20 })).sort((a, b) => b.d - a.d);
-    R0.guilde = { titre: `Boss de guilde ${SAVE.guild.boss.name || ''} niv ${gb.lv}`, top: g.slice(0, 5).map(x => ({ equipe: x.t.map(short), ids: x.t, degats: Math.round(x.d) })) };
-    console.log(`\n${R0.guilde.titre} (${tr.length} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`);
-    g.slice(0, 5).forEach((x, i) => console.log(`  ${i + 1}. ${x.t.map(short).join(' / ')} : ${Math.round(x.d)} degats (${Math.floor(x.d / 2500)} points)`));
-  }
+    R0[cle] = { titre, top: g.slice(0, 5).map(x => ({ equipe: x.t.map(short), ids: x.t, degats: Math.round(x.d) })) };
+    console.log(`
+${titre} (${tr.length} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`);
+    g.slice(0, 5).forEach((x, i) => console.log(`  ${i + 1}. ${x.t.map(short).join(' / ')} : ${Math.round(x.d)} degats`));
+  };
+  if (SAVE.guild?.boss && G.setupGwBoss) await bossGuilde('guilde', `Boss de guilde ${SAVE.guild.boss.name || ''} niv ${SAVE.guild.boss.lv}`, { ...SAVE.guild.boss, turns: SAVE.guild.boss.turns || 12, cap: 300000 }, SAVE.guild.minLv || 15);
+  // Pain : pendant l'evenement ; niveau exporte par le script (sinon 1). Degats sur un Pain a PV pleins, plafonnes a ses PV.
+  const P = G.PAIN; if (P && G.setupPain && Date.now() >= P.FROM && Date.now() < P.UNTIL) { const lv = SAVE.pain?.lv || 1; await bossGuilde('pain', `${P.NAME} (evenement de guilde) niv ${lv}`, { pain: true, lv, hp: P.HP, turns: P.TURNS, cap: P.HP }, P.MIN_LV || 15); }
 }
 saveCache();
 mkdirSync(D('resultats'), { recursive: true });
