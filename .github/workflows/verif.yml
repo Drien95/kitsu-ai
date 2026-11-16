@@ -37,7 +37,7 @@ jobs:
         run: |
           git fetch --tags -q origin
           V=$(grep -m1 '@version' kitsu_ai.user.js | awk '{print $3}')
-          CODE=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -Ev '^(docs/|README\.md$|CHANGELOG\.md$|\.github/)' || true)
+          CODE=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -Ev '^(docs/|README\.md$|CHANGELOG\.md$|CLAUDE\.md$|\.gitignore$|publier\.ps1$|\.github/)' || true)
           if git rev-parse -q --verify "refs/tags/v$V" >/dev/null && [ -n "$CODE" ]; then
             echo "::error::La version $V est deja publiee (tag v$V) mais le code change :"; echo "$CODE"
             echo "Monte la version (// @version, README, CHANGELOG) pour que la mise a jour soit proposee."; exit 1
