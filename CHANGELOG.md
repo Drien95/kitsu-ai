@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.11.4
+
+### Corrigé
+- **Conseil en combat (campagne et autres modes)** : quand tous les coups donnaient le même résultat (combat gagné à 3 étoiles quoi qu'on fasse, ou perdu quoi qu'on fasse), le calcul du PC classait en tête le premier coup de sa liste, « Respirer », et les boutons mettaient « Respirer » en avant alors que le panneau conseillait la meilleure attaque. Le PC ne remplace plus le conseil du navigateur que s'il trouve un coup strictement meilleur.
+
+---
+
 ## 5.11.3
 
 ### Ajouté

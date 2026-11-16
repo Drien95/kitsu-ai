@@ -24,7 +24,7 @@ if ($cur -ne $branch -or -not $remote) {
 # Version deja publiee ? Sans nouveau numero, aucune mise a jour ne sera proposee (et la verification GitHub refusera).
 $ver = ((Select-String -Path kitsu_ai.user.js -Pattern '@version\s+(\S+)' | Select-Object -First 1).Matches[0].Groups[1].Value)
 if (git tag -l "v$ver") {
-  $code = git diff --name-only "v$ver" -- . ':!docs' ':!README.md' ':!CHANGELOG.md' ':!.github'
+  $code = git diff --name-only "v$ver" -- . ':!docs' ':!README.md' ':!CHANGELOG.md' ':!CLAUDE.md' ':!.gitignore' ':!publier.ps1' ':!.github'
   if ($code) { Write-Host "`nAttention : la version $ver est deja publiee et le code a change. Monte la version, sinon aucune mise a jour ne sera proposee." -ForegroundColor Yellow; if ((Read-Host "Envoyer quand meme ? (o/N)") -ne 'o') { exit 1 } }
 }
 git add -A
