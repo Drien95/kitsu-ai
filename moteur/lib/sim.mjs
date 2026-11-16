@@ -68,9 +68,9 @@ export function makeSim(G, B) {
     }
     return maxFl;
   };
-  // Boss de guilde : degats en N cycles, plafonnes comme dans le jeu.
+  // Boss de guilde (semaine) ou Pain (evenement de guilde, boss.pain) : degats en N cycles, plafonnes comme dans le jeu.
   const gw = (team, seed, pol, boss) => {
-    const { st, hp0 } = G.setupGwBoss(boss.id, boss.lv, boss.hp, team, seed);
+    const { st, hp0 = boss.hp } = boss.pain ? G.setupPain(boss.lv, boss.hp, team, seed) : G.setupGwBoss(boss.id, boss.lv, boss.hp, team, seed);
     for (let i = 0; i < 800 && st.cycle <= boss.turns; i++) { const u = step(st); if (!u || st.cycle > boss.turns) break; doAct(st, u, pol(st, u)); }
     return Math.min(boss.cap || 300000, hp0 - B.enemies(st)[0].hp);
   };

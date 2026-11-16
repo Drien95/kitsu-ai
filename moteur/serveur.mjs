@@ -65,10 +65,11 @@ const ACTIONS = {
   bench: { nom: 'Mesure de vitesse', cmd: ['bench.mjs'] },
   imitation: { nom: "IA par imitation", cmd: ['distiller.mjs'], opts: o => ['--types', o.types || 'nm,boss', '--combats', String(o.combats || 160)] },
   equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--generations', String(o.generations || 25)] },
-  conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos'] },
+  tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
+  conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos,marche'] },
 };
 // Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
-const CHAINES = { complet: { nom: 'Tout lancer', etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }], ['equipes', { n: 3 }], ['conseils', {}]] } };
+const CHAINES = { complet: { nom: 'Tout lancer', etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }], ['entrainer', { types: 'tour', generations: 20 }], ['equipes', { n: 3 }], ['conseils', {}]] } };
 let job = null; const history = []; let CARTES = {};
 function lancer(action, o = {}) {
   if (job && !job.fin) throw new Error('une tache tourne deja : ' + job.nom);
@@ -89,7 +90,7 @@ function lancerChaine(action, o) {
 function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const A = ACTIONS[action]; if (!A) throw new Error('action inconnue');
   const fils = Math.max(1, NCPU - Math.max(1, reglages().filsReserves)); // des fils restent libres pour le conseil en combat
-  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils'].includes(action) ? ['--fils', String(fils)] : [])];
+  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour'].includes(action) ? ['--fils', String(fils)] : [])];
   const p = spawn(process.execPath, args, { cwd: here, env: { ...process.env, KITSU_MOTEUR: here } });
   const prev = chaine && job ? job.lignes : [];
   job = { id: Date.now(), action, nom: chaine ? `${chaine.nom} (${chaine.i + 1}/${chaine.etapes.length} : ${A.nom})` : A.nom, args: args.join(' '), debut: chaine ? chaine.debut : Date.now(), lignes: chaine ? [...prev, `=== ${A.nom} ===`] : [], fin: null, code: null, proc: p, chaine };
@@ -103,21 +104,23 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
 // ---------- conseil en combat ----------
 async function conseil({ st, key, cands, W, budget }) {
   budget = budget || reglages().conseilMs;
-  const t0 = Date.now(), stats = cands.map((c, i) => ({ ...c, i, n: 0, s2: 0, s3: 0, win: 0 }));
-  const val = r => (r.s2 + 0.5 * r.s3 + 0.2 * r.win) / Math.max(1, r.n);
+  const t0 = Date.now(), stats = cands.map((c, i) => ({ ...c, i, n: 0, s2: 0, s3: 0, win: 0, hp: 0 }));
+  // Tour de l'infini : les etoiles ne comptent pas, seuls la victoire et les PV gardes pour les etages suivants (12 % de soin seulement).
+  const tour = typeof st === 'string' && st.includes('"__tower":1');
+  const val = tour ? r => (r.win + 0.5 * r.hp) / Math.max(1, r.n) : r => (r.s2 + 0.5 * r.s3 + 0.2 * r.win) / Math.max(1, r.n);
   let alive = stats.slice(), seed = (Math.random() * 1e9) >>> 0, round = 0;
   const parts = job && !job.fin ? 1 : Math.max(1, Math.min(pool.n, 8));
   while (alive.length) {
     const per = round === 0 ? 24 : 16;
     const jobs = []; for (let p = 0; p < parts; p++) jobs.push({ type: 'roll', st, key, cands: alive.map(c => ({ i: c.i, kind: c.kind, tgt: c.tgt })), n: Math.ceil(per / parts), seed: seed + p * 1000003 + round * 7 });
     const res = await pool.runAll(jobs, W, {}, 1);
-    for (const part of res) for (const r of part) { const a = stats[r.i]; a.n += r.n; a.s2 += r.s2; a.s3 += r.s3; a.win += r.win; }
+    for (const part of res) for (const r of part) { const a = stats[r.i]; a.n += r.n; a.s2 += r.s2; a.s3 += r.s3; a.win += r.win; a.hp += r.hp || 0; }
     round++;
     if (Date.now() - t0 > budget || round >= 12) break;
     const best = Math.max(...alive.map(val)); alive = alive.filter(r => best - val(r) < 0.12 + 0.6 / Math.sqrt(r.n));
     if (alive.length < 2) break;
   }
-  const out = stats.map(r => ({ kind: r.kind, tgt: r.tgt, n: r.n, s2: r.s2 / Math.max(1, r.n), s3: r.s3 / Math.max(1, r.n), win: r.win / Math.max(1, r.n), v: val(r) })).sort((a, b) => b.v - a.v);
+  const out = stats.map(r => ({ kind: r.kind, tgt: r.tgt, n: r.n, s2: r.s2 / Math.max(1, r.n), s3: r.s3 / Math.max(1, r.n), win: r.win / Math.max(1, r.n), hp: r.hp / Math.max(1, r.n), v: val(r) })).sort((a, b) => b.v - a.v);
   return { ms: Date.now() - t0, sims: stats.reduce((a, r) => a + r.n, 0), res: out };
 }
 // ---------- etat ----------

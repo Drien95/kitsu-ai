@@ -10,6 +10,7 @@ import { makePool } from './lib/pool.mjs';
 import { W_DEFAUT } from './lib/sim.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { reglagesAnalyse } from './lib/historique.mjs';
+import { makeTour } from './lib/tour.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const T0 = Date.now(), log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
@@ -34,8 +35,8 @@ const saveCache = () => writeFileSync(cacheFile, JSON.stringify(Object.fromEntri
 const shuffle = (a, s = 7) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { s = (s * 1103515245 + 12345) & 0x7fffffff; const j = s % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // ---------- evaluation avec cache ----------
 let LVF = null; // fonction niveau (actuel ou 99)
-const mkTeam = t => t.map(id => ({ id, lv: LVF(id), stars: SAVE.stars?.[id] || 0 }));
-const tkey = t => t.map(id => id + ':' + LVF(id) + ':' + (SAVE.stars?.[id] || 0)).sort().join(',');
+const mkTeam = (t, lk = {}) => t.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LVF(id), stars: SAVE.stars?.[id] || 0, ...(l ? { lk: l } : {}) }; }); // avec les collectifs choisis
+const tkey = t => t.map(id => id + ':' + LVF(id) + ':' + (SAVE.stars?.[id] || 0) + ':' + (SAVE.lk?.[id] || []).join('+')).sort().join(',');
 async function evalUnit(cat, teams, chunkIdx, fl, seed) {
   const out = new Array(teams.length), todo = [];
   teams.forEach((t, i) => { const k = `${cat}|${chunkIdx}|${seed}|${tkey(t)}`; const c = cache.get(k); if (c) { out[i] = c; cacheHits++; } else todo.push([i, k]); });
@@ -112,28 +113,32 @@ for (const nv of niveaux) {
     res.slice(0, 5).forEach((r, i) => console.log(`  ${i + 1}. ${r.t.map(short).join(' / ')} : 2+ etoiles ${pct(r.s2)}, 3 etoiles ${pct(r.s3)}, victoire ${pct(r.win)}`));
     saveCache();
   }
-  // Tour de l'infini : les meilleurs trios des autres categories, montee complete sur plusieurs tirages.
+  // Tour de l'infini : trio cherche pour la Tour (lib/tour.mjs), montees completes sur plusieurs tirages.
   if ((SAVE.acct?.lv || 25) >= 25 && G.setupTower) {
-    const t1 = Date.now(), cand = [...new Map(Object.values(R0).flatMap(c => c.top.slice(0, 6).map(x => [x.ids.slice().sort().join(), x.ids]))).values()];
-    const r = await pool.runAll(cand.map(t => ({ type: 'tower', team: mkTeam(t), seeds: Array.from({ length: SEEDS + 2 }, (_, i) => i + 1), maxFl: 300 })), W, {}, 1);
-    const tw = cand.map((t, i) => ({ t, moy: r[i].fl.reduce((a, b) => a + b, 0) / r[i].fl.length, min: Math.min(...r[i].fl) })).sort((a, b) => b.moy - a.moy);
-    R0.tour = { titre: "Tour de l'infini", top: tw.slice(0, 5).map(x => ({ equipe: x.t.map(short), ids: x.t, etageMoyen: +x.moy.toFixed(1), etageMin: x.min })) };
-    console.log(`\nTour de l'infini (${cand.length} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`);
-    tw.slice(0, 5).forEach((x, i) => console.log(`  ${i + 1}. ${x.t.map(short).join(' / ')} : etage moyen ${x.moy.toFixed(1)} (min ${x.min})`));
+    const t1 = Date.now(), T = makeTour({ G, B, pool, W, ids: IDS, mk: mkTeam, actuelle: (SAVE.team || []).map(Number).filter(id => IDS.includes(id)) });
+    const { fin, essais } = await T.trios({ cartes: 22, tirages: Math.max(20, SEEDS * 5) });
+    R0.tour = { titre: "Tour de l'infini", trios: essais, top: fin.slice(0, 5).map(x => ({ equipe: x.t.map(short), ids: x.t, etageMoyen: +x.moy.toFixed(1), etageMin: x.min, p10: x.p10, max: x.max })), murs: T.murs(fin[0]) };
+    console.log(`
+Tour de l'infini (${essais} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`);
+    fin.slice(0, 5).forEach((x, i) => console.log(`  ${i + 1}. ${x.t.map(short).join(' / ')} : etage moyen ${x.moy.toFixed(1)} (min ${x.min}, max ${x.max})`));
   }
-  // Boss de guilde (si exporte avec la sauvegarde).
-  if (SAVE.guild?.boss && G.setupGwBoss) {
-    const t1 = Date.now(), gb = { ...SAVE.guild.boss, turns: SAVE.guild.boss.turns || 12, cap: 300000 }, minLv = SAVE.guild.minLv || 15;
-    const el = IDS.filter(id => LVF(id) >= minLv), tr = []; const pick = el.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 20);
+  // Boss de guilde de la semaine et Pain (evenement de guilde) : trios qui font le plus de degats en N cycles.
+  const bossGuilde = async (cle, titre, gb, minLv) => {
+    const t1 = Date.now(), el = IDS.filter(id => LVF(id) >= minLv), tr = []; const pick = el.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 20);
     for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) tr.push([pick[a], pick[b], pick[c]]);
+    if (!tr.length) return;
     const r1 = await pool.runAll(tr.map(t => ({ type: 'gw', team: mkTeam(t), seeds: [1, 2], boss: gb })), W, {}, 8);
     const s1 = tr.map((t, i) => ({ t, d: r1[i].dmg.reduce((a, b) => a + b, 0) / 2 })).sort((a, b) => b.d - a.d).slice(0, 15);
     const r2 = await pool.runAll(s1.map(x => ({ type: 'gw', team: mkTeam(x.t), seeds: Array.from({ length: 20 }, (_, i) => 100 + i), boss: gb })), W, {}, 1);
     const g = s1.map((x, i) => ({ t: x.t, d: r2[i].dmg.reduce((a, b) => a + b, 0) / 20 })).sort((a, b) => b.d - a.d);
-    R0.guilde = { titre: `Boss de guilde ${SAVE.guild.boss.name || ''} niv ${gb.lv}`, top: g.slice(0, 5).map(x => ({ equipe: x.t.map(short), ids: x.t, degats: Math.round(x.d) })) };
-    console.log(`\n${R0.guilde.titre} (${tr.length} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`);
-    g.slice(0, 5).forEach((x, i) => console.log(`  ${i + 1}. ${x.t.map(short).join(' / ')} : ${Math.round(x.d)} degats (${Math.floor(x.d / 2500)} points)`));
-  }
+    R0[cle] = { titre, top: g.slice(0, 5).map(x => ({ equipe: x.t.map(short), ids: x.t, degats: Math.round(x.d) })) };
+    console.log(`
+${titre} (${tr.length} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`);
+    g.slice(0, 5).forEach((x, i) => console.log(`  ${i + 1}. ${x.t.map(short).join(' / ')} : ${Math.round(x.d)} degats`));
+  };
+  if (SAVE.guild?.boss && G.setupGwBoss) await bossGuilde('guilde', `Boss de guilde ${SAVE.guild.boss.name || ''} niv ${SAVE.guild.boss.lv}`, { ...SAVE.guild.boss, turns: SAVE.guild.boss.turns || 12, cap: 300000 }, SAVE.guild.minLv || 15);
+  // Pain : pendant l'evenement ; niveau exporte par le script (sinon 1). Degats sur un Pain a PV pleins, plafonnes a ses PV.
+  const P = G.PAIN; if (P && G.setupPain && Date.now() >= P.FROM && Date.now() < P.UNTIL) { const lv = SAVE.pain?.lv || 1; await bossGuilde('pain', `${P.NAME} (evenement de guilde) niv ${lv}`, { pain: true, lv, hp: P.HP, turns: P.TURNS, cap: P.HP }, P.MIN_LV || 15); }
 }
 saveCache();
 mkdirSync(D('resultats'), { recursive: true });

@@ -4,6 +4,22 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.12.0
+
+### Ajouté
+- **Tour de l'infini** (`tour.mjs`, carte « Tour de l'infini » dans Calculs) : le trio est cherché pour la Tour elle-même (chaque carte seule, puis tous les trios des meilleures, puis les 20 meilleurs sur 30 montées), au lieu d'être pris parmi les meilleurs des autres modes. Résultats : étage moyen avec sa marge, minimum, 10 % des montées les plus courtes, maximum.
+- **Réglages de combat appris pour la Tour** (`entrainer.mjs --types tour`, case « Tour » dans Entraînement, et étape de « Tout lancer ») : appris sur l’étage atteint (montées complètes, PV reportés) et gardés seulement s’ils battent les réglages actuels sur 100 montées jamais vues par équipe. Essai sur la sauvegarde du 16/11 : étage moyen 95,1 puis 99,6 (+4,4, z = 9).
+- Étages où les montées s’arrêtent, avec les ennemis qui y sont (ils sont toujours les mêmes pour un étage), et collectifs conseillés pour la Tour. Affichés dans Résultats, catégorie Tour.
+
+- **Conseil en combat dans la Tour** : le calcul du PC ne vise plus les étoiles (qui ne comptent pas dans la Tour) mais la victoire puis les PV gardés pour les étages suivants, et l’affiche (« victoire … % · PV gardés … % »).
+- **Pain (événement de guilde)** : pendant l’événement, l’analyse complète cherche le trio qui fait le plus de dégâts en 12 cycles, au niveau de Pain exporté par le script (catégorie « Pain (guilde) » dans Résultats).
+- **Marché (échanges)** : nouvelle partie « Marché » des Conseils de cartes. Pour chaque carte au marché que tu n’as pas, ce qu’elle ajoute à ton meilleur trio, et quelles cartes de même rareté tu peux proposer sans toucher à tes équipes. Pour chaque offre reçue sur tes lots : accepter ou non. Le script exporte les lots et offres en lisant `/api/market` et `/api/market/mine`, comme la page du marché.
+
+### Corrigé
+- **Les analyses ne tenaient pas compte des collectifs choisis** : l'analyse complète (`tout.mjs`) et la simulation de la Tour du script construisaient les équipes sans `lk`, l’entraînement de l’IA aussi. Le cache de l'analyse en tient compte désormais.
+
+---
+
 ## 5.11.4
 
 ### Corrigé
