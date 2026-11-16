@@ -262,6 +262,7 @@
           <label><input type="checkbox" id="o_tnm" checked> Cauchemar</label>
           <label><input type="checkbox" id="o_tbo" checked> Boss</label>
           <label><input type="checkbox" id="o_tno" checked> Normal</label>
+          <label><input type="checkbox" id="o_ttw"> Tour</label>
           <label>Générations <input type="number" id="o_gen" value="40" min="5" max="200"></label>
           <button data-act="entrainer">Lancer</button>
         </div>
@@ -695,7 +696,7 @@ setTimeout(renderMaj, 1500); setInterval(renderMaj, 600e3);
 async function lancer(action) {
   const o = {};
   if (action === 'tout') Object.assign(o, { niveaux: $('o_niv').value, tirages: +$('o_tir').value, cartes: +$('o_car').value });
-  if (action === 'entrainer') Object.assign(o, { types: [['nm', 'o_tnm'], ['boss', 'o_tbo'], ['norm', 'o_tno']].filter(([, i]) => $(i).checked).map(([k]) => k).join(','), generations: +$('o_gen').value });
+  if (action === 'entrainer') Object.assign(o, { types: [['nm', 'o_tnm'], ['boss', 'o_tbo'], ['norm', 'o_tno'], ['tour', 'o_ttw']].filter(([, i]) => $(i).checked).map(([k]) => k).join(','), generations: +$('o_gen').value });
   if (action === 'mode') Object.assign(o, { mode: $('o_mode').value, lv99: $('o_lv99').checked, top: +$('o_top').value });
   if (action === 'plafond') Object.assign(o, { n: +$('o_n').value });
   if (action === 'conseils') { const p = [['collectifs', 'o_ccol'], ['xp', 'o_cxp'], ['tirage', 'o_ctir'], ['duos', 'o_cduo']].filter(([, i]) => $(i).checked).map(([k]) => k); if (!p.length) return; o.parties = p.join(','); }

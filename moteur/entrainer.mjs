@@ -20,6 +20,7 @@ const pp = D('data', 'poids.json');
 let W = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')).W : (SAVE.W?.nm ? SAVE.W : W_DEFAUT);
 W = { ...W_DEFAUT, ...W };
 const lv = id => SAVE.lv?.[id]?.l || 99, st = id => SAVE.stars?.[id] || 0;
+const mkT = t => t.map(id => ({ id, lv: lv(id), stars: st(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}) })); // avec les collectifs choisis
 // Equipes : les meilleures de la derniere analyse complete, sinon l'equipe actuelle.
 const dp = D('resultats', 'dernier.json');
 const DER = existsSync(dp) ? JSON.parse(readFileSync(dp, 'utf8')) : null;
@@ -55,10 +56,42 @@ async function entrainer(kind, teams, fightsAll, gens, etiquette) {
   }
   return { w: best.map(x => +x.toFixed(4)), depart: +(100 * start).toFixed(1), fin: +(100 * bestHo).toFixed(1) };
 }
+// Tour de l'infini : reglages appris sur l'etage atteint (montees completes, PV reportes), pas sur les etoiles.
+// Gardes seulement s'ils battent les reglages actuels sur des montees jamais vues (z >= 2).
+async function entrainerTour(teams, gens) {
+  const climbs = async (w, seeds) => { const r = await pool.runAll(teams.map(team => ({ type: 'tower', team, seeds, maxFl: 400 })), { ...W, tower: w }, {}, 1); return r.flatMap(x => x.fl); };
+  const moy = a => a.reduce((x, y) => x + y, 0) / a.length, CTRL = Array.from({ length: 30 }, (_, i) => 9001 + i);
+  let mu = W.tower.slice(), sd = Array(mu.length).fill(0.35), best = mu.slice(), bestHo = moy(await climbs(best, CTRL)), stale = 0;
+  const start = bestHo; log(`tour : ${teams.length} equipe(s), depart etage moyen ${start.toFixed(1)} (controle ${CTRL.length} montees par equipe)`);
+  for (let g = 0; g < gens && stale < 8; g++) {
+    const seeds = Array.from({ length: 6 }, (_, i) => 100 * g + 11 + i);
+    const eps = Array.from({ length: POP / 2 }, () => mu.map((_, j) => sd[j] * rn()));
+    const ws = [best.slice(), ...eps.flatMap(e => [mu.map((m, j) => m + e[j]), mu.map((m, j) => m - e[j])])].slice(0, POP);
+    const fs = await Promise.all(ws.map(w => climbs(w, seeds).then(moy)));
+    const pop = ws.map((w, i) => ({ w, f: fs[i] })).sort((a, b) => b.f - a.f), el = pop.slice(0, ELITE);
+    for (let j = 0; j < mu.length; j++) { const m = el.reduce((a, p) => a + p.w[j], 0) / ELITE; mu[j] = m; sd[j] = Math.max(0.05, Math.sqrt(el.reduce((a, p) => a + (p.w[j] - m) ** 2, 0) / ELITE) * 0.9 + 0.02); }
+    let imp = false; for (const w of [pop[0].w, mu]) { const h = moy(await climbs(w, CTRL)); if (h > bestHo + 0.5) { bestHo = h; best = w.slice(); imp = true; } }
+    stale = imp ? 0 : stale + 1;
+    log(`tour generation ${g + 1} : meilleur ${pop[0].f.toFixed(1)} (entrainement), controle ${bestHo.toFixed(1)}${imp ? ' (amelioration)' : ''}`);
+  }
+  // Verification finale sur des montees jamais vues : reglages actuels contre reglages appris, memes tirages.
+  const FIN = Array.from({ length: 100 }, (_, i) => 70001 + i), a = await climbs(W.tower, FIN), b = await climbs(best, FIN);
+  const d = b.map((x, i) => x - a[i]), md = moy(d), se = Math.sqrt(d.reduce((x, y) => x + (y - md) ** 2, 0) / (d.length - 1) / d.length), z = se ? md / se : 0;
+  log(`tour : verification sur ${FIN.length} montees jamais vues par equipe : ${moy(a).toFixed(1)} -> ${moy(b).toFixed(1)} (ecart ${md.toFixed(1)} +/- ${(2 * se).toFixed(1)}, z = ${z.toFixed(1)})`);
+  return { w: best.map(x => +x.toFixed(4)), depart: +moy(a).toFixed(1), fin: +moy(b).toFixed(1), z: +z.toFixed(1), garde: z >= 2 };
+}
 const sauver = patch => { mkdirSync(D('data'), { recursive: true }); archiverPoids('entrainement'); const old = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')) : {}; writeFileSync(pp, JSON.stringify({ ...old, ...patch, restaure: undefined, t: Date.now(), version }, null, 1)); };
 for (const kind of String(arg('types', 'nm,boss,norm')).split(',').filter(Boolean)) {
+  if (kind === 'tour') {
+    const tops = (DER?.modes?.actuel || DER?.modes?.['99'] || {}).tour?.top?.slice(0, 2).map(x => x.ids) || (SAVE.team?.length ? [SAVE.team.map(Number)] : []);
+    if (!tops.length) { log('tour : aucune equipe (lance d abord l analyse de la Tour)'); continue; }
+    const r = await entrainerTour(tops.map(mkT), GENS);
+    gains.tour = { depart: r.depart, fin: r.fin, z: r.z, unite: 'etage moyen' };
+    if (r.garde) { W.tower = r.w; log(`tour : reglages appris gardes (${r.depart} -> ${r.fin})`); } else log('tour : pas de gain net sur les montees jamais vues, reglages actuels gardes');
+    sauver({ W, gains }); continue;
+  }
   const T = TYPES[kind]; if (!T) continue;
-  const teams = teamsFor(T.cats).map(t => t.map(id => ({ id, lv: lv(id), stars: st(id) })));
+  const teams = teamsFor(T.cats).map(mkT);
   if (!teams.length) { log(kind, ': aucune equipe'); continue; }
   const r = await entrainer(kind, teams, T.fights, GENS, kind); if (!r) continue;
   W[kind] = r.w; gains[kind] = { depart: r.depart, fin: r.fin };
@@ -72,7 +105,7 @@ if (NE > 0) {
   const old = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')) : {}, equipes = old.equipes || {};
   for (const t of teamsFor(['cauchemar_multi', 'cauchemar_boss', 'cauchemar']).slice(0, NE)) {
     const key = t.slice().sort((a, b) => a - b).join('-'), nom = t.map(id => (CH[id]?.n || id)).join(' / ');
-    const r = await entrainer('nm', [t.map(id => ({ id, lv: lv(id), stars: st(id) }))], TYPES.nm.fights, Math.round(GENS * 0.6), 'equipe ' + nom);
+    const r = await entrainer('nm', [mkT(t)], TYPES.nm.fights, Math.round(GENS * 0.6), 'equipe ' + nom);
     if (r && r.fin > r.depart + 0.5) { equipes[key] = { nom, nm: r.w, depart: r.depart, fin: r.fin, t: Date.now() }; log(`equipe ${nom} : ${r.depart} -> ${r.fin}, reglages propres gardes`); }
     else if (r) log(`equipe ${nom} : pas de gain net (${r.depart} -> ${r.fin}), reglages generaux gardes`);
   }

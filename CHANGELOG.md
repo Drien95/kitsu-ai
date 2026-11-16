@@ -8,10 +8,11 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ### Ajouté
 - **Tour de l'infini** (`tour.mjs`, carte « Tour de l'infini » dans Calculs) : le trio est cherché pour la Tour elle-même (chaque carte seule, puis tous les trios des meilleures, puis les 20 meilleurs sur 30 montées), au lieu d'être pris parmi les meilleurs des autres modes. Résultats : étage moyen avec sa marge, minimum, 10 % des montées les plus courtes, maximum.
+- **Réglages de combat appris pour la Tour** (`entrainer.mjs --types tour`, case « Tour » dans Entraînement, et étape de « Tout lancer ») : appris sur l’étage atteint (montées complètes, PV reportés) et gardés seulement s’ils battent les réglages actuels sur 100 montées jamais vues par équipe. Essai sur la sauvegarde du 16/11 : étage moyen 95,1 puis 99,6 (+4,4, z = 9).
 - Étages où les montées s’arrêtent, avec les ennemis qui y sont (ils sont toujours les mêmes pour un étage), et collectifs conseillés pour la Tour. Affichés dans Résultats, catégorie Tour.
 
 ### Corrigé
-- **Les analyses ne tenaient pas compte des collectifs choisis** : l'analyse complète (`tout.mjs`) et la simulation de la Tour du script construisaient les équipes sans `lk`. Le cache de l'analyse en tient compte désormais.
+- **Les analyses ne tenaient pas compte des collectifs choisis** : l'analyse complète (`tout.mjs`) et la simulation de la Tour du script construisaient les équipes sans `lk`, l’entraînement de l’IA aussi. Le cache de l'analyse en tient compte désormais.
 
 ---
 
