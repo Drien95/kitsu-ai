@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.12.1
+
+### Corrigé
+- **Le jeu ralentissait avec le temps** : l'objectif de bannière (barre en haut du dock) était recalculé toutes les 0,4 s et relisait à chaque fois la sauvegarde et le journal des gains, qui grossit à chaque combat (jusqu'à 500). Il est maintenant recalculé toutes les 5 s.
+- Conseiller de combat : les contours (bouton, cible, carte qui joue) étaient retirés puis remis toutes les 150 ms, ce qui forçait le navigateur à redessiner les halos en continu. Ils ne sont plus touchés que s'ils changent.
+- Le journal de calibration (300 combats) n'est plus relu pour chaque pourcentage affiché, seulement après un combat terminé.
+
+---
+
 ## 5.12.0
 
 ### Ajouté
