@@ -4,10 +4,11 @@ Le panneau s'ouvre dans la fenêtre KitsuAI (adresse interne : `http://127.0.0.1
 
 | Onglet | Contenu |
 |---|---|
-| Tableau de bord | Trois cartes de mode avec les portraits du trio (Campagne : combats gagnés à 3★, un trio par combat ; Tour : étage ; Arène : % de victoires, avec le script privé), liste **À faire** (sauvegarde ancienne, analyse à relancer, combats sans 3★), bouton **Mettre à jour l'IA** et tâche en cours |
+| Tableau de bord | Trois cartes de mode avec les portraits du trio (Campagne : combats gagnés à 3★, un trio par combat ; Tour : étage ; Raids : % de raids gagnés ; Arène : % de victoires, avec le script privé), liste **À faire** (sauvegarde ancienne, analyse à relancer, combats sans 3★), bouton **Mettre à jour l'IA** et tâche en cours |
 | Calculs | Chaque calcul séparément avec ses options : analyse complète, entraînement, conseils de cartes, IA par équipe, IA par imitation, analyse par mode, mesure du plafond, mise à jour du moteur, mesure de vitesse |
 | Résultats | Top 10 par catégorie, à tes niveaux ou au niveau 99, conseils de cartes (collectifs, plan d’XP, tirage, duos) et tous les fichiers CSV/JSON/TXT |
 | Campagne | **3 étoiles en Campagne et en Cauchemar** (6 difficultés, ou Cauchemar seulement) : podium, carte à partager en PNG avec les portraits, comparateur de trios, bouton de calcul (tous les trios de tes SSR, UR et LR, reprise après arrêt, PC gardé éveillé), 10 meilleurs trios par difficulté avec portraits, graphiques (classement, difficultés, boss, mondes, course, répartition), ton équipe, ce que tu peux faire à tes niveaux, cartes clés, collectifs conseillés, export PNG par graphique ou en planche |
+| Raids | Raid « Le Destin Effacé » (1 à 3 joueurs) : bouton de calcul du meilleur trio, podium par niveau de coéquipiers (moyens, bons, forts) et à 3 ou 2 joueurs, rôle de chaque carte, causes de défaite, les 3 boss et ce qu'il faut faire, tes derniers raids lus par le script |
 | Script | Version disponible et version installée, connexion au PC, installer ou mettre à jour, copier le script, voir le code |
 | Sauvegarde | Export actuel (cartes, équipe, boss de guilde) et import par glisser-déposer |
 | Nouveautés | Notes de version de KitsuAI (bouton Mise à jour) et **patchs KITSU détectés** (cartes nouvelles et modifiées, mondes, événements, bannières, tes cartes touchées) |

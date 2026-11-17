@@ -1,8 +1,10 @@
 // Fil de calcul : charge le moteur une fois, puis traite des paquets de travail.
 //   type 'fights' : combats -> { n, win, s2, s3 }   type 'tower' : etages atteints   type 'gw' : degats au boss de guilde
+//   type 'raid' : raids complets (ton trio au siege 0 + coequipiers) -> victoires, etape atteinte, ta part des degats, causes
 import { parentPort, workerData } from 'node:worker_threads';
 import { loadEngine } from './charger.mjs';
 import { makeSim } from './sim.mjs';
+import { jouer, roster } from './raid.mjs';
 const { G, B } = await loadEngine(workerData?.version);
 const S = makeSim(G, B);
 let polKey = '', pol = null;
@@ -33,6 +35,12 @@ parentPort.on('message', ({ id, W, jobs, opt }) => {
       if (j.type === 'roll') return roll(j);
       if (j.type === 'teach') return { samples: S.teach(j.fid, j.team, j.seed, globalThis.__W, j.opt || {}) };
       if (j.type === 'etoiles') { let st = ''; for (const sd of j.seeds) for (const fid of j.fights) st += S.fight(fid, j.team, sd, pol, opt).stars | 0; return { st }; } // etoiles de chaque combat (cauchemar3, par combat)
+      if (j.type === 'raid') { // j.moi : ton trio, j.autres : liste de coequipiers (3 ou 6 cartes), une graine par coequipier
+        let n = 0, win = 0, etape = 0, part = 0; const causes = {}, cartes = {};
+        j.autres.forEach((a, i) => { const r = jouer(G, roster(j.moi, a), (j.graine || 7919) * (i + 1)); n++; win += r.gagne; etape += r.gagne ? 3 : r.stage; const tot = r.degats.reduce((x, y) => x + y, 0) || 1; part += r.degats[0] / tot;
+          if (!r.gagne) causes[r.cause] = (causes[r.cause] || 0) + 1; if (j.detail) for (const [k, c] of Object.entries(r.parCarte)) if (k.startsWith('p0-')) { const d = cartes[k] ||= { degats: 0, ruptures: 0, gardes: 0, part: 0 }; d.degats += c.degats; d.ruptures += c.ruptures; d.gardes += c.gardes; d.part += c.degats / tot; } });
+        return { n, win, etape, part, causes, ...(j.detail ? { cartes } : {}) };
+      }
       if (j.type === 'gw') return { dmg: j.seeds.map(sd => S.gw(j.team, sd, pol, j.boss)) };
       let n = 0, win = 0, s2 = 0, s3 = 0;
       for (const sd of j.seeds) for (const fid of j.fights) { const r = S.fight(fid, j.team, sd, pol, opt); n++; win += r.win; s2 += r.stars >= 2; s3 += r.stars === 3; }

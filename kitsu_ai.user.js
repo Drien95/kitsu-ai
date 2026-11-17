@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.19.0
+// @version      5.20.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.19.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.20.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -568,13 +568,13 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.19.0',
+          __v: '5.20.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
           async start() {
             await loadModules();
-            this.live(); this.teamAdvisor(); this.pullAdvisor(); this.rewardTracker(); this.planAdvisor(); this.roadAdvisor(); if (lsGet('kitsu_ai_guide', true) !== false) this.guide(true); this.healthPanel(); this.forecast(); this.dock(); this.energyAlert();
+            this.live(); this.teamAdvisor(); this.pullAdvisor(); this.rewardTracker(); this.planAdvisor(); this.roadAdvisor(); if (lsGet('kitsu_ai_guide', true) !== false) this.guide(true); this.healthPanel(); this.forecast(); this.dock(); this.energyAlert(); this.raidAdvisor();
             this.checkVersion();
             const tw = lsGet('kitsu_ai_tower', null); if (!tw || Date.now() - tw.t > 86400000) setTimeout(() => this.tower(8, 4).catch(() => {}), 20000);
             const tr = lsGet('kitsu_ai_training', null);
@@ -2138,13 +2138,116 @@
             console.table(b3);
             return `${c.total} combats enregistres, dont ${log.length} avec le suivi des etoiles`;
           },
+          // Raid « Le Destin Effacé » (5.20) : au salon, ton meilleur trio avec les cartes de tes partenaires ; en combat, l'action de
+          // chacune de tes cartes ce tour (Rupture, Garde, attaque), calculee sur le PC d'apres l'annonce du boss et ce que tes partenaires
+          // ont deja prevu. Lecture seule : l'etat est lu comme la page le lit (GET), rien n'est envoye au jeu, aucun clic.
+          raidAdvisor() {
+            const H = () => ({ credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } });
+            if (!document.getElementById('kitsuRaidCss')) {
+              const c = document.createElement('style'); c.id = 'kitsuRaidCss';
+              c.textContent = '#kitsuRaid{top:70px;max-width:330px}'
+                + '.kitsu-rr{outline:3px solid #2fd27a!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important}.kitsu-rg{outline:3px solid #ff7a2f!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important}'
+                + '.kitsu-ra{outline:2px dashed #ff7a2f!important;outline-offset:3px}.kitsu-rp{outline:3px solid #2fd27a!important;outline-offset:2px}'
+                + '[data-kitsu-raid]{position:relative}[data-kitsu-raid]::after{content:attr(data-kitsu-raid);position:absolute;left:50%;top:-6px;transform:translate(-50%,-100%);z-index:9;pointer-events:none;white-space:nowrap;'
+                + 'font:italic 700 12px/1.25 "Bahnschrift SemiBold Condensed","Bahnschrift Condensed",Bahnschrift,"Arial Narrow",system-ui,sans-serif;letter-spacing:.6px;text-transform:uppercase;padding:1px 7px;border-radius:5px 5px 5px 0;background:#ff7a2f;color:#140a04}'
+                + '.kitsu-rr[data-kitsu-raid]::after,.kitsu-rp[data-kitsu-raid]::after{background:#2fd27a;color:#04140b}';
+              document.head.appendChild(c);
+            }
+            const box = () => { let b = document.getElementById('kitsuRaid'); if (!b) { b = document.createElement('div'); b.id = 'kitsuRaid'; b.className = 'kitsu-panel'; document.body.appendChild(b); } return b; };
+            const effacer = () => document.querySelectorAll('.kitsu-rr,.kitsu-rg,.kitsu-ra,.kitsu-rp,[data-kitsu-raid]').forEach(e => { e.classList.remove('kitsu-rr', 'kitsu-rg', 'kitsu-ra', 'kitsu-rp'); e.removeAttribute('data-kitsu-raid'); });
+            const marquer = (el, cls, txt) => { if (!el) return; el.classList.add(cls); if (txt) el.setAttribute('data-kitsu-raid', txt); };
+            const cacher = () => { const b = document.getElementById('kitsuRaid'); if (b) b.style.display = 'none'; effacer(); };
+            const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const moi = () => { try { const p = JSON.parse(atob((localStorage.getItem('kitsu_token') || '').split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); return String(p.id ?? p.sub ?? p.uid ?? p.user_id ?? ''); } catch { return ''; } };
+            // Ton siege : par ton identifiant, sinon par les cartes que la page t'affiche comme les tiennes.
+            const siege = w => {
+              const id = moi(), p = id && w.players?.find(x => String(x.user_id) === id); if (p) return p.seat;
+              const k = document.querySelector('#view-raids .rf-own [data-raid-select], #view-raids [data-raid-select]')?.dataset.raidSelect; const m = /^p(\d)-/.exec(k || ''); if (m) return +m[1];
+              const pris = [...document.querySelectorAll('#view-raids [data-r-action^="pick:"][aria-pressed="true"]')].map(b => +b.dataset.rAction.slice(5)).sort().join();
+              const q = w.players?.find(x => (x.cards || []).map(Number).sort().join() === pris); return q ? q.seat : null;
+            };
+            const nomU = u => short(u?.id) || u?.name || '?';
+            const LIB = { basic: 'Attaque', skill: 'Technique', ult: 'Ultime', guard: 'Garde', rupture: 'Rupture', revive: 'Reanimer' };
+            let busy = false, rid = '', ridT = 0, cleTour = '', cleSalon = '', dernier = null, suivis = 0, nConseils = 0, compte = '', finis = new Set(lsGet('kitsu_ai_raids_finis', []));
+            const salon = async (w, me) => {
+              const part = (w.players || []).filter(p => p.seat !== me && p.cards?.length).map(p => p.cards.map(Number));
+              const cle = JSON.stringify(part); const b = box(); b.style.display = 'block';
+              if (cle !== cleSalon) { cleSalon = cle; b.innerHTML = '<div class="k-who">Raid · salon</div><div class="k-mute">Calcul de ton meilleur trio avec ' + (part.length ? 'les cartes de tes partenaires' : 'des partenaires inconnus') + '...</div>';
+                const r = await localAsk('/raid', { salon: { partenaires: part } }, 60000); dernier = r;
+                if (!r?.trios?.length) { b.innerHTML = '<div class="k-who">Raid · salon</div><div class="k-mute">' + (localPC.ok ? 'Aucun trio a proposer : lance « Raid : meilleur trio » dans le panneau KitsuAI.' : 'Lance KitsuAI sur ton PC pour le conseil du raid.') + '</div>'; return; }
+                const t = r.trios[0], noms = (w.players || []).filter(p => p.seat !== me).map(p => esc(p.name)).join(' et ');
+                b.innerHTML = `<div class="k-who">Raid · salon · <b>${part.length ? 'avec ' + noms : 'partenaires pas encore choisis'}</b></div><div class="k-move">${t.ids.map(i => esc(short(i))).join(' · ')}</div>`
+                  + `<div class="k-chips"><span class="k-chip ok">Victoire ${t.victoire} %</span><span class="k-chip">Ta part ${t.part} %</span><span class="k-chip">${r.joueurs} joueur${r.joueurs > 1 ? 's' : ''}</span></div>`
+                  + (r.joueurs < 3 ? '<div class="k-why">Moins de 3 joueurs : le Nuage de Cioccolata demande 2 Ruptures de 2 joueurs, et Secco 2 fissures.</div>' : '')
+                  + '<div class="k-sec"><span>Autres trios</span><span>victoire</span></div>' + r.trios.map((x, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${x.ids.map(id => esc(short(id))).join(' · ')}</span><span class="p">${x.victoire} %</span><span class="k-bar"><b style="width:${x.victoire}%"></b></span></div>`).join('')
+                  + `<div class="k-foot"><span>${r.raids} raids simules</span><span>${(r.ms / 1000).toFixed(1)} s</span><span>partenaires supposes niveau 99</span></div>`;
+                accents(b);
+              }
+              effacer(); const t = dernier?.trios?.[0]; if (t) for (const id of t.ids) marquer(document.querySelector(`#view-raids [data-r-action="pick:${id}"]`), 'kitsu-rp', 'Prends');
+            };
+            const tour = async (w, me) => {
+              const C = w.combat; if (!C?.battle) return; const b = box(); b.style.display = 'block';
+              const intents = {}; for (const it of w.intents || []) { const p = w.players?.find(x => x.user_id === it.user_id); if (p && p.seat !== me && it.actions?.length) intents[p.seat] = it.actions; }
+              const mesInt = (w.intents || []).find(it => w.players?.find(x => x.user_id === it.user_id)?.seat === me);
+              if (C.mode !== 'PREPARE') { // resolution : on compte si le conseil a ete suivi (une fois par tour)
+                if (dernier?.tour === C.turn && !dernier.compte && mesInt?.actions) { dernier.compte = 1; nConseils++; if (dernier.actions.every(a => (mesInt.actions.find(x => x.unit === a.unit)?.kind || 'guard') === a.kind)) suivis++; }
+                effacer(); return;
+              }
+              const cle = C.turn + '|' + JSON.stringify(intents);
+              if (cle !== cleTour) { cleTour = cle;
+                const r = await localAsk('/raid', { tour: { combat: C, siege: me, intents } }, 15000);
+                if (!r?.actions) { b.innerHTML = '<div class="k-who">Raid</div><div class="k-mute">' + (localPC.ok ? 'Conseil indisponible ce tour.' : 'Lance KitsuAI sur ton PC pour le conseil du raid.') + '</div>'; dernier = null; return; }
+                dernier = { ...r, tour: C.turn };
+                const U = k => C.battle.units.find(u => u.key === k), f = r.forecast || {}, act = r.actions;
+                const forts = act.filter(a => ['rupture', 'guard', 'revive'].includes(a.kind));
+                const titre = forts.length ? forts.map(a => esc(nomU(U(a.unit))) + ' ' + ({ rupture: 'rompt', guard: 'garde', revive: 'reanime' }[a.kind])).join(' · ') : 'Tout le monde frappe';
+                const autresR = Object.entries(intents).filter(([, v]) => v.some(a => a.kind === 'rupture')).map(([p]) => esc(w.players.find(x => x.seat === +p)?.name || 'un partenaire'));
+                const msg = act.some(a => a.kind === 'rupture') ? 'Rupture prete.' : act.some(a => a.kind === 'guard' && (f.marks || []).includes(a.unit)) ? 'Je protege.' : '';
+                b.innerHTML = `<div class="k-who">${esc(f.title || 'Raid')}${f.breaks ? ` · <b>${f.breaks} Rupture${f.breaks > 1 ? 's' : ''}</b>` : ''}</div><div class="k-move">${titre}</div>`
+                  + `<div class="k-chips"><span class="k-chip ok">Victoire ${r.victoire} %</span>${r.sansConseil < r.victoire ? `<span class="k-chip hot">Sinon ${r.sansConseil} %</span>` : ''}${autresR.length ? `<span class="k-chip ok">${autresR.join(', ')} rompt deja</span>` : ''}</div>`
+                  + (forts.length ? `<div class="k-why">${forts.map(a => `<b>${esc(nomU(U(a.unit)))}</b> : ${esc(a.why)}`).join('<br>')}</div>` : '')
+                  + '<div class="k-sec"><span>Tes cartes</span><span>action</span></div>' + act.map((a, i) => `<div class="k-row"><span class="n">${i + 1}</span><span class="l">${esc(nomU(U(a.unit)))} : ${LIB[a.kind] || a.kind}${a.target && a.kind !== 'revive' ? ' sur ' + esc(U(a.target)?.name || '') : a.kind === 'revive' ? ' ' + esc(nomU(U(a.target))) : ''}</span><span class="p">${a.degats ? '~' + a.degats.toLocaleString('fr-FR') : ''}</span></div>`).join('')
+                  + (msg ? `<div class="k-sec"><span>Message rapide</span><span></span></div><div>« ${msg} »</div>` : '')
+                  + `<div class="k-foot"><span>Reanimations <b>${r.revives ?? '-'}</b></span><span>Conseils suivis <b>${suivis}/${nConseils}</b></span><span>${r.ms} ms</span></div>`;
+                accents(b);
+              }
+              effacer();
+              for (const a of dernier?.actions || []) { const el = document.querySelector(`#view-raids [data-raid-select="${a.unit}"]`) || document.querySelector(`#view-raids [data-unit="${a.unit}"]`);
+                marquer(el, a.kind === 'rupture' || a.kind === 'revive' ? 'kitsu-rr' : a.kind === 'guard' ? 'kitsu-rg' : 'kitsu-ra', LIB[a.kind]); }
+            };
+            const fin = async (w, me) => {
+              effacer(); const C = w.combat || {}, b = box(); b.style.display = 'block';
+              if (!finis.has(w.id)) { finis.add(w.id); lsSet('kitsu_ai_raids_finis', [...finis].slice(-50));
+                const mines = (C.battle?.units || []).filter(u => u.side === 'ally' && u.owner === me).map(u => +u.id).filter(Boolean), autres = (C.battle?.units || []).filter(u => u.side === 'ally' && u.owner !== me).map(u => +u.id).filter(Boolean);
+                localAsk('/raid', { fin: { id: w.id, gagne: w.status === 'WON', etape: C.stage, phase: C.phase, tour: C.turn, trio: mines, partenaires: autres, joueurs: (w.players || []).length, suivis, conseils: nConseils } }, 5000); }
+              b.innerHTML = `<div class="k-who">Raid termine</div><div class="k-move">${w.status === 'WON' ? 'Destin brise' : 'Expedition terminee'}</div><div class="k-mute">${['Cioccolata', 'Secco', 'Diavolo'][C.stage] || ''}${C.stage === 2 ? ', phase ' + C.phase : ''} · tour ${C.turn || '-'} · conseils suivis ${suivis}/${nConseils}</div>`;
+              accents(b);
+            };
+            clearInterval(window.__kitsuRaidT);
+            window.__kitsuRaidT = setInterval(async () => {
+              const v = document.getElementById('view-raids');
+              if (document.hidden || !v || !v.offsetParent) { cacher(); return; }
+              if (busy) return; busy = true;
+              try {
+                if (!rid && Date.now() - ridT > 10000) { ridT = Date.now(); const a = await fetch('/api/raids', H()); if (a.ok) rid = (await a.json()).active || ''; }
+                if (!rid) { cacher(); return; }
+                const r = await fetch('/api/raids/' + rid, H()); if (!r.ok) { rid = ''; cacher(); return; }
+                const w = await r.json(), me = siege(w);
+                if (compte !== rid) { compte = rid; suivis = 0; nConseils = 0; cleTour = ''; cleSalon = ''; }
+                if (me == null) { cacher(); return; }
+                if (w.status === 'LOBBY') await salon(w, me);
+                else if (w.status === 'RUNNING') await tour(w, me);
+                else { await fin(w, me); rid = ''; ridT = Date.now(); }
+              } catch { } finally { busy = false; }
+            }, 2500);
+          },
           status() {
             const v = lsGet(LS.ver, null), T = this._train;
             return { version: v, poids: lsGet(LS.w, null) ? 'reentraines' : 'par defaut', entrainement: T ? { phase: T.phase, gen: T.gen, depart: T.start, meilleur: T.best, combats: T.runs } : 'aucun', calibration: calibration().total + ' combats' };
           },
           stop() {
-            clearInterval(window.__kitsuAdvT); clearInterval(window.__kitsuTeamT); clearInterval(window.__kitsuPullT); clearInterval(window.__kitsuRwT); clearInterval(window.__kitsuPlanT); clearInterval(window.__kitsuGuideT); clearInterval(window.__kitsuDockT); clearInterval(window.__kitsuHealthT); clearInterval(window.__kitsuEnT); worker && worker.terminate && worker.terminate(); clearInterval(window.__kitsuHealthT);
-            ['kitsuAdv', 'kitsuTeam', 'kitsuPull', 'kitsuPlan', 'kitsuRoad', 'kitsuGuide', 'kitsuGuideCss', 'kitsuToast', 'kitsuBadge', 'kitsuAdvCss', 'kitsuDock', 'kitsuDockCss', 'kitsuHealth', 'kitsuGoal'].forEach(id => document.getElementById(id)?.remove());
+            clearInterval(window.__kitsuAdvT); clearInterval(window.__kitsuRaidT); clearInterval(window.__kitsuTeamT); clearInterval(window.__kitsuPullT); clearInterval(window.__kitsuRwT); clearInterval(window.__kitsuPlanT); clearInterval(window.__kitsuGuideT); clearInterval(window.__kitsuDockT); clearInterval(window.__kitsuHealthT); clearInterval(window.__kitsuEnT); worker && worker.terminate && worker.terminate(); clearInterval(window.__kitsuHealthT);
+            ['kitsuAdv', 'kitsuRaid', 'kitsuRaidCss', 'kitsuTeam', 'kitsuPull', 'kitsuPlan', 'kitsuRoad', 'kitsuGuide', 'kitsuGuideCss', 'kitsuToast', 'kitsuBadge', 'kitsuAdvCss', 'kitsuDock', 'kitsuDockCss', 'kitsuHealth', 'kitsuGoal'].forEach(id => document.getElementById(id)?.remove());
             clearMarks();
             return 'KitsuAI arrete';
           },
@@ -2164,7 +2267,7 @@
   }
   // Pont vers le serveur local du PC (moteur/serveur.bat) : seulement /ping, /conseil, /poids, /equipes, /sauvegarde et /jeu, seulement vers 127.0.0.1.
   window.addEventListener('message', e => {
-    const q = e.data && e.data.kitsuLocalReq; if (!q || !(/^\/ping(\?v=[\w.%-]*)?$/.test(q.path) || ['/conseil', '/poids', '/equipes', '/sauvegarde', '/jeu'].includes(q.path))) return;
+    const q = e.data && e.data.kitsuLocalReq; if (!q || !(/^\/ping(\?v=[\w.%-]*)?$/.test(q.path) || ['/conseil', '/poids', '/equipes', '/sauvegarde', '/jeu', '/raid'].includes(q.path))) return;
     const reply = (ok, data) => window.postMessage({ kitsuLocalRes: q.id, ok, data }, '*');
     try {
       GM_xmlhttpRequest({ method: q.body ? 'POST' : 'GET', url: 'http://127.0.0.1:47123' + q.path, data: q.body ? JSON.stringify(q.body) : undefined, headers: { 'Content-Type': 'application/json', 'X-Kitsu-Script': '1' }, timeout: q.timeout || 3000,

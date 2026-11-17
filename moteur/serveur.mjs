@@ -15,6 +15,7 @@ import { fiche } from './lib/fiche.mjs';
 import { makePool, baisserPriorite } from './lib/pool.mjs';
 import { dir as D, DATA, CODE } from './lib/chemins.mjs';
 import { listerPoids, restaurerPoids } from './lib/historique.mjs';
+import { planTour, planNaif, finir as finirRaid, sieges as siegesRaid } from './lib/raid.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
@@ -94,6 +95,46 @@ function calculConseille() {
 }
 const scriptFile = () => [path.join(CODE, '..', 'kitsu_ai.user.js'), path.join(CODE, 'kitsu_ai.user.js')].find(f => existsSync(f));
 function scriptInfo() { const f = scriptFile(); if (!f) return { trouve: false, vu: scriptVu }; const t = readFileSync(f, 'utf8'); return { trouve: true, version: (t.match(/@version\s+(\S+)/) || [])[1], taille: t.length, lignes: t.split('\n').length, vu: scriptVu, url: 'https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js' }; }
+
+// ---------- Raid (5.20) : conseil du tour et meilleur trio au salon, demandes par le script ----------
+// Tour : l'etat du combat lu par le script (celui que la page affiche), son siege, les actions deja prevues par les partenaires.
+// On renvoie les actions de tes cartes et une estimation : raids finis par la strategie depuis cet etat (6 tirages).
+const RAID_SALON = new Map();
+async function raidConseil(q) {
+  const { G } = await moteur(), t0 = Date.now();
+  if (q.tour) {
+    const s0 = q.tour.combat, me = +q.tour.siege; if (!s0?.battle?.units || !s0.forecast) return { err: 'etat du raid incomplet' };
+    const base = () => { const s = JSON.parse(JSON.stringify(s0)); s.config = { ...G.RAID, ...(s.config || {}) }; if (s.seed == null) s.seed = 7919; s.log = []; return s; };
+    const intents = {}; for (const [k, v] of Object.entries(q.tour.intents || {})) if (+k !== me && Array.isArray(v) && v.length) intents[k] = v;
+    const s = base(), plan = planTour(G, s, intents), mes = plan.par[me] || [];
+    // Estimation : les partenaires font ce qu'ils ont prevu (sinon la strategie), toi le conseil, ou toi qui frappes seulement.
+    const actions = mien => siegesRaid(s).flatMap(p => p === me ? mien : (intents[p] || plan.par[p] || []).map(a => ({ unit: a.unit, kind: a.kind, ...(a.target ? { target: a.target } : {}) })));
+    const estimer = mien => { let w = 0; const n = 6; for (let k = 0; k < n; k++) { const x = base(); x.seed = (x.seed + k * 104729) >>> 0; try { w += finirRaid(G, x, actions(mien)).gagne ? 1 : 0; } catch {} } return Math.round(100 * w / n); };
+    const avec = estimer(mes), sans = estimer(planNaif(G, s, me));
+    return { ms: Date.now() - t0, tour: s0.turn, forecast: s0.forecast, ruptures: [...plan.R], actions: mes, victoire: avec, sansConseil: sans, revives: s0.revives };
+  }
+  if (q.salon) {
+    // Meilleur trio avec CES partenaires (cartes vues dans le salon, supposees niveau 99) : tes trios candidats, 6 raids chacun.
+    const part = (q.salon.partenaires || []).filter(a => Array.isArray(a) && a.length).slice(0, 2), cle = JSON.stringify(part);
+    if (RAID_SALON.has(cle) && Date.now() - RAID_SALON.get(cle).t < 10 * 60000) return RAID_SALON.get(cle).r;
+    const sv = readJ(D('data', 'sauvegarde.json')) || {}, lv = id => sv.lv?.[id]?.l || 1, st = id => sv.stars?.[id] || 0, R = readJ(D('resultats', 'raid.json'));
+    let cand = R ? [...(R.classement || []).map(x => x.ids), ...(R.premierTour || []).map(x => x.ids)] : [];
+    if (!cand.length) { const ids = Object.keys(sv.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r) && lv(id) >= 60).sort((a, b) => lv(b) - lv(a)).slice(0, 10); for (let a = 0; a < ids.length; a++) for (let b = a + 1; b < ids.length; b++) for (let c = b + 1; c < ids.length; c++) cand.push([ids[a], ids[b], ids[c]]); }
+    const vus = new Set(); cand = cand.filter(t => { const k = t.slice().sort().join(); if (vus.has(k)) return false; vus.add(k); return t.every(id => sv.owned?.[id]); }).slice(0, 60);
+    if (!cand.length) return { trios: [], ms: 0 };
+    const autres = part.flat().slice(0, 6).map(id => ({ id: +id, lv: 99, stars: 0 })), N = 6;
+    const r = await avecPool(pool => pool.runAll(cand.map(t => ({ type: 'raid', moi: t.map(id => ({ id, lv: lv(id), stars: st(id) })), autres: Array.from({ length: N }, () => autres), graine: 7919 })), {}, {}, 2));
+    const trios = cand.map((t, i) => ({ ids: t, equipe: t.map(id => G.CHAR_BY_ID[id]?.n || String(id)), victoire: Math.round(100 * r[i].win / r[i].n), part: Math.round(100 * r[i].part / r[i].n) })).sort((a, b) => b.victoire - a.victoire || b.part - a.part).slice(0, 5);
+    const out = { ms: Date.now() - t0, joueurs: part.length + 1, trios, raids: cand.length * N }; RAID_SALON.set(cle, { t: Date.now(), r: out }); if (RAID_SALON.size > 20) RAID_SALON.delete(RAID_SALON.keys().next().value);
+    return out;
+  }
+  if (q.fin) { // raid termine : garde pour l'onglet Raids (50 derniers)
+    const f = D('data', 'raids.json'), all = readJ(f) || [], x = q.fin; if (!x?.id || all.some(r => r.id === x.id)) return { ok: true };
+    all.unshift({ id: String(x.id).slice(0, 60), t: Date.now(), gagne: !!x.gagne, etape: x.etape | 0, phase: x.phase | 0, tour: x.tour | 0, trio: (x.trio || []).slice(0, 3).map(Number), partenaires: (x.partenaires || []).slice(0, 6).map(Number), joueurs: x.joueurs | 0, suivis: x.suivis | 0, conseils: x.conseils | 0 });
+    mkdirSync(D('data'), { recursive: true }); writeFileSync(f, JSON.stringify(all.slice(0, 50))); say(`raid ${x.gagne ? 'gagne' : 'perdu'} enregistre`); return { ok: true };
+  }
+  return { err: 'demande inconnue' };
+}
 const logs = []; const say = m => { const l = `[${new Date().toLocaleTimeString('fr-FR')}] ${m}`; logs.push(l); if (logs.length > 300) logs.shift(); console.log(l); };
 // ---------- taches (une a la fois : elles utilisent tout le processeur) ----------
 const ACTIONS = {
@@ -107,6 +148,7 @@ const ACTIONS = {
   equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--generations', String(o.generations || 25)] },
   tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
   cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes', '--budget-specialistes', String(o.specialistes == null ? 60 : Math.max(0, Math.min(1440, Math.round(+o.specialistes) || 0)))] },
+  raid: { nom: 'Raid : meilleur trio', cmd: ['raid.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel', '--tirages', String(Math.max(2, Math.min(40, +o.tirages || 8)))] },
   conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos,marche'] },
 };
 // Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
@@ -202,7 +244,7 @@ http.createServer(async (req, res) => {
     if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: VER, dom: MAN.dom, fils: NPOOL, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
     if (u.pathname === '/poids') { const p = readJ(D('data', 'poids.json')); return send(res, p ? 200 : 404, p || {}, 'application/json', CORS); }
     const duScript = req.headers['x-kitsu-script'] === '1';
-    if (['/sauvegarde', '/equipes', '/jeu'].includes(u.pathname) && req.method === 'POST' && !duScript) return send(res, 403, { err: 'reserve au script KitsuAI' }, 'application/json', CORS);
+    if (['/sauvegarde', '/equipes', '/jeu', '/raid'].includes(u.pathname) && req.method === 'POST' && !duScript) return send(res, 403, { err: 'reserve au script KitsuAI' }, 'application/json', CORS);
     if (u.pathname === '/sauvegarde' && req.method === 'POST') {
       const j = JSON.parse(await body(req)); if (!j.owned || !j.lv) return send(res, 400, { err: 'export invalide' }, 'application/json', CORS);
       const old = readJ(D('data', 'sauvegarde.json')); mkdirSync(D('data'), { recursive: true });
@@ -222,6 +264,7 @@ http.createServer(async (req, res) => {
       const r = await avecPool(pool => pool.runAll(q.equipes.map(team => ({ team, fights: [q.fid], seeds })), q.W, {}, 4));
       return send(res, 200, { ms: Date.now() - t0, res: r }, 'application/json', CORS);
     }
+    if (u.pathname === '/raid' && req.method === 'POST') return send(res, 200, await raidConseil(JSON.parse(await body(req))), 'application/json', CORS);
     if (u.pathname === '/conseil' && req.method === 'POST') {
       const q = JSON.parse(await body(req));
       if (q.dom && q.dom !== MAN.dom) return send(res, 409, { err: 'version', attendu: q.dom, moteur: MAN.dom }, 'application/json', CORS);
@@ -245,6 +288,7 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [] }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
+      if (u.pathname === '/api/raids') return send(res, 200, readJ(D('data', 'raids.json')) || []);
       if (u.pathname === '/api/fiche') { if (FICHE.v !== VER) FICHE = { v: VER, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: VER, ...FICHE.j }); }
       if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
       if (u.pathname === '/api/poids-historique') { const p = readJ(D('data', 'poids.json')); return send(res, 200, { actuel: p ? { regles: p.t || null, gains: p.gains || {}, equipes: Object.keys(p.equipes || {}).length, imitation: !!p.distillation, restaure: p.restaure || null } : null, copies: listerPoids() }); }
