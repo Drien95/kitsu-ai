@@ -31,6 +31,10 @@ const fermerPool = async () => { const p = poolP; poolP = null; if (p) try { awa
 setInterval(() => { if (poolP && !poolActifs && Date.now() - poolUtil > POOL_REPOS) fermerPool(); }, 30000).unref();
 const T0 = Date.now(); let nConseil = 0, lastConseil = null;
 const readJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return null; } };
+// Lecture gardee en memoire tant que le fichier ne change pas (5.18) : le panneau demande l'etat toutes les 1,5 s et relisait/reparsait
+// chaque fois sauvegarde, poids, patchs, dernier resultat... Seulement pour etat(), qui ne modifie pas ces objets (copie JSON a l'envoi).
+const jCache = new Map();
+const readJc = f => { let st; try { st = statSync(f); } catch { jCache.delete(f); return null; } const c = jCache.get(f), k = st.mtimeMs + ':' + st.size; if (c && c.k === k) return c.v; const v = readJ(f); jCache.set(f, { k, v }); return v; };
 let scriptVu = null, jeu = null;
 // ---------- campagne : ce que coutera le calcul des 3 etoiles (affiche avant le lancement) ----------
 // Memes regles que cauchemar3.mjs : cartes SSR/UR/LR possedees, combats de la campagne (sans halloween) par difficulte.
@@ -162,9 +166,9 @@ async function conseil0(pool, { st, key, cands, W, budget }) {
 }
 // ---------- etat ----------
 function etat() {
-  const sv = readJ(D('data', 'sauvegarde.json')), pw = readJ(D('data', 'poids.json'));
+  const sv = readJc(D('data', 'sauvegarde.json')), pw = readJc(D('data', 'poids.json'));
   const CH = ENG.G.CHAR_BY_ID, own = Object.keys(sv?.owned || {}).map(Number);
-  const res = existsSync(D('resultats')) ? readdirSync(D('resultats')).filter(f => /\.(csv|json|txt)$/.test(f) && f !== 'dernier.json').map(f => ({ f, t: statSync(D('resultats', f)).mtimeMs, o: statSync(D('resultats', f)).size })).sort((a, b) => b.t - a.t) : [];
+  const res = existsSync(D('resultats')) ? readdirSync(D('resultats')).filter(f => /\.(csv|json|txt)$/.test(f) && f !== 'dernier.json').map(f => { const x = statSync(D('resultats', f)); return { f, t: x.mtimeMs, o: x.size }; }).sort((a, b) => b.t - a.t) : [];
   let disque = null; try { disque = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); } catch {}
   return {
     moteur: ENG.version, moteurDisque: disque, mondes: ENG.G.ALL_WORLDS.map(w => `${w.id} (${w.fights.length})`), cartes: Object.keys(CH).length,
@@ -173,10 +177,10 @@ function etat() {
     sauvegarde: sv ? { t: sv.t, script: sv.script, cartes: own.length, lr: own.filter(i => CH[i]?.r === 'M').length, ur: own.filter(i => CH[i]?.r === 'L').length, ssr: own.filter(i => CH[i]?.r === 'E').length, equipe: (sv.team || []).map(i => CH[i]?.n), guilde: sv.guild?.boss ? `${sv.guild.boss.name} niv ${sv.guild.boss.lv}` : null, compte: sv.acct?.lv } : null,
     poids: pw ? { t: pw.t, gains: pw.gains } : null,
     job: job ? { id: job.id, nom: job.nom, args: job.args, debut: job.debut, fin: job.fin, code: job.code, lignes: job.lignes.slice(-400), chaine: job.chaine ? { etapes: job.chaine.etapes, i: job.chaine.i } : null } : null,
-    script: scriptInfo(), appVersion: process.env.KITSU_APP_VERSION || null, reglages: reglages(), alertes: alertes.slice(-20), calculConseille: calculConseille(), patchs: (readJ(D('data', 'patchs.json')) || []).slice(0, 10), jeu, sauvegardeAuto: sv?.auto || false,
+    script: scriptInfo(), appVersion: process.env.KITSU_APP_VERSION || null, reglages: reglages(), alertes: alertes.slice(-20), calculConseille: calculConseille(), patchs: (readJc(D('data', 'patchs.json')) || []).slice(0, 10), jeu, sauvegardeAuto: sv?.auto || false,
     historique: history, resultats: res.slice(0, 40), journal: logs.slice(-60),
-    dernier: readJ(D('resultats', 'dernier.json')),
-    conseils: readJ(D('resultats', 'conseils-ia.json')), imitation: readJ(D('resultats', 'ia-imitation.json')),
+    dernier: readJc(D('resultats', 'dernier.json')),
+    conseils: readJc(D('resultats', 'conseils-ia.json')), imitation: readJc(D('resultats', 'ia-imitation.json')),
   };
 }
 // ---------- serveur HTTP ----------

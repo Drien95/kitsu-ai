@@ -18,6 +18,13 @@ Moins de lag pendant les calculs (YouTube et kitsu.games qui saccadaient), sans 
   - un second serveur lancé alors que KitsuAI tourne déjà (application + `KitsuAI.bat`) s'arrête tout de suite au lieu de rester en mémoire (~500 Mo) ;
   - le launcher n'utilise plus l'accélération graphique : plus de mémoire vidéo ni de processus graphique pour un panneau de texte et de graphiques (`KITSU_GPU=1` pour la remettre).
 - Script : le worker de calcul (copie du moteur du jeu, ~100 Mo dans l'onglet) est fermé après 3 min sans calcul et recréé au besoin ; le contour du conseil clignote 3 fois puis reste fixe, au lieu de redessiner la page en continu.
+- Script plus léger dans la page du jeu :
+  - les objets du jeu (combat, écran d'équipe) sont retrouvés par leur nom retenu au lieu de parcourir tous les exports du jeu plusieurs fois par seconde ;
+  - hors combat, le conseiller ne cherche un combat que toutes les 600 ms (au lieu de 150) et ne nettoie les contours qu'une fois, à la fin du combat ;
+  - les accents ne sont corrigés qu'une fois par texte (avant : ~40 remplacements repassés sur tout le dock toutes les 400 ms) ;
+  - le dock ne resérialise plus le HTML de ses panneaux à chaque tick, le guide lit les textes sans forcer de mise en page ;
+  - onglet caché : dock, guide, conseiller, équipe, plan et invocations ne tournent plus (l'alerte d'énergie et la synchro continuent).
+- Panneau : l'état (toutes les 1,5 s) ne réécrit plus que ce qui a changé ; le serveur ne relit plus sauvegarde, réglages, patchs et derniers résultats tant que leurs fichiers ne changent pas.
 
 ## 5.17.0
 

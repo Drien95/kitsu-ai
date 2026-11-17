@@ -79,10 +79,18 @@
           if (!APP) { const u = assetUrl(/\/assets\/app-[^/]+\.js$/); APP = u ? await import(u) : null; }
           if (!G || !APP) throw new Error('modules du jeu introuvables : recharge la page');
         };
-        const findExport = test => { for (const k of Object.keys(APP)) { let v; try { v = APP[k]; } catch { continue; } if (v && typeof v === 'object' && test(v)) return v; } return null; };
+        // cle : on retient sous quel nom l'objet a ete trouve et on regarde la d'abord (5.18) : evite de parcourir tous les exports du jeu
+        // plusieurs fois par seconde. Si l'objet n'y est plus (ou plus du bon type), on refait le parcours complet comme avant.
+        const exCle = {};
+        const findExport = (test, cle) => {
+          if (cle && exCle[cle] !== undefined) { let v; try { v = APP[exCle[cle]]; } catch {} if (v && typeof v === 'object' && test(v)) return v; }
+          for (const k of Object.keys(APP)) { let v; try { v = APP[k]; } catch { continue; } if (v && typeof v === 'object' && test(v)) { if (cle) exCle[cle] = k; return v; } }
+          return null;
+        };
         const isPvp = v => !!(v.pvp || v.foe || /arena|arene|pvp/i.test(location.hash));
-        const liveBattle = () => findExport(v => 'st' in v && 'actions' in v && 'active' in v && 'over' in v && !isPvp(v));
-        const prepScreen = () => findExport(v => 'f' in v && 'team' in v && 'filter' in v && v.f);
+        const estCombat = v => 'st' in v && 'actions' in v && 'active' in v && 'over' in v && !isPvp(v), estPrep = v => 'f' in v && 'team' in v && 'filter' in v && v.f;
+        const liveBattle = () => findExport(estCombat, 'combat');
+        const prepScreen = () => findExport(estPrep, 'prep');
 
         // ---------- Version du jeu ----------
         const versionSig = () => {
@@ -366,10 +374,13 @@
           [/\bdepartages\b/g, 'départagés'], [/\bgardes\b/g, 'gardés'], [/\brapidite\b/g, 'rapidité'], [/\bprecis\b/g, 'précis'], [/\bDECISIF\b/g, 'DÉCISIF'], [/\bdetectee\b/g, 'détectée'], [/\bmodifiees?\b/g, m => m.replace('modifie', 'modifié')], [/\bmodifie\b/g, 'modifié'],
           [/\btermine(s?)\b/g, 'terminé$1'], [/\barriere-plan\b/g, 'arrière-plan'], [/\bRecompenses\b/g, 'Récompenses'], [/\bniveau a\b/g, 'niveau à'], [/\bverifie\b/g, 'vérifie'], [/\bpaliers a recuperer\b/g, 'paliers à récupérer'], [/\bsupposee\b/g, 'supposée'],
           [/\bprevu(e?s?)\b/g, 'prévu$1'], [/\breelles?\b/g, m => m.replace('reel', 'réel')], [/\bmarche\b/g, 'marché'], [/\bHebdo\b/g, 'Hebdo'], [/\bpleine\b/g, 'pleine'], [/\bDoublon\b/g, 'Doublon'], [/\bIA normale\b/g, 'IA normale']];
+        // Chaque noeud de texte n'est corrige qu'une fois (5.18) : avant, ~40 expressions etaient repassees sur tout le dock toutes les 400 ms.
+        // Un texte reecrit (innerHTML, textContent) cree de nouveaux noeuds, qui sont donc corriges a leur tour.
+        const accVus = new WeakSet();
         const accents = root => {
           if (!root) return;
           const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-          for (let n = w.nextNode(); n; n = w.nextNode()) { let t = n.nodeValue, o = t; for (const [re, r] of ACC) t = t.replace(re, r); if (t !== o) n.nodeValue = t; }
+          for (let n = w.nextNode(); n; n = w.nextNode()) { if (accVus.has(n)) continue; let t = n.nodeValue, o = t; for (const [re, r] of ACC) t = t.replace(re, r); if (t !== o) n.nodeValue = t; accVus.add(n); }
         };
         const toast = (html, ms = 8000) => { const { toast: t } = ui(); t.innerHTML = html; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => (t.style.display = 'none'), ms); };
         const clearMarks = badge => {
@@ -976,8 +987,9 @@
             });
             clearInterval(window.__kitsuDockT);
             window.__kitsuDockT = setInterval(() => {
+              if (document.hidden) return; // onglet cache : rien a afficher
               adopt();
-              const rel = {}; for (const [k, , id] of tabs) { const el = document.getElementById(id); rel[k] = !!el && el.style.display !== 'none' && el.innerHTML.trim() !== ''; }
+              const rel = {}; for (const [k, , id] of tabs) { const el = document.getElementById(id); rel[k] = !!el && el.style.display !== 'none' && (!!el.firstElementChild || el.textContent.trim() !== ''); }
               d.querySelectorAll('.kd-tab').forEach(t => { t.classList.toggle('rel', rel[t.dataset.kd]); t.classList.toggle('on', d.dataset.tab === t.dataset.kd); });
               if (Date.now() - override > 30000) { const auto = ['adv', 'team', 'pull', 'road', 'plan'].find(k => rel[k]) || d.dataset.tab || 'plan'; d.dataset.tab = auto; }
               try { KitsuAI.goalTick(); } catch {}
@@ -1032,11 +1044,12 @@
             };
             const snooze = (id, min) => { const sz = lsGet('kitsu_ai_snooze', {}); sz[id] = Date.now() + min * 60000; lsSet('kitsu_ai_snooze', sz); };
             window.__kitsuGuideT = setInterval(() => {
+              if (document.hidden) return;
               try {
                 const T = liveBattle();
                 if (T && !T.over) { clr(); pill.innerHTML = '<b style="color:#38bdf8">Guide</b> · combat en cours : suis le panneau orange'; return; }
                 // Verification anti-robot du jeu : c'est a toi de la faire, le guide ne pointe rien.
-                if ([...document.querySelectorAll('h2,h3,b,strong,p')].some(e => vis(e) && /Petite v[ée]rification/i.test(e.innerText || ''))) return mark(null, 'verification du jeu : coche la case toi-meme, puis continue', 'botcheck');
+                if ([...document.querySelectorAll('h2,h3,b,strong,p')].some(e => /Petite v[ée]rification/i.test(e.textContent || '') && vis(e))) return mark(null, 'verification du jeu : coche la case toi-meme, puis continue', 'botcheck');
                 { const sk = [...document.querySelectorAll('#skipAll')].find(vis); if (sk) return mark(sk, 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)', 'skipall'); const h = document.getElementById('tpHelp'); if (vis(h) && /Touche/i.test(h.innerText || '')) { const c = [...document.querySelectorAll('.tp-card')].find(vis); if (c) return mark(c, 'touche la carte pour la retourner (ou « Tout passer »)', 'tpcard'); } }
                 // Animations et fenetres a passer : invocation (Passer, puis toucher), carte gagnee, popups, installation.
                 for (const [sel, txt] of [['#skipAll', 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)'], ['#tpPack', 'booster : glisse la souris sur les pointilles pour l\'ouvrir'], ['.wk-skip', 'invocation : clique sur « Passer »'], ['.rr-tap', 'touche l\'ecran pour continuer'], ['.rw-hint,.rw-card', 'carte obtenue : clique dessus (ou a cote) pour continuer'], ['[data-pop-close]', 'ferme cette fenetre (croix en haut a droite)'], ['[data-pwa-later]', 'fenetre « installer l\'appli » : clique sur la croix']]) {
@@ -1642,6 +1655,7 @@
             let busy = false, shownAt = 0;
             clearInterval(window.__kitsuPlanT);
             window.__kitsuPlanT = setInterval(async () => {
+              if (document.hidden) return;
               const onMap = /adventure/.test(location.hash) && !liveBattle() && !prepScreen();
               if (!onMap) { pn.style.display = 'none'; return; }
               pn.style.display = 'block';
@@ -1686,10 +1700,14 @@
             const { box, badge } = ui();
             let last = '', cur = null, wasOver = true;
             clearInterval(window.__kitsuAdvT);
+            let tick = 0;
             window.__kitsuAdvT = setInterval(() => {
               try {
+                // Hors combat : on ne cherche un combat que toutes les 600 ms (4 ticks) et on ne nettoie qu'une fois, a la fin du combat (5.18).
+                if (wasOver && (++tick & 3)) return;
                 const T = liveBattle();
-                if (!T || T.over) { if (T && T.over && !wasOver) logEnd(T); wasOver = true; box.style.display = 'none'; last = ''; cur = null; clearMarks(badge); return; }
+                if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; clearMarks(badge); } wasOver = true; return; }
+                if (document.hidden) return;
                 wasOver = false; box.style.display = 'block';
                 const st = T.st, a = T.active;
                 if (cur) {
@@ -1903,6 +1921,7 @@
             let lastSig = '', job = null;
             clearInterval(window.__kitsuTeamT);
             window.__kitsuTeamT = setInterval(() => {
+              if (document.hidden) return;
               const W = prepScreen();
               if (!W) { tb.style.display = 'none'; lastSig = ''; job = null; return; }
               const team = (W.team || []).map(x => typeof x === 'object' ? x?.id : x).filter(Boolean).map(Number);
@@ -2000,6 +2019,7 @@
             let busy = false, shown = false;
             clearInterval(window.__kitsuPullT);
             window.__kitsuPullT = setInterval(async () => {
+              if (document.hidden) return;
               if (!/boosters|invocation/.test(location.hash)) { pb.style.display = 'none'; shown = false; return; }
               if (shown || busy) return;
               pb.style.display = 'block';
