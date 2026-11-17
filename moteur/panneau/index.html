@@ -1143,6 +1143,7 @@ function campEtat() {
   const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}. Le PC reste éveillé ; tu peux arrêter, la reprise repart du journal.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les combats déjà faits sont gardés.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
   const pg = moi && run ? campProgres((E.job.lignes || []).filter(l => l.trim())) : null;
   setH('c3job', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
+  if (moi && run) CP.fin = null; // vu en cours : la fin doit recharger les resultats
   if (moi && E.job.fin && CP.fin !== E.job.fin) { const premier = CP.fin === undefined; CP.fin = E.job.fin; if (!premier || !CP.j) campCharger(); }
 }
 function campCmp(i) { const L = CP.j?.meilleurs?.[CP.obj] || [], k = L[i]?.ids.join('-'); if (!k) return; const at = CP.cmp.indexOf(k); if (at >= 0) CP.cmp.splice(at, 1); else { if (CP.cmp.length >= 3) CP.cmp.shift(); CP.cmp.push(k); } campRender(); }
@@ -1336,6 +1337,7 @@ function twEtat() {
   const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les montées déjà faites sont gardées.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
   const pg = moi && run ? twProgres((E.job.lignes || []).filter(l => l.trim())) : null;
   setH('twJob', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
+  if (moi && run) TW.fin = null; // vu en cours : la fin doit recharger les resultats
   if (moi && E.job.fin && TW.fin !== E.job.fin) { const premier = TW.fin === undefined; TW.fin = E.job.fin; if (!premier) { twCharger(); } }
 }
 const tuile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
