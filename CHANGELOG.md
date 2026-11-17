@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.19.1
+
+Tour de l'infini avec le script privé installé : le choix de la compo suit le trio de son calcul exact.
+
+- Le script privé publie son trio de la Tour (`html[data-kar-tour]`, seulement les identifiants des cartes et l'étage visé). Sur l'écran de choix de la compo de la Tour, le script entoure alors les cartes à retirer puis à ajouter, puis « Lancer la montée », même s'il reste des combats au plan.
+- Sans script privé, rien ne change : le trio vient toujours de la simulation faite dans la page.
+- Tous les autres conseils (Campagne, plan, boutique, combat) restent ceux du script public.
+
 ## 5.19.0
 
 Nouvelle direction artistique du script dans la page du jeu, alignée sur le launcher (maquette validée le 17/11). Mêmes conseils, mêmes calculs : seul l'habillage change.

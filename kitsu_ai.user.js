@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.19.0
+// @version      5.19.1
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.19.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.19.1') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -568,7 +568,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.19.0',
+          __v: '5.19.1',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1119,6 +1119,16 @@
                 // Fenetre « defi de doublons » : Remplir, puis valider.
                 const sbcOk = [...document.querySelectorAll('[data-sbc-ok]')].find(vis);
                 if (sbcOk) { const auto = [...document.querySelectorAll('[data-sbc-auto]')].find(b => vis(b) && !b.disabled); if (auto && sbcOk.disabled) return mark(auto, 'defi de doublons : clique sur Remplir', 'sbca'); if (!sbcOk.disabled) return mark(sbcOk, 'defi de doublons : valide', 'sbcok'); }
+                // 5.19.1 : avec le script prive, l'ecran de choix de la compo de la Tour suit son trio (html[data-kar-tour]),
+                // meme si d'autres combats restent au plan. Le reste des conseils ne change pas.
+                const karT = KitsuAI._karTour(), pkT = karT ? [...document.querySelectorAll('[data-tw="pickc"]')].filter(vis) : [];
+                if (pkT.length) {
+                  const on = pkT.filter(c => c.classList.contains('on')).map(c => +c.dataset.id), extra = on.filter(id => !karT.equipe.includes(id)), missing = karT.equipe.filter(id => !on.includes(id));
+                  const byId = id => pkT.find(c => +c.dataset.id === id);
+                  if (extra.length) return mark(byId(extra[0]), `Tour : retire ${short(extra[0])} (trio du calcul exact)`, 'kxrm' + extra[0]);
+                  if (missing.length) { const el = byId(missing[0]); return mark(el || [...document.querySelectorAll('input')].find(e => vis(e) && /recherch/i.test(e.placeholder || '')) || null, `Tour : ajoute ${missing.map(short).join(', ')}${el ? '' : ' (cherche-le)'} (trio du calcul exact)`, 'kxadd' + missing[0], [{ els: missing.slice(1).map(byId).filter(Boolean), cls: 'kitsu-add' }]); }
+                  const st = [...document.querySelectorAll('[data-tw="start"]')].find(b => vis(b) && !b.disabled); if (st) return mark(st, `Tour : lance la montee (calcul exact : ~${karT.etage} etages)`, 'kxstart');
+                }
                 const S = save(), P = lsGet('kitsu_ai_plan', null);
                 const E0 = lsGet('kitsu_ai_events', null); if ((!E0 || Date.now() - E0.t > 6 * 3600000 || Object.keys(S.ev?.clear || {}).some(k => E0.combats && !E0.combats.find(r => r.id === k)?.fait)) && !KitsuAI._evBusy && !T && Date.now() - (window.__kitsuEvTry || 0) > 60000) { window.__kitsuEvTry = Date.now(); KitsuAI.events().catch(e => health.err('evenements : ' + e.message)); }
                 if (!P && !prepScreen()) { mark(null, 'calcul du plan... ouvre l\'onglet Jouer'); return; }
@@ -1881,9 +1891,16 @@
             if (i?.buy) out.push({ id: 'gwbuy', kind: 'claim', tab: 'shop', btn: `[data-gw="buy"][data-id="${i.buy.id}"]`, txt: `Boutique de guilde : achete ${i.buy.nom} (${i.buy.price} points)` });
             return out;
           },
+          // 5.19.1 : trio de la Tour publie par le script prive dans html[data-kar-tour] (« id,id,id|etage »), sinon null.
+          // Sans script prive, rien ne change : le trio vient de la simulation de la page (kitsu_ai_tower).
+          _karTour() {
+            const v = document.documentElement.dataset.karTour; if (!v) return null;
+            const [a, e] = v.split('|'), team = a.split(',').map(Number).filter(n => n > 0);
+            return team.length === 3 ? { equipe: team, etage: +e || 0, t: Date.now() } : null;
+          },
           _towerAction(S = save(), en = 0) {
             if ((S.acct?.lv || 1) < 25) return null;
-            const tw = lsGet('kitsu_ai_tower', null), cost = G?.TOWER?.COST || 4, best = S.tower?.best || 0;
+            const tw = KitsuAI._karTour() || lsGet('kitsu_ai_tower', null), cost = G?.TOWER?.COST || 4, best = S.tower?.best || 0;
             if (!tw?.equipe?.length || en < cost || tw.etage < best + 1) return null;
             return { team: tw.equipe, best, cible: Math.round(tw.etage) };
           },
