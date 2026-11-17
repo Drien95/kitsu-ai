@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
 <title>KitsuAI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Direction artistique inspiree de KITSU : nuit, rouge-orange, titres Anton italiques, navigation en haut soulignee. */
+  /* Direction artistique inspiree de KITSU : nuit, rouge-orange, titres Anton italiques. Barre laterale par groupes (refonte 5.13). */
   :root {
     --bg: #07080c; --bg2: #0d0f15; --panel: #11131a; --panel2: #171a23; --line: #232633; --line2: #33374a;
     --txt: #f4ede3; --mute: #8f96a6; --acc: #ff4b3e; --acc2: #ff7a3d; --ok: #2fd27a; --warn: #f5a524; --gold: #f7c548;
@@ -18,23 +19,10 @@
   html, body { margin: 0; background: var(--bg); color: var(--txt); font: 14px/1.5 var(--body); }
   body { min-height: 100vh; background: radial-gradient(1100px 520px at 85% -8%, rgba(255,75,62,.14), transparent 60%), radial-gradient(800px 420px at -5% 105%, rgba(255,122,61,.07), transparent 60%), var(--bg); }
   a { color: inherit; }
-  /* --- barre du haut --- */
-  .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: stretch; gap: 18px; padding: 0 28px; height: 64px; background: rgba(7,8,12,.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-  .brand svg { width: 34px; height: 34px; }
-  .brand b { font: 400 26px/1 var(--head); letter-spacing: .5px; text-transform: uppercase; }
-  .brand b em { font-style: normal; color: var(--acc); }
-  nav { display: flex; align-items: stretch; gap: 4px; }
-  nav a { display: flex; align-items: center; gap: 6px; padding: 0 9px; white-space: nowrap; text-decoration: none; color: #c9c3b9; font-weight: 800; font-size: 11.5px; letter-spacing: .5px; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color .15s; }
-  nav a svg { width: 16px; height: 16px; opacity: .8; }
-  nav a:hover { color: #fff; }
-  nav a.on { color: var(--acc2); border-bottom-color: var(--acc2); }
-  .topr { margin-left: auto; display: flex; align-items: center; gap: 10px; }
   .chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--line2); border-radius: 999px; background: var(--panel); font-size: 12px; font-weight: 700; color: #d9d3c9; white-space: nowrap; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
   .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); } .dot.bad { background: var(--acc); box-shadow: 0 0 8px var(--acc); }
   /* --- pages --- */
-  main { max-width: 1320px; margin: 0 auto; padding: 30px 28px 70px; }
   .page { display: none; } .page.on { display: block; }
   .eyebrow { color: var(--acc); font-size: 12px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; }
   .eyebrow::before { content: ""; display: inline-block; width: 7px; height: 7px; background: var(--acc); transform: rotate(45deg); margin-right: 8px; vertical-align: 1px; }
@@ -49,7 +37,7 @@
   .card.hot { border-color: rgba(255,75,62,.55); box-shadow: 0 0 0 1px rgba(255,75,62,.15), 0 20px 60px -30px rgba(255,75,62,.5); }
   .grid { display: grid; gap: 18px; }
   .g2 { grid-template-columns: 1.15fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g5 { grid-template-columns: repeat(5, 1fr); } .gc { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 1100px) { .g2, .gc { grid-template-columns: 1fr; } .g5 { grid-template-columns: repeat(3, 1fr); } .g3 { grid-template-columns: 1fr; } nav a span { display: none; } }
+  @media (max-width: 1100px) { .g2, .gc { grid-template-columns: 1fr; } .g5 { grid-template-columns: repeat(3, 1fr); } .g3 { grid-template-columns: 1fr; } }
   .sp { height: 18px; }
   /* --- tuiles de stats (comme les blocs ATK / DEF du jeu) --- */
   .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-height: 104px; display: flex; flex-direction: column; }
@@ -122,7 +110,6 @@
   .upd { display: none; } .upd.on { display: inline-flex; }
   .upd { animation: pulse 2s ease-in-out infinite; padding: 9px 14px; font-size: 12px; white-space: nowrap; letter-spacing: 1px; }
   @media (max-width: 1500px) { #chipVer { display: none; } .upd.on ~ #chipSrv { display: none; } }
-  @media (max-width: 1280px) { nav a span { display: none; } }
   @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,75,62,.55); } 50% { box-shadow: 0 0 0 8px rgba(255,75,62,0); } }
   .pn-hero { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(255,75,62,.45); padding: 34px 36px; background: radial-gradient(700px 300px at 85% 20%, rgba(255,122,61,.28), transparent 60%), radial-gradient(500px 260px at 10% 120%, rgba(255,75,62,.2), transparent 60%), linear-gradient(135deg, #151019, #0b0c12); }
   .pn-hero::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, transparent 2px 14px); pointer-events: none; }
@@ -194,35 +181,152 @@
   .phare .tx .v { font: 400 46px/1 var(--head); font-style: italic; margin: 6px 0 2px; }
   .phare .tx .s { color: var(--mute); font-size: 13px; }
   @media (max-width: 900px) { .phare { flex-direction: column; align-items: flex-start; } .pf.big { width: 86px; height: 115px; } }
+  /* ===================== refonte 5.13 : barre laterale, fond, modes, fiches ===================== */
+  .fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .fx .ph { position: absolute; right: -6%; top: -8%; width: 62%; height: 90%; background-size: cover; background-position: 50% 20%; opacity: 0; transition: opacity .8s, background-image .8s; filter: blur(3px) saturate(1.3); -webkit-mask-image: radial-gradient(closest-side, #000 40%, transparent); mask-image: radial-gradient(closest-side, #000 40%, transparent); }
+  .fx .ph.on { opacity: .13; }
+  .fx i { position: absolute; bottom: -20px; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle, #ffd27a, #ff7a3d 45%, transparent 70%); box-shadow: 0 0 12px 3px rgba(255,122,61,.55); animation: monte linear infinite; opacity: 0; will-change: transform, opacity; }
+  @keyframes monte { 0% { transform: translate(0,0) scale(.6); opacity: 0; } 10% { opacity: .9; } 100% { transform: translate(var(--dx), -105vh) scale(1.1); opacity: 0; } }
+  .fx.pause i { animation-play-state: paused; } body.calme .fx { display: none; }
+  @media (prefers-reduced-motion: reduce) { .fx i, .maj::after, .pf.r-LR, .pf.r-LR::before, .upd, .blink { animation: none !important; } }
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+  .side { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 18px 14px; border-right: 1px solid var(--line); background: rgba(9,10,15,.86); backdrop-filter: blur(8px); z-index: 30; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 4px; text-decoration: none; }
+  .brand svg { width: 34px; height: 34px; } .brand b { font: 400 25px/1 var(--head); letter-spacing: .5px; text-transform: uppercase; } .brand b em { font-style: normal; color: var(--acc); }
+  .maj { position: relative; border-radius: 14px; padding: 13px 14px; background: linear-gradient(135deg, #ff4b3e, #ff8a3d); box-shadow: 0 14px 40px -16px rgba(255,75,62,.8); cursor: pointer; }
+  .maj::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.25) 50%, transparent 70%); background-size: 250% 100%; animation: sh 3.5s ease-in-out infinite; }
+  @keyframes sh { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+  .maj .k { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; opacity: .92; } .maj .v { font: 400 26px/1.05 var(--head); margin: 2px 0 3px; } .maj .s { font-size: 12px; opacity: .94; }
+  .maj button { position: relative; z-index: 1; margin-top: 10px; width: 100%; padding: 9px; background: #07080c; box-shadow: none; font-size: 11.5px; letter-spacing: 1.2px; }
+  .maj .prog { background: rgba(0,0,0,.3); margin: 8px 0 0; } .maj .prog i { background: #fff; }
+  .maj.off { background: var(--panel); border: 1px solid var(--line); box-shadow: none; padding: 10px 12px; } .maj.off::after { display: none; } .maj.off .v { font-size: 18px; } .maj.off .k { color: var(--mute); }
+  .nav { display: flex; flex-direction: column; gap: 1px; }
+  .nav .grp { font-size: 10.5px; font-weight: 800; letter-spacing: 2px; color: #6f7686; text-transform: uppercase; padding: 10px 10px 4px; }
+  .nav a { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 9px; color: #cfc8bd; text-decoration: none; font-weight: 700; font-size: 13.5px; }
+  .nav a svg { width: 18px; height: 18px; opacity: .85; flex: none; } .nav a:hover { background: var(--panel); color: #fff; }
+  .nav a.on { background: linear-gradient(90deg, rgba(255,75,62,.18), rgba(255,75,62,.02)); color: #fff; box-shadow: inset 3px 0 0 var(--acc); }
+  .nav a .b { margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 99px; background: var(--panel2); color: var(--mute); white-space: nowrap; } .nav a .b.g { color: var(--ok); } .nav a .b.o { color: var(--gold); } .nav a .b.p { color: #c4b5fd; }
+  .job { margin-top: auto; border: 1px solid var(--line2); border-radius: 12px; padding: 12px; background: var(--panel); cursor: pointer; }
+  .job .t { font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .job .s { font-size: 11.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .job .prog { margin: 8px 0 6px; }
+  .mainw { min-width: 0; }
+  .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 62px; padding: 0 30px; background: rgba(7,8,12,.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .crumb { color: var(--mute); font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .crumb b { color: var(--txt); }
+  .topr { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .kbtn { background: var(--panel); border: 1px solid var(--line2); color: var(--mute); box-shadow: none; padding: 7px 12px; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 700; }
+  .kbtn kbd { font: 800 10px var(--body); border: 1px solid var(--line2); border-radius: 5px; padding: 1px 5px; color: #cfc8bd; }
+  .burger { display: none; width: 38px; height: 38px; padding: 0; border-radius: 10px; background: var(--panel); border: 1px solid var(--line2); box-shadow: none; font-size: 18px; }
+  main { max-width: 1320px; padding: 28px 30px 70px; }
+  .tabbar { display: none; }
+  .mbmaj { display: none; align-items: center; gap: 10px; margin: -6px 0 16px; padding: 11px 13px; border-radius: 12px; background: linear-gradient(135deg, #ff4b3e, #ff8a3d); font-weight: 800; font-size: 13px; cursor: pointer; }
+  .mbmaj button { margin-left: auto; padding: 7px 11px; background: #07080c; box-shadow: none; font-size: 11px; }
+  .seg { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); gap: 4px; margin-bottom: 18px; flex-wrap: wrap; }
+  .seg a { padding: 8px 14px; border-radius: 9px; font-weight: 800; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; color: #bdb7ad; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .seg a.on { background: linear-gradient(135deg, var(--acc), var(--acc2)); color: #fff; } .seg a.nm.on { background: linear-gradient(135deg, #7c3aed, #b35cff); } .seg a.nm { color: #c9b8f5; }
+  .seg .sep { width: 1px; background: var(--line2); margin: 4px 6px; }
+  .chips2 { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; } .chips2 a { padding: 7px 13px; border-radius: 99px; border: 1px solid var(--line2); background: var(--panel); font-weight: 800; font-size: 12px; color: #d9d3c9; text-decoration: none; cursor: pointer; } .chips2 a.on, .chips2 a:hover { border-color: var(--acc2); color: #fff; }
+  .grid > * { min-width: 0; }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .tile .v { overflow-wrap: anywhere; }
+  .pf { cursor: pointer; } .pf.lg { width: 74px; height: 100px; border-radius: 12px; } .pf.xl { width: 112px; height: 150px; border-radius: 14px; }
+  .pf.lg i, .pf.xl i { font-size: 10px; padding: 18px 0 6px; letter-spacing: 1.5px; } .pf.lg .ini, .pf.xl .ini { font-size: 26px; }
+  .pf .lv { position: absolute; top: 3px; right: 3px; z-index: 3; font: 800 9px/1 var(--body); background: rgba(0,0,0,.75); color: #fff; padding: 2px 4px; border-radius: 4px; }
+  .trio { display: flex; gap: 10px; }
+  .hero { position: relative; overflow: hidden; display: flex; gap: 22px; align-items: center; padding: 24px; }
+  .hero .bgimg { position: absolute; inset: 0; display: flex; opacity: .16; filter: blur(2px) saturate(1.2); pointer-events: none; } .hero .bgimg img { flex: 1; object-fit: cover; object-position: 50% 20%; min-width: 0; }
+  .hero .bgimg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--panel) 30%, transparent); }
+  .hero > *:not(.bgimg) { position: relative; } .hero .txt { min-width: 0; flex: 1; }
+  .hero .k { color: var(--acc); font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+  .hero .bigv { font: 400 54px/1 var(--head); font-style: italic; margin: 6px 0 4px; } .hero .s { color: var(--mute); font-size: 13px; }
+  .pill { display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border-radius: 99px; font-weight: 800; font-size: 12px; background: var(--panel2); border: 1px solid var(--line2); white-space: nowrap; }
+  .pill.n { color: #2fd27a; } .pill.d { color: #f5a524; } .pill.e { color: #ff4b3e; } .pill.p { color: #c4b5fd; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .mode { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); min-height: 210px; padding: 16px; display: flex; flex-direction: column; background: var(--panel); color: inherit; text-decoration: none; transition: transform .15s, border-color .15s; }
+  .mode:hover { transform: translateY(-2px); border-color: var(--acc2); }
+  .mode .ph { position: absolute; inset: 0; display: flex; } .mode .ph img { flex: 1; min-width: 0; object-fit: cover; object-position: 50% 18%; }
+  .mode .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,8,12,.15), rgba(7,8,12,.55) 45%, rgba(11,12,18,.97) 78%); }
+  .mode > *:not(.ph) { position: relative; } .mode .t { font: 400 22px/1 var(--head); text-transform: uppercase; font-style: italic; margin-top: auto; } .mode .v { font: 400 32px/1 var(--head); margin: 6px 0 2px; } .mode .s { color: #c9c3b9; font-size: 12px; }
+  .mode .tag { align-self: flex-start; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; background: rgba(7,8,12,.7); border: 1px solid var(--line2); }
+  .mode.soon { background: repeating-linear-gradient(135deg, var(--panel), var(--panel) 12px, #13151d 12px, #13151d 24px); } .mode.soon .t, .mode.soon .v { color: var(--mute); }
+  .podium { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 16px; align-items: end; }
+  .pod { position: relative; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); padding: 20px 14px 16px; text-align: center; }
+  .pod.first { border-color: rgba(247,197,72,.55); box-shadow: 0 20px 60px -30px rgba(247,197,72,.6); order: 2; } .pod.second { order: 1; } .pod.third { order: 3; }
+  .pod .rk { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 400 16px var(--head); background: var(--panel2); border: 1px solid var(--line2); } .pod.first .rk { background: var(--gold); color: #07080c; border: 0; }
+  .pod .trio { justify-content: center; margin: 8px 0; gap: 6px; } .pod .nm { font-weight: 800; font-size: 12.5px; } .pod .sc { font: 400 40px/1 var(--head); margin: 8px 0 6px; } .pod .pills { justify-content: center; }
+  .share { display: flex; gap: 18px; align-items: center; } .share canvas { width: 340px; max-width: 100%; border-radius: 12px; border: 1px solid var(--line2); flex: none; }
+  .chg { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); } .chg .up { color: var(--ok); font-weight: 800; white-space: nowrap; } .chg .dn { color: var(--acc); font-weight: 800; white-space: nowrap; } .chg .x { color: var(--mute); font-size: 12px; margin-left: auto; text-align: right; }
+  .floor { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); } .floor .fn { font: 400 24px var(--head); width: 54px; text-align: center; color: var(--gold); flex: none; }
+  .search { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .search input[type=search] { flex: 1; min-width: 220px; padding: 10px 14px; border-radius: 11px; border: 1px solid var(--line2); background: var(--panel2); color: var(--txt); font: 600 13px var(--body); }
+  .search select { padding: 9px 12px; border-radius: 10px; }
+  .coll { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 12px; }
+  .coll .it { text-align: center; font-size: 11px; font-weight: 700; color: #d9d3c9; } .coll .it .pf { width: 100%; height: auto; aspect-ratio: 3/4; } .coll .it span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; } .coll .it small { color: var(--mute); font-weight: 600; }
+  .veil { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); display: none; } .veil.on { display: block; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(470px, 100vw); z-index: 71; background: #0c0e14; border-left: 1px solid var(--line2); box-shadow: -30px 0 80px rgba(0,0,0,.6); padding: 22px; overflow-y: auto; transform: translateX(105%); transition: transform .22s ease-out; }
+  .drawer.on { transform: none; } .drawer .bn { position: absolute; left: 0; right: 0; top: 0; height: 190px; background-size: cover; background-position: center; opacity: .22; -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent); pointer-events: none; }
+  .drawer > *:not(.bn) { position: relative; } .drawer .x { position: absolute; top: 14px; right: 14px; z-index: 2; padding: 6px 10px; }
+  .drawer .nm { font: 400 36px/1 var(--head); font-style: italic; text-transform: uppercase; margin: 4px 0; }
+  .kbar { position: fixed; left: 50%; top: 110px; transform: translateX(-50%); width: min(620px, 94vw); z-index: 72; background: #0f1118; border: 1px solid var(--line2); border-radius: 16px; box-shadow: 0 30px 90px rgba(0,0,0,.7); display: none; overflow: hidden; } .kbar.on { display: block; }
+  .kbar input { width: 100%; padding: 16px 18px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--txt); font: 700 16px var(--body); outline: none; }
+  .kbar .it { display: flex; align-items: center; gap: 12px; padding: 8px 18px; cursor: pointer; } .kbar .it.on { background: rgba(255,75,62,.12); } .kbar .it small { margin-left: auto; color: var(--mute); } .kbar .it .pf { width: 30px; height: 40px; border-radius: 6px; } .kbar .it .pf i { display: none; }
+  .kbar .ic2 { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--panel2); } .kbar .ft { color: var(--mute); font-size: 12px; padding: 10px 18px; border-top: 1px solid var(--line); }
+  .skel { border-radius: 12px; background: linear-gradient(90deg, var(--panel) 25%, var(--panel2) 50%, var(--panel) 75%); background-size: 300% 100%; animation: skel 1.4s ease-in-out infinite; min-height: 120px; } @keyframes skel { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+  .act h3 .ic { width: 20px; height: 20px; } .act .dur { float: right; font: 800 10.5px var(--body); font-style: normal; letter-spacing: 1px; color: var(--mute); border: 1px solid var(--line2); border-radius: 99px; padding: 3px 8px; margin-top: 4px; text-transform: uppercase; }
+  td .cmp { width: 15px; height: 15px; }
+  #drawer .chg .tmn { display: none; } #drawer .g4 { grid-template-columns: repeat(4, 1fr); } @media (max-width: 420px) { #drawer .g4 { grid-template-columns: 1fr 1fr; } }
+  #p-calculs > .grid { align-items: start; } #p-calculs .act { min-height: 230px; }
+  @media (max-width: 1100px) { .g4 { grid-template-columns: 1fr 1fr; } .podium { grid-template-columns: 1fr; } .pod { order: 0 !important; } .share { flex-direction: column; align-items: stretch; } .share canvas { width: 100%; } }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; } .side { position: fixed; left: 0; top: 0; bottom: 0; width: 270px; transform: translateX(-102%); transition: transform .2s; box-shadow: 30px 0 80px rgba(0,0,0,.6); }
+    body.menu .side { transform: none; } body.menu .veil { display: block; }
+    .burger { display: grid; place-items: center; } .top { padding: 0 14px; height: 58px; } .kbtn span, #chipVer, #chipSrv, .upd { display: none !important; }
+    main { padding: 18px 16px 96px; } h1 { font-size: 40px; } .mbmaj.on { display: flex; }
+    .g2, .gc, .g3 { grid-template-columns: 1fr; } .g5 { grid-template-columns: 1fr 1fr; } .mode { min-height: 170px; } .hero { flex-direction: column; align-items: flex-start; padding: 18px; } .hero .bigv { font-size: 42px; } .pf.xl { width: 92px; height: 124px; }
+    .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: rgba(9,10,15,.96); border-top: 1px solid var(--line); padding: 8px 6px 14px; }
+    .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 800; color: #9aa1b0; text-decoration: none; cursor: pointer; } .tabbar a svg { width: 21px; height: 21px; } .tabbar a.on { color: var(--acc2); }
+    table { display: block; overflow-x: auto; } .kv { grid-template-columns: 1fr; }
+    .topr .chip:not(.bell), .kbtn kbd { display: none !important; } .crumb { flex: 1; min-width: 0; } .burger svg { width: 20px; height: 20px; }
+    .seg { display: flex; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; } .row label { flex-wrap: wrap; max-width: 100%; } select { max-width: 100%; }
+    .pf.xl { width: 84px; height: 112px; } h2 { flex-wrap: wrap; } h2 .r { margin-left: 0; width: 100%; flex-wrap: wrap; }
+  }
 </style>
 </head>
 <body>
-<header class="top">
-  <a class="brand" href="#accueil">
-    <svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8c3c"/><stop offset="1" stop-color="#e8283c"/></linearGradient></defs><path d="M18 18 L36 36 L26 50 Z M82 18 L64 36 L74 50 Z M20 38 L50 32 L80 38 L72 62 L50 82 L28 62 Z" fill="url(#g)"/><path d="M30 58 L50 64 L70 58 L60 68 L50 77 L40 68 Z" fill="#f4ede3"/><path d="M33 49 L43 52 L35 55 Z M67 49 L57 52 L65 55 Z M47 72 L53 72 L50 75 Z" fill="#07080c"/></svg>
-    <b>Kitsu<em>AI</em></b>
-  </a>
-  <nav id="nav">
-    <a href="#accueil" data-p="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tableau de bord</span></a>
-    <a href="#calculs" data-p="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Calculs</span></a>
-    <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Résultats</span></a>
-    <a href="#campagne" data-p="campagne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span>Campagne</span></a>
-    <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span></a>
-    <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
-    <a href="#nouveautes" data-p="nouveautes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 20 12 16.6 6.5 20 8 13.4 3 9l6.4-.7z"/></svg><span>Nouveautés</span></a>
-    <a href="#reglages" data-p="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Réglages</span></a>
-    <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal</span></a>
+<div class="fx" id="fx" aria-hidden="true"><div class="ph" id="fxph"></div><i style="left:0%;--dx:-44px;animation-duration:9s;animation-delay:-0.0s"></i><i style="left:37%;--dx:-22px;animation-duration:10s;animation-delay:-1.3s"></i><i style="left:74%;--dx:0px;animation-duration:11s;animation-delay:-2.6s"></i><i style="left:11%;--dx:22px;animation-duration:12s;animation-delay:-3.9s"></i><i style="left:48%;--dx:44px;animation-duration:13s;animation-delay:-5.2s"></i><i style="left:85%;--dx:-44px;animation-duration:14s;animation-delay:-6.5s"></i><i style="left:22%;--dx:-22px;animation-duration:9s;animation-delay:-7.8s"></i><i style="left:59%;--dx:0px;animation-duration:10s;animation-delay:-0.1s"></i><i style="left:96%;--dx:22px;animation-duration:11s;animation-delay:-1.4s"></i><i style="left:33%;--dx:44px;animation-duration:12s;animation-delay:-2.7s"></i><i style="left:70%;--dx:-44px;animation-duration:13s;animation-delay:-4.0s"></i><i style="left:7%;--dx:-22px;animation-duration:14s;animation-delay:-5.3s"></i><i style="left:44%;--dx:0px;animation-duration:9s;animation-delay:-6.6s"></i><i style="left:81%;--dx:22px;animation-duration:10s;animation-delay:-7.9s"></i><i style="left:18%;--dx:44px;animation-duration:11s;animation-delay:-0.2s"></i><i style="left:55%;--dx:-44px;animation-duration:12s;animation-delay:-1.5s"></i><i style="left:92%;--dx:-22px;animation-duration:13s;animation-delay:-2.8s"></i><i style="left:29%;--dx:0px;animation-duration:14s;animation-delay:-4.1s"></i><i style="left:66%;--dx:22px;animation-duration:9s;animation-delay:-5.4s"></i><i style="left:3%;--dx:44px;animation-duration:10s;animation-delay:-6.7s"></i><i style="left:40%;--dx:-44px;animation-duration:11s;animation-delay:-8.0s"></i><i style="left:77%;--dx:-22px;animation-duration:12s;animation-delay:-0.3s"></i></div>
+<div class="app">
+<aside class="side" id="side">
+  <a class="brand" href="#accueil"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8c3c"/><stop offset="1" stop-color="#e8283c"/></linearGradient></defs><path d="M18 18 L36 36 L26 50 Z M82 18 L64 36 L74 50 Z M20 38 L50 32 L80 38 L72 62 L50 82 L28 62 Z" fill="url(#g)"/><path d="M30 58 L50 64 L70 58 L60 68 L50 77 L40 68 Z" fill="#f4ede3"/><path d="M33 49 L43 52 L35 55 Z M67 49 L57 52 L65 55 Z M47 72 L53 72 L50 75 Z" fill="#07080c"/></svg><b>Kitsu<em>AI</em></b></a>
+  <div class="maj off" id="majCard" onclick="majAction(event)"><div class="k" id="majK">Launcher</div><div class="v" id="majV">KitsuAI</div><div class="s" id="majS">Vérification des mises à jour…</div><div id="majX"></div></div>
+  <nav id="nav" class="nav">
+    <div class="grp">Accueil</div>
+    <a href="#accueil" data-p="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tableau de bord</span></a>
+    <div class="grp">Modes de jeu</div>
+    <a href="#campagne" data-p="campagne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg><span>Campagne</span><span class="b" id="nbCamp"></span></a>
+    <a href="#tour" data-p="tour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V9h10v12M5 9h14M7 9V5h2v2h2V5h2v2h2V5h2v4M10 21v-5h4v5"/></svg><span>Tour de l'infini</span><span class="b" id="nbTour"></span></a>
+    <a href="#raid" data-p="raid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span>Raids</span><span class="b">bientôt</span></a>
+    <a href="#arene0" data-p="arene0" id="navArene0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4M5 21l-2-2"/></svg><span>Arène</span><span class="b p">privé</span></a>
+    <a href="#event" data-p="event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span>Événements et guilde</span></a>
+    <div class="grp">Analyses</div>
+    <a href="#calculs" data-p="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Calculs</span></a>
+    <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Cartes et conseils</span></a>
+    <div class="grp">Outils</div>
+    <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span><span class="b" id="nbScript"></span></a>
+    <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
+    <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal et nouveautés</span><span class="b o" id="nbJour" style="display:none"></span></a>
+    <a href="#reglages" data-p="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>Réglages</span></a>
   </nav>
-  <div class="topr"><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><span class="chip bell" id="bell" onclick="go('journal')" title="Alertes"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><i id="bellN" style="display:none"></i></span><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div>
-</header>
-
+  <div class="job" id="sideJob" onclick="go('journal')"><div class="t" id="sjT">Aucune tâche</div><div class="prog" id="sjP"><i></i></div><div class="s" id="sjS">Prêt.</div></div>
+</aside>
+<div class="mainw">
+<header class="top"><button class="burger" onclick="menu()" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="crumb" id="crumb"></div><div class="topr"><button class="kbtn" onclick="kOuvrir()" title="Rechercher un onglet ou une carte">⌕ <span>Rechercher</span> <kbd>Ctrl K</kbd></button><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><span class="chip bell" id="bell" onclick="go('journal')" title="Alertes"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><i id="bellN" style="display:none"></i></span><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div></header>
 <main>
+  <div class="mbmaj" id="mbMaj" onclick="majAction(event)"><span id="mbMajT">Mise à jour disponible</span><button>Voir</button></div>
   <!-- ===================== TABLEAU DE BORD ===================== -->
   <section class="page" id="p-accueil">
     <div id="bandeaux"></div>
     <div class="eyebrow">KitsuAI · panneau local</div>
     <h1>Tableau de bord</h1>
     <p class="lead">Un bouton pour tout faire : mettre à jour le moteur du jeu, entraîner l'IA sur tes équipes, puis analyser toutes tes cartes. Le conseil en combat tourne en parallèle tant que KitsuAI est ouvert.</p>
+    <div id="dashPhare"></div>
     <div class="grid g2">
       <div class="card hot">
         <h2>Tout lancer</h2>
@@ -241,10 +345,49 @@
     <div class="sp"></div>
     <div class="grid g5" id="tiles"></div>
     <div class="sp"></div>
+    <div class="grid g4" id="dashModes"></div>
+    <div class="sp"></div>
+    <div class="card" id="dashChg"></div>
+    <div class="sp"></div>
     <div class="card">
       <h2>Meilleures équipes <span class="r" id="dtres"></span></h2>
       <div id="resume"></div>
     </div>
+  </section>
+
+  <!-- ===================== TOUR ===================== -->
+  <section class="page" id="p-tour">
+    <div class="eyebrow">Modes de jeu</div>
+    <h1>Tour de l'infini</h1>
+    <p class="lead">Le trio qui monte le plus haut, cherché sur les vrais étages (les PV sont gardés d'un étage à l'autre), les étages où tes montées s'arrêtent et les collectifs à cocher.</p>
+    <div class="card hot"><h2>Lancer le calcul</h2><div class="row"><label>Niveaux <select id="o_twniv"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99</option></select></label><button data-act="tour" style="margin-left:auto">Lancer</button></div><p class="muted" style="font-size:12px;margin:10px 0 0">Quelques minutes.</p></div>
+    <div class="sp"></div>
+    <div id="twBody"><div class="skel"></div></div>
+  </section>
+
+  <!-- ===================== RAIDS ===================== -->
+  <section class="page" id="p-raid">
+    <div class="eyebrow">Modes de jeu</div>
+    <h1>Raids</h1>
+    <p class="lead">Les raids n'ont pas encore d'analyse dans KitsuAI. L'onglet est prêt : il se remplira quand le calcul existera.</p>
+    <div class="grid g3"><div class="mode soon" style="min-height:170px"><span class="tag">bientôt</span><div class="t">Meilleur trio de raid</div><div class="s">Dégâts par trio, comme le boss de guilde.</div></div><div class="mode soon" style="min-height:170px"><span class="tag">bientôt</span><div class="t">Cartes à monter</div><div class="s">Ce qui fait le plus monter les dégâts.</div></div><div class="mode soon" style="min-height:170px"><span class="tag">bientôt</span><div class="t">Collectifs</div><div class="s">Les 6 à cocher pour le raid.</div></div></div>
+  </section>
+
+  <!-- ===================== ARENE (sans l'extension locale) ===================== -->
+  <section class="page" id="p-arene0">
+    <div class="eyebrow">Modes de jeu</div>
+    <h1>Arène</h1>
+    <p class="lead">L'arène est un mode joueur contre joueur : la version publique de KitsuAI n'y donne aucun conseil.</p>
+    <div class="card"><div class="muted">Rien à afficher ici.</div></div>
+  </section>
+
+  <!-- ===================== EVENEMENTS ET GUILDE ===================== -->
+  <section class="page" id="p-event">
+    <div class="eyebrow">Modes de jeu</div>
+    <h1>Événements et guilde</h1>
+    <p class="lead">Événements ouverts, Salle, boss de guilde et Pain : les meilleurs trios de la dernière analyse complète.</p>
+    <div id="evTabs"></div>
+    <div id="evBody"><div class="skel"></div></div>
   </section>
 
   <!-- ===================== CALCULS ===================== -->
@@ -252,9 +395,9 @@
     <div class="eyebrow">Calculs sur ton processeur</div>
     <h1>Calculs</h1>
     <p class="lead">Chaque calcul utilise tous les coeurs moins deux. Une seule tâche à la fois.</p>
-    <div class="grid gc">
+    <div class="grid g3">
       <div class="card act">
-        <h3>Analyse complète</h3>
+        <h3><span class="dur">30 à 75 min</span><i data-ic="campagne_extreme"></i>Analyse complète</h3>
         <p>Campagne, boss, Cauchemar (tous, plusieurs ennemis, boss), événements, Salle, Tour de l'infini, boss de guilde. Objectif 2 étoiles minimum.</p>
         <div class="row">
           <label>Niveaux <select id="o_niv"><option value="actuel,99">actuels puis 99</option><option value="actuel">actuels</option><option value="99">99</option></select></label>
@@ -264,7 +407,7 @@
         </div>
       </div>
       <div class="card act">
-        <h3>Entraînement de l'IA</h3>
+        <h3><span class="dur">20 à 60 min</span><i data-ic="xp"></i>Entraînement de l'IA</h3>
         <p>Apprend sur tes meilleures équipes et les combats disputés. Le script du jeu récupère les nouveaux réglages tout seul.</p>
         <div class="row">
           <label><input type="checkbox" id="o_tnm" checked> Cauchemar</label>
@@ -277,7 +420,7 @@
         <div id="poids" class="muted" style="font-size:12px;margin-top:10px"></div>
       </div>
       <div class="card act">
-        <h3>Analyse par mode</h3>
+        <h3><span class="dur">1 à 3 min</span><i data-ic="cauchemar_boss"></i>Analyse par mode</h3>
         <p>Meilleures cartes et meilleurs trios pour un seul type de combat, en 1 à 3 minutes.</p>
         <div class="row">
           <select id="o_mode"><option value="boss">Boss Cauchemar</option><option value="nm3">3 ennemis Cauchemar</option><option value="ext">Boss Extrême</option></select>
@@ -287,12 +430,12 @@
         </div>
       </div>
       <div class="card act">
-        <h3>Mesure du plafond</h3>
+        <h3><span class="dur">5 à 15 min</span><i data-ic="boss_extreme"></i>Mesure du plafond</h3>
         <p>Compare l'IA actuelle et l'IA qui anticipe sur des combats de Cauchemar disputés.</p>
         <div class="row"><label>Combats <input type="number" id="o_n" value="10" min="2" max="60"></label><button data-act="plafond">Lancer</button></div>
       </div>
       <div class="card act">
-        <h3>Conseils de cartes</h3>
+        <h3><span class="dur">5 à 20 min</span><i data-ic="collectifs"></i>Conseils de cartes</h3>
         <p>Les 6 collectifs à cocher, quelle carte monter en niveau, ce que vaut chaque carte des bannières ouvertes, les duos qui marchent ensemble.</p>
         <div class="row">
           <label><input type="checkbox" id="o_ccol" checked> Collectifs</label>
@@ -304,30 +447,30 @@
         </div>
       </div>
       <div class="card act">
-        <h3>Tour de l'infini</h3>
+        <h3><span class="dur">quelques min</span><i data-ic="tour"></i>Tour de l'infini</h3>
         <p>Le meilleur trio pour la Tour, cherché sur les vrais étages (PV gardés d'un étage à l'autre), les étages où tes montées s'arrêtent et les collectifs à cocher. Quelques minutes.</p>
         <div class="row">
           <button data-act="tour">Lancer</button>
         </div>
       </div>
       <div class="card act">
-        <h3>IA par équipe</h3>
+        <h3><span class="dur">10 à 30 min</span><i data-ic="duos"></i>IA par équipe</h3>
         <p>Des réglages Cauchemar propres à chacune de tes meilleures équipes, gardés seulement s'ils font mieux.</p>
         <div class="row"><label>Équipes <input type="number" id="o_neq" value="3" min="1" max="8"></label><button data-act="equipes">Lancer</button></div>
       </div>
       <div class="card act">
-        <h3>IA par imitation</h3>
+        <h3><span class="dur">20 à 60 min</span><i data-ic="cauchemar"></i>IA par imitation</h3>
         <p>L'IA rapide apprend à jouer comme l'IA qui anticipe (plusieurs coups d'avance). Long : 20 à 60 minutes.</p>
         <div class="row"><label>Combats <input type="number" id="o_nim" value="160" min="40" max="600"></label><button data-act="imitation">Lancer</button></div>
       </div>
 <!--EXT-->
       <div class="card act">
-        <h3>Moteur du jeu</h3>
+        <h3><span class="dur">1 min</span><i data-ic="evenements"></i>Moteur du jeu</h3>
         <p>À faire après une mise à jour de KITSU, puis recharger le moteur pour le conseil en combat.</p>
         <div class="row"><button data-act="telecharger">Mettre à jour</button><button class="ghost" onclick="rechargerMoteur()">Recharger le moteur</button></div>
       </div>
       <div class="card act">
-        <h3>Mesure de vitesse</h3>
+        <h3><span class="dur">1 min</span><i data-ic="tirage"></i>Mesure de vitesse</h3>
         <p>Combats simulés par seconde sur ce PC.</p>
         <div class="row"><button class="ghost" data-act="bench">Mesurer</button></div>
       </div>
@@ -336,8 +479,9 @@
 
   <!-- ===================== RESULTATS ===================== -->
   <section class="page" id="p-resultats">
-    <div class="eyebrow">Dernière analyse complète</div>
-    <h1>Résultats</h1>
+    <div class="eyebrow">Analyses</div>
+    <h1>Cartes et conseils</h1>
+    <div class="chips2"><a onclick="document.getElementById('tabsNiv').scrollIntoView({behavior:'smooth'})">Meilleurs trios</a><a onclick="document.getElementById('tabsCons').scrollIntoView({behavior:'smooth'})">Collectifs, XP, tirage, duos, marché</a><a onclick="document.getElementById('files').scrollIntoView({behavior:'smooth'})">Fichiers</a></div>
     <p class="lead" id="resinfo">Les 10 meilleurs trios par catégorie.</p>
     <div class="sub" id="tabsNiv"></div>
     <div class="sub" id="tabsCat"></div>
@@ -355,20 +499,21 @@
 
   <!-- ===================== CAMPAGNE ===================== -->
   <section class="page" id="p-campagne">
-    <div class="eyebrow">Cauchemar Normal, Difficile, Extrême</div>
+    <div class="eyebrow">Modes de jeu</div>
     <h1>Campagne</h1>
-    <p class="lead">Le meilleur trio pour les 3 étoiles : tous les trios de tes cartes SSR, UR et LR, chaque combat de la campagne Cauchemar, collectifs et effets compris.</p>
+    <p class="lead">Le meilleur trio pour les 3 étoiles, en Campagne et en Cauchemar, chacun en Normal, Difficile et Extrême. Tous les trios de tes cartes SSR, UR et LR sont essayés.</p>
     <div class="card hot">
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="campPlanche()">Exporter la planche PNG</button></span></h2>
-      <div class="row" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div class="row">
         <label>Niveaux <select id="o_c3niv"><option value="99">Toutes au niveau 99 (potentiel)</option><option value="actuel">Tes niveaux actuels</option></select></label>
-        <button class="big" data-act="cauchemar3">Calculer la campagne</button>
+        <label>Difficultés <select id="o_c3dif"><option value="toutes">Les 6 (Campagne et Cauchemar)</option><option value="cauchemar">Cauchemar seulement (plus rapide)</option></select></label>
+        <button data-act="cauchemar3" style="margin-left:auto">Lancer le calcul</button>
       </div>
-      <p class="muted" style="margin:12px 0 0">Premier calcul : environ 3 h sur 11 fils (des centaines de milliers de trios). Ensuite, seuls les trios touchés par un changement sont refaits : nouvelle carte, étoile ou niveau gagné, patch qui modifie une carte ou les combats. Le PC ne se met pas en veille pendant le calcul. Tu peux l'arrêter : il reprend là où il en était.</p>
+      <p class="muted" style="font-size:12px;margin:10px 0 0">Long : plusieurs heures (deux fois plus avec les 6 difficultés). Le PC reste éveillé, tu peux jouer pendant ce temps. Si tu arrêtes, la reprise repart du journal : rien n'est refait.</p>
       <p id="c3job" class="muted" style="margin:8px 0 0"></p>
     </div>
     <div class="sp"></div>
-    <div class="sub" id="c3tabs"></div>
+    <div id="c3tabs"></div>
     <div id="c3body"></div>
   </section>
 
@@ -419,10 +564,20 @@
         <ol class="how" style="margin-top:14px"><li>Sur kitsu.games, dock KitsuAI, onglet <b>Santé</b>.</li><li>Bouton <b>Exporter pour le moteur local</b> : <b>sauvegarde.json</b> est téléchargé.</li><li>Glisse-le ici, puis lance <b>Tout lancer</b>.</li></ol>
       </div>
     </div>
+    <div class="sp"></div>
+    <div class="card"><h2>Ta collection <span class="r" id="colN"></span></h2>
+      <div class="search"><input type="search" id="colQ" placeholder="Rechercher une carte, une série…" oninput="colRender()">
+        <select id="colR" onchange="colRender()"><option value="hautes">Rareté : SSR, UR, LR</option><option value="">Rareté : toutes</option><option>LR</option><option>UR</option><option>SSR</option><option>SR</option><option>R</option><option>N</option></select>
+        <select id="colS" onchange="colRender()"><option value="">Série : toutes</option></select>
+        <select id="colT" onchange="colRender()"><option value="pw">Trier : puissance</option><option value="lv">Trier : niveau</option><option value="r">Trier : rareté</option><option value="n">Trier : nom</option></select>
+        <label><input type="checkbox" id="colM" onchange="colRender()"> Dans mes meilleurs trios</label><label><input type="checkbox" id="colB" onchange="colRender()"> Niveau &lt; 60</label></div>
+      <div class="coll" id="coll"><div class="skel" style="grid-column:1/-1"></div></div><div class="row" style="justify-content:center;margin-top:14px"><button class="ghost" id="colPlus" onclick="colMax+=120;colRender()" style="display:none">Afficher plus</button></div>
+    </div>
   </section>
 
   <!-- ===================== NOUVEAUTES ===================== -->
   <section class="page" id="p-nouveautes">
+    <div class="seg"><a href="#journal">Journal</a><a href="#nouveautes" class="on">Nouveautés et patchs</a></div>
     <div class="pn-hero">
       <div class="pn-top"><i></i><b>KitsuAI</b> Patch notes <span id="pnDate" style="margin-left:auto;color:var(--mute)"></span></div>
       <div class="pn-v" id="pnV">Version</div>
@@ -447,6 +602,7 @@
         <h2>Application</h2>
         <div class="set"><div class="x"><b>Démarrer avec Windows</b><span id="demTxt">KitsuAI se lance en arrière-plan (icône près de l'horloge), prêt pour le conseil en combat.</span></div><label class="sw"><input type="checkbox" id="r_dem"><span></span></label></div>
         <div class="set"><div class="x"><b>Temps de réflexion du conseil en combat</b><span>Plus long = plus de simulations par coup (et un conseil plus sûr).</span></div><select id="r_ms"><option value="400">0,4 s</option><option value="700">0,7 s</option><option value="1200">1,2 s</option><option value="2000">2 s</option></select></div>
+        <div class="set"><div class="x"><b>Effets visuels</b><span>Portrait en fond et braises qui montent. Coupés tout seuls quand la fenêtre est cachée.</span></div><label class="sw"><input type="checkbox" id="r_fx" onchange="fxReglage(this.checked)"><span></span></label></div>
         <div class="set"><div class="x"><b>Fils gardés libres pendant les calculs</b><span>Pour jouer sans ralentissement pendant une analyse.</span></div><select id="r_fils"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
       </div>
       <div class="card">
@@ -466,6 +622,7 @@
   <section class="page" id="p-journal">
     <div class="eyebrow">Ce qui se passe</div>
     <h1>Journal</h1>
+    <div class="seg"><a href="#journal" class="on">Journal</a><a href="#nouveautes">Nouveautés et patchs</a></div>
     <p class="lead" id="jobh2">Aucune tâche.</p>
     <div class="card"><h2>Tâche <span class="r"><button class="stop" id="stop2" onclick="arreter()" disabled>Arrêter</button></span></h2><pre id="joblog" style="max-height:460px"></pre></div>
     <div class="sp"></div>
@@ -475,6 +632,11 @@
     </div>
   </section>
 </main>
+</div></div>
+<nav class="tabbar" id="tabbar"><a href="#accueil" data-t="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Accueil</a><a href="#campagne" data-t="campagne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg>Campagne</a><a href="#tour" data-t="tour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V9h10v12M5 9h14M7 9V5h2v2h2V5h2v2h2V5h2v4M10 21v-5h4v5"/></svg>Tour</a><a href="#calculs" data-t="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Calculs</a><a onclick="menu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menu</a></nav>
+<div class="veil" id="veil" onclick="fermer()"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="kbar" id="kbar"><input id="kq" placeholder="Aller à un onglet ou une carte…" autocomplete="off"><div id="kres"></div><div class="ft">Ctrl+K partout · Entrée pour ouvrir · Échap pour fermer</div></div>
 <div id="modal" onclick="if(event.target===this)this.style.display='none'"><div class="box" id="mbox"></div></div>
 <div id="toast"></div>
 <script>
@@ -483,12 +645,13 @@ const api = (p, o = {}) => fetch(p, { ...o, headers: { 'X-Kitsu-Token': TOKEN, '
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // ---------- cartes : portraits, raretes, icones ----------
-let CARTES = null, PAR_NOM = {};
-async function chargerCartes() { try { const r = await api('/api/cartes'); CARTES = r.c; PAR_NOM = {}; for (const [id, c] of Object.entries(CARTES)) if (!(c[0] in PAR_NOM)) PAR_NOM[c[0]] = id; HC.clear(); refresh(); } catch { setTimeout(chargerCartes, 5000); } }
-const carte = x => { const id = typeof x === 'number' || /^\d+$/.test(String(x)) ? String(x) : PAR_NOM[x]; const c = CARTES?.[id]; return c ? { id, n: c[0], r: c[1], img: c[2], s: c[3] } : { n: String(x ?? '?'), r: '', img: '' }; };
+let CARTES = null, PAR_NOM = {}, CARTES_S = {};
+async function chargerCartes() { try { const r = await api('/api/cartes'); CARTES = r.c; CARTES_S = r.s || {}; PAR_NOM = {}; for (const [id, c] of Object.entries(CARTES)) if (!(c[0] in PAR_NOM)) PAR_NOM[c[0]] = id; HC.clear(); refresh(); } catch { setTimeout(chargerCartes, 5000); } }
+const carte = x => { const id = typeof x === 'number' || /^\d+$/.test(String(x)) ? String(x) : PAR_NOM[x]; const c = CARTES?.[id]; return c ? { id, n: c[0], r: c[1], img: c[2], s: c[3], sid: c[4], pw: c[5], atk: c[6], def: c[7], spd: c[8], crit: c[9] } : { n: String(x ?? '?'), r: '', img: '' }; };
 function pf(x, big) {
   const c = carte(x), ini = c.n.replace(/\(.*\)/, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-  return `<span class="pf r-${c.r || 'N'}${big ? ' big' : ''}" title="${esc(c.n)}${c.r ? ' · ' + c.r : ''}${c.s ? ' · ' + esc(c.s) : ''}"><span class="ini">${esc(ini)}</span>${c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}${c.r ? `<i>${c.r}</i>` : ''}</span>`;
+  const t = big === true ? ' big' : big ? ' ' + big : '';
+  return `<span class="pf r-${c.r || 'N'}${t}"${c.id ? ` data-id="${c.id}"` : ''} title="${esc(c.n)}${c.r ? ' · ' + c.r : ''}${c.s ? ' · ' + esc(c.s) : ''}"><span class="ini">${esc(ini)}</span>${c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}${c.r ? `<i>${c.r}</i>` : ''}</span>`;
 }
 const eqList = v => Array.isArray(v) ? v : String(v || '').split(' / ').filter(Boolean);
 const equipeHTML = (v, sm) => { const L = eqList(v); return `<div class="tm${sm ? ' sm' : ''}">${L.map(x => pf(x)).join('')}<span class="tmn">${L.map(x => esc(carte(x).n)).join(' / ')}</span></div>`; };
@@ -522,8 +685,7 @@ let E = null, niv = null, cat = null, lastLog = -1;
 
 // ---------- navigation ----------
 function go(p) { location.hash = p; }
-function route() { const p = (location.hash || '#accueil').slice(1); document.querySelectorAll('.page').forEach(x => x.classList.toggle('on', x.id === 'p-' + p)); document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.p === p)); if (!document.querySelector('.page.on')) go('accueil'); }
-addEventListener('hashchange', route); route();
+addEventListener('hashchange', () => route());
 
 // ---------- rafraichissement ----------
 async function refresh() {
@@ -562,9 +724,9 @@ async function refresh() {
     const PM = D.precedent?.modes?.[D.modes.actuel ? 'actuel' : Object.keys(D.modes)[0]] || {};
     const dl = (k, f, v) => { const a = PM[k]?.[f]; if (a == null || v == null) return ''; const d = Math.round((v - a) * 10) / 10; return d ? ` <span style="font-size:11px;color:${d > 0 ? 'var(--ok)' : 'var(--acc)'}">${d > 0 ? '+' : ''}${d}</span>` : ''; };
     const ph = M.cauchemar_multi?.top?.[0] || M.cauchemar?.top?.[0], phIds = ph ? (ph.ids || ph.equipe) : null;
-    const phare = ph ? `<div class="phare"><div class="cs">${eqList(phIds).map(x => `<div>${pf(x, true)}<div class="pn">${esc(carte(x).n)}</div></div>`).join('')}</div><div class="tx"><div class="k">${ic('cauchemar_multi')}Équipe phare · Cauchemar, plusieurs ennemis</div><div class="v">${ph.deuxEtoiles} %${dl(M.cauchemar_multi?.top?.[0] ? 'cauchemar_multi' : 'cauchemar', 'deuxEtoiles', ph.deuxEtoiles).replace('font-size:11px', 'font-size:20px')}</div><div class="s">de combats à 2 étoiles ou plus, ${ph.troisEtoiles} % à 3 étoiles</div></div></div>` : '';
-    setH('resume', phare + `<table><tr><th>Catégorie</th><th>Meilleure équipe</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th></tr>` + Object.entries(M).map(([k, c]) => { const x = c.top[0]; if (!x) return ''; return `<tr><td class="cat">${ic(k)}${CATS[k] || esc(c.titre)}</td><td>${equipeHTML(x.ids || x.equipe, 1)}</td>${k === 'tour' ? `<td class="n" colspan="2">étage ${x.etageMoyen}</td>` : (k === 'guilde' || k === 'pain') ? `<td class="n" colspan="2">${x.degats.toLocaleString('fr-FR')} dégâts</td>` : `<td class="n">${x.deuxEtoiles} %${dl(k, 'deuxEtoiles', x.deuxEtoiles)}</td><td class="n">${x.troisEtoiles} %${dl(k, 'troisEtoiles', x.troisEtoiles)}</td>`}</tr>`; }).join('') + '</table>' + (D.precedent ? `<div class="muted" style="font-size:12px;margin-top:8px">Écarts par rapport à l’analyse du ${quand(D.precedent.date)}.</div>` : ''));
-  } else setH('resume', '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>');
+    const phare = ph ? `<div class="phare hero"><div class="bgimg">${imgsTrio(phIds)}</div><div class="cs">${eqList(phIds).map(x => `<div>${pf(x, true)}<div class="pn">${esc(carte(x).n)}</div></div>`).join('')}</div><div class="tx"><div class="k">${ic('cauchemar_multi')}Équipe phare · Cauchemar, plusieurs ennemis</div><div class="v">${ph.deuxEtoiles} %${dl(M.cauchemar_multi?.top?.[0] ? 'cauchemar_multi' : 'cauchemar', 'deuxEtoiles', ph.deuxEtoiles).replace('font-size:11px', 'font-size:20px')}</div><div class="s">de combats à 2 étoiles ou plus, ${ph.troisEtoiles} % à 3 étoiles</div></div></div>` : '';
+    setH('dashPhare', phare); setH('resume', `<table><tr><th>Catégorie</th><th>Meilleure équipe</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th></tr>` + Object.entries(M).map(([k, c]) => { const x = c.top[0]; if (!x) return ''; return `<tr><td class="cat">${ic(k)}${CATS[k] || esc(c.titre)}</td><td>${equipeHTML(x.ids || x.equipe, 1)}</td>${k === 'tour' ? `<td class="n" colspan="2">étage ${x.etageMoyen}</td>` : (k === 'guilde' || k === 'pain') ? `<td class="n" colspan="2">${x.degats.toLocaleString('fr-FR')} dégâts</td>` : `<td class="n">${x.deuxEtoiles} %${dl(k, 'deuxEtoiles', x.deuxEtoiles)}</td><td class="n">${x.troisEtoiles} %${dl(k, 'troisEtoiles', x.troisEtoiles)}</td>`}</tr>`; }).join('') + '</table>' + (D.precedent ? `<div class="muted" style="font-size:12px;margin-top:8px">Écarts par rapport à l’analyse du ${quand(D.precedent.date)}.</div>` : ''));
+  } else { setH('dashPhare', ''); setH('resume', '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>'); }
   // bandeaux : patch du jeu non vu, calcul conseille
   const pk = (E.patchs || [])[0], cc = E.calculConseille || [];
   $('bandeaux').innerHTML = (pk && !pk.vu && !pk.vide ? `<div class="banner patch"><b>Patch KITSU détecté</b><div class="t">${esc(resumePatch(pk))}<div>moteur ${esc(pk.de)} puis ${esc(pk.vers)}</div></div><button onclick="go('nouveautes')">Voir le détail</button><button class="ghost" onclick="api('/api/patch-vu',{method:'POST'}).then(refresh)">Vu</button></div>` : '')
@@ -594,6 +756,7 @@ async function refresh() {
   // resultats
   $('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
+  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'sauvegarde') colRender();
 }
 let consTab = 'collectifs';
 function renderCons() {
@@ -721,7 +884,7 @@ async function renderMaj() {
     erreur: `<span class="badc" style="font-size:13px">${esc(MAJ.msg)}</span><button class="ghost" onclick="APP.verifier()">Réessayer</button>`,
     dev: '<span class="muted">Mode développeur : pas de mise à jour automatique.</span>',
   }[MAJ.etat] || `<span class="okc" style="font-weight:800">Tu as la dernière version.</span><button class="ghost" onclick="APP && APP.verifier()">Vérifier</button>`;
-  $('pnAct').innerHTML = act;
+  $('pnAct').innerHTML = act; majSide(dispo, lv);
   $('pnOld').innerHTML = rels.filter(r => r !== shown).slice(0, 12).map(r => `<details class="rel"><summary><b>${esc(r.tag_name)}</b><span>${new Date(r.published_at).toLocaleDateString('fr-FR')}</span></summary><div class="body pn-cols">${Object.entries(md(r.body.split(/\n---\n/)[0])).map(([k, v]) => `<div class="pn-col ${({ 'Ajouté': 'add', 'Corrigé': 'fix' })[k] || 'mod'}"><h3 style="font-size:18px">${esc(k)}</h3>${liste(v)}</div>`).join('')}</div></details>`).join('') || '<div class="muted">Aucune.</div>';
 }
 if (APP) { APP.surMaj(s => { MAJ = s; renderMaj(); }); APP.etat().then(s => { MAJ = s; renderMaj(); }); }
@@ -736,7 +899,8 @@ async function lancer(action) {
   if (action === 'plafond') Object.assign(o, { n: +$('o_n').value });
   if (action === 'conseils') { const p = [['collectifs', 'o_ccol'], ['xp', 'o_cxp'], ['tirage', 'o_ctir'], ['duos', 'o_cduo'], ['marche', 'o_cmar']].filter(([, i]) => $(i).checked).map(([k]) => k); if (!p.length) return; o.parties = p.join(','); }
   if (action === 'equipes') o.n = +$('o_neq').value;
-  if (action === 'cauchemar3') o.niveaux = $('o_c3niv').value;
+  if (action === 'cauchemar3') Object.assign(o, { niveaux: $('o_c3niv').value, difficultes: $('o_c3dif').value });
+  if (action === 'tour') o.niveaux = $('o_twniv').value;
   if (action === 'imitation') o.combats = +$('o_nim').value;
   if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;
   try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; toast('Lancé'); refresh(); } catch (e) { alert(e.message); }
@@ -754,42 +918,47 @@ async function voir(f) {
   else html = `<pre style="max-height:70vh">${esc(/\.json$/.test(f) ? JSON.stringify(JSON.parse(t), null, 1) : t)}</pre>`;
   $('mbox').innerHTML = `<h2>${esc(f)}</h2>${html}`; $('modal').style.display = 'flex';
 }
-async function importer(file) { try { await api('/api/sauvegarde', { method: 'POST', body: await file.text() }); toast('Sauvegarde importée'); refresh(); } catch (e) { alert('Import impossible : ' + e.message); } }
+async function importer(file) { try { await api('/api/sauvegarde', { method: 'POST', body: await file.text() }); toast('Sauvegarde importée'); refresh(); colCharger(); } catch (e) { alert('Import impossible : ' + e.message); } }
 document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => lancer(b.dataset.act));
 const drop = $('drop'); drop.onclick = () => $('file').click(); $('file').onchange = e => e.target.files[0] && importer(e.target.files[0]);
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('hot'); }; drop.ondragleave = () => drop.classList.remove('hot');
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hot'); e.dataTransfer.files[0] && importer(e.dataTransfer.files[0]); };
 addEventListener('keydown', e => { if (e.key === 'Escape') $('modal').style.display = 'none'; });
-// ---------- campagne : 3 etoiles en Cauchemar (resultats/cauchemar3.json) ----------
+// ---------- campagne : 3 etoiles en Campagne et en Cauchemar (resultats/cauchemar3.json) ----------
 // Les graphiques sont des SVG aux couleurs ecrites en dur (pas de variables CSS) : ils s'exportent tels quels en PNG.
 // Aucun portrait dans les SVG : une image d'une autre adresse rendrait le canvas illisible pour l'export.
-const CP = { j: null, obj: 'Moyenne', fin: undefined, err: '' };
-const CC = { bg: '#11131a', line: '#232633', txt: '#f4ede3', mute: '#8f96a6', N: '#2fd27a', D: '#f5a524', E: '#ff4b3e', gold: '#f7c548', acc2: '#ff7a3d' };
-const DIFFS = [['normal', 'Normal', CC.N], ['difficile', 'Difficile', CC.D], ['extreme', 'Extrême', CC.E]];
-const OBJS = [['Normal', 'Normal'], ['Difficile', 'Difficile'], ['Extreme', 'Extrême'], ['Moyenne', 'Les trois']];
-const fmt = v => v == null ? '-' : (Math.round(v * 10) / 10).toLocaleString('fr-FR');
+// La carte a partager (canvas) charge les portraits en CORS : ceux qui refusent sont remplaces par les initiales.
+const CP = { j: null, obj: 'Moyenne', fin: undefined, err: '', cmp: [], charge: false };
+const CC = { bg: '#11131a', line: '#232633', txt: '#f4ede3', mute: '#8f96a6', N: '#2fd27a', D: '#f5a524', E: '#ff4b3e', gold: '#f7c548', acc2: '#ff7a3d', cn: '#b38cff', cd: '#8b5cf6', ce: '#e14fd6' };
+// [indice dans parDifficulte, nom, couleur, nom court] : 0..2 Cauchemar, 3..5 Campagne (si calculee).
+const DIFFS = [[3, 'Normal', CC.N, 'Normal'], [4, 'Difficile', CC.D, 'Difficile'], [5, 'Extrême', CC.E, 'Extrême'], [0, 'Cauchemar Normal', CC.cn, 'Cauch. N'], [1, 'Cauchemar Difficile', CC.cd, 'Cauch. D'], [2, 'Cauchemar Extrême', CC.ce, 'Cauch. E']];
+// [cle de meilleurs, libelle, difficultes moyennees, cauchemar ?]
+const OBJS = [['CampNormal', 'Normal', [3]], ['CampDifficile', 'Difficile', [4]], ['CampExtreme', 'Extrême', [5]], ['Normal', '☾ Cauchemar Normal', [0], 1], ['Difficile', '☾ Cauchemar Difficile', [1], 1], ['Extreme', '☾ Cauchemar Extrême', [2], 1], ['Moyenne', '☾ Cauchemar, les trois', [0, 1, 2], 1], ['Les6', 'Les 6', [0, 1, 2, 3, 4, 5]]];
+const objDe = k => OBJS.find(o => o[0] === k) || OBJS[6];
+const nDiff = () => CP.j?.difficultes?.length || 3, dVis = () => DIFFS.filter(([i]) => i < nDiff());
+const fmt = v => v == null || !isFinite(v) ? '-' : (Math.round(v * 10) / 10).toLocaleString('fr-FR');
 const court = n => String(n).replace(/\s*\(.*\)/, '').trim().split(/\s+/)[0];
 const trioCourt = e => e.map(court).join(' / ');
-const DI = o => ({ Normal: 0, Difficile: 1, Extreme: 2 })[o] ?? 3;
-// valeur d'une ligne pour une difficulte (0..2) ou la moyenne des trois (3)
-const pdVal = (pd, di, f = 'troisEtoiles') => di < 3 ? pd?.[di]?.[f] : pd?.length ? pd.reduce((a, x) => a + (x?.[f] || 0), 0) / pd.length : null;
-const valMonde = (pd, id, di) => { const xs = (di < 3 ? [pd?.[di]] : pd || []).map(x => x?.mondes?.[id]).filter(Boolean); const n = xs.reduce((a, x) => a + x.n, 0); return n ? xs.reduce((a, x) => a + x.troisEtoiles * x.n, 0) / n : null; };
+// valeur d'une ligne : moyenne des difficultes ds (liste d'indices)
+const pdVal = (pd, ds, f = 'troisEtoiles') => { const xs = ds.map(d => pd?.[d]?.[f]).filter(v => v != null); return xs.length ? xs.reduce((a, v) => a + v, 0) / xs.length : null; };
+const valMonde = (pd, id, ds) => { const xs = ds.map(d => pd?.[d]?.mondes?.[id]).filter(Boolean); const n = xs.reduce((a, x) => a + x.n, 0); return n ? xs.reduce((a, x) => a + x.troisEtoiles * x.n, 0) / n : null; };
 const chaud = v => { const t = Math.max(0, Math.min(1, v / 100)), a = [52, 58, 76], b = [47, 210, 122]; return `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * t)).join(',')})`; };
 
+let LAB = 'CAMPAGNE';
 function cadre(titre, sous, h, corps, W = 760) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${h}" width="100%" font-family="Manrope, Segoe UI, Arial, sans-serif"><rect width="${W}" height="${h}" rx="12" fill="${CC.bg}"/><rect x="20" y="16" width="7" height="7" fill="${CC.E}" transform="rotate(45 23.5 19.5)"/><text x="34" y="24" fill="${CC.E}" font-size="10" font-weight="800" letter-spacing="2">KITSUAI · CAMPAGNE</text><text x="20" y="50" fill="${CC.txt}" font-family="Anton, Impact, Arial Narrow, sans-serif" font-size="22">${esc(titre.toUpperCase())}</text><text x="20" y="69" fill="${CC.mute}" font-size="12">${esc(sous)}</text>${corps}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${h}" width="100%" font-family="Manrope, Segoe UI, Arial, sans-serif"><rect width="${W}" height="${h}" rx="12" fill="${CC.bg}"/><rect x="20" y="16" width="7" height="7" fill="${CC.E}" transform="rotate(45 23.5 19.5)"/><text x="34" y="24" fill="${CC.E}" font-size="10" font-weight="800" letter-spacing="2">KITSUAI · ${LAB}</text><text x="20" y="50" fill="${CC.txt}" font-family="Anton, Impact, Arial Narrow, sans-serif" font-size="22">${esc(titre.toUpperCase())}</text><text x="20" y="69" fill="${CC.mute}" font-size="12">${esc(sous)}</text>${corps}</svg>`;
 }
 const fig = (id, svg) => `<figure class="cg" id="cg-${id}">${svg}<figcaption><button class="ghost" onclick="campPng('${id}')">PNG</button></figcaption></figure>`;
-function legende(series, W = 760) { let b = '', x = W - 20; for (const s of series.slice().reverse()) { x -= s.nom.length * 6.6 + 24; b += `<rect x="${x}" y="40" width="10" height="10" rx="2" fill="${s.c}"/><text x="${x + 15}" y="49" fill="${CC.mute}" font-size="11">${esc(s.nom)}</text>`; } return b; }
+function legende(series, W = 760, y = 40) { let b = '', x = W - 20; for (const s of series.slice().reverse()) { x -= s.nom.length * 6.6 + 24; b += `<rect x="${x}" y="${y}" width="10" height="10" rx="2" fill="${s.c}"/><text x="${x + 15}" y="${y + 9}" fill="${CC.mute}" font-size="11">${esc(s.nom)}</text>`; } return b; }
 
 // Barres verticales groupees (pourcentages).
 function barres(titre, sous, groupes, series) {
-  const W = 760, y0 = 96, y1 = 290, x0 = 52, gw = (W - x0 - 20) / groupes.length, bw = Math.min(54, (gw - 24) / series.length);
-  let b = legende(series);
+  const lg = series.length > 3 || series.reduce((a, s) => a + s.nom.length, 0) > 34, W = 760, y0 = lg ? 116 : 96, y1 = lg ? 310 : 290, x0 = 52, gw = (W - x0 - 20) / groupes.length, bw = Math.min(54, (gw - 24) / series.length), fs = bw < 22 ? 9 : 11;
+  let b = legende(series, W, lg ? 80 : 40);
   for (let v = 0; v <= 100; v += 25) { const y = y1 - (y1 - y0) * v / 100; b += `<line x1="${x0}" x2="${W - 20}" y1="${y}" y2="${y}" stroke="${CC.line}"/><text x="${x0 - 8}" y="${y + 4}" fill="${CC.mute}" font-size="10" text-anchor="end">${v} %</text>`; }
   groupes.forEach((g, i) => {
     const cx = x0 + gw * i + gw / 2, s0 = cx - bw * series.length / 2;
-    g.vals.forEach((v, k) => { if (v == null) return; const h = (y1 - y0) * Math.min(100, v) / 100, x = s0 + k * bw; b += `<rect x="${x + 3}" y="${y1 - h}" width="${bw - 6}" height="${Math.max(1.5, h)}" rx="4" fill="${series[k].c}"/><text x="${x + bw / 2}" y="${y1 - h - 6}" fill="${CC.txt}" font-size="11" font-weight="700" text-anchor="middle">${fmt(v)}</text>`; });
+    g.vals.forEach((v, k) => { if (v == null) return; const h = (y1 - y0) * Math.min(100, v) / 100, x = s0 + k * bw; b += `<rect x="${x + 2}" y="${y1 - h}" width="${bw - 4}" height="${Math.max(1.5, h)}" rx="4" fill="${series[k].c}"/><text x="${x + bw / 2}" y="${y1 - h - 6}" fill="${CC.txt}" font-size="${fs}" font-weight="700" text-anchor="middle">${fmt(v)}</text>`; });
     b += `<text x="${cx}" y="${y1 + 20}" fill="${CC.txt}" font-size="12" font-weight="700" text-anchor="middle">${esc(g.nom)}</text>` + (g.sous ? `<text x="${cx}" y="${y1 + 36}" fill="${CC.mute}" font-size="10.5" text-anchor="middle">${esc(g.sous)}</text>` : '');
   });
   return cadre(titre, sous, y1 + 52, b);
@@ -807,13 +976,13 @@ function classement(titre, sous, L) {
   return cadre(titre, sous, y0 + L.length * rh + 18, b);
 }
 // Carte de chaleur : trios x mondes.
-function chaleur(titre, sous, L, di) {
+function chaleur(titre, sous, L, ds) {
   const M = CP.j.mondes || [], W = 760, x0 = 200, y0 = 150, ch = 32, cw = (W - x0 - 70) / Math.max(1, M.length);
   let b = '';
   M.forEach((m, k) => { const x = x0 + cw * k + cw / 2; b += `<text transform="translate(${x - 4} ${y0 - 10}) rotate(-38)" fill="${CC.mute}" font-size="10.5">${esc(m.nom)}</text>`; });
   L.forEach((l, i) => {
     const y = y0 + i * ch; b += `<text x="20" y="${y + 20}" fill="${CC.txt}" font-size="11.5">${esc(trioCourt(l.equipe))}</text>`;
-    M.forEach((m, k) => { const v = valMonde(l.parDifficulte, m.id, di), x = x0 + cw * k; b += v == null ? `<rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="5" fill="${CC.line}" opacity=".5"/>` : `<rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="5" fill="${chaud(v)}"/><text x="${x + cw / 2}" y="${y + 20}" fill="${v > 60 ? '#07080c' : CC.txt}" font-size="11" font-weight="700" text-anchor="middle">${Math.round(v)}</text>`; });
+    M.forEach((m, k) => { const v = valMonde(l.parDifficulte, m.id, ds), x = x0 + cw * k; b += v == null ? `<rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="5" fill="${CC.line}" opacity=".5"/>` : `<rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="5" fill="${chaud(v)}"/><text x="${x + cw / 2}" y="${y + 20}" fill="${v > 60 ? '#07080c' : CC.txt}" font-size="11" font-weight="700" text-anchor="middle">${Math.round(v)}</text>`; });
   });
   return cadre(titre, sous, y0 + L.length * ch + 20, b);
 }
@@ -841,7 +1010,7 @@ async function svgCanvas(svg, k = 2) {
   try { await new Promise((ok, ko) => { img.onload = ok; img.onerror = ko; img.src = url; }); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); } finally { URL.revokeObjectURL(url); }
   return c;
 }
-const pngNom = id => `kitsuai-campagne-${CP.obj.toLowerCase()}-${id}-${(CP.j?.date || '').slice(0, 10)}.png`;
+const pngNom = id => /^tw-/.test(id) ? `kitsuai-tour-${id.slice(3)}-${(TW.j?.date || '').slice(0, 10)}.png` : `kitsuai-campagne-${CP.obj.toLowerCase()}-${id}-${(CP.j?.date || '').slice(0, 10)}.png`;
 const telecharger = (c, nom) => { const a = document.createElement('a'); a.download = nom; a.href = c.toDataURL('image/png'); a.click(); };
 async function campPng(id) { const s = document.querySelector(`#cg-${id} svg`); if (s) telecharger(await svgCanvas(s), pngNom(id)); }
 async function campPlanche() {
@@ -851,55 +1020,297 @@ async function campPlanche() {
   telecharger(c, pngNom('planche')); toast('Planche exportée');
 }
 
+// ---------- carte a partager (portraits depuis leur adresse d'origine, rien n'est copie) ----------
+const imgCors = src => new Promise(ok => { if (!src) return ok(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.referrerPolicy = 'no-referrer'; im.onload = () => ok(im); im.onerror = () => ok(null); im.src = src + (src.includes('?') ? '&' : '?') + 'kitsuai=cors'; }); // adresse d'origine ; le parametre evite la copie en cache chargee sans CORS
+const RCOL = { N: '#7d828f', R: '#3fbf6f', SR: '#3f8cff', SSR: '#b35cff', UR: '#ff4b3e', LR: '#f7c548' };
+async function carteSouvenir(cv, l, titre, sansImages) {
+  const W = 1200, H = 630, x = cv.getContext('2d'); cv.width = W; cv.height = H;
+  try { await document.fonts?.load('italic 100px Anton'); } catch {}
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1d0f14'); g.addColorStop(1, '#0b0c12'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,.03)'; x.lineWidth = 2; for (let k = -H; k < W; k += 16) { x.beginPath(); x.moveTo(k, H); x.lineTo(k + H * .47, 0); x.stroke(); }
+  const rg = x.createRadialGradient(W * .78, H * .3, 10, W * .78, H * .3, 520); rg.addColorStop(0, 'rgba(255,122,61,.28)'); rg.addColorStop(1, 'transparent'); x.fillStyle = rg; x.fillRect(0, 0, W, H);
+  x.fillStyle = CC.E; x.save(); x.translate(64, 64); x.rotate(Math.PI / 4); x.fillRect(-6, -6, 12, 12); x.restore();
+  x.font = '800 20px Manrope, Segoe UI, sans-serif'; x.fillText('KITSUAI · CAMPAGNE', 86, 71);
+  x.fillStyle = CC.txt; let fz = 54; do { x.font = `italic ${fz}px Anton, Impact, sans-serif`; fz -= 2; } while (fz > 26 && x.measureText(titre.toUpperCase()).width > 570); x.fillText(titre.toUpperCase(), 56, 150);
+  x.fillStyle = CC.gold; x.font = 'italic 150px Anton, Impact, sans-serif'; x.fillText(fmt(l.troisEtoiles) + ' %', 50, 315);
+  x.fillStyle = CC.mute; x.font = '700 24px Manrope, Segoe UI, sans-serif'; x.fillText('des combats finis en 3 étoiles', 58, 358);
+  let px = 58; x.font = '800 21px Manrope, Segoe UI, sans-serif';
+  for (const [d, , c, n] of dVis()) { const t = `${n} ${fmt(pdVal(l.parDifficulte, [d]))} %`, w = x.measureText(t).width + 28; if (px + w > 600) break; x.fillStyle = 'rgba(255,255,255,.06)'; x.beginPath(); x.roundRect(px, 392, w, 40, 20); x.fill(); x.fillStyle = c; x.fillText(t, px + 14, 419); px += w + 10; }
+  x.fillStyle = CC.txt; x.font = '700 24px Manrope, Segoe UI, sans-serif'; x.fillText(l.equipe.join(' · '), 58, 492);
+  x.fillStyle = CC.mute; x.font = '600 19px Manrope, Segoe UI, sans-serif'; x.fillText(`${CP.j.niveaux === '99' ? 'Toutes les cartes au niveau 99' : 'Niveaux actuels'} · ${(CP.j.trios || 0).toLocaleString('fr-FR')} trios essayés · ${new Date(CP.j.date).toLocaleDateString('fr-FR')}`, 58, 572);
+  const ims = sansImages ? [] : await Promise.all(l.ids.map(id => imgCors(carte(id).img)));
+  l.ids.forEach((id, i) => {
+    const c = carte(id), w = 168, h = 228, X = 660 + i * 178, Y = 150 + (i === 1 ? -26 : 0), col = RCOL[c.r] || '#5b6172';
+    x.save(); x.shadowColor = col; x.shadowBlur = 30; x.fillStyle = '#1c1f2a'; x.beginPath(); x.roundRect(X, Y, w, h, 18); x.fill(); x.restore();
+    x.save(); x.beginPath(); x.roundRect(X, Y, w, h, 18); x.clip();
+    const im = ims[i]; if (im) { const r = Math.max(w / im.width, h / im.height), iw = im.width * r, ih = im.height * r; x.drawImage(im, X + (w - iw) / 2, Y + (h - ih) * .15, iw, ih); }
+    else { x.fillStyle = '#cfc8bd'; x.font = 'italic 64px Anton, Impact, sans-serif'; x.textAlign = 'center'; x.fillText(c.n.replace(/\(.*\)/, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase(), X + w / 2, Y + h / 2 + 22); x.textAlign = 'left'; }
+    const gb = x.createLinearGradient(0, Y + h - 70, 0, Y + h); gb.addColorStop(0, 'transparent'); gb.addColorStop(1, 'rgba(0,0,0,.9)'); x.fillStyle = gb; x.fillRect(X, Y + h - 70, w, 70);
+    x.fillStyle = col; x.font = '800 16px Manrope, Segoe UI, sans-serif'; x.textAlign = 'center'; x.fillText(c.r || '', X + w / 2, Y + h - 14); x.textAlign = 'left'; x.restore();
+    x.strokeStyle = col; x.lineWidth = 4; x.beginPath(); x.roundRect(X + 2, Y + 2, w - 4, h - 4, 16); x.stroke();
+    x.fillStyle = CC.txt; x.font = '800 19px Manrope, Segoe UI, sans-serif'; x.textAlign = 'center'; x.fillText(court(c.n), X + w / 2, Y + h + 34); x.textAlign = 'left';
+  });
+  try { cv.toDataURL(); return true; } catch { if (!sansImages) return carteSouvenir(cv, l, titre, true).then(() => false); return false; }
+}
+async function partager(act) {
+  const cv = $('c3share'); if (!cv) return;
+  if (act === 'png') return telecharger(cv, pngNom('carte'));
+  try { const b = await new Promise(ok => cv.toBlob(ok, 'image/png')); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); toast('Image copiée : colle-la où tu veux'); } catch { toast('Copie impossible ici : utilise Télécharger'); }
+}
+
 // ---------- chargement et rendu ----------
-async function campCharger() { try { CP.j = await api('/api/resultat?f=cauchemar3.json'); CP.err = ''; } catch (e) { CP.j = null; CP.err = String(e.message); } HC.delete('c3body'); campRender(); }
+async function campCharger() { CP.charge = true; try { CP.j = await api('/api/resultat?f=cauchemar3.json'); CP.err = ''; } catch (e) { CP.j = null; CP.err = String(e.message); } CP.charge = false; HC.delete('c3body'); HC.delete('c3tabs'); campRender(); }
 function campEtat() {
   if (CP.j && CARTES && !CP.rc) { CP.rc = 1; campRender(); } // portraits arrives apres le premier rendu
-  const run = E?.job && !E.job.fin, moi = E?.job?.nom === 'Campagne : 3 etoiles en Cauchemar';
+  const run = E?.job && !E.job.fin, moi = /^Campagne : 3 etoiles/.test(E?.job?.nom || '');
   const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}. Le PC reste éveillé ; tu peux arrêter, la reprise repart du journal.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les combats déjà faits sont gardés.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
   setH('c3job', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : ''));
   if (moi && E.job.fin && CP.fin !== E.job.fin) { const premier = CP.fin === undefined; CP.fin = E.job.fin; if (!premier || !CP.j) campCharger(); }
 }
+function campCmp(i) { const L = CP.j?.meilleurs?.[CP.obj] || [], k = L[i]?.ids.join('-'); if (!k) return; const at = CP.cmp.indexOf(k); if (at >= 0) CP.cmp.splice(at, 1); else { if (CP.cmp.length >= 3) CP.cmp.shift(); CP.cmp.push(k); } campRender(); }
 function campRender() {
   const j = CP.j;
-  if (!j) { setH('c3body', `<div class="card"><div class="muted">${CP.err && !/introuvable|404/.test(CP.err) ? 'Lecture impossible : ' + esc(CP.err) : 'Aucun calcul de campagne pour l’instant. Lance-le avec le bouton ci-dessus.'}</div></div>`); $('c3tabs').innerHTML = ''; return; }
-  $('c3tabs').innerHTML = OBJS.map(([k, n]) => `<a class="${k === CP.obj ? 'on' : ''}" onclick="CP.obj='${k}';campRender()">${k === 'Moyenne' ? 'Les trois difficultés' : 'Cauchemar ' + n}</a>`).join('');
-  const L = j.meilleurs?.[CP.obj] || [], di = DI(CP.obj), b0 = L[0], nivTxt = j.niveaux === '99' ? 'toutes les cartes au niveau 99' : 'tes niveaux actuels', ea = j.equipeActuelle, mt = j.maintenant || [];
-  const objNom = di < 3 ? 'Cauchemar ' + DIFFS[di][1] : 'moyenne des trois difficultés';
+  if (!j) { setH('c3tabs', ''); setH('c3body', CP.charge ? '<div class="skel"></div>' : `<div class="card"><div class="muted">${CP.err && !/introuvable|404/.test(CP.err) ? 'Lecture impossible : ' + esc(CP.err) : 'Aucun calcul de campagne pour l’instant. Lance-le avec le bouton ci-dessus.'}</div></div>`); return; }
+  if (!j.meilleurs?.[CP.obj]) CP.obj = j.meilleurs?.Les6 ? 'Les6' : 'Moyenne';
+  const dispo = OBJS.filter(o => j.meilleurs?.[o[0]]);
+  setH('c3tabs', `<div class="seg">${dispo.map((o, i) => `${o[3] && !dispo[i - 1]?.[3] && i ? '<span class="sep"></span>' : ''}${!o[3] && dispo[i - 1]?.[3] ? '<span class="sep"></span>' : ''}<a class="${o[3] ? 'nm ' : ''}${o[0] === CP.obj ? 'on' : ''}" onclick="CP.obj='${o[0]}';campRender();vedette()">${o[1]}</a>`).join('')}</div>`);
+  const [, objLib, ds] = objDe(CP.obj), L = j.meilleurs[CP.obj] || [], b0 = L[0], VIS = dVis(), nivTxt = j.niveaux === '99' ? 'toutes les cartes au niveau 99' : 'tes niveaux actuels', ea = j.equipeActuelle, mt = j.maintenant || [];
+  const objNom = CP.obj === 'Les6' ? 'moyenne des 6 difficultés' : CP.obj === 'Moyenne' ? 'moyenne des trois Cauchemar' : objLib.replace('☾ ', '');
   const tile = (k, v, s, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
-  const nC = (j.combats?.normal || 0) + (j.combats?.difficile || 0) + (j.combats?.extreme || 0);
-  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), 'Normal, Difficile, Extrême')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div>`;
+  const nC = Object.values(j.combats || {}).reduce((a, v) => a + (+v || 0), 0);
+  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), nDiff() + ' difficultés')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div>`;
+  // podium et carte a partager
+  if (L.length >= 3) h += `<div class="card"><h2>Podium <span class="r">${esc(objNom)} · ${esc(nivTxt)}</span></h2><div class="sp"></div><div class="podium">${L.slice(0, 3).map((l, i) => `<div class="pod ${['first', 'second', 'third'][i]}"><div class="rk">${i + 1}</div><div class="trio">${l.ids.map(id => pf(id, i ? 'lg' : 'xl')).join('')}</div><div class="nm">${esc(l.equipe.join(' · '))}</div><div class="sc">${fmt(l.troisEtoiles)} %</div><div class="muted" style="font-size:12px">en 3 étoiles · ± ${fmt(l.marge)}</div><div class="pills">${VIS.map(([d, , c, n]) => `<span class="pill" style="color:${c}">${n} ${fmt(pdVal(l.parDifficulte, [d]))}</span>`).join('')}</div></div>`).join('')}</div></div><div class="sp"></div>`;
+  if (b0) h += `<div class="card"><h2>Carte à partager <span class="r"><button class="ghost" onclick="partager('copier')">Copier</button><button onclick="partager('png')">Télécharger PNG</button></span></h2><div class="share"><canvas id="c3share" width="1200" height="630"></canvas><div class="muted" style="font-size:13px">Ton meilleur trio en image, avec les portraits des cartes, prête à envoyer à ta guilde. Les portraits viennent de leur adresse d'origine ; si une adresse refuse, ses initiales les remplacent.</div></div></div><div class="sp"></div>`;
+  // comparateur
+  const cmp = CP.cmp.map(k => L.find(l => l.ids.join('-') === k)).filter(Boolean);
   // tableau du classement avec portraits
-  h += `<div class="card"><h2>Les 10 meilleurs trios <span class="r">${esc(objNom)} · ${esc(nivTxt)}</span></h2><table class="c3t"><tr><th>#</th><th>Trio</th><th>3★ Normal</th><th>3★ Difficile</th><th>3★ Extrême</th><th>2★ moyen</th><th>Victoire</th><th>Note</th></tr>`
-    + L.map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids, true)}<div class="muted c3s">niveaux ${l.niveaux.join(' / ')} · étoiles ${l.etoiles.join(' / ')}</div></td>${DIFFS.map((_, d) => `<td><b style="color:${DIFFS[d][2]}">${fmt(pdVal(l.parDifficulte, d))}</b> %</td>`).join('')}<td>${fmt(pdVal(l.parDifficulte, 3, 'deuxEtoiles'))} %</td><td>${fmt(pdVal(l.parDifficulte, 3, 'victoire'))} %</td><td><b>${fmt(l.troisEtoiles)} %</b> <span class="muted">± ${fmt(l.marge)}</span></td></tr>`).join('') + '</table></div><div class="sp"></div>';
+  h += `<div class="card"><h2>Les 10 meilleurs trios <span class="r">${esc(objNom)} · ${esc(nivTxt)}</span></h2><div class="muted" style="font-size:12.5px;margin:-6px 0 10px">Chaque % est la part des combats finis en <b style="color:var(--txt)">3 étoiles</b> (survole une case : victoires et 2 étoiles). Coche jusqu'à 3 trios pour les comparer.</div><table class="c3t"><tr><th>#</th><th>Trio</th>${VIS.map(([, n, c]) => `<th style="color:${c}">3★ ${n.replace('Cauchemar', 'Cauch.')}</th>`).join('')}<th>Note</th><th></th></tr>`
+    + L.map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids, true)}<div class="muted c3s">niveaux ${l.niveaux.join(' / ')} · étoiles ${l.etoiles.join(' / ')}</div></td>${VIS.map(([d, , c]) => { const x = l.parDifficulte?.[d]; return `<td title="victoire ${fmt(x?.victoire)} %, 2 étoiles ${fmt(x?.deuxEtoiles)} %"><b style="color:${c}">${fmt(x?.troisEtoiles)}</b> %</td>`; }).join('')}<td><b>${fmt(l.troisEtoiles)} %</b> <span class="muted">± ${fmt(l.marge)}</span></td><td><input type="checkbox" class="cmp" ${CP.cmp.includes(l.ids.join('-')) ? 'checked' : ''} onchange="campCmp(${i})" title="Comparer"></td></tr>`).join('') + '</table></div><div class="sp"></div>';
+  const ser = VIS.map(([, , c, n]) => ({ nom: n, c })), figs = [];
+  if (cmp.length >= 2) figs.push(fig('comparateur', barres('Comparateur de trios', '3 étoiles par difficulté, trios cochés dans le tableau', VIS.map(([d, , , n]) => ({ nom: n, vals: cmp.map(l => pdVal(l.parDifficulte, [d])) })), cmp.map((l, i) => ({ nom: trioCourt(l.equipe), c: [CC.gold, CC.acc2, CC.cn][i] })))));
   // graphiques
-  const ser = DIFFS.map(([, n, c]) => ({ nom: n, c })), groupes = [];
-  if (b0) groupes.push({ nom: 'Meilleur trio', sous: trioCourt(b0.equipe), vals: DIFFS.map((_, d) => pdVal(b0.parDifficulte, d)) });
-  if (ea) groupes.push({ nom: 'Ton équipe', sous: trioCourt(ea.equipe) + (j.niveaux === '99' ? ' (niv. 99)' : ''), vals: DIFFS.map((_, d) => pdVal(j.niveaux === '99' ? ea.niveau99 : ea.actuel, d)) });
-  if (mt[0]) groupes.push({ nom: 'Meilleur trio, tes niveaux', sous: trioCourt(mt[0].equipe), vals: DIFFS.map((_, d) => pdVal(mt[0].parDifficulte, d)) });
-  const figs = [];
+  const groupes = [];
+  if (b0) groupes.push({ nom: 'Meilleur trio', sous: trioCourt(b0.equipe), vals: VIS.map(([d]) => pdVal(b0.parDifficulte, [d])) });
+  if (ea) groupes.push({ nom: 'Ton équipe', sous: trioCourt(ea.equipe) + (j.niveaux === '99' ? ' (niv. 99)' : ''), vals: VIS.map(([d]) => pdVal(j.niveaux === '99' ? ea.niveau99 : ea.actuel, [d])) });
+  if (mt[0]) groupes.push({ nom: 'Meilleur trio, tes niveaux', sous: trioCourt(mt[0].equipe), vals: VIS.map(([d]) => pdVal(mt[0].parDifficulte, [d])) });
   if (L.length) figs.push(fig('classement', classement('Classement des 3 étoiles', `${objNom}, ${nivTxt}, trait = marge d'erreur`, L)));
   if (groupes.length) figs.push(fig('comparaison', barres('3 étoiles par difficulté', 'Meilleur trio, ton équipe et ce que tu peux faire tout de suite', groupes, ser)));
-  if (b0) figs.push(fig('boss', barres('Boss contre autres combats', 'Meilleur trio : 3 étoiles par type de combat', DIFFS.map(([, n], d) => ({ nom: n, sous: (b0.parDifficulte?.[d]?.boss?.n || 0) + ' boss, ' + (b0.parDifficulte?.[d]?.autres?.n || 0) + ' autres', vals: [b0.parDifficulte?.[d]?.boss?.troisEtoiles, b0.parDifficulte?.[d]?.autres?.troisEtoiles] })), [{ nom: 'Boss', c: CC.gold }, { nom: 'Autres', c: CC.acc2 }])));
-  if (L.length && j.mondes?.length) figs.push(fig('mondes', chaleur('3 étoiles par monde', `5 meilleurs trios, ${objNom}, en %`, L.slice(0, 5), di)));
+  if (b0) figs.push(fig('boss', barres('Boss contre autres combats', 'Meilleur trio : 3 étoiles par type de combat', VIS.map(([d, , , n]) => ({ nom: n, sous: (b0.parDifficulte?.[d]?.boss?.n || 0) + ' boss', vals: [b0.parDifficulte?.[d]?.boss?.troisEtoiles, b0.parDifficulte?.[d]?.autres?.troisEtoiles] })), [{ nom: 'Boss', c: CC.gold }, { nom: 'Autres', c: CC.acc2 }])));
+  if (L.length && j.mondes?.length) figs.push(fig('mondes', chaleur('3 étoiles par monde', `5 meilleurs trios, ${objNom}, en %`, L.slice(0, 5), ds)));
   if (j.entonnoir?.length) figs.push(fig('course', entonnoir('La course des trios', 'Trios gardés après chaque manche (échelle logarithmique)', [j.trios, ...j.entonnoir])));
-  if (j.repartition?.some(Boolean)) figs.push(fig('repartition', histo('Répartition des finalistes', '3 étoiles en moyenne sur les trois difficultés, par tranche de 5 %', j.repartition)));
+  if (j.repartition?.some(Boolean)) figs.push(fig('repartition', histo('Répartition des finalistes', '3 étoiles en moyenne sur les trois Cauchemar, par tranche de 5 %', j.repartition)));
   h += `<div class="grid gc">${figs.join('')}</div><div class="sp"></div>`;
   // ton equipe
-  if (ea) { const row = (nom, pd) => `<tr><td>${nom}</td>${DIFFS.map((_, d) => `<td><b style="color:${DIFFS[d][2]}">${fmt(pd?.[d]?.troisEtoiles)}</b> % <span class="muted">· 2★ ${fmt(pd?.[d]?.deuxEtoiles)} % · victoire ${fmt(pd?.[d]?.victoire)} %</span></td>`).join('')}</tr>`;
-    h += `<div class="grid g2"><div class="card"><h2>Ton équipe actuelle</h2>${equipeHTML(ea.ids)}<div class="sp"></div><table class="c3t"><tr><th></th>${DIFFS.map(([, n]) => `<th>${n}</th>`).join('')}</tr>${row('Tes niveaux', ea.actuel)}${row('Niveau 99', ea.niveau99)}</table></div>`; } else h += '<div class="grid g2"><div class="card"><h2>Ton équipe actuelle</h2><div class="muted">Aucune équipe de 3 dans la sauvegarde.</div></div>';
-  h += `<div class="card"><h2>Tout de suite, à tes niveaux</h2>${mt.length ? `<table class="c3t"><tr><th>Trio</th>${DIFFS.map(([, n]) => `<th>3★ ${n}</th>`).join('')}</tr>${mt.map(m => `<tr><td>${equipeHTML(m.ids, true)}</td>${DIFFS.map((_, d) => `<td><b style="color:${DIFFS[d][2]}">${fmt(m.parDifficulte?.[d]?.troisEtoiles)}</b> %</td>`).join('')}</tr>`).join('')}</table>` : '<div class="muted">-</div>'}</div></div><div class="sp"></div>`;
+  const row = (nom, pd) => `<tr><td>${nom}</td>${VIS.map(([d, , c]) => `<td title="2 étoiles ${fmt(pd?.[d]?.deuxEtoiles)} %, victoire ${fmt(pd?.[d]?.victoire)} %"><b style="color:${c}">${fmt(pd?.[d]?.troisEtoiles)}</b> %</td>`).join('')}</tr>`, thd = `<tr><th></th>${VIS.map(([, , c, n]) => `<th style="color:${c}">3★ ${n}</th>`).join('')}</tr>`;
+  h += `<div class="grid g2"><div class="card"><h2>Ton équipe actuelle</h2>${ea ? `${equipeHTML(ea.ids)}<div class="sp"></div><table class="c3t">${thd}${row('Tes niveaux', ea.actuel)}${row('Niveau 99', ea.niveau99)}</table>` : '<div class="muted">Aucune équipe de 3 dans la sauvegarde.</div>'}</div>`;
+  h += `<div class="card"><h2>Tout de suite, à tes niveaux</h2>${mt.length ? `<table class="c3t"><tr><th>Trio</th>${VIS.map(([, , c, n]) => `<th style="color:${c}">3★ ${n}</th>`).join('')}</tr>${mt.map(m => `<tr><td>${equipeHTML(m.ids, true)}</td>${VIS.map(([d, , c]) => `<td><b style="color:${c}">${fmt(m.parDifficulte?.[d]?.troisEtoiles)}</b> %</td>`).join('')}</tr>`).join('')}</table>` : '<div class="muted">-</div>'}</div></div><div class="sp"></div>`;
   // cartes cles et collectifs
   const ck = j.cartesCles?.[CP.obj] || [], mx = Math.max(1, ...ck.map(c => c.dans));
   h += `<div class="grid g2"><div class="card"><h2>Cartes clés <span class="r">présence dans les 50 meilleurs trios</span></h2>${ck.map(c => `<div class="c3k">${pf(c.id)}<span class="tmn">${esc(c.carte)}<br><span class="muted c3s">${esc(carte(c.id).r || c.rarete)} · niveau ${c.niveau}</span></span><span class="c3b"><i style="width:${100 * c.dans / mx}%"></i></span><b>${c.dans}</b></div>`).join('') || '<div class="muted">-</div>'}</div>`;
   const col = j.collectifs || [];
   h += `<div class="card"><h2>Collectifs conseillés <span class="r">quand une carte en a plus de 6</span></h2>${col.length ? col.map(c => `<div class="c3c"><div class="muted c3s">${esc(c.equipe.join(' / '))}</div>${c.cartes.map(x => `<div><b>${esc(x.carte)}</b> · ${x.possibles} possibles · ${fmt(x.avant)} % vers ${fmt(x.apres)} % ${x.utile ? '<span class="okc">à changer</span>' : '<span class="muted">garder les actuels</span>'}${x.utile ? `<div class="muted c3s">${x.conseil.map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`).join('') : '<div class="muted">Aucune carte des 5 meilleurs trios n’a plus de 6 collectifs possibles : les choix du jeu suffisent.</div>'}</div></div><div class="sp"></div>`;
-  h += `<div class="card"><h2>Méthode</h2><div class="muted">Tous les trios de tes cartes SSR, UR et LR (${(j.trios || 0).toLocaleString('fr-FR')}) jouent les ${nC.toLocaleString('fr-FR')} combats de la campagne Cauchemar avec l'IA de KitsuAI. Course par manches : un trio est retiré seulement quand il est nettement derrière (z ${'>'} 3). Les finalistes rejouent tout avec d'autres tirages. Un combat est arrêté dès que les 3 étoiles sont perdues (cycle 9 ou un K.O. sans carte qui ranime) : même résultat, 1,8 fois plus vite. Le journal garde chaque paquet de combats : il n'est refait que si le jeu, une carte, ses niveaux, ses étoiles, ses collectifs ou l'IA changent.<br>Moteur ${esc(j.version)} · signature ${esc(j.signatureCombat)} · ${quand(j.date)}</div></div>`;
+  h += `<div class="card"><h2>Méthode</h2><div class="muted">Tous les trios de tes cartes SSR, UR et LR (${(j.trios || 0).toLocaleString('fr-FR')}) jouent les ${nC.toLocaleString('fr-FR')} combats avec l'IA de KitsuAI. Course par manches : un trio est retiré seulement quand il est nettement derrière en Cauchemar (z ${'>'} 3). ${nDiff() > 3 ? "La Campagne est jouée par les mêmes trios mais ne retire personne (beaucoup y font 100 %) : son classement est celui des finalistes du Cauchemar. " : ''}Les finalistes rejouent tout avec d'autres tirages. Un combat est arrêté dès que les 3 étoiles sont perdues : même résultat, 1,8 fois plus vite. Le journal garde chaque paquet de combats : il n'est refait que si le jeu, une carte, ses niveaux, ses étoiles, ses collectifs ou l'IA changent.<br>Moteur ${esc(j.version)} · signature ${esc(j.signatureCombat)} · ${quand(j.date)}</div></div>`;
   setH('c3body', h);
+  if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
 setInterval(() => { if (E) campEtat(); }, 1500);
 addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.j) campCharger(); });
 campCharger();
+
+// ---------- refonte 5.13 : navigation, fond, mise a jour, tableau de bord, Tour, evenements, collection, fiche, recherche ----------
+const PAGES = { accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
+const NAV_DE = { nouveautes: 'journal' };
+const pageAct = () => (location.hash || '#accueil').slice(1);
+function route() {
+  const p = pageAct(); if (!document.getElementById('p-' + p)) { if (p !== 'accueil') go('accueil'); return; }
+  document.querySelectorAll('.page').forEach(x => x.classList.toggle('on', x.id === 'p-' + p));
+  const n = NAV_DE[p] || p;
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.p === n));
+  document.querySelectorAll('#tabbar a[data-t]').forEach(a => a.classList.toggle('on', a.dataset.t === n));
+  const t = PAGES[p] || ['', p]; $('crumb').innerHTML = (t[0] ? esc(t[0]) + ' · ' : '') + `<b>${esc(t[1])}</b>`;
+  document.body.classList.remove('menu'); vedette(); pageVue(p);
+}
+function pageVue(p) { if (p === 'tour') twRender(); if (p === 'event') evRender(); if (p === 'sauvegarde') { if (!COL.j && !COL.charge) colCharger(); else colRender(); } }
+const menu = () => document.body.classList.toggle('menu');
+function fermer() { document.body.classList.remove('menu'); $('drawer').classList.remove('on'); $('kbar').classList.remove('on'); $('veil').classList.remove('on'); }
+const voile = () => $('veil').classList.add('on');
+
+// Fond : portrait de la meilleure carte du mode affiche, braises (coupees si la fenetre est cachee ou si l'option est decochee).
+let FXI = null;
+function vedette() {
+  const p = pageAct(), M = E?.dernier?.modes, m = M?.actuel || (M && M[Object.keys(M)[0]]);
+  const t1 = k => { const x = m?.[k]?.top?.[0]; return x ? eqList(x.ids || x.equipe)[0] : null; };
+  const id = p === 'campagne' ? CP.j?.meilleurs?.[CP.obj]?.[0]?.ids?.[0] ?? t1('cauchemar') : p === 'tour' ? TW.j?.trios?.[0]?.ids?.[0] ?? t1('tour') : p === 'event' ? t1('guilde') ?? t1('evenements') : t1('cauchemar_multi') ?? t1('cauchemar');
+  const img = id != null && CARTES ? carte(id).img : '';
+  if (img === FXI) return; FXI = img; const ph = $('fxph'); ph.classList.remove('on');
+  if (img) { const im = new Image(); im.referrerPolicy = 'no-referrer'; im.onload = () => { if (FXI === img) { ph.style.backgroundImage = `url("${img}")`; ph.classList.add('on'); } }; im.src = img; }
+}
+const FXON = (() => { try { return localStorage.getItem('kitsuFx') !== '0'; } catch { return true; } })();
+function fxReglage(v) { try { localStorage.setItem('kitsuFx', v ? '1' : '0'); } catch {} document.body.classList.toggle('calme', !v); }
+document.addEventListener('visibilitychange', () => $('fx').classList.toggle('pause', document.hidden));
+
+// Mise a jour du launcher : carte en tete de la barre laterale (et bandeau sur telephone).
+let MAJDISPO = false;
+function majSide(dispo, lv) {
+  const v = MAJ.version || lv, et = MAJ.etat; MAJDISPO = !!dispo;
+  let k = 'Launcher', V = 'KitsuAI v' + (curV || '-'), S = 'Tu as la dernière version.', X = '', on = false;
+  if (et === 'telechargement') { on = true; k = 'Mise à jour'; V = 'v' + v; S = 'Téléchargement : ' + (MAJ.pct || 0) + ' %'; X = `<div class="prog"><i style="width:${MAJ.pct || 0}%"></i></div>`; }
+  else if (et === 'prete') { on = true; k = 'Mise à jour prête'; V = 'v' + v; S = 'Tes données sont gardées.'; X = '<button>Installer et redémarrer</button>'; }
+  else if (dispo) { on = true; k = 'Nouvelle version'; V = 'v' + v; S = `Tu as la v${curV || '-'}. Clique pour voir ce qui change.`; X = `<button>${APP ? (et === 'disponible' ? 'Mettre à jour' : 'Voir') : 'Télécharger'}</button>`; }
+  else if (et === 'recherche') S = 'Recherche de mise à jour…'; else if (et === 'erreur') S = 'Vérification impossible pour l’instant.'; else if (et === 'dev') S = 'Mode développeur.'; else if (et === 'navigateur') S = 'Ouvert dans le navigateur.'; else if (et === 'preparation') S = 'Nouvelle version en préparation.';
+  $('majCard').classList.toggle('off', !on); $('majK').textContent = k; $('majV').textContent = V; $('majS').textContent = S; if ($('majX').innerHTML !== X) $('majX').innerHTML = X;
+  $('mbMaj').classList.toggle('on', on); $('mbMajT').textContent = k + ' : ' + V;
+}
+function majAction(e) {
+  const b = e?.target?.closest('button');
+  if (b && APP && MAJ.etat === 'prete') return APP.installer();
+  if (b && APP && MAJ.etat === 'disponible') return APP.telecharger();
+  if (b && !APP && MAJDISPO) return ouvrir('https://github.com/Drien95/kitsu-ai/releases/latest');
+  go('nouveautes');
+}
+
+// Tache en cours dans la barre laterale et badges du menu.
+function sideRender(run) {
+  const j = E.job;
+  if (!j) { $('sjT').textContent = 'Aucune tâche'; $('sjS').textContent = 'Prêt.'; $('sjP').className = 'prog'; }
+  else { const el = Math.round(((j.fin || Date.now()) - j.debut) / 1000), L = j.lignes.filter(l => l.trim()); $('sjT').textContent = j.nom; $('sjP').className = 'prog' + (run ? ' run' : ''); $('sjP').firstElementChild.style.width = run ? '' : (j.code === 0 ? '100%' : '0'); $('sjS').textContent = run ? dur(el) + ' · ' + (L[L.length - 1] || '…').replace(/^\[\s*\d+ s\]\s*/, '') : (j.code === 0 ? 'Terminée en ' : 'Arrêtée après ') + dur(el); }
+  const b0 = CP.j?.meilleurs?.[CP.j?.meilleurs?.Les6 ? 'Les6' : 'Moyenne']?.[0], t0 = TW.j?.trios?.[0], sc = E.script || {}, vu = sc.vu;
+  $('nbCamp').textContent = b0 ? fmt(b0.troisEtoiles) + ' %' : ''; $('nbCamp').className = 'b g'; $('nbCamp').style.display = b0 ? '' : 'none';
+  $('nbTour').textContent = t0 ? 'ét. ' + Math.round(t0.etageMoyen) : ''; $('nbTour').className = 'b o'; $('nbTour').style.display = t0 ? '' : 'none';
+  const ok = vu && vu.v === sc.version && Date.now() - vu.t < 180000; $('nbScript').textContent = ok ? 'OK' : vu ? 'veille' : '!'; $('nbScript').className = 'b ' + (ok ? 'g' : 'o');
+  const nv = (E.alertes || []).filter(a => a.id > (+localStorage.getItem('kitsuAlertesVues') || 0)).length; $('nbJour').style.display = nv ? '' : 'none'; $('nbJour').textContent = nv;
+}
+
+// ---------- tableau de bord : equipe phare, cartes des modes, ce qui a change ----------
+const imgsTrio = ids => eqList(ids).map(x => carte(x).img).filter(Boolean).map(u => `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`).join('');
+function dashRender() {
+  const D = E?.dernier, M = D && (D.modes.actuel || D.modes[Object.keys(D.modes)[0]]), mode = (href, tag, t, v, s, ids, soon) => `<a class="mode${soon ? ' soon' : ''}" href="#${href}">${ids && CARTES ? `<div class="ph">${imgsTrio(ids)}</div>` : ''}<span class="tag">${tag}</span><div class="t">${t}</div><div class="v">${v}</div><div class="s">${s}</div></a>`;
+  const cK = CP.j?.meilleurs?.Les6 ? 'Les6' : 'Moyenne', c0 = CP.j?.meilleurs?.[cK]?.[0], cm = M?.cauchemar_multi?.top?.[0] || M?.cauchemar?.top?.[0];
+  const t0 = TW.j?.trios?.[0] || M?.tour?.top?.[0], g0 = M?.guilde?.top?.[0], ext = !!document.querySelector('#nav a[data-p="arene"]');
+  setH('dashModes', [
+    c0 ? mode('campagne', '3 étoiles', 'Campagne', fmt(c0.troisEtoiles) + ' %', `${trioCourt(c0.equipe)} · ${cK === 'Les6' ? 'moyenne des 6' : 'moyenne Cauchemar'}`, c0.ids) : cm ? mode('campagne', '2 étoiles', 'Campagne', cm.deuxEtoiles + ' %', trioCourt(eqList(cm.equipe)) + ' · Cauchemar', cm.ids) : mode('campagne', 'à calculer', 'Campagne', '-', 'Lance le calcul des 3 étoiles', null, 1),
+    t0 ? mode('tour', 'record moyen', "Tour de l'infini", 'Étage ' + Math.round(t0.etageMoyen), trioCourt(eqList(t0.equipe)) + (t0.max ? ` · jusqu'à ${t0.max}` : ''), t0.ids) : mode('tour', 'à calculer', "Tour de l'infini", '-', 'Lance le calcul de la Tour', null, 1),
+    ext ? mode('arene', 'privé', 'Arène', 'Fantômes', 'Draft, combat, défense, collectifs', null) : mode('arene0', 'PvP', 'Arène', 'Sans conseil', 'Mode joueur contre joueur', null, 1),
+    g0 ? mode('event', 'guilde', 'Événements', (g0.degats || 0).toLocaleString('fr-FR'), 'dégâts au boss de guilde · ' + trioCourt(eqList(g0.equipe)), g0.ids) : mode('event', 'à calculer', 'Événements', '-', 'Analyse complète', null, 1),
+  ].join(''));
+  // ce qui a change depuis l'analyse precedente
+  const PM = D?.precedent?.modes?.[D.modes.actuel ? 'actuel' : Object.keys(D.modes)[0]], L = [];
+  if (M && PM) for (const [k, c] of Object.entries(M)) {
+    const x = c.top?.[0], y = PM[k]?.top?.[0]; if (!x || !y) continue;
+    const f = k === 'tour' ? 'etageMoyen' : (k === 'guilde' || k === 'pain') ? 'degats' : 'deuxEtoiles', d = (x[f] ?? 0) - (y[f] ?? 0), nouv = eqList(x.ids || x.equipe).join() !== eqList(y.ids || y.equipe).join();
+    if (!d && !nouv) continue; const u = f === 'etageMoyen' ? ' étages' : f === 'degats' ? ' dégâts' : ' pts';
+    L.push({ k, x, d, nouv, t: (d > 0 ? '+' : '') + (f === 'degats' ? Math.round(d).toLocaleString('fr-FR') : fmt(d)) + u, w: Math.abs(f === 'degats' ? d / Math.max(1, y[f]) * 100 : d) + (nouv ? 5 : 0) });
+  }
+  L.sort((a, b) => b.w - a.w);
+  $('dashChg').style.display = L.length ? '' : 'none';
+  setH('dashChg', L.length ? `<h2>Ce qui a changé <span class="r">depuis l’analyse du ${quand(D.precedent.date)}</span></h2><div class="grid gc" style="gap:0 30px">${L.slice(0, 8).map(l => `<div class="chg">${equipeHTML(l.x.ids || l.x.equipe, 1)}<span class="x">${esc(CATS[l.k] || l.k)}${l.nouv ? ' · nouveau n°1' : ''}</span><span class="${l.d >= 0 ? 'up' : 'dn'}">${l.d ? l.t : '='}</span></div>`).join('')}</div>` : '');
+}
+
+// ---------- Tour de l'infini (resultats/tour.json, sinon l'analyse complete) ----------
+const TW = { j: null, fin: undefined, charge: false };
+async function twCharger() { TW.charge = true; try { TW.j = await api('/api/resultat?f=tour.json'); } catch { TW.j = null; } TW.charge = false; HC.delete('twBody'); if (pageAct() === 'tour') { twRender(); vedette(); } }
+function etageBarres(titre, sous, L) { // intervalle min..max, 10 % les plus bas, mediane et moyenne
+  const W = 760, rh = 30, y0 = 108, x0 = 250, x1 = W - 40, lo = Math.max(0, Math.min(...L.map(l => l.min ?? l.etageMin ?? l.etageMoyen)) - 5), hi = Math.max(...L.map(l => l.max ?? l.etageMoyen)) + 5, X = v => x0 + (x1 - x0) * (v - lo) / Math.max(1, hi - lo);
+  let b = ''; for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) b += `<line x1="${X(v)}" x2="${X(v)}" y1="${y0 - 6}" y2="${y0 + L.length * rh}" stroke="${CC.line}"/><text x="${X(v)}" y="${y0 - 12}" fill="${CC.mute}" font-size="10" text-anchor="middle">${v}</text>`;
+  L.forEach((l, i) => { const y = y0 + i * rh, mn = l.min ?? l.etageMin, md = l.mediane ?? l.etageMoyen;
+    b += `<text x="22" y="${y + 18}" fill="${i ? CC.mute : CC.gold}" font-size="12" font-weight="800">${i + 1}</text><text x="44" y="${y + 18}" fill="${CC.txt}" font-size="12">${esc(trioCourt(eqList(l.equipe)))}</text>`
+      + (mn != null && l.max != null ? `<rect x="${X(mn)}" y="${y + 9}" width="${Math.max(2, X(l.max) - X(mn))}" height="10" rx="5" fill="${CC.line}"/>` : '') + (l.p10 != null && l.max != null ? `<rect x="${X(l.p10)}" y="${y + 9}" width="${Math.max(2, X(md) - X(l.p10))}" height="10" rx="5" fill="${i ? CC.acc2 : CC.gold}" opacity=".85"/>` : '')
+      + `<circle cx="${X(l.etageMoyen)}" cy="${y + 14}" r="5" fill="${CC.txt}"/><text x="${Math.min(x1 - 4, X(l.max ?? l.etageMoyen) + 8)}" y="${y + 18}" fill="${CC.txt}" font-size="11" font-weight="700">${fmt(l.etageMoyen)}</text>`; });
+  return cadre(titre, sous, y0 + L.length * rh + 16, b);
+}
+const ennemiCarte = n => { const k = String(n).replace(/^Écho de\s+/, ''); return CARTES && PAR_NOM[k] ? pf(PAR_NOM[k]) : ''; };
+function twRender() {
+  const j = TW.j, M = E?.dernier?.modes, m = M?.actuel || (M && M[Object.keys(M)[0]]), tr = j?.trios || m?.tour?.top || [], murs = j?.murs || m?.tour?.murs || [], t0 = tr[0];
+  if (!t0) { setH('twBody', TW.charge || !E ? '<div class="skel"></div>' : '<div class="card"><div class="muted">Pas encore de calcul de la Tour. Lance-le avec le bouton ci-dessus.</div></div>'); return; }
+  LAB = 'TOUR DE L’INFINI'; const ea = j?.equipeActuelle;
+  let h = `<div class="card hero"><div class="bgimg">${imgsTrio(t0.ids)}</div><div class="trio">${eqList(t0.ids || t0.equipe).map(x => pf(x, 'xl')).join('')}</div><div class="txt"><div class="k">Meilleur trio · ${j ? (j.niveaux === '99' ? 'toutes au niveau 99' : 'tes niveaux actuels') : 'analyse complète'}</div><div class="bigv">Étage ${fmt(t0.etageMoyen)}</div><div class="s">${esc(eqList(t0.equipe).join(' · '))}${t0.marge ? ` · ± ${fmt(t0.marge)}` : ''}</div><div class="pills">${t0.min ?? t0.etageMin ? `<span class="pill e">pire ${t0.min ?? t0.etageMin}</span>` : ''}${t0.p10 ? `<span class="pill d">9 fois sur 10 : ${t0.p10}+</span>` : ''}${t0.mediane ? `<span class="pill">médiane ${t0.mediane}</span>` : ''}${t0.max ? `<span class="pill n">record ${t0.max}</span>` : ''}${ea ? `<span class="pill p">ton équipe : ${fmt(ea.etageMoyen)}</span>` : ''}</div></div></div><div class="sp"></div>`;
+  h += `<div class="grid gc">${fig('tw-etages', etageBarres('Étages atteints par trio', 'point = moyenne, barre colorée = 9 montées sur 10, gris = du pire au record', tr.slice(0, 10)))}`;
+  const cs = j?.cartesSeules?.slice(0, 10) || [], mx = Math.max(1, ...cs.map(c => c.etage));
+  h += `<div class="card"><h2>Cartes seules <span class="r">étage moyen avec deux cartes faibles</span></h2>${cs.map(c => `<div class="c3k">${pf(c.id)}<span class="tmn">${esc(c.carte)}</span><span class="c3b"><i style="width:${100 * c.etage / mx}%"></i></span><b style="width:40px">${fmt(c.etage)}</b></div>`).join('') || '<div class="muted">Relance le calcul de la Tour pour voir ce classement.</div>'}</div></div><div class="sp"></div>`;
+  h += `<div class="grid gc"><div class="card"><h2>Où tes montées s’arrêtent <span class="r">meilleur trio</span></h2>${murs.slice(0, 8).map(w => `<div class="floor"><div class="fn">${w.etage}</div><div style="flex:1;min-width:0"><b>${w.boss ? 'Boss · ' : ''}${w.part} % des montées</b><div class="muted c3s">${(w.ennemis || []).map(esc).join(', ')}</div></div><div class="tm sm">${(w.ennemis || []).slice(0, 3).map(ennemiCarte).join('')}</div></div>`).join('') || '<div class="muted">-</div>'}</div>`;
+  const col = j?.collectifs || m?.tour?.collectifs || [];
+  h += `<div class="card"><h2>Collectifs pour la Tour</h2>${col.map(c => `<div class="floor">${pf(c.id || c.carte)}<div style="flex:1;min-width:0"><b>${esc(c.carte)}</b> <span class="muted c3s">${c.possibles ? c.possibles + ' possibles' : ''}</span><div class="muted c3s">${c.utile === false ? 'garde les tiens (pas de gain net)' : (c.conseil || []).map(esc).join(', ')}</div></div>${c.avant != null && c.apres != null ? `<span class="pill ${c.utile === false ? '' : 'n'}" title="étage moyen avant et après${c.utile === false ? ' (écart dans la marge d’erreur)' : ''}">${fmt(c.avant)} vers ${fmt(c.apres)}</span>` : ''}</div>`).join('') || '<div class="muted">Aucune carte du trio n’a plus de 6 collectifs possibles.</div>'}</div></div>`;
+  if (tr.length > 1) h += `<div class="sp"></div><div class="card"><h2>Les meilleurs trios</h2><table class="c3t"><tr><th>#</th><th>Trio</th><th>Étage moyen</th><th>Pire</th><th>9 sur 10</th><th>Médiane</th><th>Record</th></tr>${tr.slice(0, 10).map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids || l.equipe, 1)}</td><td><b>${fmt(l.etageMoyen)}</b>${l.marge ? ` <span class="muted">± ${fmt(l.marge)}</span>` : ''}</td><td>${l.min ?? l.etageMin ?? '-'}</td><td>${l.p10 ?? '-'}</td><td>${l.mediane ?? '-'}</td><td>${l.max ?? '-'}</td></tr>`).join('')}</table></div>`;
+  LAB = 'CAMPAGNE'; setH('twBody', h);
+}
+
+// ---------- evenements et guilde (analyse complete) ----------
+let evNiv = null, evCat = null;
+function evRender() {
+  const D = E?.dernier; if (!D) { setH('evTabs', ''); setH('evBody', E ? '<div class="card"><div class="muted">Pas encore d’analyse complète. Lance « Tout lancer » depuis le tableau de bord.</div></div>' : '<div class="skel"></div>'); return; }
+  const ns = Object.keys(D.modes); if (!ns.includes(evNiv)) evNiv = ns.includes('actuel') ? 'actuel' : ns[0];
+  const M = D.modes[evNiv], cs = ['evenements', 'guilde', 'pain'].filter(k => M[k]); if (!cs.includes(evCat)) evCat = cs[0];
+  setH('evTabs', `<div class="seg">${ns.map(n => `<a class="${n === evNiv ? 'on' : ''}" onclick="evNiv='${n}';evRender()">${n === '99' ? 'Tout au niveau 99' : 'Tes niveaux'}</a>`).join('')}<span class="sep"></span>${cs.map(k => `<a class="${k === evCat ? 'on' : ''}" onclick="evCat='${k}';evRender()">${CATS[k] || k}</a>`).join('')}</div>`);
+  const c = M[evCat]; if (!c) { setH('evBody', '<div class="card"><div class="muted">Rien d’ouvert dans la dernière analyse.</div></div>'); return; }
+  const x = c.top?.[0], gu = evCat !== 'evenements', val = l => gu ? (l.degats || 0).toLocaleString('fr-FR') + ' dégâts' : `${l.deuxEtoiles} % de 2 étoiles`;
+  let h = x ? `<div class="card hero"><div class="bgimg">${imgsTrio(x.ids || x.equipe)}</div><div class="trio">${eqList(x.ids || x.equipe).map(i => pf(i, 'xl')).join('')}</div><div class="txt"><div class="k">${esc(c.titre || CATS[evCat])}</div><div class="bigv">${gu ? (x.degats || 0).toLocaleString('fr-FR') : x.deuxEtoiles + ' %'}</div><div class="s">${gu ? 'dégâts par combat' : `de combats à 2 étoiles ou plus, ${x.troisEtoiles} % à 3 étoiles`} · ${esc(eqList(x.equipe).join(' · '))}</div>${c.solo?.length ? `<div class="pills">${c.solo.slice(0, 6).map(n => `<span class="pill">${esc(n)}</span>`).join('')}</div>` : ''}</div></div><div class="sp"></div>` : '';
+  h += `<div class="card"><h2>Les meilleurs trios <span class="r">${quand(D.date)}</span></h2><table class="c3t"><tr><th>#</th><th>Trio</th><th>${gu ? 'Dégâts' : '2+ étoiles'}</th>${gu ? '' : '<th>3 étoiles</th>'}</tr>${(c.top || []).map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids || l.equipe, 1)}</td><td><b>${gu ? (l.degats || 0).toLocaleString('fr-FR') : l.deuxEtoiles + ' %'}</b></td>${gu ? '' : `<td>${l.troisEtoiles} %</td>`}</tr>`).join('')}</table></div>`;
+  setH('evBody', h);
+}
+
+// ---------- collection (Sauvegarde) ----------
+const COL = { j: null, charge: false }; let colMax = 120;
+async function colCharger() { COL.charge = true; try { COL.j = await api('/api/collection'); } catch { COL.j = null; } COL.charge = false; colRender(); }
+const RORD = { LR: 6, UR: 5, SSR: 4, SR: 3, R: 2, N: 1 }, sansAcc = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function mesTrios() { const s = new Set(), M = E?.dernier?.modes; for (const m of Object.values(M || {})) for (const c of Object.values(m)) for (const x of (c.top || []).slice(0, 5)) eqList(x.ids || []).forEach(i => s.add(String(i))); for (const L of Object.values(CP.j?.meilleurs || {})) for (const x of L.slice(0, 5)) x.ids.forEach(i => s.add(String(i))); for (const x of (TW.j?.trios || []).slice(0, 5)) x.ids.forEach(i => s.add(String(i))); return s; }
+function colRender() {
+  if (pageAct() !== 'sauvegarde') return;
+  const J = COL.j; if (!J || !CARTES) { setH('coll', COL.charge || !CARTES ? '<div class="skel" style="grid-column:1/-1"></div>' : '<div class="muted" style="grid-column:1/-1">Importe ta sauvegarde pour voir ta collection.</div>'); $('colN').textContent = ''; return; }
+  const ids = Object.keys(J.owned).filter(id => CARTES[id]), ser = $('colS');
+  if (ser.options.length <= 1) { const S = [...new Set(ids.map(id => carte(id).s).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')); ser.innerHTML = '<option value="">Série : toutes</option>' + S.map(n => `<option>${esc(n)}</option>`).join(''); }
+  const q = sansAcc($('colQ').value.trim()), r = $('colR').value, s = ser.value, t = $('colT').value, mt = $('colM').checked ? mesTrios() : null, bas = $('colB').checked;
+  let L = ids.map(id => ({ id, c: carte(id), lv: J.lv[id] || 1, st: J.stars[id] || 0 })).filter(x => (!q || sansAcc(x.c.n + ' ' + x.c.s).includes(q)) && (r === 'hautes' ? RORD[x.c.r] >= 4 : !r || x.c.r === r) && (!s || x.c.s === s) && (!mt || mt.has(x.id)) && (!bas || x.lv < 60));
+  const tri = { pw: (a, b) => (b.c.pw || 0) - (a.c.pw || 0) || RORD[b.c.r] - RORD[a.c.r], lv: (a, b) => b.lv - a.lv, r: (a, b) => RORD[b.c.r] - RORD[a.c.r] || b.lv - a.lv, n: (a, b) => a.c.n.localeCompare(b.c.n, 'fr') }[t];
+  L.sort(tri); $('colN').textContent = `${ids.length} cartes · ${L.length} affichées${L.length > colMax ? ` (les ${colMax} premières)` : ''}`;
+  setH('coll', L.slice(0, colMax).map(x => `<div class="it">${pf(x.id)}<span>${esc(court(x.c.n))}</span><small>niv ${x.lv}${x.st ? ' · ' + '★'.repeat(Math.min(7, x.st)) : ''}</small></div>`).join('') || '<div class="muted" style="grid-column:1/-1">Aucune carte ne correspond.</div>');
+  $('colPlus').style.display = L.length > colMax ? '' : 'none';
+}
+
+// ---------- fiche de carte (clic sur un portrait) ----------
+function triosAvec(id) {
+  const id_ = String(id), out = [], vus = new Set(), add = (m, ids, v) => { if (vus.has(m) || !eqList(ids).map(String).includes(id_)) return; vus.add(m); out.push({ m, ids, v }); };
+  for (const o of OBJS) for (const l of CP.j?.meilleurs?.[o[0]] || []) add('Campagne · ' + o[1].replace('☾ ', ''), l.ids, fmt(l.troisEtoiles) + ' % 3★');
+  for (const l of TW.j?.trios || []) add("Tour de l'infini", l.ids, 'étage ' + fmt(l.etageMoyen));
+  const M = E?.dernier?.modes, m = M?.actuel || (M && M[Object.keys(M)[0]]);
+  for (const [k, c] of Object.entries(m || {})) for (const l of c.top || []) add(CATS[k] || k, l.ids || l.equipe, k === 'tour' ? 'étage ' + l.etageMoyen : l.degats != null ? l.degats.toLocaleString('fr-FR') : l.deuxEtoiles + ' % 2★');
+  return out;
+}
+function fiche(id) {
+  const c = carte(id); if (!c.id) return;
+  const sr = CARTES_S?.[c.sid] || [], J = COL.j, own = J?.owned?.[c.id], lv = J?.lv?.[c.id] || 1, st = J?.stars?.[c.id] || 0, tr = triosAvec(c.id);
+  const tl = (k, v) => `<div class="tile" style="min-height:0"><div class="k">${k}</div><div class="v" style="font-size:22px">${v ? Number(v).toLocaleString('fr-FR') : '-'}</div></div>`;
+  $('drawer').innerHTML = `${sr[1] ? `<div class="bn" style="background-image:url('${esc(sr[1])}')"></div>` : ''}<button class="ghost x" onclick="fermer()">Fermer</button>
+    <div style="display:flex;gap:16px;align-items:flex-start;margin-top:34px">${pf(c.id, 'xl')}<div style="min-width:0"><div class="eyebrow" style="font-size:10.5px">Fiche · ${esc(c.r)}${c.s ? ' · ' + esc(c.s) : ''}</div><div class="nm">${esc(c.n)}</div><div class="muted">${J ? (own ? `Niveau ${lv} · ${st} étoile${st > 1 ? 's' : ''}` : 'Pas dans ta collection') : 'Collection non importée'}</div>${tr.length ? `<div class="pills"><span class="pill n">dans ${tr.length} meilleur${tr.length > 1 ? 's' : ''} trio${tr.length > 1 ? 's' : ''}</span></div>` : ''}</div></div>
+    <div class="sp"></div><div class="grid g4" style="gap:8px">${tl('Puissance', c.pw)}${tl('ATK', c.atk)}${tl('DEF', c.def)}${tl('VIT', c.spd)}</div><div class="muted" style="font-size:11.5px;margin-top:6px">Stats de base du jeu (niveau 1, sans étoile ni collectif).</div>
+    <div class="sp"></div><h2>Meilleurs trios avec elle</h2>${tr.slice(0, 10).map(t => `<div class="chg"><span style="width:110px;flex:none;color:var(--mute);font-weight:800;font-size:11.5px">${esc(t.m)}</span>${equipeHTML(t.ids, 1)}<b class="x" style="color:var(--txt);white-space:nowrap">${esc(t.v)}</b></div>`).join('') || '<div class="muted">Dans aucun des meilleurs trios des dernières analyses.</div>'}`;
+  $('kbar').classList.remove('on'); $('drawer').classList.add('on'); voile();
+}
+document.addEventListener('click', e => { const p = e.target.closest('.pf[data-id]'); if (p && !e.target.closest('#drawer .x')) { e.preventDefault(); fiche(p.dataset.id); } });
+
+// ---------- recherche Ctrl+K : onglets et cartes ----------
+let KS = [], KI = 0;
+function kOuvrir() { $('drawer').classList.remove('on'); $('kbar').classList.add('on'); voile(); $('kq').value = ''; kChercher(); setTimeout(() => $('kq').focus(), 20); }
+function kChercher() {
+  const q = sansAcc($('kq').value.trim()), pages = [...document.querySelectorAll('#nav a[data-p]')].map(a => ({ t: 'p', p: a.dataset.p, n: a.querySelector('span')?.textContent || a.textContent }));
+  const P = pages.filter(x => !q || sansAcc(x.n).includes(q)), own = COL.j?.owned || {};
+  const C = q.length < 2 || !CARTES ? [] : Object.entries(CARTES).filter(([, c]) => sansAcc(c[0] + ' ' + c[3]).includes(q)).sort((a, b) => (own[b[0]] ? 1 : 0) - (own[a[0]] ? 1 : 0) || (RORD[b[1][1]] || 0) - (RORD[a[1][1]] || 0)).slice(0, 8).map(([id, c]) => ({ t: 'c', id, n: c[0], x: `carte · ${c[1]}${own[id] ? ' · à toi' : ''}` }));
+  KS = [...P.slice(0, q ? 5 : 8), ...C]; KI = 0; kDessin();
+}
+function kDessin() { $('kres').innerHTML = KS.map((x, i) => `<div class="it ${i === KI ? 'on' : ''}" onmousemove="KI=${i};kDessin()" onclick="KI=${i};kAller()">${x.t === 'c' ? pf(x.id) : `<span class="ic2">${$('nav').querySelector(`a[data-p="${x.p}"] svg`)?.outerHTML.replace('<svg', '<svg width="16" height="16"') || ''}</span>`}<b>${esc(x.n)}</b><small>${x.t === 'c' ? esc(x.x) : 'onglet'}</small></div>`).join('') || '<div class="it muted">Rien trouvé.</div>'; }
+function kAller() { const x = KS[KI]; if (!x) return; if (x.t === 'p') { fermer(); go(x.p); } else fiche(x.id); }
+$('kq').addEventListener('input', kChercher);
+$('kq').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { KI = Math.min(KS.length - 1, KI + 1); kDessin(); e.preventDefault(); } if (e.key === 'ArrowUp') { KI = Math.max(0, KI - 1); kDessin(); e.preventDefault(); } if (e.key === 'Enter') kAller(); });
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); kOuvrir(); } if (e.key === 'Escape') fermer(); });
+
+// ---------- demarrage ----------
+document.querySelectorAll('i[data-ic]').forEach(i => { i.outerHTML = ic(i.dataset.ic); });
+{ const ext = document.querySelector('#nav a[data-p="arene"]'), ph = $('navArene0'); if (ext && ph) { ext.innerHTML = ph.innerHTML; ph.replaceWith(ext); $('p-arene0')?.remove(); } }
+document.body.classList.toggle('calme', !FXON); $('r_fx').checked = FXON;
+setInterval(() => { if (!E) return; const j = E.job; if (j?.nom === "Tour de l'infini" && j.fin && TW.fin !== j.fin) { const premier = TW.fin === undefined; TW.fin = j.fin; if (!premier || !TW.j) twCharger(); } if (j?.nom === "Import de la sauvegarde") colCharger(); }, 1500);
+twCharger(); colCharger();
+
+route();
 refresh(); setInterval(refresh, 1500); chargerCartes();
 </script>
 </body>

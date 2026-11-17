@@ -15,7 +15,7 @@ Rappel des règles du projet : KitsuAI lit et affiche seulement. Aucun clic auto
 | IA qui anticipe | `lib/anticipe.mjs`, `plafond.mjs` | Conseil en combat : chaque action candidate est jouée jusqu'à la fin plusieurs fois sur une copie du combat | Sert aussi à mesurer le plafond de la règle rapide |
 | Analyse complète | `tout.mjs` | Meilleurs trios par mode (campagne, Cauchemar, boss, événements, Salle, Tour, guilde, Pain) | Objectif 2 étoiles minimum, départage par les 3 étoiles |
 | Tour de l'infini | `tour.mjs`, `lib/tour.mjs` | Trio cherché pour la Tour elle-même, étages qui bloquent, collectifs ; conseil en combat sur la victoire puis les PV gardés | Montées complètes avec PV reportés et soin entre étages comme le jeu |
-| Campagne : 3 étoiles en Cauchemar | `cauchemar3.mjs` | Tous les trios de tes SSR, UR et LR sur tous les combats de Cauchemar Normal, Difficile et Extrême | Voir la section 2 |
+| Campagne : 3 étoiles | `cauchemar3.mjs` | Tous les trios de tes SSR, UR et LR sur tous les combats de Cauchemar Normal, Difficile et Extrême, et de Campagne Normal, Difficile et Extrême (jouée, sans élimination) | Voir la section 2 |
 | Mêmes tirages pour tous (nombres aléatoires communs) | `cauchemar3.mjs`, `tout.mjs` | Tous les trios jouent les mêmes combats avec les mêmes graines : l'écart mesuré vient du trio, pas de la chance | Divise fortement le nombre de combats nécessaires pour départager |
 | Collectifs | `conseils.mjs`, `cauchemar3.mjs` | Les 6 collectifs à cocher quand une carte en a plus : crible rapide, puis confirmation | Changement conseillé seulement si le gain dépasse 2 erreurs types |
 | Conseils de cartes | `conseils.mjs` | Plan d'XP, valeur des cartes des bannières, duos, marché | Mesurés avec le moteur sur tes cartes |

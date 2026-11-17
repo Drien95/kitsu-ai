@@ -4,6 +4,24 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.14.0
+
+### Ajouté
+- **Nouveau launcher** : refonte visuelle complète du panneau.
+  - Barre latérale par groupes (Accueil, Modes de jeu, Analyses, Outils) avec un onglet par mode : Campagne, Tour de l'infini, Raids (prêt pour plus tard), Arène, Événements et guilde.
+  - **Mise à jour du launcher en évidence** : carte en tête de la barre latérale (nouvelle version, téléchargement, « Installer et redémarrer »), bandeau sur téléphone.
+  - Tâche en cours toujours visible en bas de la barre latérale, badges dans le menu (3 étoiles, étage de la Tour, état du script, alertes).
+  - Fond animé : portrait de la meilleure carte du mode affiché et braises qui montent. Coupé quand la fenêtre est cachée, désactivable dans Réglages, respecte le réglage « réduire les animations » de Windows.
+  - Tableau de bord : équipe phare en grand, cartes des modes avec les portraits du meilleur trio, « Ce qui a changé » depuis l'analyse précédente.
+  - **Fiche de carte** : clic sur n'importe quel portrait (stats de base, niveau et étoiles, meilleurs trios avec elle dans chaque mode).
+  - **Recherche Ctrl+K** : aller à un onglet ou ouvrir la fiche d'une carte.
+  - Sauvegarde : ta collection en portraits, avec recherche, filtres (rareté, série, dans mes meilleurs trios, niveau < 60) et tri.
+  - Onglet Tour de l'infini : meilleur trio en grand, étages atteints par trio (graphique PNG), cartes seules, étages où les montées s'arrêtent avec les ennemis, collectifs.
+  - Onglet Événements et guilde : événements, Salle, boss de guilde, Pain.
+  - Calculs en grille de cartes avec durée indicative ; Résultats et Conseils réunis dans « Cartes et conseils » ; Journal et Nouveautés réunis.
+  - Responsive : sur téléphone, barre d'onglets en bas et menu latéral.
+- **Campagne en 6 difficultés** : Campagne Normal, Difficile, Extrême et Cauchemar Normal, Difficile, Extrême (option « Cauchemar seulement », plus rapide). La Campagne est jouée par les mêmes trios mais n'élimine personne (beaucoup y font 100 %). Podium, **carte à partager en PNG avec les portraits**, comparateur de trios (jusqu'à 3), tableau avec un en-tête « 3★ » par difficulté et l'explication des pourcentages.
+
 ## 5.13.0
 
 ### Ajouté
