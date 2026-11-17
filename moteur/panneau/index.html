@@ -121,7 +121,8 @@
   .pn-tag.ghost { background: transparent; border: 1px solid var(--line2); color: #d9d3c9; }
   .pn-act { position: relative; z-index: 1; margin-top: 22px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
   .pn-act button { padding: 16px 28px; font-size: 15px; letter-spacing: 2.5px; }
-  .pn-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .pn-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; }
+  .pn-cols > .pn-col:only-child > ul { columns: 400px 3; column-gap: 36px; } .pn-cols > .pn-col:only-child > ul > li { break-inside: avoid; }
   @media (max-width: 1100px) { .pn-cols { grid-template-columns: 1fr; } .pn-v { font-size: 64px; } }
   .pn-col h3 { display: flex; align-items: center; gap: 10px; font: 400 24px var(--head); font-style: italic; text-transform: uppercase; margin: 0 0 12px; }
   .pn-col h3 span { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font: 800 16px var(--body); font-style: normal; }
@@ -215,7 +216,7 @@
   .kbtn { background: var(--panel); border: 1px solid var(--line2); color: var(--mute); box-shadow: none; padding: 7px 12px; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 700; }
   .kbtn kbd { font: 800 10px var(--body); border: 1px solid var(--line2); border-radius: 5px; padding: 1px 5px; color: #cfc8bd; }
   .burger { display: none; width: 38px; height: 38px; padding: 0; border-radius: 10px; background: var(--panel); border: 1px solid var(--line2); box-shadow: none; font-size: 18px; }
-  main { max-width: 1320px; padding: 28px 30px 70px; }
+  main { max-width: 1800px; padding: 28px 30px 70px; }
   .tabbar { display: none; }
   .mbmaj { display: none; align-items: center; gap: 10px; margin: -6px 0 16px; padding: 11px 13px; border-radius: 12px; background: linear-gradient(135deg, #ff4b3e, #ff8a3d); font-weight: 800; font-size: 13px; cursor: pointer; }
   .mbmaj button { margin-left: auto; padding: 7px 11px; background: #07080c; box-shadow: none; font-size: 11px; }
@@ -505,12 +506,13 @@
     <div class="card hot">
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="campPlanche()">Exporter la planche PNG</button></span></h2>
       <div class="row">
-        <label>Niveaux <select id="o_c3niv"><option value="99">Toutes au niveau 99 (potentiel)</option><option value="actuel">Tes niveaux actuels</option></select></label>
-        <label>Difficultés <select id="o_c3dif"><option value="toutes">Les 6 (Campagne et Cauchemar)</option><option value="cauchemar">Cauchemar seulement (plus rapide)</option></select></label>
+        <label>Niveaux <select id="o_c3niv" onchange="campPrev()"><option value="99">Toutes au niveau 99 (potentiel)</option><option value="actuel">Tes niveaux actuels</option></select></label>
+        <label>Difficultés <select id="o_c3dif" onchange="campPrev()"><option value="toutes">Les 6 (Campagne et Cauchemar)</option><option value="cauchemar">Cauchemar seulement (plus rapide)</option></select></label>
         <button data-act="cauchemar3" style="margin-left:auto">Lancer le calcul</button>
       </div>
-      <p class="muted" style="font-size:12px;margin:10px 0 0">Long : plusieurs heures (deux fois plus avec les 6 difficultés). Le PC reste éveillé, tu peux jouer pendant ce temps. Si tu arrêtes, la reprise repart du journal : rien n'est refait.</p>
-      <p id="c3job" class="muted" style="margin:8px 0 0"></p>
+      <div id="c3prev" class="grid g5" style="margin-top:14px"></div>
+      <p class="muted" style="font-size:12px;margin:10px 0 0">Le PC reste éveillé, tu peux jouer pendant ce temps. Si tu arrêtes, la reprise repart du journal : les combats déjà joués ne sont pas refaits.</p>
+      <div id="c3job" class="muted" style="margin:8px 0 0"></div>
     </div>
     <div class="sp"></div>
     <div id="c3tabs"></div>
@@ -884,7 +886,8 @@ async function renderMaj() {
     erreur: `<span class="badc" style="font-size:13px">${esc(MAJ.msg)}</span><button class="ghost" onclick="APP.verifier()">Réessayer</button>`,
     dev: '<span class="muted">Mode développeur : pas de mise à jour automatique.</span>',
   }[MAJ.etat] || `<span class="okc" style="font-weight:800">Tu as la dernière version.</span><button class="ghost" onclick="APP && APP.verifier()">Vérifier</button>`;
-  $('pnAct').innerHTML = act; majSide(dispo, lv);
+  const rapp = dispo || ['disponible', 'telechargement', 'prete'].includes(MAJ.etat) ? '<div class="muted" style="flex-basis:100%;font-size:12.5px">Après la mise à jour, réinstalle aussi le script dans Tampermonkey : la carte en haut à gauche te le rappellera.</div>' : '';
+  $('pnAct').innerHTML = act + rapp; majSide(dispo, lv);
   $('pnOld').innerHTML = rels.filter(r => r !== shown).slice(0, 12).map(r => `<details class="rel"><summary><b>${esc(r.tag_name)}</b><span>${new Date(r.published_at).toLocaleDateString('fr-FR')}</span></summary><div class="body pn-cols">${Object.entries(md(r.body.split(/\n---\n/)[0])).map(([k, v]) => `<div class="pn-col ${({ 'Ajouté': 'add', 'Corrigé': 'fix' })[k] || 'mod'}"><h3 style="font-size:18px">${esc(k)}</h3>${liste(v)}</div>`).join('')}</div></details>`).join('') || '<div class="muted">Aucune.</div>';
 }
 if (APP) { APP.surMaj(s => { MAJ = s; renderMaj(); }); APP.etat().then(s => { MAJ = s; renderMaj(); }); }
@@ -1058,13 +1061,42 @@ async function partager(act) {
   try { const b = await new Promise(ok => cv.toBlob(ok, 'image/png')); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); toast('Image copiée : colle-la où tu veux'); } catch { toast('Copie impossible ici : utilise Télécharger'); }
 }
 
+// ---------- ce que fera le calcul (avant le lancement) et ou il en est (pendant) ----------
+async function campPrev() {
+  try { CP.prev = await api('/api/campagne/prevision'); } catch { CP.prev = null; }
+  const P = CP.prev; if (!P) return setH('c3prev', '');
+  const six = $('o_c3dif').value !== 'cauchemar', cles = six ? Object.keys(P.combats) : ['normal', 'difficile', 'extreme'];
+  const parTrio = cles.reduce((a, k) => a + (P.combats[k] || 0), 0), nd = cles.length;
+  // Vitesse : celle du dernier vrai calcul sur ce PC, sinon environ 650 combats par seconde et par fil (mesure du 17/11/2026).
+  const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 650 * P.fils;
+  const tour1 = P.trios * nd * 16, s1 = tour1 / vit; // 1er tour : 16 combats par difficulte pour chaque trio, avant toute elimination
+  const tile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  if (!P.cartes) return setH('c3prev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>');
+  setH('c3prev', tile('Cartes', fmt(P.cartes), 'tes SSR, UR et LR')
+    + tile('Trios à tester', P.trios.toLocaleString('fr-FR'), 'toutes les combinaisons de 3')
+    + tile('Combats par trio', fmt(parTrio), `${nd} difficultés, joués 16 par 16`)
+    + tile('Déjà en mémoire', P.journalOctets ? (P.journalOctets / 1048576).toFixed(0) + ' Mo' : 'rien', P.journalOctets ? 'ces combats ne sont pas rejoués' : 'premier calcul sur ce PC')
+    + tile('1er tour', s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), 'ensuite les trios faibles sont écartés : le total dépend de tes cartes'));
+}
+// Progression lue dans le journal de la tache : « tour 3/12 : 383306 -> 41210 trios en course, ... (7300/s) ».
+function campProgres(L) {
+  let t = null, p = null, fin = null;
+  for (const l of L) { const a = l.match(/tour (\d+)\/(\d+) : (\d+) -> (\d+) trios en course.*\((\d+)\/s\)/); if (a) t = a; const b = l.match(/tour (\d+) : (\d+) \/ (\d+) paquets, (\d+) combats\/s/); if (b) p = b; if (/^.*finale :/.test(l)) fin = l; }
+  if (fin) return { pct: 97, txt: 'Finale et détail des meilleurs trios.' };
+  if (!t && !p) return { pct: 2, txt: 'Préparation : chargement du moteur, des trios et du journal.' };
+  const k = t ? +t[1] : 0, n = t ? +t[2] : 0, enCours = p && (!t || +p[1] > k) ? p : null;
+  const pct = n ? Math.min(95, Math.round(100 * (k + (enCours ? +enCours[2] / +enCours[3] : 0)) / (n + 2))) : 5;
+  return { pct, txt: (t ? `Tour ${k}/${n} fini : ${(+t[4]).toLocaleString('fr-FR')} trios encore en course (sur ${(+t[3]).toLocaleString('fr-FR')}), ${(+t[5]).toLocaleString('fr-FR')} combats/s.` : '') + (enCours ? ` Tour ${enCours[1]} : ${(+enCours[2]).toLocaleString('fr-FR')} / ${(+enCours[3]).toLocaleString('fr-FR')} paquets.` : '') };
+}
+
 // ---------- chargement et rendu ----------
-async function campCharger() { CP.charge = true; try { CP.j = await api('/api/resultat?f=cauchemar3.json'); CP.err = ''; } catch (e) { CP.j = null; CP.err = String(e.message); } CP.charge = false; HC.delete('c3body'); HC.delete('c3tabs'); campRender(); }
+async function campCharger() { campPrev(); CP.charge = true; try { CP.j = await api('/api/resultat?f=cauchemar3.json'); CP.err = ''; } catch (e) { CP.j = null; CP.err = String(e.message); } CP.charge = false; HC.delete('c3body'); HC.delete('c3tabs'); campRender(); }
 function campEtat() {
   if (CP.j && CARTES && !CP.rc) { CP.rc = 1; campRender(); } // portraits arrives apres le premier rendu
   const run = E?.job && !E.job.fin, moi = /^Campagne : 3 etoiles/.test(E?.job?.nom || '');
   const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}. Le PC reste éveillé ; tu peux arrêter, la reprise repart du journal.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les combats déjà faits sont gardés.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
-  setH('c3job', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : ''));
+  const pg = moi && run ? campProgres((E.job.lignes || []).filter(l => l.trim())) : null;
+  setH('c3job', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
   if (moi && E.job.fin && CP.fin !== E.job.fin) { const premier = CP.fin === undefined; CP.fin = E.job.fin; if (!premier || !CP.j) campCharger(); }
 }
 function campCmp(i) { const L = CP.j?.meilleurs?.[CP.obj] || [], k = L[i]?.ids.join('-'); if (!k) return; const at = CP.cmp.indexOf(k); if (at >= 0) CP.cmp.splice(at, 1); else { if (CP.cmp.length >= 3) CP.cmp.shift(); CP.cmp.push(k); } campRender(); }
@@ -1152,18 +1184,24 @@ document.addEventListener('visibilitychange', () => $('fx').classList.toggle('pa
 
 // Mise a jour du launcher : carte en tete de la barre laterale (et bandeau sur telephone).
 let MAJDISPO = false;
+// Version du script Tampermonkey : une mise a jour du launcher apporte en general un nouveau script, a reinstaller a part.
+let MAJLV = null, SCRV = { v: null, vu: null };
 function majSide(dispo, lv) {
+  if (lv !== undefined) MAJLV = lv; else lv = MAJLV;
   const v = MAJ.version || lv, et = MAJ.etat; MAJDISPO = !!dispo;
+  const scriptVieux = SCRV.v && SCRV.vu && SCRV.vu !== SCRV.v, rappel = ' Le script Tampermonkey sera aussi à mettre à jour ensuite.';
   let k = 'Launcher', V = 'KitsuAI v' + (curV || '-'), S = 'Tu as la dernière version.', X = '', on = false;
   if (et === 'telechargement') { on = true; k = 'Mise à jour'; V = 'v' + v; S = 'Téléchargement : ' + (MAJ.pct || 0) + ' %'; X = `<div class="prog"><i style="width:${MAJ.pct || 0}%"></i></div>`; }
-  else if (et === 'prete') { on = true; k = 'Mise à jour prête'; V = 'v' + v; S = 'Tes données sont gardées.'; X = '<button>Installer et redémarrer</button>'; }
-  else if (dispo) { on = true; k = 'Nouvelle version'; V = 'v' + v; S = `Tu as la v${curV || '-'}. Clique pour voir ce qui change.`; X = `<button>${APP ? (et === 'disponible' ? 'Mettre à jour' : 'Voir') : 'Télécharger'}</button>`; }
+  else if (et === 'prete') { on = true; k = 'Mise à jour prête'; V = 'v' + v; S = 'Tes données sont gardées.' + rappel; X = '<button>Installer et redémarrer</button>'; }
+  else if (dispo) { on = true; k = 'Nouvelle version'; V = 'v' + v; S = `Tu as la v${curV || '-'}. Clique pour voir ce qui change.` + rappel; X = `<button>${APP ? (et === 'disponible' ? 'Mettre à jour' : 'Voir') : 'Télécharger'}</button>`; }
+  else if (scriptVieux) { on = true; k = 'Script à mettre à jour'; V = 'Script v' + SCRV.v; S = `Tampermonkey a encore la v${SCRV.vu}. Clique Installer puis confirme dans Tampermonkey.`; X = '<button data-scr="1">Installer le script</button>'; }
   else if (et === 'recherche') S = 'Recherche de mise à jour…'; else if (et === 'erreur') S = 'Vérification impossible pour l’instant.'; else if (et === 'dev') S = 'Mode développeur.'; else if (et === 'navigateur') S = 'Ouvert dans le navigateur.'; else if (et === 'preparation') S = 'Nouvelle version en préparation.';
   $('majCard').classList.toggle('off', !on); $('majK').textContent = k; $('majV').textContent = V; $('majS').textContent = S; if ($('majX').innerHTML !== X) $('majX').innerHTML = X;
   $('mbMaj').classList.toggle('on', on); $('mbMajT').textContent = k + ' : ' + V;
 }
 function majAction(e) {
   const b = e?.target?.closest('button');
+  if (b?.dataset.scr) return ouvrir(SCRIPT_URL);
   if (b && APP && MAJ.etat === 'prete') return APP.installer();
   if (b && APP && MAJ.etat === 'disponible') return APP.telecharger();
   if (b && !APP && MAJDISPO) return ouvrir('https://github.com/Drien95/kitsu-ai/releases/latest');
@@ -1179,6 +1217,7 @@ function sideRender(run) {
   $('nbCamp').textContent = b0 ? fmt(b0.troisEtoiles) + ' %' : ''; $('nbCamp').className = 'b g'; $('nbCamp').style.display = b0 ? '' : 'none';
   $('nbTour').textContent = t0 ? 'ét. ' + Math.round(t0.etageMoyen) : ''; $('nbTour').className = 'b o'; $('nbTour').style.display = t0 ? '' : 'none';
   const ok = vu && vu.v === sc.version && Date.now() - vu.t < 180000; $('nbScript').textContent = ok ? 'OK' : vu ? 'veille' : '!'; $('nbScript').className = 'b ' + (ok ? 'g' : 'o');
+  if (SCRV.v !== (sc.version || null) || SCRV.vu !== (vu?.v || null)) { SCRV = { v: sc.version || null, vu: vu?.v || null }; majSide(MAJDISPO); }
   const nv = (E.alertes || []).filter(a => a.id > (+localStorage.getItem('kitsuAlertesVues') || 0)).length; $('nbJour').style.display = nv ? '' : 'none'; $('nbJour').textContent = nv;
 }
 
