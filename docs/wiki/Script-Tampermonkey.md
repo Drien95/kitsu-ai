@@ -2,8 +2,8 @@
 
 | Fonction | Description |
 |---|---|
-| Guide pas à pas | Contour bleu sur le prochain clic utile : campagne, événements, Salle, guilde, Tour, quêtes, pass, albums, boutique, invocations, fenêtres de confirmation |
-| Panneau orange (combat) | Action conseillée, raison, cible ; cadre vert « Calcul du PC » si l'application tourne |
+| Guide pas à pas | Contour blanc sur le prochain clic utile : campagne, événements, Salle, guilde, Tour, quêtes, pass, albums, boutique, invocations, fenêtres de confirmation |
+| Panneau orange (combat) | Coup conseillé en grand, raison, coups classés ; cadre vert « Calcul du PC » si l'application tourne ; replié sur une ligne quand le script privé donne un coup exact |
 | Roadmap | Les priorités du moment, triées (gemmes, énergie, quêtes, guilde, bannières) |
 | Plan | Combats de campagne à faire, équipe et chances de 3 étoiles |
 | Équipe | Meilleur trio pour l'écran de préparation, équipe cible et cartes à monter |

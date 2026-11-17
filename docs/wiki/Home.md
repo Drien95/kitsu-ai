@@ -9,7 +9,7 @@ KitsuAI **ne joue jamais à ta place** : il ne clique rien, n'envoie rien au jeu
 | Morceau | Rôle | Où |
 |---|---|---|
 | **Application KitsuAI** (Windows) | Panneau local, conseil en combat calculé sur tous les coeurs du PC, analyses complètes, entraînement de l'IA, mises à jour automatiques | [Dernière release](https://github.com/Drien95/kitsu-ai/releases/latest), fichier `KitsuAI-Setup-X.Y.Z.exe` |
-| **Script du jeu** (Tampermonkey) | Guide pas à pas (contours bleus), panneau orange en combat, roadmap, plan, équipe cible | [kitsu_ai.user.js](https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js) |
+| **Script du jeu** (Tampermonkey) | Guide pas à pas (contours blancs), panneau orange en combat, roadmap, plan, équipe cible | [kitsu_ai.user.js](https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js) |
 
 Le script fonctionne seul. L'application le rend plus fort : conseil en combat qui anticipe, analyses de toutes tes cartes, IA entraînée sur tes équipes.
 

@@ -82,7 +82,7 @@ function verifierAlertes() {
   const cc = calculConseille(); if (cc.length) alerter('calculConseille', 'cc-' + cc.join('|'), 'Calcul conseille', cc.join(' ; '));
 }
 setInterval(verifierAlertes, 30000);
-// Pourquoi relancer « Tout lancer » : patch du jeu ou collection changee depuis la derniere analyse.
+// Pourquoi relancer « Mettre a jour l'IA » : patch du jeu ou collection changee depuis la derniere analyse.
 const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), Object.entries(sv.lv || {}).map(([k, v]) => k + ':' + (v?.l || v)).sort(), Object.entries(sv.stars || {}).sort()]).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0) : 0;
 function calculConseille() {
   const d = readJ(D('resultats', 'dernier.json')), sv = readJ(D('data', 'sauvegarde.json')), out = [];
@@ -110,7 +110,7 @@ const ACTIONS = {
   conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos,marche'] },
 };
 // Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
-const CHAINES = { complet: { nom: 'Tout lancer', etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }], ['entrainer', { types: 'tour', generations: 20 }], ['equipes', { n: 3 }], ['conseils', {}]] } };
+const CHAINES = { complet: { nom: "Mettre a jour l'IA", etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }], ['entrainer', { types: 'tour', generations: 20 }], ['equipes', { n: 3 }], ['conseils', {}]] } };
 let job = null; const history = []; let CARTES = {};
 function lancer(action, o = {}) {
   if (job && !job.fin) throw new Error('une tache tourne deja : ' + job.nom);
