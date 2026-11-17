@@ -60,7 +60,7 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
   // (meme graine pour tous). Un trio est abandonne quand sa borne haute passe sous la borne basse du Ke meilleur.
   // Ecart type d'une montee pris au moins egal a SD0 etages (prudent avec peu de montees). Journal : montee deja faite = reprise.
   // ctx : { trios, cle(t) -> cle du trio, J (journal), garder, z, manches, onManche(log) }
-  async function course({ trios: tr, cle, J, garder = 200, z = 3, manches = 10, sd0 = 4, onManche = () => {} }) {
+  async function course({ trios: tr, cle, J, garder = 200, z = 3, manches = 10, sd0 = 4, largeur = 1500, onManche = () => {} }) {
     const T = tr.length, n = new Uint16Array(T), s1 = new Float64Array(T), s2 = new Float64Array(T);
     let alive = [...Array(T).keys()], montees = 0, repris = 0; const entonnoir = [], t0 = Date.now();
     const borne = t => { const m = s1[t] / n[t], v = n[t] > 1 ? Math.max(0, (s2[t] - n[t] * m * m) / (n[t] - 1)) : 0; const se = Math.sqrt(Math.max(v, sd0 * sd0) / n[t]); return { m, lo: m - z * se, hi: m + z * se }; };
@@ -78,7 +78,12 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
       onManche({ r, manches, avant, apres: alive.length, montees, repris, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000), fin: true });
     }
     const classement = alive.map(t => ({ t: tr[t], moy: s1[t] / n[t], n: n[t] })).sort((a, b) => b.moy - a.moy);
-    return { classement, entonnoir, montees, repris, duree: Math.round((Date.now() - t0) / 1000) };
+    // Ecartes les mieux places (souvent une seule montee) : prefiltre du departage exact, qui juge autrement que la regle apprise.
+    const enCourse = new Set(alive), ecartes = [];
+    for (let t = 0; t < tr.length; t++) if (n[t] && !enCourse.has(t)) ecartes.push(t);
+    ecartes.sort((a, b) => s1[b] / n[b] - s1[a] / n[a]);
+    const ecartesTop = ecartes.slice(0, largeur).map(t => ({ t: tr[t], moy: s1[t] / n[t], n: n[t] }));
+    return { classement, ecartes: ecartesTop, entonnoir, montees, repris, duree: Math.round((Date.now() - t0) / 1000) };
   }
   return { climb, trios, murs, collectifs, course };
 }

@@ -310,6 +310,7 @@
     <a href="#calculs" data-p="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Calculs</span></a>
     <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Cartes et conseils</span></a>
     <div class="grp">Outils</div>
+    <a href="#regles" data-p="regles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M8 7h8M8 11h6"/></svg>Règles et effets</a>
     <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span><span class="b" id="nbScript"></span></a>
     <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
     <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal et nouveautés</span><span class="b o" id="nbJour" style="display:none"></span></a>
@@ -560,6 +561,12 @@
   </section>
 
   <!-- ===================== SAUVEGARDE ===================== -->
+  <section class="page" id="p-regles">
+    <div class="eyebrow">Outils</div>
+    <h1>Règles et effets</h1>
+    <p class="lead">Tous les statuts (malus, bonus, protections), les règles du combat, les passifs et la progression, lus dans le moteur du jeu. La page suit chaque nouvelle version du jeu ; un statut que KitsuAI ne connaît pas encore est marqué « nouveau ».</p>
+    <div id="rgBody"></div>
+  </section>
   <section class="page" id="p-sauvegarde">
     <div class="eyebrow">Ta collection</div>
     <h1>Sauvegarde</h1>
@@ -775,11 +782,11 @@ function renderCons() {
   const pc = (a, b) => `${a} %${b != null ? ` <span class="muted">→</span> <b style="color:${b > a ? 'var(--ok,#22c55e)' : 'inherit'}">${b} %</b>` : ''}`; let h = `<h2>${ic(consTab)}${T[consTab]} <span class="r">${quand(C.date)} · ${C.combats} combats Cauchemar Extrême</span></h2>`;
   if (consTab === 'collectifs') {
     const L = C.collectifs.flatMap(e => [...e.cartes.map(c => ({ e, c })), ...(e.ensemble ? [{ e, c: { carte: 'Les deux ensemble', actifs: '', utile: e.ensemble.utile, seul: e.ensemble.seul, conseil: [], retirer: [], avant: e.ensemble.avant, apres: e.ensemble.apres, tous: 1 } }] : [])]);
-    h += L.length ? `<table><tr><th>Équipe</th><th>Carte</th><th>Coche ces 6 collectifs</th><th class="n">2+ étoiles</th></tr>` + L.map(({ e, c }) => `<tr><td>${equipeHTML(e.ids || e.equipe, 1)}</td><td>${c.tous ? esc(c.carte) : carteHTML(c.id || c.carte, `<div class="muted" style="font-size:11px">${c.actifs} collectifs actifs</div>`)}</td><td style="font-size:12px">${c.tous ? `<span class="muted">${c.utile ? 'les choix ci-dessus combinés' : `combinés, ils ne font pas mieux : change seulement ${esc(c.seul || 'la meilleure carte')}`}</span>` : c.utile ? c.conseil.map(esc).join('<br>') : '<span class="muted">ton choix actuel est déjà le meilleur</span>'}${c.utile && c.retirer.length ? `<div class="muted" style="margin-top:4px">décoche : ${c.retirer.map(esc).join(', ')}</div>` : ''}</td><td class="n">${pc(c.avant.s2, c.utile ? c.apres.s2 : null)}</td></tr>`).join('') + '</table>' : '<div class="muted">Aucune carte de tes meilleures équipes n’a plus de 6 collectifs actifs : rien à choisir.</div>';
+    h += L.length ? `<table><tr><th>Équipe</th><th>Carte</th><th>Coche ces 6 collectifs</th><th class="n">3 étoiles</th></tr>` + L.map(({ e, c }) => `<tr><td>${equipeHTML(e.ids || e.equipe, 1)}</td><td>${c.tous ? esc(c.carte) : carteHTML(c.id || c.carte, `<div class="muted" style="font-size:11px">${c.actifs} collectifs actifs</div>`)}</td><td style="font-size:12px">${c.tous ? `<span class="muted">${c.utile ? 'les choix ci-dessus combinés' : `combinés, ils ne font pas mieux : change seulement ${esc(c.seul || 'la meilleure carte')}`}</span>` : c.utile ? c.conseil.map(esc).join('<br>') : '<span class="muted">ton choix actuel est déjà le meilleur</span>'}${c.utile && c.retirer.length ? `<div class="muted" style="margin-top:4px">décoche : ${c.retirer.map(esc).join(', ')}</div>` : ''}</td><td class="n">${pc(c.avant.s3, c.utile ? c.apres.s3 : null)}</td></tr>`).join('') + '</table>' : '<div class="muted">Aucune carte de tes meilleures équipes n’a plus de 6 collectifs actifs : rien à choisir.</div>';
   }
   if (consTab === 'xp') {
     const X = C.xp, ref = X.reference;
-    h += `<p class="muted">Référence : ${esc(ref?.equipe || '-')} (${ref?.s2} % de 2+ étoiles). Une carte vaut l’XP seulement si son meilleur trio dépasse cette équipe.</p><table><tr><th>Carte</th><th>Meilleur trio</th><th>2+ étoiles selon le niveau</th><th>Conseil</th></tr>` + X.cartes.map(c => `<tr><td>${carteHTML(c.id || c.carte, ` <span class="muted">niv ${c.niveau}</span>`)}</td><td>${equipeHTML(c.ids || c.equipe, 1)}</td><td style="font-size:12px">${c.paliers.map(p => `${p.niveau} : ${p.s2} %`).join(' · ')}</td><td>${c.conseil ? `<b>monter au ${c.conseil.jusqua}</b><div class="muted" style="font-size:11px">${c.conseil.xp.toLocaleString('fr-FR')} XP</div>` : '<span class="muted">pas prioritaire</span>'}</td></tr>`).join('') + '</table>';
+    h += `<p class="muted">Référence : ${esc(ref?.equipe || '-')} (${ref?.s3} % de 3 étoiles, ${ref?.s2} % de 2+). Une carte vaut l’XP seulement si son meilleur trio dépasse cette équipe. Nombre de combats : estimation sur le combat de référence le plus payant${X.xpParCombat ? ` (≈ ${X.xpParCombat.toLocaleString('fr-FR')} XP par combat à 3★, sans le bonus de difficulté)` : ''}.</p><table><tr><th>Carte</th><th>Meilleur trio</th><th>3 étoiles selon le niveau</th><th>Conseil</th></tr>` + X.cartes.map(c => `<tr><td>${carteHTML(c.id || c.carte, ` <span class="muted">niv ${c.niveau}</span>`)}</td><td>${equipeHTML(c.ids || c.equipe, 1)}</td><td style="font-size:12px">${c.paliers.map(p => `${p.niveau} : ${p.s3} %`).join(' · ')}</td><td>${c.conseil ? `<b>monter au ${c.conseil.jusqua}</b><div class="muted" style="font-size:11px">${c.conseil.xp.toLocaleString('fr-FR')} XP${c.conseil.combats ? ` · ≈ ${c.conseil.combats.toLocaleString('fr-FR')} combats gagnés à 3★` : ''}</div>` : '<span class="muted">pas prioritaire</span>'}</td></tr>`).join('') + '</table>';
   }
   if (consTab === 'tirage') {
     h += C.tirage.map(b => `<h3 style="margin-top:14px">${esc(b.banniere)} <span class="muted" style="font-weight:400;font-size:12px">jusqu’au ${new Date(b.fin).toLocaleDateString('fr-FR')} · gain moyen d’une LR : ${b.gainMoyenLR ?? '-'} pts</span></h3><table><tr><th>Carte</th><th>Meilleur trio avec elle</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th><th class="n">Gain</th></tr>` + b.cartes.map(c => `<tr><td>${carteHTML(c.id || c.carte, c.possedee ? '<div class="muted" style="font-size:11px">déjà à toi (+1 étoile)</div>' : '')}</td><td>${c.equipe ? equipeHTML(c.ids || c.equipe, 1) : '-'}</td><td class="n">${c.s2 ?? '-'} %</td><td class="n">${c.s3 ?? '-'} %</td><td class="n" style="color:${(c.gain || 0) > 0 ? 'var(--ok,#22c55e)' : 'var(--mute)'}">${c.gain > 0 ? '+' : ''}${c.gain ?? '-'}</td></tr>`).join('') + '</table>').join('') + `<p class="muted" style="margin-top:8px">Gain = points de score (2+ étoiles, plus la moitié des 3 étoiles) par rapport à ta meilleure équipe actuelle (${esc(C.tirage[0]?.reference?.equipe || '-')}). Carte supposée niveau 99.</p>`;
@@ -971,6 +978,95 @@ function campEtages(j) {
   return h;
 }
 
+// ---------- regles et effets (/api/fiche : lu dans le moteur du jeu a chaque version ; explications lues dans son code) ----------
+const RG = { j: null, q: '', vue: 'statuts' };
+// Ce que fait chaque statut, lu dans le code du combat. {v} = valeur par defaut tiree du moteur.
+const RG_DESC = {
+  burn: 'Perd {dot} de ses PV max au début de chacun de ses tours.',
+  saignement: 'Perd {dot} de ses PV max par cumul au début de chacun de ses tours.',
+  flammes_noires: 'Perd {dot} de ses PV max par cumul au début de chacun de ses tours. Ne se purge pas.',
+  desintegration: 'Perd {dot} de ses PV max par cumul au début de chacun de ses tours. Ne se purge pas.',
+  marque_sacrifice: 'Perd {dot} de ses PV max par cumul au début de ses tours et reçoit {takenMul} de dégâts. Ne se purge pas.',
+  stun: 'Saute son prochain tour. En arène, une unité qui vient de sauter un tour ne peut plus être étourdie avant son tour suivant. Un Susanô avec bouclier y résiste.',
+  endormi: 'Saute ses tours tant qu’il dort. Se réveille dès qu’il reçoit des dégâts.',
+  scelle: 'Ne gagne plus d’énergie et ne peut pas lancer son ultime.',
+  cendre: 'Soins reçus {healMul}.',
+  paralysie: 'Perd tout de suite des points d’énergie (30 si le kit ne précise rien), puis le statut disparaît.',
+  erosion: 'Ses PV max baissent de la valeur indiquée (10 % si rien n’est précisé) au moment où le statut est posé. Ne se purge pas.',
+  domine: 'Au début de son tour, il attaque son allié le plus blessé (attaque de base, sans avantage de type) au lieu de jouer, puis le statut disparaît.',
+  karma: 'Pas de règle générale dans le moteur : l’effet vient du kit de la carte qui le pose.',
+  atkUp: 'ATK {atkMul}.', atk_moins: 'ATK {atkMul}.', crainte: 'ATK {atkMul}.', rage: 'ATK {atkMul} par cumul (cumulable). Ne se dissipe pas.',
+  defDown: 'DEF {defMul}.', def_plus: 'DEF {defMul}.', vit_moins: 'VIT {spdMul} : joue moins souvent.', vit_plus: 'VIT {spdMul} : joue plus souvent.',
+  marque: 'Dégâts reçus {takenMul}.', demasque: 'Dégâts reçus {takenMul}.', reduction: 'Dégâts reçus {takenMul}.',
+  regen: 'Récupère 6 % de ses PV max (ou la valeur du kit) au début de chacun de ses tours.',
+  esquive: 'Le prochain coup reçu rate (sauf riposte ou coup inesquivable), puis le statut disparaît.',
+  intangible: 'Tous les coups reçus ratent tant que le statut dure.',
+  immunite: 'Aucun nouveau malus ne peut être posé.',
+  riposte: 'Quand il est frappé, il renvoie un coup (50 % de sa puissance si rien n’est précisé, sans avantage de type).',
+  susano: 'Tant qu’il a un bouclier, il résiste aux statuts qui font sauter le tour.',
+  survie: 'Le prochain coup fatal le laisse en vie, puis le statut disparaît.',
+  taunt: 'Provocation : les ennemis doivent le viser.',
+  guard: 'En garde (après un repos) : dégâts reçus −30 % jusqu’à son prochain tour.',
+};
+const RG_MUL = { atkMul: 'ATK', defMul: 'DEF', spdMul: 'VIT', takenMul: 'Dégâts reçus', dealtMul: 'Dégâts infligés', healMul: 'Soins reçus' };
+const rgPct = v => (v >= 1 ? '+' : '−') + Math.round(Math.abs(v - 1) * 100) + ' %';
+function rgTexte(s) {
+  const d = RG_DESC[s.id]; if (!d) return Object.entries(s.mul).map(([m, v]) => `${RG_MUL[m]} ${rgPct(v)}`).join(', ') || (s.dot ? `Perd ${Math.round(s.dot * 100)} % de ses PV max par tour.` : 'Effet propre au kit qui le pose.');
+  return d.replace('{dot}', s.dot != null ? Math.round(s.dot * 100) + ' %' : '').replace(/\{(\w+)\}/g, (_, m) => s.mul[m] != null ? rgPct(s.mul[m]) : '');
+}
+async function rgCharger() { try { RG.j = await api('/api/fiche'); } catch (e) { RG.j = { err: e.message }; } rgRender(); }
+function rgSet(k, v) { RG[k] = v; rgRender(); if (k === 'q') { const i = $('rgQ'); if (i) { i.focus(); i.setSelectionRange(v.length, v.length); } } }
+function rgRender() {
+  const j = RG.j, el = $('rgBody'); if (!el) return;
+  if (!j) { el.innerHTML = '<div class="skel"></div>'; return; }
+  if (j.err) { el.innerHTML = `<div class="card"><div class="muted">Lecture impossible : ${esc(j.err)}</div></div>`; return; }
+  const q = RG.q.toLowerCase(), tab = (k, n) => `<a class="${RG.vue === k ? 'on' : ''}" onclick="rgSet('vue','${k}')">${n}</a>`;
+  let h = `<div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:14px"><div class="seg">${tab('statuts', `Statuts (${j.statuts.length})`)}${tab('combat', 'Règles du combat')}${tab('passifs', `Passifs (${j.passifs.length})`)}${tab('progression', 'Progression')}</div>${RG.vue === 'statuts' || RG.vue === 'passifs' ? `<input id="rgQ" style="min-width:260px;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:10px;font:inherit" placeholder="Chercher" value="${esc(RG.q)}" oninput="rgSet('q',this.value)">` : ''}<span class="muted" style="margin-left:auto;font-size:12px">Lu dans le moteur du jeu ${esc(j.version)}</span></div>`;
+  if (RG.vue === 'statuts') {
+    const L = j.statuts.filter(s => !q || (s.nom + ' ' + s.id + ' ' + rgTexte(s)).toLowerCase().includes(q));
+    const groupe = (titre, f) => { const G2 = L.filter(f); return G2.length ? `<h3 class="cat">${titre} (${G2.length})</h3><div class="grid g2">${G2.map(s => `<div class="card" style="padding:12px 14px"><div class="row" style="gap:10px;align-items:center"><span style="display:inline-grid;place-items:center;min-width:34px;height:34px;border-radius:8px;background:${esc(s.couleur)}22;color:${esc(s.couleur)};font-weight:800">${esc(s.kanji)}</span><b>${esc(s.nom)}</b><span class="muted" style="font-size:11px">${esc(s.id)}</span>${RG_DESC[s.id] ? '' : '<span class="pill" style="color:var(--warn)">nouveau</span>'}</div><div style="margin-top:6px;font-size:13px">${esc(rgTexte(s))}</div><div class="muted" style="font-size:11.5px;margin-top:4px">${[s.nonPurgeable && 'ne se purge pas', s.nonDissipable && 'ne se dissipe pas', s.cumulable && 'cumulable', s.valeurReglable && 'valeur réglée par le kit qui le pose'].filter(Boolean).join(' · ')}</div></div>`).join('')}</div><div class="sp"></div>` : ''; };
+    h += groupe('Malus', s => s.malus) + groupe('Bonus et protections', s => !s.malus);
+    h += `<div class="muted" style="font-size:12px">Durée : 2 tours si le kit ne précise rien ; « permanent » = 999 tours. Reposer un statut déjà présent prolonge sa durée (et garde la plus forte valeur). Une immunité bloque tout nouveau malus.</div>`;
+  } else if (RG.vue === 'combat') {
+    const c = j.combat, ty = j.types, nomT = id => ty.find(t => t.id === id)?.nom || id;
+    const li = (t, d) => `<tr><td style="width:210px"><b>${t}</b></td><td>${d}</td></tr>`;
+    h += `<div class="grid g2"><div class="card"><h2>Tour de jeu, énergie, endurance</h2><table class="c3t">
+      ${li('Ordre des tours', `Jauge d’action : chaque unité attend ${c.avBase} ÷ VIT. Plus de VIT = jouer plus souvent.`)}
+      ${li('Endurance', `Commune à l’équipe, ${c.enduranceMax} au plus. Coûts : attaque ${c.cout.basic}, technique ${c.cout.skill}, ultime ${c.cout.ult}, repos ${c.cout.rest}. +${c.enduranceParTour} au début du tour de chaque unité, +${c.reposEndurance} au repos.`)}
+      ${li('Énergie', `Par unité, ${c.energieMax} au plus. Attaque +20 (sauf kit qui gère sa propre énergie), technique +30 (LR : +10), coup reçu +10, K.O. infligé +10, repos +10. L’ultime demande ${c.energieMax} et remet à 0.`)}
+      ${li('Repos', `+${c.reposEndurance} endurance, +10 énergie, et « En garde » : dégâts reçus −30 % jusqu’au prochain tour.`)}
+      ${li('Provocation', 'Les ennemis doivent viser l’unité qui provoque. La technique des cartes Défense de base provoque 2 tours et met un bouclier de 22 % des PV max à l’équipe (recharge 3 tours).')}
+      </table></div><div class="card"><h2>Dégâts</h2><table class="c3t">
+      ${li('Formule', 'ATK² ÷ (ATK + DEF × (1 − perce-défense)) × multiplicateur du coup × type × rupture × hasard (0,93 à 1,07) × bonus du kit × dégâts reçus de la cible.')}
+      ${li('Critique', '×1,6. Chance = critique de la carte (+ bonus du coup), 95 % au plus.')}
+      ${li('Types', ty.map(t => `<b style="color:${esc(t.couleur)}">${esc(t.nom)}</b> bat ${t.bat.map(nomT).join(', ') || 'rien'}`).join(' · ') + '. Avantage : ×1,5 et double usure de la garde ; désavantage : ×0,75.')}
+      ${li('Bouclier', 'Absorbe les dégâts avant les PV, sauf coup qui ignore les boucliers.')}
+      ${li('Rupture', 'Les ennemis qui ont une jauge de garde la perdent à chaque coup (multiplicateur × 10, 2 au moins, double avec l’avantage de type). À 0 : rompus, ils reçoivent +25 % de dégâts et perdent leur prochain tour.')}
+      ${li('Boss', 'Sous 50 % de PV, phase 2 : ATK ×1,3 et VIT ×1,12.')}
+      </table></div></div><div class="sp"></div><div class="card"><h2>Résultat d’un combat</h2><table class="c3t">
+      ${li('Étoiles', 'max(1, 3 − K.O. de ton équipe), limitées à 2 si le combat dure plus de 8 cycles. 3 étoiles = aucun K.O. en 8 cycles au plus.')}
+      ${li('Hasard', 'Le jeu tire le hasard au lancement de chaque essai : le même trio peut faire 3 étoiles une fois et pas la suivante.')}
+      ${j.tour ? li('Tour de l’infini', `Soin entre deux étages : ${Math.round(j.tour.HEAL * 100)} % des PV max, ${Math.round(j.tour.BOSS_HEAL * 100)} % après un boss. Un boss tous les ${j.tour.BOSS_EVERY} étages. Une unité K.O. le reste pour toute la montée.`) : ''}
+      </table></div>`;
+  } else if (RG.vue === 'passifs') {
+    const fx = f => !f ? '' : Object.entries(f).map(([qui, o]) => `<span class="pill">${{ self: 'soi', team: 'équipe', foe: 'adversaires' }[qui] || qui} : ${Object.entries(o).map(([k, v]) => `${{ atk: 'ATK', def: 'DEF', spd: 'VIT', hp: 'PV', crit: 'critique' }[k] || k} ${v > 0 ? '+' : ''}${v}${k === 'energy' ? ' points d’énergie au départ' : ' %'}`).join(', ')}</span>`).join(' ');
+    const L = j.passifs.filter(p => !q || (p.nom + ' ' + p.desc).toLowerCase().includes(q));
+    h += `<div class="card"><table class="c3t"><tr><th>Passif</th><th>Effet</th><th>Bonus fixes</th></tr>${L.slice(0, 300).map(p => `<tr><td><b>${esc(p.nom)}</b></td><td style="font-size:13px">${esc(p.desc)}</td><td>${fx(p.fx)}</td></tr>`).join('')}</table></div>`;
+  } else {
+    const p = j.progression;
+    h += `<div class="grid g2"><div class="card"><h2>Cartes</h2><table class="c3t">
+      <tr><td><b>Niveau</b></td><td>1 à ${p.niveauMax} : +2 % de stats par niveau.</td></tr>
+      <tr><td><b>Étoiles</b></td><td>0 à ${p.etoilesMax} : +2 % de stats par étoile.</td></tr>
+      <tr><td><b>Synergie de série</b></td><td>+${Math.round(p.synergieSerie * 100)} % par autre carte de la même série dans le trio, +${Math.round(p.synergieSerie * p.synergieMax * 100)} % au plus.</td></tr>
+      <tr><td><b>Collectifs</b></td><td>${j.collectifs.total} collectifs, ${p.collectifsMax} actifs au plus par carte (choisis dans le jeu). Chacun donne un bonus de stat quand ses cartes sont réunies.</td></tr>
+      <tr><td><b>Raretés</b></td><td>${j.rarete.map(r => `<b style="color:${esc(r.couleur)}">${esc(r.nom)}</b>`).join(' · ')}</td></tr></table></div>
+      <div class="card"><h2>Collectifs par série</h2><div style="max-height:360px;overflow:auto"><table class="c3t">${j.collectifs.parSerie.map(s => `<tr><td>${esc(s.serie)}</td><td class="n">${s.n}</td></tr>`).join('')}</table></div></div></div>`;
+  }
+  el.innerHTML = h;
+}
+addEventListener('hashchange', () => { if (location.hash === '#regles' && !RG.j) rgCharger(); });
+if (location.hash === '#regles') rgCharger();
+
 // ---------- campagne : 3 etoiles en Campagne et en Cauchemar (resultats/cauchemar3.json) ----------
 // Les graphiques sont des SVG aux couleurs ecrites en dur (pas de variables CSS) : ils s'exportent tels quels en PNG.
 // Aucun portrait dans les SVG : une image d'une autre adresse rendrait le canvas illisible pour l'export.
@@ -1143,6 +1239,7 @@ function campEtat() {
   const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}. Le PC reste éveillé ; tu peux arrêter, la reprise repart du journal.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les combats déjà faits sont gardés.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
   const pg = moi && run ? campProgres((E.job.lignes || []).filter(l => l.trim())) : null;
   setH('c3job', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
+  if (moi && run) CP.fin = null; // vu en cours : la fin doit recharger les resultats
   if (moi && E.job.fin && CP.fin !== E.job.fin) { const premier = CP.fin === undefined; CP.fin = E.job.fin; if (!premier || !CP.j) campCharger(); }
 }
 function campCmp(i) { const L = CP.j?.meilleurs?.[CP.obj] || [], k = L[i]?.ids.join('-'); if (!k) return; const at = CP.cmp.indexOf(k); if (at >= 0) CP.cmp.splice(at, 1); else { if (CP.cmp.length >= 3) CP.cmp.shift(); CP.cmp.push(k); } campRender(); }
@@ -1198,7 +1295,7 @@ addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.
 campCharger();
 
 // ---------- refonte 5.13 : navigation, fond, mise a jour, tableau de bord, Tour, evenements, collection, fiche, recherche ----------
-const PAGES = { accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
+const PAGES = { regles: ['Outils', 'Règles et effets'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
 const NAV_DE = { nouveautes: 'journal' };
 const pageAct = () => (location.hash || '#accueil').slice(1);
 function route() {
@@ -1336,6 +1433,7 @@ function twEtat() {
   const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les montées déjà faites sont gardées.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
   const pg = moi && run ? twProgres((E.job.lignes || []).filter(l => l.trim())) : null;
   setH('twJob', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
+  if (moi && run) TW.fin = null; // vu en cours : la fin doit recharger les resultats
   if (moi && E.job.fin && TW.fin !== E.job.fin) { const premier = TW.fin === undefined; TW.fin = E.job.fin; if (!premier) { twCharger(); } }
 }
 const tuile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;

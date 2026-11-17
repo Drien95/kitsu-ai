@@ -1,6 +1,6 @@
 // Conseils de choix de cartes, calcules avec le moteur du jeu sur tes cartes :
 //   collectifs (les 6 a cocher), plan d'XP (quelle carte monter, jusqu'ou), valeur des cartes des bannieres ouvertes,
-//   duos qui marchent le mieux ensemble. Objectif : 2 etoiles minimum, puis 3, en Cauchemar Extreme.
+//   duos qui marchent le mieux ensemble. Objectif : 3 etoiles (note = 3 etoiles + 2 etoiles / 4), en Cauchemar Extreme.
 //   marche : lots du marche qui valent une offre d'echange, offres recues a accepter ou non.
 //   node conseils.mjs [--parties collectifs,xp,tirage,duos,marche] [--fils 10]
 import { loadEngine } from './lib/charger.mjs';
@@ -14,7 +14,7 @@ const sets = fightSets(G, B), BENCH = [...shuffle(sets.nmMulti, 3).slice(0, 70),
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 const mk = (ids, o = {}) => ids.map(id => ({ id, lv: o.lv?.[id] ?? lvOf(id), stars: o.stars?.[id] ?? stOf(id), ...((o.lk?.[id] || SAVE.lk?.[id]) ? { lk: o.lk?.[id] || SAVE.lk[id] } : {}) }));
 const W = WA;
-const evalTeams = async (teams, fl = BENCH, seeds = [1, 2]) => { const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), W, { stop2: true }, 12); const per = fl.length; return teams.map((_, k) => { const x = r.slice(k * per, (k + 1) * per), n = x.reduce((a, y) => a + y.n, 0); const s2 = x.reduce((a, y) => a + y.s2, 0) / n, s3 = x.reduce((a, y) => a + y.s3, 0) / n; return { s2, s3, v: s2 + 0.5 * s3 }; }); };
+const evalTeams = async (teams, fl = BENCH, seeds = [1, 2]) => { const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), W, { stop2: true }, 12); const per = fl.length; return teams.map((_, k) => { const x = r.slice(k * per, (k + 1) * per), n = x.reduce((a, y) => a + y.n, 0); const s2 = x.reduce((a, y) => a + y.s2, 0) / n, s3 = x.reduce((a, y) => a + y.s3, 0) / n; return { s2, s3, v: s3 + 0.25 * s2 }; }); };
 const pct = x => +(100 * x).toFixed(1);
 const out = { version, date: new Date().toISOString(), combats: BENCH.length };
 const TEAMS = topTeams(['cauchemar_multi', 'cauchemar_boss', 'cauchemar'], 3);
@@ -41,7 +41,7 @@ if (PARTS.includes('collectifs')) {
     }
     // Les choix ci-dessus sont faits carte par carte : on verifie qu'ensemble ils restent meilleurs.
     const ut = lignes.filter(l => l.utile); let ensemble = null;
-    if (ut.length > 1) { const [b0, b1] = await evalTeams([mk(t), mk(t, { lk: Object.fromEntries(ut.map(l => [l.id, l.cles])) })]); const seul = ut.slice().sort((a, b) => (b.apres.s2 + b.apres.s3 / 2) - (a.apres.s2 + a.apres.s3 / 2))[0]; ensemble = { avant: { s2: pct(b0.s2), s3: pct(b0.s3) }, apres: { s2: pct(b1.s2), s3: pct(b1.s3) }, utile: 100 * b1.v > seul.apres.s2 + seul.apres.s3 / 2 + 1, seul: seul.carte }; log(`collectifs ensemble (${noms(t)}) : ${ensemble.avant.s2} puis ${ensemble.apres.s2} %`); }
+    if (ut.length > 1) { const [b0, b1] = await evalTeams([mk(t), mk(t, { lk: Object.fromEntries(ut.map(l => [l.id, l.cles])) })]); const seul = ut.slice().sort((a, b) => (b.apres.s3 + b.apres.s2 / 4) - (a.apres.s3 + a.apres.s2 / 4))[0]; ensemble = { avant: { s2: pct(b0.s2), s3: pct(b0.s3) }, apres: { s2: pct(b1.s2), s3: pct(b1.s3) }, utile: 100 * b1.v > seul.apres.s3 + seul.apres.s2 / 4 + 1, seul: seul.carte }; log(`collectifs ensemble (${noms(t)}) : ${ensemble.avant.s2} puis ${ensemble.apres.s2} %`); }
     out.collectifs.push({ equipe: noms(t), ids: t, cartes: lignes, ensemble });
   }
 }
@@ -52,6 +52,10 @@ if (PARTS.includes('xp')) {
   const cum = l => { let c = 0; for (let k = 1; k < l; k++) c += G.XP_NEED(k) || 0; return c; };
   const ref = TEAMS[0], refR = ref ? (await evalTeams([mk(ref)]))[0] : { v: 0, s2: 0, s3: 0 };
   const cands = own.filter(id => lvOf(id) < 99).sort((a, b) => ('MLE'.indexOf(CH[a].r) - 'MLE'.indexOf(CH[b].r)) || (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 8);
+  // Cout en combats (estimation) : XP du combat le plus payant des combats de reference, gagne a 3 etoiles
+  // (recompense = fightXp x (0,6 + 0,2 x etoiles) x multiplicateur de difficulte, ce dernier n'est pas expose : compte 1).
+  const xpCombat = Math.max(1, ...BENCH.map(f => { try { return (G.fightXp?.(G.findFight(f)) || 0) * 1.2; } catch { return 0; } }));
+  const combatsPour = xp => Math.ceil(xp / xpCombat);
   const rows = [];
   for (const id of cands) {
     const trios = []; for (const t of TEAMS) for (let k = 0; k < 3; k++) if (!t.includes(id)) { const x = t.slice(); x[k] = id; trios.push(x); }
@@ -62,10 +66,10 @@ if (PARTS.includes('xp')) {
     const pts = paliers.map((L, i) => ({ niveau: L, xp: cum(L) - cum(l0), s2: pct(r[i].s2), s3: pct(r[i].s3), v: r[i].v }));
     const best = pts.slice(1).map(p => ({ ...p, parDixMille: Math.max(0, p.v - Math.max(pts[0].v, refR.v)) * 100 / Math.max(1, p.xp / 10000) })).sort((x, y) => y.parDixMille - x.parDixMille)[0];
     const fin = pts.at(-1), depasse = fin.v > refR.v + 0.01;
-    rows.push({ carte: nom(id), id, ids: t, rarete: R[CH[id].r], niveau: l0, equipe: noms(t), paliers: pts.map(({ v, ...p }) => p), depasse, conseil: depasse && best ? { jusqua: best.niveau, xp: best.xp, gainParDixMille: +best.parDixMille.toFixed(2), s2: best.s2, s3: best.s3 } : null });
+    rows.push({ carte: nom(id), id, ids: t, rarete: R[CH[id].r], niveau: l0, equipe: noms(t), paliers: pts.map(({ v, ...p }) => ({ ...p, combats: combatsPour(p.xp) })), depasse, conseil: depasse && best ? { jusqua: best.niveau, xp: best.xp, combats: combatsPour(best.xp), gainParDixMille: +best.parDixMille.toFixed(2), s2: best.s2, s3: best.s3 } : null });
     log(`xp ${nom(id)} niv ${l0} dans ${noms(t)} : ${pts.map(p => `${p.niveau}:${p.s2}%`).join(' ')} (ref ${pct(refR.s2)}%)`);
   }
-  out.xp = { reference: ref ? { ids: ref, equipe: noms(ref), s2: pct(refR.s2), s3: pct(refR.s3) } : null, cartes: rows.sort((a, b) => (b.conseil?.gainParDixMille || 0) - (a.conseil?.gainParDixMille || 0) || b.paliers.at(-1).s2 - a.paliers.at(-1).s2) };
+  out.xp = { xpParCombat: Math.round(xpCombat), reference: ref ? { ids: ref, equipe: noms(ref), s2: pct(refR.s2), s3: pct(refR.s3) } : null, cartes: rows.sort((a, b) => (b.conseil?.gainParDixMille || 0) - (a.conseil?.gainParDixMille || 0) || b.paliers.at(-1).s3 - a.paliers.at(-1).s3) };
 }
 // ---------- 3. Valeur des cartes des bannieres ouvertes ----------
 if (PARTS.includes('tirage')) {
