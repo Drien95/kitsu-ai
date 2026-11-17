@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.12.1**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.13.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -728,6 +728,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.11.4 | Combat : le calcul du PC ne remplace plus un bon coup par « Respirer » quand tous les coups se valent |
 | 5.12.0 | Tour de l'infini : trio cherché pour la Tour, étages qui bloquent, collectifs, réglages de combat appris pour la Tour, Pain, conseils d'échange au marché ; les analyses tiennent compte des collectifs |
 | 5.12.1 | Le jeu ne ralentit plus avec le temps : l'objectif de bannière n'est plus recalculé toutes les 0,4 s (il relisait le journal des gains, qui grossit à chaque combat), les contours du conseiller ne sont plus retirés et remis 7 fois par seconde, le journal de calibration n'est plus relu à chaque coup |
+| 5.13.0 | Cauchemar 3 étoiles : `cauchemar3.mjs` juge TOUS les trios de tes SSR/UR/LR (course avec élimination prudente), combat arrêté dès que les 3 étoiles sont perdues (vérifié), journal des essais gardé entre deux analyses (vidé seulement si le combat, la carte ou l'IA changent), PC gardé éveillé pendant le calcul ; onglet Campagne dans le panneau (bouton de calcul, graphiques, export PNG) ; page wiki Méthodes et recherches |
 
 ---
 

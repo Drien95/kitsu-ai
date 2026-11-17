@@ -7,6 +7,7 @@ export const W_DEFAUT = {
   nm: [-0.3042,-0.8322,0.7914,1.6557,-0.2005,1.2199,0.9199,0.3791,0.5382,0.0507,1.0024,0.5477,1.5751,-0.6616,0.5372,-0.6145,-0.0156,0.7633,-0.8152],
   tower: [-0.2911,-0.7984,0.8698,2.0784,-0.1861,0.9833,1.0596,1.5232,0.2841,0.6186,1.5002,0.9077,1.6502,-0.4352,0.1318,-0.6398,0.4653,0.7975,0.1358],
 };
+const REVIVE_RE = /ranimer|retour_temporel|revive|rewind|reecrire_coup_fatal/;
 const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
 export function makeSim(G, B) {
   const findF = id => G.EVENT_FIGHTS?.[id] || G.findFight(id);
@@ -43,13 +44,23 @@ export function makeSim(G, B) {
   };
   const hasBoss = st => B.enemies(st).some(e => e.boss);
   const smartPol = W => { const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm), pe = {}; const nmOf = st => { if (!W.equipes) return pm; const k = st.__tk ??= B.allies(st).map(x => x.id).sort((a, b) => a - b).join('-'); const e = W.equipes[k]; return e?.nm?.length === W.boss.length ? (pe[k] ??= policy(e.nm)) : pm; }; return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? nmOf(st) : hasBoss(st) ? pb : pn)(st, u); };
+  // Une carte peut-elle ramener un allie K.O. ? (operation « ranimer » ou passif qui remonte le temps)
+  const reviveMemo = new Map();
+  const canRevive = id => { if (!reviveMemo.has(id)) reviveMemo.set(id, REVIVE_RE.test(JSON.stringify(B.KITS?.[id] || {}))); return reviveMemo.get(id); };
   // Un combat. stop2 : arret des que 2 allies sont K.O. (2 etoiles deviennent impossibles).
-  const fight = (fid, team, seed, pol, { stop2 = false } = {}) => {
+  // stop3 : arret des que les 3 etoiles sont perdues : cycle 9 atteint, ou un allie K.O. si personne dans l'equipe ne peut ranimer.
+  const fight = (fid, team, seed, pol, { stop2 = false, stop3 = false } = {}) => {
     const st = G.setupBattle(findF(fid), team, seed).st;
+    const koCut = stop3 && !team.some(m => canRevive(m.id));
     for (let i = 0; i < 400; i++) {
       const u = step(st); if (!u) break;
+      if (stop3 && st.cycle > 8) return { win: false, ko: 0, cycle: st.cycle, stars: 0, cut: true };
       doAct(st, u, pol(st, u));
-      if (stop2) { let ko = 0; for (const x of B.allies(st)) if (!x.alive) ko++; if (ko >= 2) return { win: false, ko, cycle: st.cycle, stars: 0, cut: true }; }
+      if (stop2 || koCut) {
+        let ko = 0; for (const x of B.allies(st)) if (!x.alive) ko++;
+        if (koCut && ko >= 1) return { win: false, ko, cycle: st.cycle, stars: 0, cut: true };
+        if (stop2 && ko >= 2) return { win: false, ko, cycle: st.cycle, stars: 0, cut: true };
+      }
     }
     const win = B.outcome(st) === 'win';
     let ko = 0; for (const x of B.allies(st)) if (!x.alive) ko++;
