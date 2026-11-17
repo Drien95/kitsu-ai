@@ -195,7 +195,7 @@
   body.repos .maj::after, body.repos .pf.r-LR, body.repos .pf.r-LR::before, body.repos .upd, body.repos .blink, body.repos .skel { animation: none !important; }
   body.repos .top, body.repos .veil { backdrop-filter: none; }
   /* ---- Tableau de bord : memes cartes que les onglets (mode, card, pill) ---- */
-  #p-accueil .mode { min-height: 300px; } #p-accueil .mode .v small { font-size: 24px; color: var(--mute); margin-left: 4px; }
+  #dbModes { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); } #p-accueil .mode { min-height: 300px; } #p-accueil .mode .v small { font-size: 24px; color: var(--mute); margin-left: 4px; }
   #p-accueil .mode .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .dbt { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); } .dbt:first-child { border-top: 0; padding-top: 2px; }
   .dbt .d { width: 9px; height: 9px; border-radius: 50%; flex: none; } .dbt .x { flex: 1; min-width: 0; } .dbt .x span { color: var(--mute); }
@@ -313,7 +313,7 @@
     <div class="grp">Modes de jeu</div>
     <a href="#campagne" data-p="campagne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg><span>Campagne</span><span class="b" id="nbCamp"></span></a>
     <a href="#tour" data-p="tour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V9h10v12M5 9h14M7 9V5h2v2h2V5h2v2h2V5h2v4M10 21v-5h4v5"/></svg><span>Tour de l'infini</span><span class="b" id="nbTour"></span></a>
-    <a href="#raid" data-p="raid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span>Raids</span><span class="b">bientôt</span></a>
+    <a href="#raid" data-p="raid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span>Raids</span><span class="b" id="nbRaid"></span></a>
     <a href="#arene0" data-p="arene0" id="navArene0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4M5 21l-2-2"/></svg><span>Arène</span><span class="b p">privé</span></a>
     <a href="#event" data-p="event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span>Événements et guilde</span></a>
     <div class="grp">Analyses</div>
@@ -373,8 +373,15 @@
   <section class="page" id="p-raid">
     <div class="eyebrow">Modes de jeu</div>
     <h1>Raids</h1>
-    <p class="lead">Les raids n'ont pas encore d'analyse dans KitsuAI. L'onglet est prêt : il se remplira quand le calcul existera.</p>
-    <div class="grid g3"><div class="mode soon" style="min-height:170px"><span class="tag">bientôt</span><div class="t">Meilleur trio de raid</div><div class="s">Dégâts par trio, comme le boss de guilde.</div></div><div class="mode soon" style="min-height:170px"><span class="tag">bientôt</span><div class="t">Cartes à monter</div><div class="s">Ce qui fait le plus monter les dégâts.</div></div><div class="mode soon" style="min-height:170px"><span class="tag">bientôt</span><div class="t">Collectifs</div><div class="s">Les 6 à cocher pour le raid.</div></div></div>
+    <p class="lead">Le Destin Effacé : jusqu'à 3 joueurs de 3 cartes contre 3 boss (Cioccolata, Secco, Diavolo). Tous les trios de tes cartes LR, UR et SSR jouent le raid complet avec le moteur du jeu, contre 3 niveaux de coéquipiers, à 3 et à 2 joueurs. Pendant le raid, le script te dit quoi faire à chaque tour.</p>
+    <div class="card hot">
+      <h2>Lancer le calcul <span class="r">fils en priorité basse</span></h2>
+      <div class="row"><label>Cartes <select id="o_rdniv"><option value="actuel">Niveau 60 ou plus (tes niveaux)</option><option value="99">Toutes au niveau 99 (potentiel)</option></select></label><button data-act="raid" style="margin-left:auto">Lancer le calcul</button></div>
+      <p class="muted" style="font-size:12px;margin:10px 0 0">Dans le salon du raid, le script refait ce calcul avec les vraies cartes de tes partenaires (quelques secondes). Il ne clique jamais : il lit la page et affiche ses conseils.</p>
+      <div id="rdJob" class="muted" style="margin:8px 0 0"></div>
+    </div>
+    <div class="sp"></div>
+    <div id="rdBody"><div class="skel"></div></div>
   </section>
 
   <!-- ===================== ARENE (sans l'extension locale) ===================== -->
@@ -761,7 +768,7 @@ async function refresh() {
   // resultats
   hp('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
-  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'sauvegarde') colRender();
+  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'raid') rdRender(); if (pa === 'sauvegarde') colRender();
 }
 let consTab = 'collectifs';
 function renderCons() {
@@ -907,6 +914,7 @@ async function lancer(action) {
   if (action === 'equipes') o.n = +$('o_neq').value;
   if (action === 'cauchemar3') Object.assign(o, { niveaux: $('o_c3niv').value, difficultes: $('o_c3dif').value, specialistes: $('o_c3spec').value });
   if (action === 'tour') o.niveaux = $('o_twniv').value;
+  if (action === 'raid') o.niveaux = $('o_rdniv').value;
   if (action === 'imitation') o.combats = +$('o_nim').value;
   if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;
   try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; toast('Lancé'); refresh(); } catch (e) { alert(e.message); }
@@ -1279,7 +1287,7 @@ function campRender() {
   setH('c3body', h);
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
-setInterval(() => { if (E && !document.hidden) { campEtat(); twEtat(); } }, 1500);
+setInterval(() => { if (E && !document.hidden) { campEtat(); twEtat(); rdEtat(); } }, 1500);
 addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.j) campCharger(); });
 campCharger();
 
@@ -1296,7 +1304,7 @@ function route() {
   const t = PAGES[p] || ['', p]; $('crumb').innerHTML = (t[0] ? esc(t[0]) + ' · ' : '') + `<b>${esc(t[1])}</b>`;
   document.body.classList.remove('menu'); vedette(); pageVue(p);
 }
-function pageVue(p) { if (p === 'tour') twRender(); if (p === 'event') evRender(); if (p === 'sauvegarde') { if (!COL.j && !COL.charge) colCharger(); else colRender(); } }
+function pageVue(p) { if (p === 'tour') twRender(); if (p === 'raid') rdRender(); if (p === 'event') evRender(); if (p === 'sauvegarde') { if (!COL.j && !COL.charge) colCharger(); else colRender(); } }
 const menu = () => document.body.classList.toggle('menu');
 function fermer() { document.body.classList.remove('menu'); $('drawer').classList.remove('on'); $('kbar').classList.remove('on'); $('veil').classList.remove('on'); }
 const voile = () => $('veil').classList.add('on');
@@ -1349,6 +1357,7 @@ function sideRender(run) {
   const b0 = CP.j?.meilleurs?.[CP.j?.meilleurs?.Les6 ? 'Les6' : 'Moyenne']?.[0], t0 = TW.j?.trios?.[0], sc = E.script || {}, vu = sc.vu;
   const C3 = dbCampagne(), G3 = C3 && (C3.avecCau ? C3.cau : C3.camp); $('nbCamp').textContent = C3 ? C3.ok(G3) + '/' + C3.n(G3) : b0 ? fmt(b0.troisEtoiles) + ' %' : ''; $('nbCamp').className = 'b g'; $('nbCamp').style.display = C3 || b0 ? '' : 'none';
   const tX = window.DB_PRIVE?.tour; $('nbTour').textContent = tX ? 'ét. ' + Math.round(tX.etage) : t0 ? 'ét. ' + Math.round(t0.etageMoyen) : ''; $('nbTour').className = 'b o'; $('nbTour').style.display = tX || t0 ? '' : 'none';
+  const r0 = RD.j?.classement?.[0], vr = r0?.par?.['bons-3']?.victoire; $('nbRaid').textContent = r0 ? Math.round(vr ?? r0.note) + ' %' : ''; $('nbRaid').className = 'b g'; $('nbRaid').style.display = r0 ? '' : 'none';
   const ok = vu && vu.v === sc.version && Date.now() - vu.t < 180000; $('nbScript').textContent = ok ? 'OK' : vu ? 'veille' : '!'; $('nbScript').className = 'b ' + (ok ? 'g' : 'o');
   if (SCRV.v !== (sc.version || null) || SCRV.vu !== (vu?.v || null)) { SCRV = { v: sc.version || null, vu: vu?.v || null }; majSide(MAJDISPO); }
   const nv = (E.alertes || []).filter(a => a.id > (+localStorage.getItem('kitsuAlertesVues') || 0)).length; $('nbJour').style.display = nv ? '' : 'none'; $('nbJour').textContent = nv;
@@ -1377,6 +1386,9 @@ function dashRender() {
   const t0 = TW.j?.trios?.[0], tx = X.tour, tt = tx || t0;
   if (tt) L.push(carteMode('tour', '', tx ? 'départage exact' : 'étage moyen', tt.ids, "Tour de l'infini", 'Étage ' + (tx ? fmt(tx.etage) : fmt(t0.etageMoyen)), esc(eqList(tt.equipe).map(court).join(' / ')) + (!tx && t0.max ? ` · record ${t0.max}` : '')));
   else L.push(carteMode('tour', 'soon', 'à calculer', null, "Tour de l'infini", '-', 'Lance le calcul de la Tour'));
+  const r0 = RD.j?.classement?.[0];
+  if (r0) L.push(carteMode('raid', '', 'raids gagnés', r0.ids, 'Raids', `${fmt(r0.par?.['bons-3']?.victoire ?? r0.note)} %`, esc(r0.equipe.map(court).join(' / ')) + ' · coéquipiers bons, à 3', `<div class="pills">${(RD.j.groupes || []).map((g, i) => `<span class="pill ${'edn'[i]}">${esc(g.nom.replace(/^Co[eé]quipiers /, ''))} ${fmt(r0.par?.[g.id + '-3']?.victoire ?? 0)} %</span>`).join('')}</div>`));
+  else L.push(carteMode('raid', 'soon', 'à calculer', null, 'Raids', '-', 'Lance le calcul du meilleur trio de raid'));
   const ext = !!document.querySelector('#nav a[data-p="arene"]'), ar = X.arene;
   if (ar) L.push(carteMode('arene', '', 'privé', ar.ids, 'Arène', `${fmt(ar.pc)} %`, 'de victoires contre les fantômes' + (ar.gain ? ' · ' + esc(ar.gain) : '')));
   else L.push(carteMode(ext ? 'arene' : 'arene0', 'soon', ext ? 'privé' : 'PvP', null, 'Arène', ext ? '…' : 'Sans conseil', ext ? 'lecture des résultats' : 'mode joueur contre joueur'));
@@ -1466,6 +1478,49 @@ function twRender() {
     carteSouvenir(cv, { ids: t0.ids, equipe: eqList(t0.equipe) }, 'Meilleur trio · Tour de l’infini', false, { lab: 'TOUR DE L’INFINI', val: 'Étage ' + fmt(t0.etageMoyen), sous: 'étage moyen atteint en simulation', pills: [t0.p10 ? [`9 fois sur 10 : ${t0.p10}+`, CC.E] : null, t0.max ? [`record ${t0.max}`, CC.gold] : null].filter(Boolean), pied: `${nivTxt[0].toUpperCase() + nivTxt.slice(1)} · ${(j.triosEssayes || 0).toLocaleString('fr-FR')} trios essayés · ${new Date(j.date).toLocaleDateString('fr-FR')}` }); } }
 }
 
+// ---------- Raids (resultats/raid.json et data/raids.json, ecrit quand le script voit un raid fini) ----------
+const RD = { j: null, h: [], fin: undefined, charge: false, g: 'bons', n: 3 };
+async function rdCharger() { RD.charge = true; try { RD.j = await api('/api/resultat?f=raid.json'); } catch { RD.j = null; } try { RD.h = await api('/api/raids'); } catch { RD.h = []; } RD.charge = false; HC.delete('rdBody'); if (E) { sideRender(E.job && !E.job.fin); dashRender(); } if (pageAct() === 'raid') rdRender(); }
+function rdEtat() {
+  const run = E?.job && !E.job.fin, moi = /^Raid/.test(E?.job?.nom || ''), L = (E?.job?.lignes || []).filter(l => l.trim());
+  const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
+  // « premier tour : ... » puis la finale (les meilleurs avec 3 fois plus de tirages)
+  const pct = moi && run ? (L.some(l => /termine/.test(l)) ? 99 : L.some(l => /premier tour :/.test(l)) ? 75 : L.some(l => /trios, \d+ cas/.test(l)) ? 30 : 5) : 0;
+  setH('rdJob', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pct ? `<div class="prog" style="margin-top:10px"><i style="width:${pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pct} % environ. ${pct < 75 ? 'Premier tour : tous les trios, 8 tirages de coéquipiers par cas.' : 'Finale : les meilleurs trios, 3 fois plus de tirages, et le rôle de chaque carte.'}</div>` : ''));
+  if (moi && run) RD.fin = null;
+  if (moi && E.job.fin && RD.fin !== E.job.fin) { const premier = RD.fin === undefined; RD.fin = E.job.fin; if (!premier) rdCharger(); }
+}
+const RD_CAUSES = { kc: 'King Crimson sans 2 Ruptures', nuage: 'Nuage mortel chez Cioccolata', secco: 'Fissures ratées chez Secco', 'tours-cioccolata': 'Plafond de tours, Cioccolata', 'tours-secco': 'Plafond de tours, Secco', 'tours-diavolo': 'Plafond de tours, Diavolo', 'ko-0': 'Cartes à terre, Cioccolata', 'ko-1': 'Cartes à terre, Secco', 'ko-2': 'Cartes à terre, Diavolo' };
+const RD_BOSS = [
+  ['Cioccolata', '1 · 8 tours max', '325 145', 'Nuage : 2 joueurs rompent le même tour. Chute fatale : la carte marquée garde. La Garde retire aussi une charge de Moisissure.', '<span class="pill p">Rupture x2</span><span class="pill n">Garde</span>'],
+  ['Secco', '2 · 8 tours max', '190 027', 'Le boss est intouchable tant que les fissures tiennent : chaque joueur casse la sienne, le même tour si possible. Le joueur sans fissure garde.', '<span class="pill d">Synchro</span><span class="pill n">Garde</span>'],
+  ['Diavolo', '3 · 18 tours max', '1 000 199', 'Phase 1 : 1 Rupture contre Epitaph. Phase 2 : 2 Ruptures et les Échos. Phase 3 : 2 Ruptures ET la cible garde, sinon 65 % des PV à tous.', '<span class="pill p">Rupture x2</span><span class="pill e">Phase 3</span>']];
+const rdPct = v => fmt(v) + ' %';
+function rdRender() {
+  const j = RD.j, cas = `${RD.g}-${RD.n}`, H = RD.h || [];
+  let h = '';
+  if (!j?.classement?.length) h = RD.charge || !E ? '<div class="skel"></div>' : '<div class="card"><div class="muted">Pas encore de calcul de raid. Lance-le avec le bouton ci-dessus (quelques minutes).</div></div><div class="sp"></div>';
+  else {
+    const C = j.classement, v = x => x.par?.[cas]?.victoire ?? 0, T = [...C].sort((a, b) => v(b) - v(a) || (b.par?.[cas]?.etape ?? 0) - (a.par?.[cas]?.etape ?? 0)), t0 = T[0], ea = j.equipeActuelle, G = j.groupes || [], g = G.find(x => x.id === RD.g);
+    const gTxt = g ? `${g.raretes.map(r => ({ E: 'épiques', L: 'légendaires', M: 'mythiques' })[r]).join(' et ')} niveau ${g.niveau}` : '';
+    h += `<div class="grid g5">${tuile('Meilleur trio', rdPct(v(t0)), `raids gagnés, coéquipiers ${esc(RD.g)}, à ${RD.n}`)}${tuile('Ton trio actuel', ea ? rdPct(v(ea)) : '-', ea ? esc(ea.equipe.map(court).join(', ')) : 'pas dans le calcul')}${tuile('Trios testés', fmt(j.trios), `${j.cartes} cartes ${j.niveaux === '99' ? 'au niveau 99' : 'niveau ' + (j.minNiveau || 60) + ' ou plus'}`)}${tuile('Raids simulés', (j.raids || 0).toLocaleString('fr-FR'), `${j.tirages} tirages par cas au premier tour`)}${tuile('Durée', j.duree ? dur(j.duree).replace(/ \d+ s$/, '') || dur(j.duree) : '-', j.vitesse ? `${j.vitesse} raids par seconde` : '')}</div><div class="sp"></div>`;
+    h += `<div class="seg">${G.map(x => `<a class="${x.id === RD.g ? 'on' : ''}" onclick="RD.g='${x.id}';rdRender()">${esc(x.nom)}</a>`).join('')}<span class="sep"></span>${(j.joueurs || [3, 2]).map(n => `<a class="${n === RD.n ? 'on' : ''}" onclick="RD.n=${n};rdRender()">À ${n} joueurs</a>`).join('')}</div>`;
+    const pills = x => `<div class="pills">${G.map((y, i) => `<span class="pill ${'edn'[i] || ''}">${esc(y.nom.replace(/^Coequipiers |^Coéquipiers /, ''))} ${rdPct(x.par?.[y.id + '-' + RD.n]?.victoire ?? 0)}</span>`).join('')}</div>`;
+    if (T.length >= 3) h += `<div class="card"><h2>Podium <span class="r">raids gagnés · ${esc(gTxt)} · à ${RD.n} joueurs</span></h2><div class="sp"></div><div class="podium">${T.slice(0, 3).map((x, i) => `<div class="pod ${['first', 'second', 'third'][i]}"><div class="rk">${i + 1}</div><div class="trio">${x.ids.map(id => pf(id, i ? 'lg' : 'xl')).join('')}</div><div class="nm">${esc(x.equipe.join(' · '))}</div><div class="sc">${rdPct(v(x))}</div><div class="muted" style="font-size:12px">raids gagnés</div>${pills(x)}</div>`).join('')}</div></div><div class="sp"></div>`;
+    const RO = { degats: ['e', 'Dégâts'], rupture: ['p', 'Rupture'], soutien: ['n', 'Soutien'] };
+    const ca = ea || t0, pc = ca.par?.[cas] || {}, perdus = Object.values(pc.causes || {}).reduce((a, b) => a + b, 0), cs = Object.entries(pc.causes || {}).sort((a, b) => b[1] - a[1]);
+    h += `<div class="grid g2"><div class="card"><h2>Le rôle de chaque carte <span class="r">meilleur trio</span></h2><table class="c3t"><tr><th>Carte</th><th>Rôle</th><th>Dégâts</th><th>Ruptures</th><th>Gardes</th></tr>${(t0.roles || []).map(r => `<tr><td><span style="display:flex;gap:10px;align-items:center">${pf(r.id)}${esc(court(r.carte))}</span></td><td><span class="pill ${RO[r.role]?.[0] || ''}">${RO[r.role]?.[1] || esc(r.role)}</span></td><td><b>${rdPct(r.part)}</b> du groupe</td><td>${fmt(r.ruptures)}</td><td>${fmt(r.gardes)}</td></tr>`).join('')}</table><div class="muted" style="font-size:12.5px;margin-top:10px">Moyenne par raid, tous les cas. Ce trio fait ${rdPct(pc.part ?? 0)} des dégâts du groupe ici.</div></div>`;
+    h += `<div class="card"><h2>Pourquoi tu perds <span class="r">${ea ? 'trio actuel' : 'meilleur trio'}, raids perdus</span></h2>${cs.map(([k, n]) => `<div class="c3k"><span class="tmn">${esc(RD_CAUSES[k] || k)}</span><span class="c3b"><i style="width:${100 * n / perdus}%"></i></span><b style="width:44px">${Math.round(100 * n / perdus)} %</b></div>`).join('') || '<div class="muted">Aucun raid perdu dans ce cas.</div>'}${cs[0]?.[0] === 'kc' ? '<div class="note" style="margin-top:14px">Garde 2 Ruptures pour la phase 3 de Diavolo : le script te prévient avant.</div>' : ''}</div></div><div class="sp"></div>`;
+    if (T.length > 3) h += `<div class="card"><h2>Les meilleurs trios <span class="r">finale : ${3 * j.tirages} tirages par cas</span></h2><table class="c3t"><tr><th>#</th><th>Trio</th>${G.map(y => `<th>${esc(y.nom.replace(/^Coequipiers |^Coéquipiers /, ''))}</th>`).join('')}<th>Moyenne</th></tr>${T.slice(0, 10).map((x, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(x.ids, 1)}</td>${G.map(y => `<td${y.id === RD.g ? ' style="font-weight:800"' : ''}>${rdPct(x.par?.[y.id + '-' + RD.n]?.victoire ?? 0)}</td>`).join('')}<td>${rdPct(x.note)}</td></tr>`).join('')}</table></div><div class="sp"></div>`;
+  }
+  const bossPf = n => CARTES && PAR_NOM[n] ? `<span style="position:absolute;right:14px;top:14px">${pf(PAR_NOM[n], 'lg')}</span>` : '';
+  h += `<div class="card"><h2>Les 3 boss <span class="r">ce qu'il faut faire</span></h2><div class="grid g3">${RD_BOSS.map(([n, tag, pv, s, p]) => `<div class="mode" style="min-height:280px"><div class="ph">${bossPf(n)}</div><span class="tag">${tag}</span><div class="t">${n}</div><div class="v">${pv} <small style="font-size:16px;color:var(--mute)">PV</small></div><div class="s">${s}</div><div class="pills">${p}</div></div>`).join('')}</div></div><div class="sp"></div>`;
+  const etat = r => r.gagne ? '<span class="pill n">Gagné</span>' : `<span class="pill e">${['Cioccolata', 'Secco', 'Diavolo'][r.etape] || 'Perdu'}${r.etape === 2 && r.phase ? ', phase ' + r.phase : ''}</span>`;
+  h += `<div class="card"><h2>Tes derniers raids <span class="r">lus par le script</span></h2>${H.length ? `<table class="c3t"><tr><th>Quand</th><th>Ton trio</th><th>Partenaires</th><th>Résultat</th><th>Tour</th><th>Conseils suivis</th></tr>${H.slice(0, 12).map((r, i) => `<tr${i ? '' : ' class="c3top"'}><td>${quand(r.t)}</td><td>${r.trio?.length ? equipeHTML(r.trio, 1) : '-'}</td><td class="muted">${Math.max(0, (r.joueurs || 1) - 1)} joueur${r.joueurs > 2 ? 's' : ''} · ${r.partenaires?.length || 0} cartes</td><td>${etat(r)}</td><td>${r.tour || '-'}</td><td>${r.conseils ? `${r.suivis} / ${r.conseils}` : '-'}</td></tr>`).join('')}</table>` : '<div class="muted">Aucun raid lu pour l’instant. Joue un raid avec le script actif : il s’ajoute ici à la fin.</div>'}</div><div class="sp"></div>`;
+  h += `<div class="card"><h2>Méthode</h2><div class="muted">Chaque trio joue le raid complet avec le moteur du jeu, contre des coéquipiers tirés au hasard (moyens : épiques niveau 70 ; bons : épiques et légendaires niveau 99 ; forts : légendaires et mythiques niveau 99), à 3 joueurs et à 2. Tous les joueurs suivent la stratégie de KitsuAI : Ruptures planifiées pour le groupe, Garde sur les cartes visées, Réanimation, et 2 Ruptures gardées pour la phase 3 de Diavolo. Le raid se joue aussi seul ou à 2 : le conseil en jeu s’adapte au nombre de joueurs.${j ? `<br>Moteur ${esc(j.version || '-')} · ${quand(j.date)}` : ''}</div></div>`;
+  setH('rdBody', h);
+}
+
 // ---------- evenements et guilde (analyse complete) ----------
 let evNiv = null, evCat = null;
 function evRender() {
@@ -1539,7 +1594,7 @@ document.querySelectorAll('i[data-ic]').forEach(i => { i.outerHTML = ic(i.datase
 { const ext = document.querySelector('#nav a[data-p="arene"]'), ph = $('navArene0'); if (ext && ph) { ext.innerHTML = ph.innerHTML; ph.replaceWith(ext); $('p-arene0')?.remove(); } }
 document.body.classList.toggle('calme', !FXON); $('r_fx').checked = FXON;
 setInterval(() => { if (!E) return; const j = E.job; if (j?.nom === "Tour de l'infini" && j.fin && TW.fin !== j.fin) { const premier = TW.fin === undefined; TW.fin = j.fin; if (!premier || !TW.j) twCharger(); } if (j?.nom === "Import de la sauvegarde") colCharger(); }, 1500);
-twCharger(); colCharger();
+twCharger(); rdCharger(); colCharger();
 
 route();
 refresh(); setInterval(refreshDoux, 1500); chargerCartes();

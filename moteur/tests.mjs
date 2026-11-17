@@ -27,6 +27,16 @@ t('journal : cle stable et distincte', h53('abc') === h53('abc') && h53('abc') !
 const pool = await makePool(2), jobs = fights.slice(0, 12).map(f => ({ team, fights: [f], seeds: [7] }));
 const pr = await pool.runAll(jobs, W_DEFAUT, {}, 3); await pool.close();
 t('multithread = fil unique', pr.every((r, i) => r.s2 === (a[i].stars >= 2 ? 1 : 0) && r.win === (a[i].win ? 1 : 0)));
+// Raid : meme graine = meme raid, actions acceptees par le jeu, la coordination fait mieux que frapper seulement.
+const RA = await import('./lib/raid.mjs'), LG = Object.values(G.CHAR_BY_ID).filter(c => c.r === 'M' && !c.raidExclusive).slice(0, 9).map(c => ({ id: c.id, lv: 99 }));
+const rr = RA.roster(LG.slice(0, 3), LG.slice(3)), j1 = RA.jouer(G, rr, 11), j2 = RA.jouer(G, rr, 11);
+t('Raid : meme graine = meme raid', JSON.stringify(j1) === JSON.stringify(j2), j1.outcome);
+let valide = true, sr = G.createRaidCombat(rr, 11, 0);
+for (let k = 0; k < 12 && !sr.outcome; k++) { const P = RA.planTour(G, sr); for (const [seat, A] of Object.entries(P.par)) try { G.validateRaidActions(sr, +seat, A.map(({ why, degats, ...x }) => x)); } catch (e) { valide = false; } sr = RA.jouerTour(G, sr, Object.values(P.par).flat(), 0); if (!sr.outcome) G.prepareRaidTurn(sr, 0); }
+t('Raid : conseils acceptes par le jeu', valide);
+const graines = [1, 2, 3, 4], coord = graines.map(g => RA.jouer(G, rr, g)), naif = graines.map(g => RA.jouer(G, rr, g, { naif: [0, 1, 2] }));
+const sc = L => L.reduce((a, r) => a + (r.gagne ? 3 : r.stage), 0);
+t('Raid : coordination meilleure que frapper seulement', sc(coord) > sc(naif), sc(coord) + ' contre ' + sc(naif));
 const r1 = resumer(G, B, version); t('patch : une version comparee a elle-meme est vide', comparer(r1, r1).vide);
 // Serveur : demarre sur un autre port, verifie les protections.
 const PORT = 47199, srv = spawn(process.execPath, ['serveur.mjs'], { env: { ...process.env, KITSU_PORT: String(PORT) } });
@@ -34,6 +44,7 @@ let up = false; for (let i = 0; i < 60 && !up; i++) { await new Promise(r => set
 t('serveur demarre', up);
 if (up) {
   t('panneau protege par jeton', (await fetch(`http://127.0.0.1:${PORT}/api/etat`)).status === 403);
+  t('conseil de raid reserve au script', (await fetch(`http://127.0.0.1:${PORT}/raid`, { method: 'POST', body: '{}' })).status === 403);
   t('sauvegarde reservee au script', (await fetch(`http://127.0.0.1:${PORT}/sauvegarde`, { method: 'POST', body: '{}' })).status === 403);
 }
 srv.kill();

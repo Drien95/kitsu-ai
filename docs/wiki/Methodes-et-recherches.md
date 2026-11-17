@@ -21,6 +21,7 @@ Rappel des règles du projet : KitsuAI lit et affiche seulement. Aucun clic auto
 | Collectifs | `conseils.mjs`, `cauchemar3.mjs` | Les 6 collectifs à cocher quand une carte en a plus : crible rapide, puis confirmation | Changement conseillé seulement si le gain dépasse 2 erreurs types |
 | Conseils de cartes | `conseils.mjs` | Plan d'XP, valeur des cartes des bannières, duos, marché | Mesurés avec le moteur sur tes cartes |
 | Calcul sur tous les cœurs | `lib/pool.mjs`, `lib/worker.mjs` | Les combats sont répartis sur les fils du processeur | Vérifié identique au calcul sur un seul fil |
+| Raid : simulation et stratégie de groupe | `lib/raid.mjs`, `raid.mjs` | Raid complet joué avec le code du jeu, de 1 à 3 joueurs ; Ruptures planifiées pour le groupe, Garde sur la carte visée, 2 Ruptures gardées pour la phase 3 de Diavolo ; trios classés contre 3 niveaux de coéquipiers tirés au hasard, à 3 et à 2 joueurs | Trio recopié aux 3 places : 0 sur 20 en frappant seulement, 30 sur 30 avec la stratégie. Coéquipiers L/M niveau 99 : 93 % ; E/L : 60 % ; E niveau 70 : 7 % |
 | Détection de patch | `telecharger.mjs`, `lib/resume.mjs` | Repérer ce qui change dans le jeu (cartes, kits, combats) | Une version comparée à elle-même est vide (test) |
 
 ## 2. La méthode de la campagne (version 5.13.0)

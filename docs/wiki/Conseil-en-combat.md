@@ -21,3 +21,7 @@ Mesure sur des combats de Cauchemar disputés (20 parties, marge d'environ 10 po
 | Boss | 40 % | 50 % | 5 % | 15 % |
 
 Sans l'application, le script garde son conseil habituel (simulation rapide dans le navigateur).
+
+## Raid « Le Destin Effacé »
+
+Pendant un raid (1 à 3 joueurs), le script lit l'état du combat affiché par la page et l'envoie au PC. Le PC répond avec l'action de chacune de tes cartes : **Rupture** quand le boss annonce un coup à interrompre (le groupe en réunit juste assez, les Ruptures déjà prévues par tes partenaires comptent d'abord), **Garde** pour la carte visée, **Réanimer** si une carte est tombée, sinon la meilleure attaque. Il joue aussi la suite du raid quelques fois pour donner tes chances de victoire avec et sans le conseil. Le script ne clique jamais.

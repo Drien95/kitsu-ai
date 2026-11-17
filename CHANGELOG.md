@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.20.0
+
+Raid « Le Destin Effacé » (Diavolo) : calcul du meilleur trio dans le launcher et conseil à chaque tour dans le script. De 1 à 3 joueurs.
+
+- **Simulateur de raid** (`moteur/lib/raid.mjs`) : le raid complet joué avec le code du jeu (Cioccolata, Secco, Diavolo et ses 3 phases), réserve d'énergie par joueur, Ruptures, Garde, Réanimation. Stratégie de groupe : Ruptures choisies pour le groupe (les plus faibles rompent, les Ruptures déjà prévues par un partenaire comptent d'abord), Garde sur la carte visée, 2 Ruptures gardées pour « Seul le résultat demeure » quand la phase 3 approche. Mesuré : trio recopié aux 3 places, 0 raid gagné sur 20 en frappant seulement, 30 sur 30 avec la stratégie.
+- **Calcul « Raid : meilleur trio »** (`moteur/raid.mjs`) : tous les trios de tes LR, UR et SSR (niveau 60 ou plus, ou tout au niveau 99) contre 3 niveaux de coéquipiers tirés au hasard (moyens, bons, forts), à 3 et à 2 joueurs, mêmes coéquipiers pour tous les trios. Finale des 10 meilleurs avec 3 fois plus de tirages et le rôle de chaque carte (dégâts, Rupture, soutien). Résultat : `resultats/raid.json`.
+- **Onglet Raids du launcher** (il était « bientôt ») : bouton de calcul et progression, tuiles, onglets coéquipiers moyens, bons, forts et à 3 ou 2 joueurs, podium, rôle de chaque carte, « Pourquoi tu perds », les meilleurs trios, les 3 boss et ce qu'il faut faire, tes derniers raids lus par le script, méthode. Badge du menu et carte Raids au tableau de bord.
+- **Conseil du script pendant le raid** (lecture seule, aucun clic) : dans le salon, le meilleur trio avec les vraies cartes de tes partenaires (ou des partenaires inconnus si le groupe n'est pas complet) ; à chaque tour, l'action de chacune de tes cartes avec sa raison (contour vert : Rupture ou Réanimer, orange : Garde, pointillé : attaque), qui rompt dans le groupe, et les chances de victoire avec et sans le conseil ; en fin de raid, le résultat et les conseils suivis, gardés pour l'onglet Raids. Le pont du script accepte `/raid` (réservé au script, comme `/sauvegarde`).
+- Tests : 16 au lieu de 12 (même graine même raid, conseils acceptés par le jeu, coordination meilleure que frapper seulement, `/raid` réservé au script).
+
 ## 5.19.1
 
 Tour de l'infini avec le script privé installé : le choix de la compo suit le trio de son calcul exact.
