@@ -1,6 +1,6 @@
 # Conseil en combat
 
-Pendant un combat, le panneau orange du script propose une action. Quand l'application tourne, un cadre vert **Calcul du PC** s'ajoute en haut du panneau.
+Pendant un combat, le panneau orange du script propose une action. Le coup conseillé s'affiche en grand, avec une étiquette au-dessus de la cible. Quand l'application tourne, un cadre vert **Calcul du PC** s'ajoute sous la raison.
 
 ## Comment le PC choisit
 

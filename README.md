@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.18.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.19.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -100,12 +100,13 @@ Placée juste sous la barre de navigation du jeu (pour ne pas la cacher). Elle d
 
 | Couleur | Sens |
 |---|---|
-| **Contour bleu qui clignote** | Clique ici maintenant. Un seul élément à la fois. |
+| **Contour blanc qui clignote** (étiquette « Guide ») | Clique ici maintenant. Un seul élément à la fois. |
 | **Vert** | Carte à ajouter ensuite |
 | **Rouge** | Carte à retirer |
-| **Orange** (en combat) | L'attaque à jouer et la cible |
+| **Orange** (en combat) | L'attaque à jouer et la cible, avec une étiquette au-dessus |
+| **Bleu** (en combat, script privé) | Coup exact du script privé ; le panneau orange se replie alors sur une ligne (= d'accord, ≠ pas d'accord) |
 
-Dans le panneau Équipe, un cadre « À jouer » **bleu** veut dire que l'équipe fait aussi monter des cartes en retard ; **vert**, qu'elle est simplement la plus forte. Les taux de 3 étoiles sous 95 % sont en rouge.
+Dans le panneau Équipe, un cadre « À jouer » **orange** veut dire que l'équipe fait aussi monter des cartes en retard ; **vert**, qu'elle est simplement la plus forte. Les taux de 3 étoiles sous 95 % sont en rouge.
 
 ### Les accents
 
@@ -153,7 +154,7 @@ La règle : **ce qui se perd passe avant ce qui attend**.
 ### Écran de choix des cartes
 
 - Le guide suit **exactement** le verdict « À jouer » du panneau Équipe dès qu'il est calculé pour ce combat. Avant, il utilise l'équipe du plan.
-- Toutes les cartes à la fois : rouge à retirer, vert à ajouter, bleu clignotant pour le prochain clic.
+- Toutes les cartes à la fois : rouge à retirer, vert à ajouter, blanc clignotant pour le prochain clic.
 - Si la carte n'est pas affichée (pagination), il met en évidence la **barre de recherche** et te dit quoi taper.
 - Équipe déjà bonne : « équipe prête : clique sur Combattre », avec l'astuce « Passer les dialogues » si elle n'est pas cochée.
 - **Bouton « Carte »** (retour) mis en évidence si : un combat de Salle ou d'événement est à faire d'abord ; si ce combat est un mur (moins de 90 % de 3 étoiles au mieux) ; ou si tu as déjà 1 ou 2 étoiles et que la 3e n'est pas assez sûre (« 3e étoile pas assez sûre ici, pour 1 gemme : joue plutôt… »).
@@ -173,7 +174,7 @@ Pendant ton tour, pour l'unité active :
 1. Liste des coups légaux : Attaque, Technique, Ultime, Repos, et chaque cible possible.
 2. Pour chaque coup : copie de l'état du combat, coup joué, puis fin du combat simulée par l'IA. **8 simulations par coup**, puis des simulations en plus (jusqu'à 40) sur les coups au coude à coude, dans une limite d'environ 60 ms.
 3. Affichage : le meilleur coup avec son **vrai nom** (« Tir de pistolet », « Ordre tactique », etc.), sa description, la cible, les chances de victoire **calibrées**, et les autres coups.
-4. Surbrillance orange du bouton d'action (touches du jeu Q, E, R, F) et de la cible ; contour vert sur l'unité qui joue ; badge au-dessus de la cible.
+4. Contour orange net (sans halo) sur le bouton d'action (touches du jeu Q, E, R, F) et sur la cible ; contour vert sur l'unité qui joue ; étiquette au-dessus de la cible. Le coup conseillé s'affiche en grand en haut du panneau.
 5. **« Pourquoi »** : les raisons en clair (met X K.O., brise X et lui fait sauter un tour, le boss charge et le briser annule son attaque de zone, avantage de type x1,5, endurance basse, un allié est à 40 % de PV, touche les 3 ennemis, profite de sa DEF baissée, etc.).
 6. **« COUP DÉCISIF »** quand un seul coup sépare la victoire de la défaite.
 
@@ -728,6 +729,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.11.4 | Combat : le calcul du PC ne remplace plus un bon coup par « Respirer » quand tous les coups se valent |
 | 5.12.0 | Tour de l'infini : trio cherché pour la Tour, étages qui bloquent, collectifs, réglages de combat appris pour la Tour, Pain, conseils d'échange au marché ; les analyses tiennent compte des collectifs |
 | 5.12.1 | Le jeu ne ralentit plus avec le temps : l'objectif de bannière n'est plus recalculé toutes les 0,4 s (il relisait le journal des gains, qui grossit à chaque combat), les contours du conseiller ne sont plus retirés et remis 7 fois par seconde, le journal de calibration n'est plus relu à chaque coup |
+| 5.19.0 | Nouvelle direction artistique du script en jeu : couleur par source (orange script, bleu privé, blanc guide), coup conseillé en grand, contours nets sans halo, dock et plan redessinés, panneau replié quand le script privé donne un coup exact. Aucun flou ni animation continue. ; launcher : tableau de bord refait (3 cartes de mode avec portraits, liste « À faire »), « Tout lancer » renommé « Mettre à jour l'IA » |
 | 5.18.0 | Moins de lag pendant les calculs : calculs en priorité « inactive » (vidéos, jeu et conseil passent devant, sans perte quand le PC est libre), launcher sans effets animés pendant un calcul ou en arrière-plan, sauvegarde du jeu relue seulement quand elle change dans le script. |
 | 5.17.0 | Page « Règles et effets » lue dans le moteur du jeu (statuts, règles du combat, passifs, progression), IA PvE et conseils visés sur les 3 étoiles, plan d'XP en combats, Tour : suite du classement pour le départage, correction du rechargement des pages Tour et Campagne. |
 | 5.16.0 | Campagne : meilleur trio PAR COMBAT (Campagne et Cauchemar) : les meilleurs trios de la course et ceux du script jouent chaque combat, les combats sans trio sûr sont cherchés sur TOUS les trios par priorité dans un budget de temps (reprise la nuit suivante), plan minimal de trios ; vue par monde et par combat dans la page Campagne ; le script Tampermonkey ajoute ces trios à son classement de l'écran d'équipe |

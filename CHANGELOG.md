@@ -4,6 +4,22 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.19.0
+
+Nouvelle direction artistique du script dans la page du jeu, alignée sur le launcher (maquette validée le 17/11). Mêmes conseils, mêmes calculs : seul l'habillage change.
+
+- **Une couleur par source de conseil** : orange renard pour le script, bleu glacier pour le calcul exact du script privé, blanc pour le guide, vert et rouge pour tes cartes (ajouter, retirer, carte qui joue).
+- **Panneau de combat** : le coup conseillé en grand (« LAME D'OMBRE → ZETSU »), pastilles (coup décisif, type et coût, ennemi qui charge), raison, puis le classement des coups avec une fine barre de chances. Le cadre **Calcul du PC** se place sous la raison ; quand il change le conseil, le coup affiché en grand suit (comme les contours).
+- **Contours nets** : trait de 3 px et anneau sombre autour, au lieu du halo flou de 24 à 28 px (moins de surface à redessiner en plein combat). Le badge au-dessus de la cible devient une étiquette.
+- **Dock** : en-tête renard, onglets soulignés (point vert = onglet utile), ligne de contexte et voyant du moteur du PC ; replié (Alt+K), il garde une ligne.
+- **Plan du moment** : gemmes à prendre en grand, combats classés avec barre de 3 étoiles et équipe.
+- **Guide** : contour blanc (pulse toujours 3 fois seulement) et pilule « Guide ».
+- Avec le script privé : quand il donne un coup exact (Tour, Campagne, arène contre un fantôme), le panneau de combat se replie sur une ligne « Public · coup » avec **=** s'ils sont d'accord, **≠** sinon (clic sur la ligne : tout voir), et seuls ses contours bleus restent affichés.
+- Coût machine : aucun flou, aucune animation continue, aucune image ni police téléchargée (titres en Bahnschrift, déjà dans Windows), styles regroupés dans une feuille au lieu d'être répétés dans chaque panneau.
+- **Tableau de bord du launcher refait** avec les mêmes éléments que l’onglet Campagne : trois cartes de mode avec les portraits du trio et un seul chiffre (Campagne : combats gagnés à 3★ sur le total, un trio par combat, avec N / D / E ; Tour : étage, départage exact si le script privé l'a calculé ; Arène : % de victoires, seulement avec le privé), une liste « À faire » courte (sauvegarde ancienne, analyse à relancer, combats sans 3★) et le bouton. Disparus : l'équipe phare en 2★, les tuiles, le tableau des meilleures équipes et « Ce qui a changé » (toujours dans leurs onglets).
+- **« Tout lancer » devient « Mettre à jour l'IA »** : mêmes étapes, nom plus juste (il n'inclut pas la Campagne 3★ ni la Tour, qui se lancent depuis leur onglet). L'écran affiche maintenant ses 6 étapes : l'entraînement de l'IA de la Tour manquait, ce qui décalait l'étape « en cours ».
+- Badge Campagne du menu : combats à 3★ sur le total au lieu du % du meilleur trio.
+
 ## 5.18.0
 
 Moins de lag pendant les calculs (YouTube et kitsu.games qui saccadaient), sans perte de vitesse de calcul.
@@ -25,10 +41,6 @@ Moins de lag pendant les calculs (YouTube et kitsu.games qui saccadaient), sans 
   - le dock ne resérialise plus le HTML de ses panneaux à chaque tick, le guide lit les textes sans forcer de mise en page ;
   - onglet caché : dock, guide, conseiller, équipe, plan et invocations ne tournent plus (l'alerte d'énergie et la synchro continuent).
 - Panneau : l'état (toutes les 1,5 s) ne réécrit plus que ce qui a changé ; le serveur ne relit plus sauvegarde, réglages, patchs et derniers résultats tant que leurs fichiers ne changent pas.
-- Encore moins au repos :
-  - launcher fermé dans la barre des tâches : la fenêtre est détruite au lieu d'être cachée (son processus d'affichage ne reste plus en mémoire), elle est recréée au clic sur l'icône ; démarrage avec Windows sans fenêtre ; correcteur orthographique coupé ;
-  - le serveur ne charge le moteur du jeu qu'à la première ouverture du panneau : le script (ping, conseil, équipes) n'en a pas besoin, les fils ont leur copie. Mesuré le 17/11 : ~72 Mo au repos au lieu de ~150 Mo ;
-  - panneau au premier plan sans calcul en cours : état demandé toutes les 5 s au lieu de 1,5 s (toujours 1,5 s pendant un calcul).
 
 ## 5.17.0
 

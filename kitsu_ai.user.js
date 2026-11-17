@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.18.0
+// @version      5.19.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.17.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.19.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -247,7 +247,7 @@
             if (p?.W && K && ['norm', 'boss', 'nm'].every(k => Array.isArray(p.W[k]) && p.W[k].length === NF)) {
               K.W = { ...K.W, ...Object.fromEntries(Object.entries(p.W).filter(([, v]) => Array.isArray(v) && v.length === NF)), ...(p.equipes ? { equipes: Object.fromEntries(Object.entries(p.equipes).filter(([, e]) => e?.nm?.length === NF).map(([k, e]) => [k, { nom: e.nom, nm: e.nm }])) } : {}) }; if (!p.equipes) delete K.W.equipes; lsSet(LS.w, K.W); lsSet('kitsu_ai_wLocalT', r.poidsT);
               for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_training', 'kitsu_ai_events', 'kitsu_ai_road']) localStorage.removeItem(k);
-              if (p.restaure) toast('<b style="color:#22c55e">Reglages de l\'IA restaures</b><br>Copie remise en service depuis le panneau du PC. Plan et equipes recalcules.', 9000); else toast('<b style="color:#22c55e">Nouveaux reglages de l\'IA</b><br>Entraines sur ton PC (' + Object.entries(p.gains || {}).map(([k, g]) => k + ' ' + g.depart + ' -> ' + g.fin).join(', ') + (p.equipes ? ', ' + Object.keys(p.equipes).length + ' equipe(s) avec reglages propres' : '') + '). Plan et equipes recalcules.', 9000);
+              if (p.restaure) toast('<b style="color:#2fd27a">Reglages de l\'IA restaures</b><br>Copie remise en service depuis le panneau du PC. Plan et equipes recalcules.', 9000); else toast('<b style="color:#2fd27a">Nouveaux reglages de l\'IA</b><br>Entraines sur ton PC (' + Object.entries(p.gains || {}).map(([k, g]) => k + ' ' + g.depart + ' -> ' + g.fin).join(', ') + (p.equipes ? ', ' + Object.keys(p.equipes).length + ' equipe(s) avec reglages propres' : '') + '). Plan et equipes recalcules.', 9000);
             }
           }
           return localPC.ok;
@@ -352,14 +352,29 @@
         const ui = () => {
           if (!document.getElementById('kitsuAdvCss')) {
             const s = document.createElement('style'); s.id = 'kitsuAdvCss';
-            s.textContent = '.kitsu-tgt{outline:4px solid #f59e0b!important;outline-offset:3px;border-radius:12px;box-shadow:0 0 28px 6px rgba(245,158,11,.75)!important}'
-              + '.kitsu-all{outline:3px dashed #f59e0b!important;outline-offset:3px;border-radius:12px}'
-              + '.kitsu-me{outline:3px solid #22c55e!important;outline-offset:3px;border-radius:12px}'
-              + '.kitsu-btn{outline:4px solid #f59e0b!important;outline-offset:2px;box-shadow:0 0 24px 6px rgba(245,158,11,.8)!important;border-radius:10px}'
-              + '.kitsu-panel{position:fixed;right:12px;z-index:2147483647;background:rgba(10,10,18,.94);color:#fff;font:13px/1.35 system-ui,sans-serif;padding:10px 12px;border-radius:10px;min-width:230px;max-width:340px;pointer-events:none;display:none}'
-              + '#kitsuAdv{top:70px;border:1px solid #f59e0b}#kitsuTeam,#kitsuPull{bottom:90px;border:1px solid #22c55e;font-size:12px}#kitsuPull{border-color:#a855f7}'
-              + '#kitsuToast{top:12px;left:50%;right:auto;transform:translateX(-50%);border:1px solid #38bdf8;font-size:12px}'
-              + '#kitsuBadge{position:fixed;z-index:2147483647;pointer-events:none;background:#f59e0b;color:#111;font:700 12px system-ui;padding:3px 8px;border-radius:999px;display:none;transform:translate(-50%,-120%);white-space:nowrap}';
+            s.textContent = '.kitsu-tgt{outline:3px solid #ff7a2f!important;outline-offset:3px;border-radius:12px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important}'
+              + '.kitsu-all{outline:2px dashed #ff7a2f!important;outline-offset:3px;border-radius:12px}'
+              + '.kitsu-me{outline:2px solid #2fd27a!important;outline-offset:3px;border-radius:12px}'
+              + '.kitsu-btn{outline:3px solid #ff7a2f!important;outline-offset:2px;box-shadow:0 0 0 6px rgba(8,9,12,.55)!important;border-radius:10px}'
+              // 5.19 : le script prive donne un conseil exact (Tour, Campagne, arene) -> ses contours bleus seuls, pas deux conseils a l'ecran.
+              + 'html[data-kar-coup] .kitsu-tgt:not(.kAr-tgt),html[data-kar-coup] .kitsu-all:not(.kAr-tgt),html[data-kar-coup] .kitsu-btn:not(.kAr-btn),html[data-kar-coup] .kitsu-me{outline:none!important;box-shadow:none!important}html[data-kar-coup] #kitsuBadge{display:none!important}'
+              + '.kitsu-panel{position:fixed;right:12px;z-index:2147483647;background:rgba(12,14,19,.96);color:#f2ede6;font:12.5px/1.45 "Segoe UI",system-ui,sans-serif;padding:9px 12px 10px 13px;border:1px solid #262a33;border-radius:10px;min-width:230px;max-width:340px;pointer-events:none;display:none;box-shadow:inset 3px 0 0 var(--k-acc,#ff7a2f)}'
+              + '#kitsuAdv{top:70px}#kitsuTeam,#kitsuPull{bottom:90px;font-size:12px;--k-acc:#2fd27a}#kitsuPull{--k-acc:#ffc24a}'
+              + '#kitsuToast{top:12px;left:50%;right:auto;transform:translateX(-50%);font-size:12px}'
+              + '#kitsuBadge{position:fixed;z-index:2147483647;pointer-events:none;background:#ff7a2f;color:#140a04;font:italic 700 13px/1.25 "Bahnschrift SemiBold Condensed","Bahnschrift Condensed",Bahnschrift,"Arial Narrow",system-ui,sans-serif;letter-spacing:.6px;text-transform:uppercase;padding:2px 9px 2px 8px;border-radius:5px 5px 5px 0;display:none;transform:translate(-50%,-125%);white-space:nowrap}'
+              + '.k-ttl{font:italic 700 16px/1.1 "Bahnschrift SemiBold Condensed","Bahnschrift Condensed",Bahnschrift,"Arial Narrow",system-ui,sans-serif;letter-spacing:.3px;text-transform:uppercase;color:#f2ede6;margin:0 0 5px}'
+              + '.k-tt{font:italic 700 14px/1.2 "Bahnschrift SemiBold Condensed","Bahnschrift Condensed",Bahnschrift,"Arial Narrow",system-ui,sans-serif;letter-spacing:.3px;text-transform:uppercase;color:#ff7a2f}'
+              + '.k-who{font:600 11px/1.3 "Segoe UI",system-ui,sans-serif;letter-spacing:.7px;text-transform:uppercase;color:#9199a6}.k-who b{color:#f2ede6}'
+              + '.k-move{font:italic 700 24px/1.05 "Bahnschrift SemiBold Condensed","Bahnschrift Condensed",Bahnschrift,"Arial Narrow",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.2px;margin:3px 0 2px;color:#f2ede6}.k-move i{font-style:inherit;color:var(--k-acc,#ff7a2f)}'
+              + '.k-chips{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 7px}.k-chip{white-space:nowrap;font:700 10px/1.5 system-ui,sans-serif;letter-spacing:.5px;text-transform:uppercase;padding:1px 7px;border-radius:999px;background:#1b1f28;color:#c9ced8;border:1px solid #2a2f3a}'
+              + '.k-chip.hot{background:#ff4436;color:#fff;border-color:#ff4436}.k-chip.acc{color:#ff7a2f;border-color:#5a2f17;background:#22140c}.k-chip.ok{color:#2fd27a;border-color:#1f4d34;background:#0f2219}.k-chip.warn{color:#ff5f6d;border-color:#5a1f26;background:#22100f}'
+              + '.k-why{font-size:12px;color:#c7ccd6;border-left:2px solid #2a2f3a;padding:1px 0 1px 8px;margin:2px 0 6px}.k-desc{font-size:11px;color:#9199a6;margin:0 0 4px}'
+              + '.k-sec{display:flex;justify-content:space-between;font:700 10px/1.4 system-ui,sans-serif;letter-spacing:1.1px;text-transform:uppercase;color:#9199a6;margin:8px 0 3px}'
+              + '.k-row{display:grid;grid-template-columns:14px 1fr auto;column-gap:6px;align-items:center;padding:2px 0}.k-row .n{font-weight:700;font-size:11px;color:#9199a6}.k-row .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.k-row .p{font-weight:700;color:#ffc24a;text-align:right;white-space:nowrap}.k-row .p small{color:#9199a6;font-weight:500;font-size:10.5px;margin-left:3px}'
+              + '.k-row .k-sub{grid-column:2/4;font-size:11px;color:#9199a6}.k-bar{grid-column:2/4;height:3px;border-radius:2px;background:#1d2029;overflow:hidden;margin:1px 0}.k-bar b{display:block;height:100%;background:var(--k-acc,#ff7a2f)}.k-row.k-dim{opacity:.72}.k-row:not(.k-dim) .l{font-weight:700}'
+              + '.k-pc{margin:6px 0 4px;padding:6px 8px;border-radius:7px;background:#0f1a14;border:1px solid #1f4d34;font-size:12px}.k-pc.chg{background:#1f1a0c;border-color:#5a4718}.k-pc .t{display:flex;justify-content:space-between;gap:6px;font:700 10px/1.5 system-ui,sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#2fd27a}.k-pc.chg .t{color:#ffc24a}.k-pc .t span{color:#9199a6;font-weight:600;letter-spacing:.2px;text-transform:none}'
+              + '.k-foot{display:flex;gap:4px 10px;flex-wrap:wrap;font-size:11px;color:#9199a6;border-top:1px solid #1c1f27;margin-top:8px;padding-top:6px}.k-foot b{color:#d6dae2;font-weight:600}.k-mute{color:#9199a6}.k-gold{color:#ffc24a}.k-warn{color:#ff5f6d;font-weight:600}'
+              + '.k-gd{font:italic 700 13px/1.3 "Bahnschrift SemiBold Condensed","Bahnschrift Condensed",Bahnschrift,"Arial Narrow",system-ui,sans-serif;letter-spacing:.8px;text-transform:uppercase;background:#fff;color:#0b0c10;border-radius:999px;padding:1px 9px;margin-right:7px}';
             document.head.appendChild(s);
           }
           for (const id of ['kitsuAdv', 'kitsuTeam', 'kitsuPull', 'kitsuToast', 'kitsuBadge']) if (!document.getElementById(id)) { const d = document.createElement('div'); d.id = id; if (id !== 'kitsuBadge') d.className = 'kitsu-panel'; document.body.appendChild(d); }
@@ -553,7 +568,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.17.0',
+          __v: '5.19.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -568,7 +583,7 @@
             const rsig = pool(8).map(id => id + ':' + Math.floor((save().lv?.[id]?.l || 1) / 5)).join(',');
             const rprev = lsGet('kitsu_ai_rosterSig', null);
             if (!rprev) lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() });
-            else if (rprev.sig !== rsig && Date.now() - rprev.t > 12 * 3600000) setTimeout(() => { if (!this._train || this._train.done) { toast('<b style="color:#38bdf8">Ton equipe a evolue</b><br>Reentrainement de l\'IA en arriere-plan (pause pendant les combats).', 8000); this.retrain({ quiet: true }).then(() => lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() })).catch(() => {}); } }, 60000);
+            else if (rprev.sig !== rsig && Date.now() - rprev.t > 12 * 3600000) setTimeout(() => { if (!this._train || this._train.done) { toast('<b class="k-tt">Ton equipe a evolue</b><br>Reentrainement de l\'IA en arriere-plan (pause pendant les combats).', 8000); this.retrain({ quiet: true }).then(() => lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() })).catch(() => {}); } }, 60000);
             if (lsGet('kitsu_ai_scriptver', null) !== this.__v) { for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_events', 'kitsu_ai_farm', 'kitsu_ai_road', 'kitsu_ai_snooze']) localStorage.removeItem(k); lsSet('kitsu_ai_scriptver', this.__v); setTimeout(() => this.plan().catch(() => {}), 2000); }
             setTimeout(() => this.events().catch(() => {}), 9000);
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
@@ -594,13 +609,13 @@
                   for (const id of Object.keys(a.owned || {})) if (!b.owned?.[id] || a.owned[id] > b.owned[id]) d.cartes.push(short(id));
                   const log = lsGet('kitsu_ai_rewards', []); log.push(d); lsSet('kitsu_ai_rewards', log.slice(-500));
                   const parts = [];
-                  if (d.gemmes) parts.push(`<b style="color:#fbbf24">${d.gemmes > 0 ? '+' : ''}${d.gemmes} gemmes</b>`);
+                  if (d.gemmes) parts.push(`<b style="color:#ffc24a">${d.gemmes > 0 ? '+' : ''}${d.gemmes} gemmes</b>`);
                   if (d.etoiles > 0) parts.push(`+${d.etoiles} etoile${d.etoiles > 1 ? 's' : ''}`);
                   const lv = Object.entries(d.niveaux).map(([k, v]) => `${k} ${v}`); if (lv.length) parts.push(lv.join(', '));
                   if (d.cartes.length) parts.push('carte : ' + d.cartes.join(', '));
                   const eco = econActions(a, 99);
-                  if (eco.length) parts.push(`<span style="color:#fbbf24">A faire : ${eco.map(x => x.txt).join(' ; ')}</span>`);
-                  if (parts.length) toast(`<b style="color:#38bdf8">Recompenses</b><br>${parts.join('<br>')}`, eco.length ? 10000 : 7000);
+                  if (eco.length) parts.push(`<span style="color:#ffc24a">A faire : ${eco.map(x => x.txt).join(' ; ')}</span>`);
+                  if (parts.length) toast(`<b class="k-tt">Recompenses</b><br>${parts.join('<br>')}`, eco.length ? 10000 : 7000);
                   setTimeout(() => KitsuAI.plan().then(() => KitsuAI.precomputeTeams()).then(() => String(f || '').startsWith('ev-') ? KitsuAI.events(true) : null).then(() => Date.now() - (lsGet('kitsu_ai_training', {})?.t || 0) > 3600000 ? KitsuAI.training().then(() => KitsuAI.plan()) : null).catch(() => {}), 300);
                 }, 2500);
               }
@@ -812,7 +827,7 @@
             // Appele toutes les 0,4 s par le dock : relit la sauvegarde et le journal des gains (jusqu'a 500 combats) ; 5 s suffisent (echelle : heures).
             if (Date.now() - (this._goalT || 0) < 5000 && document.getElementById('kitsuGoal')) return; this._goalT = Date.now();
             let bar = document.getElementById('kitsuGoal');
-            if (!bar) { bar = document.createElement('div'); bar.id = 'kitsuGoal'; bar.style.cssText = 'padding:6px 10px;border-bottom:1px solid #1e293b;font-size:11px'; d.insertBefore(bar, d.querySelector('#kitsuDockBody')); }
+            if (!bar) { bar = document.createElement('div'); bar.id = 'kitsuGoal'; bar.style.cssText = 'padding:6px 12px 6px 13px;border-bottom:1px solid #1c1f27;font-size:11px'; d.insertBefore(bar, d.querySelector('#kitsuDockTabs')); }
             const S = save(), now = Date.now(), pulls = lsGet(LS.pulls, null);
             const cands = (G.BANNERS || []).filter(b => b.until && b.until > now && b.until - now < 7 * 86400000);
             const b = cands.find(x => x.series === pulls?.banners?.[0]?.banniere) || cands.find(x => (S.pity?.[x.series] || 0) > 0);
@@ -830,9 +845,9 @@
             const need = h > 0 ? missing / h : Infinity;
             const reach = gems + Math.max(rate6, 30) * Math.max(0, h) * 0.5;
             const ok = missing === 0 ? 'atteint : invoque !' : reach < needTotal ? `garantie hors de portee avant la fin (${needTotal} gemmes) : ne la vise pas` : rate6 >= need ? `dans les temps (${rate6.toFixed(1)}/h, il faut ${need.toFixed(1)}/h)` : `en retard (${rate6.toFixed(1)}/h, il faut ${need.toFixed(1)}/h)`;
-            const col = missing === 0 ? '#22c55e' : rate6 >= need ? '#22c55e' : '#f87171';
-            bar.innerHTML = `<div style="display:flex;justify-content:space-between"><b style="color:#fbbf24">Objectif LR ${b.series}</b><span>${h < 24 ? Math.round(h) + ' h' : Math.floor(h / 24) + ' j ' + Math.round(h % 24) + ' h'} restantes</span></div>`
-              + `<div style="height:6px;background:#1e293b;border-radius:3px;margin:3px 0"><div style="height:6px;width:${Math.round(pct * 100)}%;background:${col};border-radius:3px"></div></div>`
+            const col = missing === 0 ? '#2fd27a' : rate6 >= need ? '#2fd27a' : '#ff5f6d';
+            bar.innerHTML = `<div style="display:flex;justify-content:space-between"><b style="color:#ffc24a">Objectif LR ${b.series}</b><span>${h < 24 ? Math.round(h) + ' h' : Math.floor(h / 24) + ' j ' + Math.round(h % 24) + ' h'} restantes</span></div>`
+              + `<div style="height:6px;background:#1b1f28;border-radius:3px;margin:3px 0"><div style="height:6px;width:${Math.round(pct * 100)}%;background:${col};border-radius:3px"></div></div>`
               + `<div>${gems}/${needTotal} gemmes (pity ${pity}/${pmax}) · <span style="color:${col}">${ok}</span></div>`;
             accents(bar);
           },
@@ -867,7 +882,7 @@
             const missing = SELECTORS.filter(x => !src.includes(x)), unsure = missing.filter(x => lazy.includes(x) && !files.some(f => /events-/.test(f)));
             const res = { sig, t: Date.now(), total: SELECTORS.length, manquants: missing.filter(x => !unsure.includes(x)), nonCharges: unsure };
             lsSet('kitsu_ai_selfcheck', res);
-            if (res.manquants.length) { health.err('le jeu a change : ' + res.manquants.join(', ')); toast(`<b style="color:#f87171">Le jeu a ete mis a jour</b><br>Le guide peut se tromper sur : ${res.manquants.join(', ')}. Envoie un « Signaler » a Claude.`, 12000); }
+            if (res.manquants.length) { health.err('le jeu a change : ' + res.manquants.join(', ')); toast(`<b style="color:#ff5f6d">Le jeu a ete mis a jour</b><br>Le guide peut se tromper sur : ${res.manquants.join(', ')}. Envoie un « Signaler » a Claude.`, 12000); }
             return res;
           },
           // Instantane de l'ecran pour corriger un bug precis : copie dans le presse-papiers.
@@ -923,22 +938,22 @@
                 ['Entrainement IA', T ? (T.done ? 'termine' : `${T.phase}, ${T.runs} combats simules`) : (lsGet(LS.w, null) ? 'poids reentraines enregistres' : 'poids par defaut')],
                 ['Journal', `${log.length} combats, ${log.filter(g => g.result === 'win').length} victoires`],
                 ['3 etoiles prevues', l3.length ? `${ok3}/${l3.length} predictions justes` : 'pas encore de donnees'],
-                ['Boutons du jeu', (() => { const c = lsGet('kitsu_ai_selfcheck', null); return !c ? 'pas encore verifie' : c.manquants.length ? `<span style="color:#f87171">${c.manquants.length} introuvable(s)</span>` : `${c.total - c.nonCharges.length}/${c.total} presents`; })()],
+                ['Boutons du jeu', (() => { const c = lsGet('kitsu_ai_selfcheck', null); return !c ? 'pas encore verifie' : c.manquants.length ? `<span style="color:#ff5f6d">${c.manquants.length} introuvable(s)</span>` : `${c.total - c.nonCharges.length}/${c.total} presents`; })()],
                 ...(() => { const by = {}; for (const g of log) { if (!g.preds?.length) continue; const m = /^ev-salle/.test(g.f) ? 'Salle' : /^ev-/.test(g.f) ? 'Evenement' : /@x?n$|@hn$/.test(g.f) ? 'Cauchemar' : /@x$/.test(g.f) ? 'Extreme' : /@h$/.test(g.f) ? 'Difficile' : 'Normal'; const b = by[m] ||= { n: 0, p: 0, w: 0 }; b.n++; b.p += g.preds[0]; if (g.result === 'win') b.w++; } return Object.entries(by).map(([m, b]) => ['Calibration ' + m, `prevu ${Math.round(b.p / b.n * 100)} % · reel ${Math.round(b.w / b.n * 100)} % (${b.n})`]); })(),
               ];
-              hp.innerHTML = `<div style="color:#94a3b8;font-weight:700;margin-bottom:4px">Sante de KitsuAI</div>`
+              hp.innerHTML = `<div class="k-ttl">Sante de KitsuAI</div>`
                 + rows.map(([k, x]) => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><span style="opacity:.7">${k}</span><span>${x}</span></div>`).join('')
-                + (health.errors.length ? `<div style="margin-top:6px;color:#f87171;font-size:11px">${health.errors.slice(0, 4).map(e => `${age(e.t)} : ${e.m}`).join('<br>')}</div>` : '<div style="margin-top:6px;color:#22c55e;font-size:11px">Aucune erreur recente</div>')
-                + `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span id="kitsuRecalc" style="cursor:pointer;background:#1e293b;padding:3px 8px;border-radius:6px;font-size:11px">Tout recalculer</span>`
-                + `<span id="kitsuExpBtn" style="cursor:pointer;background:#1e3a8a;padding:3px 8px;border-radius:6px;font-size:11px">Exporter pour le moteur local</span>`
-                + `<span id="kitsuRepBtn" style="cursor:pointer;background:#7c2d12;padding:3px 8px;border-radius:6px;font-size:11px">Signaler (copie l'ecran)</span>`
-                + `<span id="kitsuEnBtn" style="cursor:pointer;background:${lsGet('kitsu_ai_enAlert', null) === true ? '#14532d' : '#1e293b'};padding:3px 8px;border-radius:6px;font-size:11px">Alerte energie pleine : ${lsGet('kitsu_ai_enAlert', null) === true ? (('Notification' in window && Notification.permission === 'granted') ? 'active' : 'autorisation bloquee') : 'activer'}</span></div>`;
-              document.getElementById('kitsuExpBtn').onclick = async () => { await this.exportMoteur(); toast('<b style="color:#38bdf8">sauvegarde.json telechargee</b><br>Glisse-la dans le panneau KitsuAI (zone « Ta sauvegarde »).', 8000); };
-              document.getElementById('kitsuRepBtn').onclick = () => { this.signal(); toast('<b style="color:#38bdf8">Rapport copie</b><br>Colle-le dans ta conversation avec Claude (Ctrl+V).', 7000); };
+                + (health.errors.length ? `<div style="margin-top:6px;color:#ff5f6d;font-size:11px">${health.errors.slice(0, 4).map(e => `${age(e.t)} : ${e.m}`).join('<br>')}</div>` : '<div style="margin-top:6px;color:#2fd27a;font-size:11px">Aucune erreur recente</div>')
+                + `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span id="kitsuRecalc" style="cursor:pointer;background:#1b1f28;padding:3px 8px;border-radius:6px;font-size:11px">Tout recalculer</span>`
+                + `<span id="kitsuExpBtn" style="cursor:pointer;background:#1d3a5a;padding:3px 8px;border-radius:6px;font-size:11px">Exporter pour le moteur local</span>`
+                + `<span id="kitsuRepBtn" style="cursor:pointer;background:#5a2f17;padding:3px 8px;border-radius:6px;font-size:11px">Signaler (copie l'ecran)</span>`
+                + `<span id="kitsuEnBtn" style="cursor:pointer;background:${lsGet('kitsu_ai_enAlert', null) === true ? '#1f4d34' : '#1b1f28'};padding:3px 8px;border-radius:6px;font-size:11px">Alerte energie pleine : ${lsGet('kitsu_ai_enAlert', null) === true ? (('Notification' in window && Notification.permission === 'granted') ? 'active' : 'autorisation bloquee') : 'activer'}</span></div>`;
+              document.getElementById('kitsuExpBtn').onclick = async () => { await this.exportMoteur(); toast('<b class="k-tt">sauvegarde.json telechargee</b><br>Glisse-la dans le panneau KitsuAI (zone « Ta sauvegarde »).', 8000); };
+              document.getElementById('kitsuRepBtn').onclick = () => { this.signal(); toast('<b class="k-tt">Rapport copie</b><br>Colle-le dans ta conversation avec Claude (Ctrl+V).', 7000); };
               document.getElementById('kitsuEnBtn').onclick = () => { const on = lsGet('kitsu_ai_enAlert', null) === true; this.energyAlert(!on); render(); };
               document.getElementById('kitsuRecalc').onclick = async () => {
                 for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_training', 'kitsu_ai_walls', LS.pulls, 'kitsu_ai_shop', 'kitsu_ai_gw', 'kitsu_ai_road']) localStorage.removeItem(k);
-                toast('<b style="color:#38bdf8">Recalcul complet</b><br>Plan, equipes, entrainement, boutique : en arriere-plan.', 6000);
+                toast('<b class="k-tt">Recalcul complet</b><br>Plan, equipes, entrainement, boutique : en arriere-plan.', 6000);
                 try { await this.plan(); await this.training(); await this.shops(); await this.precomputeTeams(); } catch (e) { health.err(e.message); }
               };
             };
@@ -953,23 +968,28 @@
             if (document.getElementById('kitsuDock')) return;
             const css = document.createElement('style'); css.id = 'kitsuDockCss';
             const tabs = [['adv', 'Combat', 'kitsuAdv'], ['team', 'Équipe', 'kitsuTeam'], ['plan', 'Plan', 'kitsuPlan'], ['road', 'Roadmap', 'kitsuRoad'], ['pull', 'Tirage', 'kitsuPull'], ['future', 'Avenir', 'kitsuFuture'], ['health', 'Santé', 'kitsuHealth']];
-            css.textContent = '#kitsuDock{position:fixed;z-index:2147483646;width:330px;background:rgba(10,10,18,.95);color:#fff;font:13px/1.4 system-ui,sans-serif;border:1px solid #334155;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.5)}'
-              + '#kitsuDockHead{display:flex;align-items:center;gap:4px;padding:6px 8px;cursor:move;border-bottom:1px solid #1e293b;user-select:none}'
-              + '#kitsuDockHead b{color:#fbbf24;margin-right:4px;font-size:12px}'
-              + '.kd-tab{font-size:11px;padding:3px 7px;border-radius:999px;background:#1e293b;color:#cbd5e1;cursor:pointer;position:relative}'
-              + '.kd-tab.on{background:#f59e0b;color:#111;font-weight:700}.kd-tab.rel::after{content:"";position:absolute;top:1px;right:1px;width:6px;height:6px;border-radius:50%;background:#22c55e}'
-              + '#kitsuDockMin{margin-left:auto;cursor:pointer;opacity:.7;padding:0 4px}'
-              + '#kitsuDockBody{padding:8px 10px;max-height:62vh;overflow:auto}#kitsuDock.min #kitsuDockBody{display:none}'
+            css.textContent = '#kitsuDock{position:fixed;z-index:2147483646;width:340px;background:rgba(12,14,19,.96);color:#f2ede6;font:12.5px/1.45 "Segoe UI",system-ui,sans-serif;border:1px solid #262a33;border-radius:10px;box-shadow:inset 3px 0 0 #ff7a2f}'
+              + '#kitsuDockHead{display:flex;align-items:center;gap:7px;padding:7px 10px 6px 13px;cursor:move;border-bottom:1px solid #1c1f27;user-select:none}#kitsuDockHead svg{width:15px;height:15px;flex:none}'
+              + '#kitsuDockHead .kd-b{font:700 12px/1 "Bahnschrift SemiBold Condensed","Bahnschrift Condensed",Bahnschrift,"Arial Narrow",system-ui,sans-serif;letter-spacing:1.6px;text-transform:uppercase}#kitsuDockHead .kd-b em{font-style:normal;color:#ff7a2f}'
+              + '#kitsuDockCtx{font:600 10.5px/1.3 system-ui,sans-serif;letter-spacing:.7px;text-transform:uppercase;color:#9199a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}#kitsuDockCtx .k-chip{margin-left:4px}'
+              + '#kitsuDockPc{margin-left:auto;font:600 11px system-ui,sans-serif;color:#9199a6;white-space:nowrap}#kitsuDockPc::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#4b5160;margin-right:4px;vertical-align:1px}#kitsuDockPc.on::before{background:#2fd27a}'
+              + '#kitsuDockMin{cursor:pointer;color:#9199a6;font:700 14px/1 system-ui;padding:0 2px 0 4px}'
+              + '#kitsuDockTabs{display:flex;padding:0 6px 0 9px;border-bottom:1px solid #1c1f27}'
+              + '.kd-tab{position:relative;font:600 11px/1.3 system-ui,sans-serif;color:#9199a6;padding:6px 5px 5px;cursor:pointer}.kd-tab.on{color:#f2ede6}.kd-tab.on::after{content:"";position:absolute;left:5px;right:5px;bottom:-1px;height:2px;background:#ff7a2f}.kd-tab.rel::before{content:"";position:absolute;top:4px;right:1px;width:5px;height:5px;border-radius:50%;background:#2fd27a}'
+              + '#kitsuDockBody{padding:9px 12px 10px 13px;max-height:62vh;overflow:auto}#kitsuDock.min #kitsuDockBody,#kitsuDock.min #kitsuDockTabs{display:none}'
+              // 5.19 : conseil exact du script prive en cours -> le dock se replie sur une ligne (clic sur la ligne : tout voir).
+              + '#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
               + '#kitsuDock .kitsu-panel{position:static!important;transform:none!important;max-width:none!important;min-width:0!important;border:none!important;background:none!important;padding:0!important;box-shadow:none!important;pointer-events:auto!important}'
               + tabs.map(([k, , id]) => `#kitsuDock:not([data-tab="${k}"]) #${id}{display:none!important}`).join('');
             document.head.appendChild(css);
             const d = document.createElement('div'); d.id = 'kitsuDock';
-            d.innerHTML = `<div id="kitsuDockHead"><b>KitsuAI</b>${tabs.map(([k, n]) => `<span class="kd-tab" data-kd="${k}">${n}</span>`).join('')}<span id="kitsuDockMin" title="Alt+K">–</span></div><div id="kitsuDockBody"></div>`;
+            d.innerHTML = `<div id="kitsuDockHead"><svg viewBox="0 0 16 16"><path d="M1 2l4.2 3.4h5.6L15 2l-1.4 7L8 14.5 2.4 9z" fill="#ff7a2f"/><path d="M5.3 8.2l1.6.9M10.7 8.2l-1.6.9" stroke="#0c0e13" stroke-width="1.3" stroke-linecap="round"/></svg><span class="kd-b">Kitsu<em>AI</em></span><span id="kitsuDockCtx"></span><span id="kitsuDockPc">PC</span><span id="kitsuDockMin" title="Alt+K">–</span></div><div id="kitsuDockTabs">${tabs.map(([k, n]) => `<span class="kd-tab" data-kd="${k}">${n}</span>`).join('')}</div><div id="kitsuDockBody"></div>`;
             document.body.appendChild(d);
             const pos = lsGet('kitsu_ai_dock', { right: 12, top: 110, min: false });
-            const place = p => { d.style.top = p.top + 'px'; d.style.right = p.right + 'px'; d.classList.toggle('min', !!p.min); };
+            const place = p => { d.style.top = p.top + 'px'; d.style.right = p.right + 'px'; d.classList.toggle('min', !!p.min); const m = d.querySelector('#kitsuDockMin'); if (m) m.textContent = p.min ? '+' : '–'; };
             place(pos);
-            const body = d.querySelector('#kitsuDockBody');
+            const body = d.querySelector('#kitsuDockBody'), ctxEl = d.querySelector('#kitsuDockCtx'), pcEl = d.querySelector('#kitsuDockPc');
+            ctxEl.onclick = () => { if (!d.classList.contains('exact')) return; if (d.dataset.voir) delete d.dataset.voir; else d.dataset.voir = '1'; };
             const adopt = () => { for (const [, , id] of tabs) { const el = document.getElementById(id); if (el && el.parentElement !== body) body.appendChild(el); } };
             let override = 0;
             d.querySelectorAll('.kd-tab').forEach(t => t.onclick = () => { d.dataset.tab = t.dataset.kd; override = Date.now(); if (pos.min) { pos.min = false; place(pos); lsSet('kitsu_ai_dock', pos); } });
@@ -979,7 +999,7 @@
             // Deplacement a la souris (position memorisee)
             const head = d.querySelector('#kitsuDockHead');
             head.addEventListener('mousedown', e => {
-              if (e.target.classList.contains('kd-tab') || e.target.id === 'kitsuDockMin') return;
+              if (e.target.classList.contains('kd-tab') || e.target.id === 'kitsuDockMin' || (d.classList.contains('exact') && e.target.closest('#kitsuDockCtx'))) return;
               const sx = e.clientX, sy = e.clientY, r0 = { ...pos };
               const mv = ev => { pos.right = Math.max(0, r0.right - (ev.clientX - sx)); pos.top = Math.max(0, r0.top + (ev.clientY - sy)); place(pos); };
               const up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); lsSet('kitsu_ai_dock', pos); };
@@ -992,6 +1012,14 @@
               const rel = {}; for (const [k, , id] of tabs) { const el = document.getElementById(id); rel[k] = !!el && el.style.display !== 'none' && (!!el.firstElementChild || el.textContent.trim() !== ''); }
               d.querySelectorAll('.kd-tab').forEach(t => { t.classList.toggle('rel', rel[t.dataset.kd]); t.classList.toggle('on', d.dataset.tab === t.dataset.kd); });
               if (Date.now() - override > 30000) { const auto = ['adv', 'team', 'pull', 'road', 'plan'].find(k => rel[k]) || d.dataset.tab || 'plan'; d.dataset.tab = auto; }
+              // 5.19 : ligne de contexte (onglet ouvert, ou conseil public replie quand le script prive donne un coup exact). Reecrite seulement si elle change.
+              const kc = document.documentElement.dataset.karCoup, exact = kc != null && d.dataset.tab === 'adv';
+              if (kc == null && d.dataset.voir) delete d.dataset.voir;
+              if (d.classList.contains('exact') !== exact) d.classList.toggle('exact', exact);
+              let ctx = '· ' + (tabs.find(t => t[0] === d.dataset.tab)?.[1] || '');
+              if (exact) { const c = window.__kitsuCoup, same = !!c && c.kind + '|' + (c.tgt || '') === kc; ctx = !kc || !c ? '· Public · conseil exact du privé' : `· Public · ${c.label}<span class="k-chip ${same ? 'ok' : 'warn'}">${same ? '=' : '≠'}</span>`; }
+              if (ctxEl._v !== ctx) { ctxEl._v = ctx; ctxEl.innerHTML = ctx; }
+              const pcOn = !!localPC.ok; if (pcEl._v !== pcOn) { pcEl._v = pcOn; pcEl.classList.toggle('on', pcOn); pcEl.title = pcOn ? 'Moteur du PC connecté' : 'Moteur du PC absent'; }
               try { KitsuAI.goalTick(); } catch {}
               accents(d); accents(document.getElementById('kitsuGuide')); accents(document.getElementById('kitsuToast')); accents(document.getElementById('kitsuBadge'));
             }, 400);
@@ -1007,10 +1035,10 @@
             if (!on) { clr(); pill?.remove(); lsSet('kitsu_ai_guide', false); return 'guide desactive'; }
             lsSet('kitsu_ai_guide', true);
             ui();
-            if (!document.getElementById('kitsuGuideCss')) { const s = document.createElement('style'); s.id = 'kitsuGuideCss'; s.textContent = '.kitsu-guide{outline:4px solid #38bdf8!important;outline-offset:3px;box-shadow:0 0 26px 6px rgba(56,189,248,.8)!important;border-radius:12px;animation:kitsuPulse 1.2s ease-in-out 3}@keyframes kitsuPulse{50%{outline-color:#fff}}.kitsu-add{outline:4px solid #22c55e!important;outline-offset:3px;box-shadow:0 0 22px 5px rgba(34,197,94,.8)!important;border-radius:12px}.kitsu-rm{outline:4px solid #ef4444!important;outline-offset:3px;box-shadow:0 0 22px 5px rgba(239,68,68,.8)!important;border-radius:12px}'; document.head.appendChild(s); }
+            if (!document.getElementById('kitsuGuideCss')) { const s = document.createElement('style'); s.id = 'kitsuGuideCss'; s.textContent = '.kitsu-guide{outline:3px solid #fff!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px;animation:kitsuPulse 1.2s ease-in-out 3}@keyframes kitsuPulse{50%{outline-color:#ff7a2f}}.kitsu-add{outline:3px solid #2fd27a!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px}.kitsu-rm{outline:3px solid #ff4436!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px}'; document.head.appendChild(s); }
             if (!pill) { pill = document.createElement('div'); pill.id = 'kitsuGuide'; pill.className = 'kitsu-panel'; document.body.appendChild(pill); }
             // Sous la barre de navigation du jeu (sinon elle cache les onglets du haut).
-            { const nav = [...document.querySelectorAll('header,nav,.topbar,#topbar')].find(e => e.offsetParent && e.getBoundingClientRect().top < 5); const top = nav ? Math.round(nav.getBoundingClientRect().bottom) + 8 : 72; pill.style.cssText = `top:${top}px;left:50%;right:auto;transform:translateX(-50%);border:1px solid #38bdf8;font-size:13px;display:block;text-align:center;max-width:520px`; }
+            { const nav = [...document.querySelectorAll('header,nav,.topbar,#topbar')].find(e => e.offsetParent && e.getBoundingClientRect().top < 5); const top = nav ? Math.round(nav.getBoundingClientRect().bottom) + 8 : 72; pill.style.cssText = `top:${top}px;left:50%;right:auto;transform:translateX(-50%);font-size:12.5px;display:block;text-align:center;max-width:560px;border-radius:999px;padding:5px 14px 5px 6px;box-shadow:none`; }
             // Visible a l'ecran (y compris les fenetres en position fixe, que offsetParent ne voit pas).
             const vis = el => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden' && !el.closest('#kitsuDock,#kitsuGuide');
             // Premier element VISIBLE (le jeu a souvent deux exemplaires d'un bouton, dont un cache dans un menu).
@@ -1020,7 +1048,7 @@
             let lastKey = '', guideCheck = {};
             const mark = (el, txt, key, groups = []) => {
               clr();
-              pill.innerHTML = `<b style="color:#38bdf8">Guide</b> · ${txt}`;
+              pill.innerHTML = `<span class="k-gd">Guide</span>${txt}`;
               for (const g of groups) for (const e of g.els) e && e.classList.add(g.cls);
               window.__kitsuGuideLast = { t: Date.now(), key, txt: pill.innerText, el: el ? (el.outerHTML || '').slice(0, 200) : null };
               if (!el) return true;
@@ -1047,7 +1075,7 @@
               if (document.hidden) return;
               try {
                 const T = liveBattle();
-                if (T && !T.over) { clr(); pill.innerHTML = '<b style="color:#38bdf8">Guide</b> · combat en cours : suis le panneau orange'; return; }
+                if (T && !T.over) { clr(); pill.innerHTML = '<span class="k-gd">Guide</span>combat en cours : suis le panneau KitsuAI'; return; }
                 // Verification anti-robot du jeu : c'est a toi de la faire, le guide ne pointe rien.
                 if ([...document.querySelectorAll('h2,h3,b,strong,p')].some(e => /Petite v[ée]rification/i.test(e.textContent || '') && vis(e))) return mark(null, 'verification du jeu : coche la case toi-meme, puis continue', 'botcheck');
                 { const sk = [...document.querySelectorAll('#skipAll')].find(vis); if (sk) return mark(sk, 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)', 'skipall'); const h = document.getElementById('tpHelp'); if (vis(h) && /Touche/i.test(h.innerText || '')) { const c = [...document.querySelectorAll('.tp-card')].find(vis); if (c) return mark(c, 'touche la carte pour la retourner (ou « Tout passer »)', 'tpcard'); } }
@@ -1175,7 +1203,7 @@
                       const hidden = missing.filter((id, i) => !addEls[i]);
                       const search = [...document.querySelectorAll('input')].find(e => vis(e) && /recherch/i.test(e.placeholder || ''));
                       const firstEl = extra.length && team.length >= 3 ? rmEls[0] : (addEls.find(Boolean) || (hidden.length ? search : null) || rmEls[0]);
-                      const txt = (pp ? 'equipe « A jouer » du panneau : ' : '') + [extra.length ? `<span style="color:#f87171">retire ${extra.map(short).join(', ')}</span>` : '', missing.length ? `<span style="color:#4ade80">ajoute ${missing.map(short).join(', ')}</span>` : ''].filter(Boolean).join(' puis ')
+                      const txt = (pp ? 'equipe « A jouer » du panneau : ' : '') + [extra.length ? `<span style="color:#ff5f6d">retire ${extra.map(short).join(', ')}</span>` : '', missing.length ? `<span style="color:#2fd27a">ajoute ${missing.map(short).join(', ')}</span>` : ''].filter(Boolean).join(' puis ')
                         + (hidden.length ? ` · ${hidden.map(short).join(', ')} n'est pas a l'ecran : tape « ${short(hidden[0]).split(' ')[0]} » dans la recherche` : '')
                         + ` (equipe conseillee : ${want.map(short).join(', ')}${xpSwap ? ' : gagne aussi, et fait progresser ' + want.filter(id => xwG[id]).map(short).join(', ') : ''})`;
                       return mark(firstEl, txt + '<br><span style="font-size:11px;opacity:.8">Contour bleu clignotant : clique ici maintenant · vert : a ajouter ensuite · rouge : a retirer</span>', 'team' + extra.join() + '|' + missing.join() + '|' + hidden.length, [{ els: rmEls.filter(e => e !== firstEl), cls: 'kitsu-rm' }, { els: addEls.filter(e => e !== firstEl), cls: 'kitsu-add' }]);
@@ -1603,13 +1631,13 @@
           roadAdvisor() {
             ui();
             let rb = document.getElementById('kitsuRoad');
-            if (!rb) { rb = document.createElement('div'); rb.id = 'kitsuRoad'; rb.className = 'kitsu-panel'; rb.style.cssText = 'top:70px;left:12px;right:auto;border:1px solid #fbbf24;pointer-events:auto;max-width:380px;font-size:12px'; document.body.appendChild(rb); }
+            if (!rb) { rb = document.createElement('div'); rb.id = 'kitsuRoad'; rb.className = 'kitsu-panel'; rb.style.cssText = 'top:70px;left:12px;right:auto;border:1px solid #ffc24a;pointer-events:auto;max-width:380px;font-size:12px'; document.body.appendChild(rb); }
             const show = async force => {
               const last = lsGet('kitsu_ai_road_seen', 0);
               if (!force && Date.now() - last < 90 * 60000) return;
               rb.style.display = 'block';
               const render = (R, live) => {
-                rb.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px"><b style="color:#fbbf24">Roadmap du moment</b><span id="kitsuRoadX" style="cursor:pointer;opacity:.7">fermer</span></div>`
+                rb.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px"><b style="color:#ffc24a">Roadmap du moment</b><span id="kitsuRoadX" style="cursor:pointer;opacity:.7">fermer</span></div>`
                   + `<div style="opacity:.7;margin-bottom:4px">Gemmes ${R.gemmes} · energie ${R.energie}</div>`
                   + R.items.map((it, i) => `<div style="margin-top:3px">${i + 1}. ${it.txt}</div>`).join('')
                   + `<div style="margin-top:6px;opacity:.5;font-size:11px">${live ? 'a jour' : 'mise a jour en cours...'}</div>`;
@@ -1617,7 +1645,7 @@
               };
               // Affichage immediat de la derniere roadmap, puis mise a jour en arriere-plan.
               const cached = lsGet('kitsu_ai_road', null);
-              if (cached) render(cached, false); else rb.innerHTML = '<div style="color:#fbbf24;font-weight:700">Roadmap</div><div style="opacity:.7">Premier calcul...</div>';
+              if (cached) render(cached, false); else rb.innerHTML = '<div class="k-ttl">Roadmap</div><div style="opacity:.7">Premier calcul...</div>';
               try { const R = await this.roadmap(); if (rb.style.display !== 'none') render(R, true); } catch (e) { if (!cached) rb.textContent = 'Roadmap : ' + e.message; }
             };
             this.showRoad = () => show(true);
@@ -1651,7 +1679,7 @@
           planAdvisor() {
             const { pull: pb } = ui();
             let pn = document.getElementById('kitsuPlan');
-            if (!pn) { pn = document.createElement('div'); pn.id = 'kitsuPlan'; pn.className = 'kitsu-panel'; pn.style.cssText = 'bottom:90px;border:1px solid #38bdf8;font-size:12px'; document.body.appendChild(pn); }
+            if (!pn) { pn = document.createElement('div'); pn.id = 'kitsuPlan'; pn.className = 'kitsu-panel'; pn.style.cssText = 'bottom:90px;font-size:12px'; document.body.appendChild(pn); }
             let busy = false, shownAt = 0;
             clearInterval(window.__kitsuPlanT);
             window.__kitsuPlanT = setInterval(async () => {
@@ -1662,15 +1690,16 @@
               if (busy) return;
               let P = lsGet('kitsu_ai_plan', null);
               if (P && Date.now() - shownAt < 60000 && pn.innerHTML) return;
-              if (!P || Date.now() - P.t > 10 * 60000) { busy = true; pn.innerHTML = '<div style="color:#38bdf8;font-weight:700">Plan du moment</div><div style="opacity:.7">Calcul...</div>'; try { P = await this.plan(); } catch (e) { pn.textContent = 'Plan : ' + e.message; busy = false; return; } busy = false; }
+              if (!P || Date.now() - P.t > 10 * 60000) { busy = true; pn.innerHTML = '<div class="k-ttl">Plan du moment</div><div style="opacity:.7">Calcul...</div>'; try { P = await this.plan(); } catch (e) { pn.textContent = 'Plan : ' + e.message; busy = false; return; } busy = false; }
               const top = P.combats.filter(r => r.gemmesEsperees > 0).slice(0, 6);
-              pn.innerHTML = `<div style="color:#38bdf8;font-weight:700;margin-bottom:4px">Plan du moment</div>`
-                + `<div>Gemmes ${P.gemmes} · energie ${P.energie} · <b style="color:#fbbf24">+${P.gemmesAPrendre} gemmes</b> a prendre (${P.energieNecessaire} energie${P.minutesEnergie ? `, ~${P.minutesEnergie} min de recharge` : ''})</div>`
-                + top.map(r => `<div style="margin-top:3px">${r.nom}${r.boss ? ' (boss)' : ''} · ${r.etoiles}/3 · <span style="color:#fbbf24">3 etoiles ${Math.round(r.troisEtoiles * 100)} %</span><br><span style="opacity:.7;font-size:11px">${r.equipe.map(short).join(', ')}</span></div>`).join('')
-                + (P.bloquants.length ? `<div style="margin-top:4px;color:#f87171">Bloquants : ${P.bloquants.map(r => r.nom).join(', ')}</div>` : '')
-                + (P.avenir?.length ? `<div style="margin-top:6px;color:#fca5a5">Prochains murs : ${P.avenir.slice(0, 3).map(r => `${r.monde} « ${r.nom} » (${Math.round(r.victoire * 100)} %, ${r.niveauxEnPlus ? `+${r.niveauxEnPlus} niveaux, ~${r.combatsDeFarm} farms` : 'hors de portee'})`).join(' ; ')}</div>` : '')
-                + (P.tour ? `<div style="margin-top:4px">Tour : ${P.tour.equipe.map(short).join(', ')}, etage ~${P.tour.etage}</div>` : '')
-                + `<div style="margin-top:6px">Ensuite : ${P.apresPlan} gemmes, soit ${P.tirages10} tirage${P.tirages10 > 1 ? 's' : ''} x10 · ${P.banniere}</div>`;
+              pn.innerHTML = `<div class="k-ttl">Plan du moment</div><div class="k-move" style="font-size:20px">+${P.gemmesAPrendre} gemmes <i>à prendre</i></div>`
+                + `<div class="k-chips"><span class="k-chip">Gemmes ${P.gemmes}</span><span class="k-chip">Énergie ${P.energie}</span><span class="k-chip">${P.energieNecessaire} énergie nécessaire</span>${P.minutesEnergie ? `<span class="k-chip">~${P.minutesEnergie} min de recharge</span>` : ''}</div>`
+                + (top.length ? '<div class="k-sec"><span>Combats</span><span>3 étoiles</span></div>' : '')
+                + top.map((r, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${r.nom}${r.boss ? ' (boss)' : ''} · ${r.etoiles}/3</span><span class="p">${Math.round(r.troisEtoiles * 100)} %</span><span class="k-sub">${r.equipe.map(short).join(', ')}</span><span class="k-bar"><b style="width:${Math.round(r.troisEtoiles * 100)}%"></b></span></div>`).join('')
+                + (P.bloquants.length ? `<div class="k-warn" style="margin-top:5px">Bloquants : ${P.bloquants.map(r => r.nom).join(', ')}</div>` : '')
+                + (P.avenir?.length ? '<div class="k-sec"><span>Prochains murs</span><span></span></div>' + P.avenir.slice(0, 3).map(r => `<div>${r.monde} « ${r.nom} » · ${Math.round(r.victoire * 100)} % · <span class="k-warn">${r.niveauxEnPlus ? `+${r.niveauxEnPlus} niveaux, ~${r.combatsDeFarm} farms` : 'hors de portée'}</span></div>`).join('') : '')
+                + (P.tour ? `<div style="margin-top:5px">Tour : ${P.tour.equipe.map(short).join(', ')}, étage ~${P.tour.etage}</div>` : '')
+                + `<div class="k-foot"><span>Ensuite <b>${P.apresPlan} gemmes</b>, soit ${P.tirages10} tirage${P.tirages10 > 1 ? 's' : ''} x10</span><span>${P.banniere}</span></div>`;
               shownAt = Date.now();
             }, 1000);
           },
@@ -1685,7 +1714,7 @@
             if (prev.chars !== cur.chars) what.push(`${cur.chars - prev.chars >= 0 ? '+' : ''}${cur.chars - prev.chars} cartes`);
             if (prev.banners !== cur.banners) what.push('bannieres modifiees');
             if (prev.dom !== cur.dom || prev.app !== cur.app) what.push('code du jeu modifie');
-            toast(`<b style="color:#38bdf8">Mise a jour du jeu detectee</b><br>${what.join(', ')}<br>Plan, equipes, equipe cible et evenements recalcules avec les nouvelles regles, en arriere-plan.`, 12000);
+            toast(`<b class="k-tt">Mise a jour du jeu detectee</b><br>${what.join(', ')}<br>Plan, equipes, equipe cible et evenements recalcules avec les nouvelles regles, en arriere-plan.`, 12000);
             lsSet(LS.pulls, null);
             lsSet(LS.ver, cur);
             // Les regles ont pu changer (stats, synergies, ennemis) : tous les resultats simules sont refaits.
@@ -1706,7 +1735,7 @@
                 // Hors combat : on ne cherche un combat que toutes les 600 ms (4 ticks) et on ne nettoie qu'une fois, a la fin du combat (5.18).
                 if (wasOver && (++tick & 3)) return;
                 const T = liveBattle();
-                if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; clearMarks(badge); } wasOver = true; return; }
+                if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; window.__kitsuCoup = null; clearMarks(badge); } wasOver = true; return; }
                 if (document.hidden) return;
                 wasOver = false; box.style.display = 'block';
                 const st = T.st, a = T.active;
@@ -1720,6 +1749,7 @@
                   if (el) { const r = el.getBoundingClientRect(), txt = 'CIBLE : ' + cur.label, x = (r.left + r.width / 2) + 'px', y = r.top + 'px'; if (badge.textContent !== txt) badge.textContent = txt; if (badge.style.left !== x) badge.style.left = x; if (badge.style.top !== y) badge.style.top = y; if (badge.style.display !== 'block') badge.style.display = 'block'; }
                   else if (badge.style.display !== 'none') badge.style.display = 'none';
                 }
+                window.__kitsuCoup = cur;
                 if (!a || a.side !== 'ally') { cur = null; return; }
                 const sig = a.key + '|' + (T.actions?.length || 0) + '|' + st.elapsed;
                 if (sig === last) return; last = sig;
@@ -1732,29 +1762,30 @@
                 const decisive = res.length > 1 && res[0].win - res[1].win >= 0.15;
                 const charging = B.foes(st, a).filter(e => e.charging).map(e => e.name);
                 const pct = r => Math.round(calibrate(r.win) * 100);
-                box.innerHTML = `<div style="color:#f59e0b;font-weight:700">${a.name} joue${decisive ? ' <span style="color:#f87171">COUP DECISIF</span>' : ''}</div>`
-                  + `<div style="font-size:15px;margin:2px 0"><b>${nm(b0)}</b></div>`
-                  + `<div style="font-size:12px;color:#7dd3fc;margin-bottom:3px">Pourquoi : ${why(st, a, b0, res)}</div>`
-                  + `<div style="font-size:11px;opacity:.85;margin-bottom:6px">${TAG[b0.kind]} · ${COSTS[b0.kind] ? COSTS[b0.kind] + ' END' : 'gratuit'} · ${m0.desc}</div>`
-                  + res.slice(0, 4).map((r, i) => `<div style="opacity:${i ? .75 : 1}">${i + 1}. ${nm(r.c)} <span style="color:#fbbf24">${pct(r)} %</span> <span style="opacity:.5;font-size:10px">(${r.n})</span></div>`).join('')
-                  + `<div style="margin-top:6px;opacity:.6;font-size:11px">Endurance ${st.end} · energie ${a.energy ?? 0}/100 · IA ${modeName(st)}`
-                  + (charging.length ? ` · <span style="color:#f87171">${charging.join(', ')} charge !</span>` : '') + '</div>';
+                box.innerHTML = `<div class="k-who"><b>${a.name}</b> joue</div><div class="k-move">${m0.name}${b0.target ? ` <i>→ ${b0.target.name}</i>` : ''}</div>`
+                  + `<div class="k-chips">${decisive ? '<span class="k-chip hot">Coup décisif</span>' : ''}<span class="k-chip acc">${TAG[b0.kind]} · ${COSTS[b0.kind] ? COSTS[b0.kind] + ' END' : 'gratuit'}</span>${charging.length ? `<span class="k-chip warn">${charging.join(', ')} charge !</span>` : ''}</div>`
+                  + `<div class="k-why">${why(st, a, b0, res)}</div><div class="k-desc">${m0.desc}</div>`
+                  + '<div class="k-sec"><span>Coups classés</span><span>victoire</span></div>'
+                  + res.slice(0, 4).map((r, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${nm(r.c)}</span><span class="p">${pct(r)} %<small>(${r.n})</small></span><span class="k-bar"><b style="width:${pct(r)}%"></b></span></div>`).join('')
+                  + `<div class="k-foot"><span>Endurance <b>${st.end}</b></span><span>Énergie <b>${a.energy ?? 0}/100</b></span><span>IA <b>${modeName(st)}</b></span></div>`;
                 // Anticipation poussee sur le PC (serveur local) : objectif 2 etoiles, puis 3 (en Tour : victoire puis PV gardes). Remplace le conseil s'il est meilleur.
                 if (Date.now() - localPC.t > 30000) localPing();
                 if (localPC.ok) {
                   const mySig = sig, cl = cands(st, a), { rng, ...rest } = st;
-                  box.insertAdjacentHTML('afterbegin', '<div id="kitsuPC" style="font-size:11px;color:#86efac;margin-bottom:3px">PC : calcul...</div>');
+                  (box.querySelector('.k-desc') || box.firstElementChild)?.insertAdjacentHTML('afterend', '<div id="kitsuPC" class="k-pc"><div class="t">Calcul du PC<span>en cours...</span></div></div>');
                   localAsk('/conseil', { dom: domFile(), st: JSON.stringify(rest), key: a.key, cands: cl.map(c => ({ kind: c.kind, tgt: c.target?.key })), W: this.W, budget: 700 }, 5000).then(r => {
                     const el = document.getElementById('kitsuPC');
                     if (last !== mySig) return;
-                    if (!r || r.err || !r.res?.length) { if (r?.err === 'version') { localPC.ok = false; localPC.msg = 'moteur du PC pas a jour : relance serveur.bat'; } if (el) el.textContent = 'PC : ' + (r?.err === 'version' ? 'moteur pas a jour (relance serveur.bat)' : 'pas de reponse'); return; }
+                    if (!r || r.err || !r.res?.length) { if (r?.err === 'version') { localPC.ok = false; localPC.msg = 'moteur du PC pas a jour : relance serveur.bat'; } if (el) el.innerHTML = '<div class="t" style="color:#9199a6">Calcul du PC<span>' + (r?.err === 'version' ? 'moteur pas à jour (relance serveur.bat)' : 'pas de réponse') + '</span></div>'; return; }
                     // Le PC ne remplace le conseil que s'il trouve STRICTEMENT mieux : a egalite (combat gagne a 3 etoiles quel que
                     // soit le coup, ou perdu quoi qu'on fasse), son classement garderait le premier coup de la liste, le repos.
                     const pcB0 = r.res.find(x => x.kind === b0.kind && (x.tgt ?? null) === (b0.target?.key ?? null));
                     const b = pcB0 && r.res[0].v - pcB0.v < 0.03 ? pcB0 : r.res[0], c1 = cl.find(c => c.kind === b.kind && (c.target?.key ?? null) === (b.tgt ?? null)); if (!c1) return;
                     const changed = c1.kind !== b0.kind || (c1.target?.key ?? null) !== (b0.target?.key ?? null);
                     cur = { me: a.key, kind: c1.kind, tgt: c1.target?.key, all: c1.kind !== 'rest' && c1.kind !== 'basic' && !c1.target && B.kitRole(a, c1.kind).aoe > 0, label: mv(a, c1.kind).name };
-                    if (el) el.outerHTML = `<div id="kitsuPC" style="margin:0 0 5px;padding:4px 6px;border:1px solid #22c55e;border-radius:6px;font-size:12px"><b style="color:#22c55e">Calcul du PC</b> (${r.sims} suites, ${r.ms} ms)${changed ? ' <b style="color:#fbbf24">change le conseil</b>' : ' confirme'} :<br><b>${nm(c1)}</b> · ${T.tower && b.hp != null ? `victoire ${Math.round(b.win * 100)} % · PV gardes ${Math.round(100 * b.hp / Math.max(0.01, b.win))} %` : `2+ etoiles ${Math.round(b.s2 * 100)} % · 3 etoiles ${Math.round(b.s3 * 100)} %`}${r.res[1] ? `<br><span style="opacity:.7">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
+                    if (el) el.outerHTML = `<div id="kitsuPC" class="k-pc${changed ? ' chg' : ''}"><div class="t">Calcul du PC · ${changed ? 'change le conseil' : 'confirme'}<span>${r.sims} suites · ${r.ms} ms</span></div><b>${nm(c1)}</b> · ${T.tower && b.hp != null ? `victoire <b class="k-gold">${Math.round(b.win * 100)} %</b> · PV gardés ${Math.round(100 * b.hp / Math.max(0.01, b.win))} %` : `2+ étoiles <b class="k-gold">${Math.round(b.s2 * 100)} %</b> · 3 étoiles <b class="k-gold">${Math.round(b.s3 * 100)} %</b>`}${r.res[1] ? `<br><span class="k-mute">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
+                    // 5.19 : le coup affiche en grand suit le conseil du PC quand il le change (comme les contours).
+                    if (changed) { const mvEl = box.querySelector('.k-move'); if (mvEl) mvEl.innerHTML = `${mv(a, c1.kind).name}${c1.target ? ` <i>→ ${c1.target.name}</i>` : ''}`; }
                   });
                 }
               } catch (e) { box.textContent = 'Conseiller : ' + e.message; health.err('conseiller : ' + e.message); }
@@ -1869,7 +1900,7 @@
               const rw = lsGet('kitsu_ai_rewards', []).filter(r => now - r.t < day), perDay = Math.max(0, rw.reduce((a, r) => a + Math.max(0, r.gemmes || 0), 0));
               const gems = S.ki || 0;
               rows.push(['Gemmes', `${gems} maintenant · ~${perDay}/jour a ton rythme · ${gems + perDay * 3} dans 3 j · ${gems + perDay * 7} dans 7 j`]);
-              const lrIn = S.dshop?.lrIn; if (lrIn != null) { const tLr = now + lrIn * day; rows.push(['LR de la boutique', `${lrIn === 0 ? "aujourd'hui" : 'dans ' + lrIn + ' j'} (1 500 gemmes) : ${gems + perDay * lrIn >= 1500 ? '<span style="color:#22c55e">atteignable</span>' : `<span style="color:#f87171">il manquera ~${1500 - gems - perDay * lrIn}</span>`}`]); }
+              const lrIn = S.dshop?.lrIn; if (lrIn != null) { const tLr = now + lrIn * day; rows.push(['LR de la boutique', `${lrIn === 0 ? "aujourd'hui" : 'dans ' + lrIn + ' j'} (1 500 gemmes) : ${gems + perDay * lrIn >= 1500 ? '<span style="color:#2fd27a">atteignable</span>' : `<span style="color:#ff5f6d">il manquera ~${1500 - gems - perDay * lrIn}</span>`}`]); }
               for (const b of (G.BANNERS || []).filter(b => b.until && b.until > now).sort((a, b) => a.until - b.until)) { const pity = S.pity?.[b.series] || 0; rows.push([`Banniere ${b.series}`, `fin ${fmt(b.until)}${pity ? ` · ton compteur ${pity}/50` : ''}`]); }
               for (const b of (G.BANNERS || []).filter(b => (b.opens || b.from || 0) > now)) rows.push([`Banniere ${b.series}`, `ouvre ${fmt(b.opens || b.from)}`]);
               for (const e of openEvents(now)) { const n = (lsGet('kitsu_ai_events', null)?.combats || []).filter(r => r.evId === e.id && !r.fait && !S.ev?.clear?.[r.id] && (r.victoire || 0) >= 0.8).length; rows.push([`Evenement ${e.banner?.series || e.title}`, `fin ${e.banner?.until ? fmt(e.banner.until) : '?'}${n ? ` · ${n} premiere(s) victoire(s) a prendre` : ' · fait'}`]); }
@@ -1894,7 +1925,7 @@
                 if (h0 && now - h0.t > 3 * 3600000) {
                   const days = (now - h0.t) / day, ob = lsGet('kitsu_ai_training', null)?.objectif;
                   const ids = [...new Set([...(ob?.equipe || []), ...pool(4, S)])].slice(0, 6);
-                  rows.push(['Tes cartes dans 3 / 7 jours', ids.map(id => { const lv = S.lv?.[id]?.l || 1, r = Math.max(0, lv - (h0.lv[id] || lv)) / days; return `${short(id)} : ${lv} -> ${Math.min(99, Math.round(lv + r * 3))} -> ${Math.min(99, Math.round(lv + r * 7))}${r < 0.3 ? ' <span style="color:#f87171">(ne monte pas)</span>' : ''}${ob?.equipe?.includes(id) ? ' · cible' : ''}`; }).join('<br>')]);
+                  rows.push(['Tes cartes dans 3 / 7 jours', ids.map(id => { const lv = S.lv?.[id]?.l || 1, r = Math.max(0, lv - (h0.lv[id] || lv)) / days; return `${short(id)} : ${lv} -> ${Math.min(99, Math.round(lv + r * 3))} -> ${Math.min(99, Math.round(lv + r * 7))}${r < 0.3 ? ' <span style="color:#ff5f6d">(ne monte pas)</span>' : ''}${ob?.equipe?.includes(id) ? ' · cible' : ''}`; }).join('<br>')]);
                   const wall = lsGet('kitsu_ai_plan', null)?.avenir?.[0];
                   if (wall?.niveauxEnPlus) { const r = wall.equipe.reduce((a, id) => a + Math.max(0, (S.lv?.[id]?.l || 1) - (h0.lv[id] || S.lv?.[id]?.l || 1)), 0) / wall.equipe.length / days; rows.push(['Prochain mur', `${wall.nom} : +${wall.niveauxEnPlus} niveaux${r > 0.2 ? `, vers le ${new Date(now + wall.niveauxEnPlus / r * day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}` : ''}`]); }
                 } else rows.push(['Entrainement', 'projection disponible apres quelques heures de jeu (mesure de ton rythme)']);
@@ -1903,7 +1934,7 @@
               rows.push(['Tour de l\'infini', (S.acct?.lv || 1) >= 25 ? `debloquee · record ${S.tower?.best || 0}` : `niveau de compte ${S.acct?.lv || 1}/25`]);
               if (G.MARKET_OPEN === false) rows.push(['Marche', 'pas encore ouvert dans le jeu']);
               if (G.ROT_ON === false) rows.push(['Evenements tournants', 'desactives dans le jeu pour l\'instant']);
-              fp.innerHTML = `<div style="color:#a78bfa;font-weight:700;margin-bottom:4px">A venir</div>` + rows.map(([k, v]) => `<div style="margin:3px 0;font-size:12px"><b style="color:#cbd5e1">${k}</b><br><span style="opacity:.85">${v}</span></div>`).join('')
+              fp.innerHTML = `<div class="k-ttl">A venir</div>` + rows.map(([k, v]) => `<div style="margin:3px 0;font-size:12px"><b style="color:#c9ced8">${k}</b><br><span style="opacity:.85">${v}</span></div>`).join('')
                 + `<div style="margin-top:6px;opacity:.55;font-size:11px">Les nouvelles cartes arrivent dans les invocations (Shonen gratuites et bannieres de leur serie) et dans la boutique du jour.</div>`;
               accents(fp);
             };
@@ -1930,7 +1961,7 @@
               tb.style.display = 'block';
               const pol = smartPol(this.W), S = save();
               const hit = lsGet('kitsu_ai_teams', {})[this._teamKey(W.f.id, S)];
-              if (!hit) tb.innerHTML = `<div style="color:#22c55e;font-weight:700">Equipe pour « ${W.f.t} »</div><div style="opacity:.7">Calcul...</div>`;
+              if (!hit) tb.innerHTML = `<div class="k-ttl">Equipe pour « ${W.f.t} »</div><div style="opacity:.7">Calcul...</div>`;
               const evalT = ids => { let w = 0, s = 0, s3 = 0; for (const sd of seeds) { const st = playOut(mk(W.f.id, ids, sd, S), pol); s += score(st); if (B.outcome(st) === 'win') { w++; if (B.allies(st).every(u => u.alive) && st.cycle <= 8) s3++; } } return { w: w / seeds.length, s: s / seeds.length, s3: s3 / seeds.length }; };
               const my = {}; job = my;
               const list = { length: hit ? hit.res.length : trios(pool(10, S)).length };
@@ -1959,11 +1990,11 @@
                   : xpBetter || (pickXp.length && pick.s3 >= 0.95) ? `3 etoiles ${Math.round(pick.s3 * 100)} % et fait monter ${pickXp.map(short).join(', ')}` : `la plus sure : 3 etoiles ${Math.round(pick.s3 * 100)} %`;
                 const same = (a, b) => a.length === b.length && a.every(id => b.includes(id));
                 const rows = res.slice(0, 5); if (cur && !rows.some(r => same(r.t, team))) rows.push({ t: team, ...cur, mine: true });
-                const tag = r => { const x = r.t.filter(id => xw[id]); return (x.length ? ` <span style="color:#38bdf8;font-size:11px">XP : ${x.map(short).join(', ')}</span>` : '') + (r.calc ? ' <span style="color:#a78bfa;font-size:11px">calcul Campagne</span>' : ''); };
-                tb.innerHTML = `<div style="color:#22c55e;font-weight:700;margin-bottom:4px">Equipe pour « ${W.f.t} »${W.f.boss ? ' (boss)' : ''}</div>`
-                  + `<div style="margin-bottom:6px;padding:5px 7px;border:1px solid ${pickXp.length ? '#38bdf8' : '#22c55e'};border-radius:6px"><b style="color:${pickXp.length ? '#38bdf8' : '#22c55e'}">A jouer : ${pick.t.map(short).join(', ')}</b>${same(pick.t, team) ? ' (ton equipe)' : ''}<br><span style="font-size:11px;opacity:.85">${why}</span></div>`
-                  + rows.map((r, k) => `<div style="opacity:${same(r.t, pick.t) ? 1 : .75}">${same(r.t, pick.t) ? '<b>&gt; ' : ''}${r.mine ? 'Ton equipe' : k + 1 + '.'} ${r.t.map(short).join(', ')}${same(r.t, pick.t) ? '</b>' : ''} <span style="color:${r.s3 >= 0.95 ? '#fbbf24' : '#f87171'}">3 etoiles ${Math.round(r.s3 * 100)} %</span>${tag(r)}</div>`).join('')
-                  + (!keep && cur ? `<div style="margin-top:6px;color:#f87171">Ton equipe : 3 etoiles ${Math.round(cur.s3 * 100)} % seulement</div>` : '')
+                const tag = r => { const x = r.t.filter(id => xw[id]); return (x.length ? ` <span style="color:#ff7a2f;font-size:11px">XP : ${x.map(short).join(', ')}</span>` : '') + (r.calc ? ' <span style="color:#ffc24a;font-size:11px">calcul Campagne</span>' : ''); };
+                tb.innerHTML = `<div class="k-ttl">Equipe pour « ${W.f.t} »${W.f.boss ? ' (boss)' : ''}</div>`
+                  + `<div style="margin-bottom:6px;padding:5px 7px;border:1px solid ${pickXp.length ? '#ff7a2f' : '#2fd27a'};border-radius:6px"><b style="color:${pickXp.length ? '#ff7a2f' : '#2fd27a'}">A jouer : ${pick.t.map(short).join(', ')}</b>${same(pick.t, team) ? ' (ton equipe)' : ''}<br><span style="font-size:11px;opacity:.85">${why}</span></div>`
+                  + rows.map((r, k) => `<div style="opacity:${same(r.t, pick.t) ? 1 : .75}">${same(r.t, pick.t) ? '<b>&gt; ' : ''}${r.mine ? 'Ton equipe' : k + 1 + '.'} ${r.t.map(short).join(', ')}${same(r.t, pick.t) ? '</b>' : ''} <span style="color:${r.s3 >= 0.95 ? '#ffc24a' : '#ff5f6d'}">3 etoiles ${Math.round(r.s3 * 100)} %</span>${tag(r)}</div>`).join('')
+                  + (!keep && cur ? `<div style="margin-top:6px;color:#ff5f6d">Ton equipe : 3 etoiles ${Math.round(cur.s3 * 100)} % seulement</div>` : '')
                   + `<div style="margin-top:4px;opacity:.55;font-size:11px">Classement : 3 etoiles d'abord (32 simulations), puis les cartes a faire monter${tie > 1 ? ` · ${tie} trios a egalite` : ''}</div>`;
               };
               setTimeout(chunk, 0);
@@ -2024,15 +2055,15 @@
               if (shown || busy) return;
               pb.style.display = 'block';
               const cached = lsGet(LS.pulls, null);
-              if (!cached) pb.innerHTML = '<div style="color:#a855f7;font-weight:700">Valeur des bannieres</div><div style="opacity:.7">Simulation des cartes vedettes (environ 1 minute la premiere fois)...</div>';
+              if (!cached) pb.innerHTML = '<div class="k-ttl">Valeur des bannieres</div><div style="opacity:.7">Simulation des cartes vedettes (environ 1 minute la premiere fois)...</div>';
               busy = true;
               try {
                 const R = await this.pulls();
                 const name = { E: 'SSR', L: 'UR', M: 'LR' };
-                pb.innerHTML = `<div style="color:#a855f7;font-weight:700;margin-bottom:4px">Valeur des bannieres pour ton equipe</div>`
+                pb.innerHTML = `<div class="k-ttl">Valeur des bannieres pour ton equipe</div>`
                   + R.banners.map((b, i) => {
                     const top = ['M', 'L', 'E'].map(r => b.rarites[r]?.[0]).filter(x => x && x.g > 0).sort((a, c) => c.g - a.g)[0];
-                    return `<div style="opacity:${i ? .8 : 1};margin-top:3px">${i ? '' : '<b>'}${i + 1}. ${b.banniere}${i ? '' : '</b>'} <span style="color:#fbbf24">+${b.ev10}</span> victoires / 10 tirages · pity ${b.pity}${top ? `<br><span style="opacity:.75;font-size:11px">meilleure carte : ${top.n} (+${top.g})</span>` : ''}</div>`;
+                    return `<div style="opacity:${i ? .8 : 1};margin-top:3px">${i ? '' : '<b>'}${i + 1}. ${b.banniere}${i ? '' : '</b>'} <span style="color:#ffc24a">+${b.ev10}</span> victoires / 10 tirages · pity ${b.pity}${top ? `<br><span style="opacity:.75;font-size:11px">meilleure carte : ${top.n} (+${top.g})</span>` : ''}</div>`;
                   }).join('')
                   + `<div style="margin-top:6px;opacity:.55;font-size:11px">Gain moyen sur ${R.total} combats difficiles, nouvelle carte supposee niveau ${R.newLv}. Taux : SSR 8,5 %, UR 1 %, LR 0,4 %, une chance sur deux d'etre une carte vedette.</div>`;
                 shown = true;
@@ -2079,7 +2110,7 @@
             setTimeout(() => this.plan().then(() => this.training()).then(() => this.plan()).then(() => this.events(true)).then(() => this.precomputeTeams()).catch(e => health.err('resimulation apres entrainement : ' + e.message)), 1000);
             lsSet(LS.pulls, null);
             if (!quiet) console.log('KitsuAI : entrainement termine', T);
-            toast(`<b style="color:#38bdf8">Reentrainement termine</b><br>normal ${T.start.norm ?? '-'} -> ${T.best.norm ?? '-'}, boss ${T.start.boss ?? '-'} -> ${T.best.boss ?? '-'} (${T.runs} combats simules)<br>Campagne, equipes et equipe cible resimulees avec la nouvelle IA.`, 10000);
+            toast(`<b class="k-tt">Reentrainement termine</b><br>normal ${T.start.norm ?? '-'} -> ${T.best.norm ?? '-'}, boss ${T.start.boss ?? '-'} -> ${T.best.boss ?? '-'} (${T.runs} combats simules)<br>Campagne, equipes et equipe cible resimulees avec la nouvelle IA.`, 10000);
             return T;
           },
 

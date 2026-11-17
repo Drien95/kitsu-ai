@@ -194,6 +194,11 @@
   body.repos .fx { display: none; }
   body.repos .maj::after, body.repos .pf.r-LR, body.repos .pf.r-LR::before, body.repos .upd, body.repos .blink, body.repos .skel { animation: none !important; }
   body.repos .top, body.repos .veil { backdrop-filter: none; }
+  /* ---- Tableau de bord : memes cartes que les onglets (mode, card, pill) ---- */
+  #p-accueil .mode { min-height: 300px; } #p-accueil .mode .v small { font-size: 24px; color: var(--mute); margin-left: 4px; }
+  #p-accueil .mode .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .dbt { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); } .dbt:first-child { border-top: 0; padding-top: 2px; }
+  .dbt .d { width: 9px; height: 9px; border-radius: 50%; flex: none; } .dbt .x { flex: 1; min-width: 0; } .dbt .x span { color: var(--mute); }
   @media (prefers-reduced-motion: reduce) { .fx i, .maj::after, .pf.r-LR, .pf.r-LR::before, .upd, .blink { animation: none !important; } }
   .app { position: relative; z-index: 1; display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
   .side { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 18px 14px; border-right: 1px solid var(--line); background: rgba(9,10,15,.86); backdrop-filter: blur(8px); z-index: 30; }
@@ -332,33 +337,19 @@
     <div id="bandeaux"></div>
     <div class="eyebrow">KitsuAI · panneau local</div>
     <h1>Tableau de bord</h1>
-    <p class="lead">Un bouton pour tout faire : mettre à jour le moteur du jeu, entraîner l'IA sur tes équipes, puis analyser toutes tes cartes. Le conseil en combat tourne en parallèle tant que KitsuAI est ouvert.</p>
-    <div id="dashPhare"></div>
+    <p class="lead">Où tu en es dans chaque mode, et ce qu'il reste à faire. Rien ne se lance tout seul.</p>
+    <div class="grid g3" id="dbModes"></div>
+    <div class="sp"></div>
     <div class="grid g2">
+      <div class="card"><h2>À faire</h2><div id="dbTodo"></div></div>
       <div class="card hot">
-        <h2>Tout lancer</h2>
+        <h2>Mettre à jour l'IA <span class="r"><button class="stop" id="stop" onclick="arreter()" disabled>Arrêter</button></span></h2>
         <div class="steps" id="steps"></div>
-        <button class="big" id="btnTout" onclick="lancer('complet')">Tout lancer</button>
-        <div class="muted" style="font-size:12px;margin-top:10px">Durée indicative : 30 à 75 min selon ton processeur. Tu peux jouer pendant ce temps.</div>
-      </div>
-      <div class="card">
-        <h2>En cours <span class="r"><button class="stop" id="stop" onclick="arreter()" disabled>Arrêter</button></span></h2>
-        <div id="jobh" class="muted">Aucune tâche en cours.</div>
+        <button class="big" id="btnTout" onclick="lancer('complet')">Mettre à jour l'IA</button>
         <div class="prog" id="prog"><i></i></div>
         <div class="last" id="lastline">Prêt.</div>
-        <a class="muted" style="font-size:12px;cursor:pointer" onclick="go('journal')">Voir le journal complet</a>
+        <div class="muted" style="font-size:12px"><span id="jobh">Aucune tâche en cours.</span> · La Campagne 3★ et la Tour se lancent depuis leur onglet.</div>
       </div>
-    </div>
-    <div class="sp"></div>
-    <div class="grid g5" id="tiles"></div>
-    <div class="sp"></div>
-    <div class="grid g4" id="dashModes"></div>
-    <div class="sp"></div>
-    <div class="card" id="dashChg"></div>
-    <div class="sp"></div>
-    <div class="card">
-      <h2>Meilleures équipes <span class="r" id="dtres"></span></h2>
-      <div id="resume"></div>
     </div>
   </section>
 
@@ -703,7 +694,7 @@ const dur = s => s < 60 ? s + ' s' : s < 3600 ? Math.floor(s / 60) + ' min ' + S
 const quand = t => t ? new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
 const toast = m => { const t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600); };
 const CATS = { campagne_extreme: 'Campagne (Extrême)', boss_extreme: 'Boss (Extrême)', cauchemar: 'Cauchemar, tous', cauchemar_multi: 'Cauchemar, plusieurs ennemis', cauchemar_boss: 'Cauchemar, boss', evenements: 'Événements et Salle', tour: "Tour de l'infini", guilde: 'Boss de guilde', pain: 'Pain (guilde)'};
-const STEPS = [['Moteur du jeu', 'mise à jour'], ["Entraînement de l'IA", 'Cauchemar, boss, normal'], ['Analyse complète', 'tes niveaux puis 99'], ['IA par équipe', 'tes 3 meilleures'], ['Conseils de cartes', 'collectifs, XP, tirage, duos']];
+const STEPS = [['Moteur du jeu', 'mise à jour'], ["Entraînement de l'IA", 'Cauchemar, boss, normal'], ['Analyse complète', 'tes niveaux puis 99'], ["IA de la Tour", 'entraînement'], ['IA par équipe', 'tes 3 meilleures'], ['Conseils de cartes', 'collectifs, XP, tirage, duos']];
 let E = null, niv = null, cat = null, lastLog = -1;
 
 // ---------- navigation ----------
@@ -724,7 +715,7 @@ async function refresh() {
   const run = E.job && !E.job.fin, maj = E.moteurDisque && E.moteurDisque !== E.moteur; majRepos();
   hp('chipSrv').innerHTML = `<span class="dot ${maj ? 'warn' : ''}"></span>${E.fils} fils`; $('chipSrv').title = 'Serveur local actif sur 127.0.0.1:' + E.port;
   $('chipVer').textContent = 'v' + (E.appVersion || E.script?.version || '-');
-  // etapes de "tout lancer"
+  // etapes de « Mettre a jour l'IA »
   const ch = E.job?.chaine;
   hp('steps').innerHTML = STEPS.map(([t, s], i) => { const st = ch ? (i < ch.i ? 'done' : i === ch.i && run ? 'on' : (E.job.fin && i < ch.i) ? 'done' : '') : ''; return `<div class="step ${st}"><b>${i + 1}. ${t}</b><span>${st === 'done' ? 'terminé' : st === 'on' ? 'en cours' : s}</span></div>`; }).join('');
   document.querySelectorAll('[data-act], #btnTout').forEach(b => b.disabled = run); $('stop').disabled = $('stop2').disabled = !run;
@@ -741,27 +732,10 @@ async function refresh() {
   // tuiles
   const s = E.sauvegarde, sc = E.script || {}, vu = sc.vu, scOk = vu && vu.v === sc.version && Date.now() - vu.t < 180000;
   const tile = (k, v, sub, cls = '') => `<div class="tile ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
-  hp('tiles').innerHTML = [
-    tile('Moteur du jeu', esc(E.moteur), maj ? 'nouvelle version téléchargée, recharge-le' : `${E.mondes.length} mondes · ${E.cartes} cartes`, maj ? 'warn' : ''),
-    tile('Processeur', E.fils + ' fils', esc((E.cpu || '').replace(/\(R\)|\(TM\)|Processor|\s+/g, ' ').trim())),
-    tile('Script du jeu', vu ? 'v' + esc(vu.v) : 'non vu', !vu ? 'ouvre kitsu.games avec le script' : scOk ? 'à jour et connecté' : vu.v !== sc.version ? `disponible : v${esc(sc.version)}` : 'pas de nouvelles depuis ' + dur(Math.round((Date.now() - vu.t) / 1000)), !vu ? 'warn' : vu.v !== sc.version ? 'warn' : ''),
-    tile('Sauvegarde', s ? s.cartes + ' cartes' : 'aucune', s ? `LR ${s.lr} · UR ${s.ur} · SSR ${s.ssr} · ${quand(s.t)}` : 'à importer depuis le jeu', s ? '' : 'bad'),
-    tile('Conseils en combat', E.conseil.n, E.conseil.dernier ? `dernier : ${E.conseil.dernier.sims} suites en ${E.conseil.dernier.ms} ms` : 'en attente d’un combat'),
-  ].join('');
-  // resume
-  const D = E.dernier;
-  if (D) {
-    const M = D.modes.actuel || D.modes[Object.keys(D.modes)[0]]; $('dtres').textContent = 'analyse du ' + quand(D.date) + ' · tes niveaux' + (D.reglages ? ' · IA ' + (D.reglages.source === 'pc' ? 'entraînée sur le PC' : D.reglages.source === 'script' ? 'du script' : 'par défaut') + (D.reglages.equipes ? ` + ${D.reglages.equipes} équipe(s)` : '') : '');
-    const PM = D.precedent?.modes?.[D.modes.actuel ? 'actuel' : Object.keys(D.modes)[0]] || {};
-    const dl = (k, f, v) => { const a = PM[k]?.[f]; if (a == null || v == null) return ''; const d = Math.round((v - a) * 10) / 10; return d ? ` <span style="font-size:11px;color:${d > 0 ? 'var(--ok)' : 'var(--acc)'}">${d > 0 ? '+' : ''}${d}</span>` : ''; };
-    const ph = M.cauchemar_multi?.top?.[0] || M.cauchemar?.top?.[0], phIds = ph ? (ph.ids || ph.equipe) : null;
-    const phare = ph ? `<div class="phare hero"><div class="bgimg">${imgsTrio(phIds)}</div><div class="cs">${eqList(phIds).map(x => `<div>${pf(x, true)}<div class="pn">${esc(carte(x).n)}</div></div>`).join('')}</div><div class="tx"><div class="k">${ic('cauchemar_multi')}Équipe phare · Cauchemar, plusieurs ennemis</div><div class="v">${ph.deuxEtoiles} %${dl(M.cauchemar_multi?.top?.[0] ? 'cauchemar_multi' : 'cauchemar', 'deuxEtoiles', ph.deuxEtoiles).replace('font-size:11px', 'font-size:20px')}</div><div class="s">de combats à 2 étoiles ou plus, ${ph.troisEtoiles} % à 3 étoiles</div></div></div>` : '';
-    setH('dashPhare', phare); setH('resume', `<table><tr><th>Catégorie</th><th>Meilleure équipe</th><th class="n">2+ étoiles</th><th class="n">3 étoiles</th></tr>` + Object.entries(M).map(([k, c]) => { const x = c.top[0]; if (!x) return ''; return `<tr><td class="cat">${ic(k)}${CATS[k] || esc(c.titre)}</td><td>${equipeHTML(x.ids || x.equipe, 1)}</td>${k === 'tour' ? `<td class="n" colspan="2">étage ${x.etageMoyen}</td>` : (k === 'guilde' || k === 'pain') ? `<td class="n" colspan="2">${x.degats.toLocaleString('fr-FR')} dégâts</td>` : `<td class="n">${x.deuxEtoiles} %${dl(k, 'deuxEtoiles', x.deuxEtoiles)}</td><td class="n">${x.troisEtoiles} %${dl(k, 'troisEtoiles', x.troisEtoiles)}</td>`}</tr>`; }).join('') + '</table>' + (D.precedent ? `<div class="muted" style="font-size:12px;margin-top:8px">Écarts par rapport à l’analyse du ${quand(D.precedent.date)}.</div>` : ''));
-  } else { setH('dashPhare', ''); setH('resume', '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>'); }
   // bandeaux : patch du jeu non vu, calcul conseille
   const pk = (E.patchs || [])[0], cc = E.calculConseille || [];
   hp('bandeaux').innerHTML = (pk && !pk.vu && !pk.vide ? `<div class="banner patch"><b>Patch KITSU détecté</b><div class="t">${esc(resumePatch(pk))}<div>moteur ${esc(pk.de)} puis ${esc(pk.vers)}</div></div><button onclick="go('nouveautes')">Voir le détail</button><button class="ghost" onclick="api('/api/patch-vu',{method:'POST'}).then(refresh)">Vu</button></div>` : '')
-    + (cc.length && !run ? `<div class="banner calc"><b>Calcul conseillé</b><div class="t">${esc(cc.join(' ; '))}<div>Lance « Tout lancer » pour remettre les équipes à jour.</div></div></div>` : '');
+    + (cc.length && !run ? `<div class="banner calc"><b>Calcul conseillé</b><div class="t">${esc(cc.join(' ; '))}<div>Lance « Mettre à jour l’IA » pour remettre les équipes à jour.</div></div></div>` : '');
   $('btnTout').classList.toggle('blink', !!cc.length && !run);
   // alertes
   const al = E.alertes || [], nv = al.filter(a => a.id > (+localStorage.getItem('kitsuAlertesVues') || 0));
@@ -1373,8 +1347,8 @@ function sideRender(run) {
   if (!j) { $('sjT').textContent = 'Aucune tâche'; $('sjS').textContent = 'Prêt.'; $('sjP').className = 'prog'; }
   else { const el = Math.round(((j.fin || Date.now()) - j.debut) / 1000), L = j.lignes.filter(l => l.trim()); $('sjT').textContent = j.nom; $('sjP').className = 'prog' + (run ? ' run' : ''); $('sjP').firstElementChild.style.width = run ? '' : (j.code === 0 ? '100%' : '0'); $('sjS').textContent = run ? dur(el) + ' · ' + (L[L.length - 1] || '…').replace(/^\[\s*\d+ s\]\s*/, '') : (j.code === 0 ? 'Terminée en ' : 'Arrêtée après ') + dur(el); }
   const b0 = CP.j?.meilleurs?.[CP.j?.meilleurs?.Les6 ? 'Les6' : 'Moyenne']?.[0], t0 = TW.j?.trios?.[0], sc = E.script || {}, vu = sc.vu;
-  $('nbCamp').textContent = b0 ? fmt(b0.troisEtoiles) + ' %' : ''; $('nbCamp').className = 'b g'; $('nbCamp').style.display = b0 ? '' : 'none';
-  $('nbTour').textContent = t0 ? 'ét. ' + Math.round(t0.etageMoyen) : ''; $('nbTour').className = 'b o'; $('nbTour').style.display = t0 ? '' : 'none';
+  const C3 = dbCampagne(), G3 = C3 && (C3.avecCau ? C3.cau : C3.camp); $('nbCamp').textContent = C3 ? C3.ok(G3) + '/' + C3.n(G3) : b0 ? fmt(b0.troisEtoiles) + ' %' : ''; $('nbCamp').className = 'b g'; $('nbCamp').style.display = C3 || b0 ? '' : 'none';
+  const tX = window.DB_PRIVE?.tour; $('nbTour').textContent = tX ? 'ét. ' + Math.round(tX.etage) : t0 ? 'ét. ' + Math.round(t0.etageMoyen) : ''; $('nbTour').className = 'b o'; $('nbTour').style.display = tX || t0 ? '' : 'none';
   const ok = vu && vu.v === sc.version && Date.now() - vu.t < 180000; $('nbScript').textContent = ok ? 'OK' : vu ? 'veille' : '!'; $('nbScript').className = 'b ' + (ok ? 'g' : 'o');
   if (SCRV.v !== (sc.version || null) || SCRV.vu !== (vu?.v || null)) { SCRV = { v: sc.version || null, vu: vu?.v || null }; majSide(MAJDISPO); }
   const nv = (E.alertes || []).filter(a => a.id > (+localStorage.getItem('kitsuAlertesVues') || 0)).length; $('nbJour').style.display = nv ? '' : 'none'; $('nbJour').textContent = nv;
@@ -1382,27 +1356,39 @@ function sideRender(run) {
 
 // ---------- tableau de bord : equipe phare, cartes des modes, ce qui a change ----------
 const imgsTrio = ids => eqList(ids).map(x => carte(x).img).filter(Boolean).map(u => `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`).join('');
+// Le script prive peut remplir window.DB_PRIVE = { tour: { etage, ids, equipe }, arene: { pc, ids, gain } } puis rappeler dashRender().
+const jourMois = t => new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+function dbCampagne() {
+  const e = CP.j?.etages, R = e?.resume || []; if (!R.length) return null;
+  const d = k => R.find(r => r.difficulte === k) || {}, cau = ['normal', 'difficile', 'extreme'].map(d), camp = ['campNormal', 'campDifficile', 'campExtreme'].map(d);
+  const ok = a => a.reduce((s, r) => s + (r.troisEtoilesSur || 0), 0), n = a => a.reduce((s, r) => s + (r.combats || 0), 0);
+  return { e, cau, camp, ok, n, avecCau: n(cau) > 0, sans: R.reduce((s, r) => s + (r.impossibles || 0), 0) };
+}
 function dashRender() {
-  const D = E?.dernier, M = D && (D.modes.actuel || D.modes[Object.keys(D.modes)[0]]), mode = (href, tag, t, v, s, ids, soon) => `<a class="mode${soon ? ' soon' : ''}" href="#${href}">${ids && CARTES ? `<div class="ph">${imgsTrio(ids)}</div>` : ''}<span class="tag">${tag}</span><div class="t">${t}</div><div class="v">${v}</div><div class="s">${s}</div></a>`;
-  const cK = CP.j?.meilleurs?.Les6 ? 'Les6' : 'Moyenne', c0 = CP.j?.meilleurs?.[cK]?.[0], cm = M?.cauchemar_multi?.top?.[0] || M?.cauchemar?.top?.[0];
-  const t0 = TW.j?.trios?.[0] || M?.tour?.top?.[0], g0 = M?.guilde?.top?.[0], ext = !!document.querySelector('#nav a[data-p="arene"]');
-  setH('dashModes', [
-    c0 ? mode('campagne', '3 étoiles', 'Campagne', fmt(c0.troisEtoiles) + ' %', `${trioCourt(c0.equipe)} · ${cK === 'Les6' ? 'moyenne des 6' : 'moyenne Cauchemar'}`, c0.ids) : cm ? mode('campagne', '2 étoiles', 'Campagne', cm.deuxEtoiles + ' %', trioCourt(eqList(cm.equipe)) + ' · Cauchemar', cm.ids) : mode('campagne', 'à calculer', 'Campagne', '-', 'Lance le calcul des 3 étoiles', null, 1),
-    t0 ? mode('tour', 'record moyen', "Tour de l'infini", 'Étage ' + Math.round(t0.etageMoyen), trioCourt(eqList(t0.equipe)) + (t0.max ? ` · jusqu'à ${t0.max}` : ''), t0.ids) : mode('tour', 'à calculer', "Tour de l'infini", '-', 'Lance le calcul de la Tour', null, 1),
-    ext ? mode('arene', 'privé', 'Arène', 'Fantômes', 'Draft, combat, défense, collectifs', null) : mode('arene0', 'PvP', 'Arène', 'Sans conseil', 'Mode joueur contre joueur', null, 1),
-    g0 ? mode('event', 'guilde', 'Événements', (g0.degats || 0).toLocaleString('fr-FR'), 'dégâts au boss de guilde · ' + trioCourt(eqList(g0.equipe)), g0.ids) : mode('event', 'à calculer', 'Événements', '-', 'Analyse complète', null, 1),
-  ].join(''));
-  // ce qui a change depuis l'analyse precedente
-  const PM = D?.precedent?.modes?.[D.modes.actuel ? 'actuel' : Object.keys(D.modes)[0]], L = [];
-  if (M && PM) for (const [k, c] of Object.entries(M)) {
-    const x = c.top?.[0], y = PM[k]?.top?.[0]; if (!x || !y) continue;
-    const f = k === 'tour' ? 'etageMoyen' : (k === 'guilde' || k === 'pain') ? 'degats' : 'deuxEtoiles', d = (x[f] ?? 0) - (y[f] ?? 0), nouv = eqList(x.ids || x.equipe).join() !== eqList(y.ids || y.equipe).join();
-    if (!d && !nouv) continue; const u = f === 'etageMoyen' ? ' étages' : f === 'degats' ? ' dégâts' : ' pts';
-    L.push({ k, x, d, nouv, t: (d > 0 ? '+' : '') + (f === 'degats' ? Math.round(d).toLocaleString('fr-FR') : fmt(d)) + u, w: Math.abs(f === 'degats' ? d / Math.max(1, y[f]) * 100 : d) + (nouv ? 5 : 0) });
-  }
-  L.sort((a, b) => b.w - a.w);
-  $('dashChg').style.display = L.length ? '' : 'none';
-  setH('dashChg', L.length ? `<h2>Ce qui a changé <span class="r">depuis l’analyse du ${quand(D.precedent.date)}</span></h2><div class="grid gc" style="gap:0 30px">${L.slice(0, 8).map(l => `<div class="chg">${equipeHTML(l.x.ids || l.x.equipe, 1)}<span class="x">${esc(CATS[l.k] || l.k)}${l.nouv ? ' · nouveau n°1' : ''}</span><span class="${l.d >= 0 ? 'up' : 'dn'}">${l.d ? l.t : '='}</span></div>`).join('')}</div>` : '');
+  if (!E) return;
+  const X = window.DB_PRIVE || {}, C = dbCampagne();
+  const carteMode = (href, cls, tag, ids, t, v, sub, pills = '') => `<a class="mode${cls ? ' ' + cls : ''}" href="#${href}">${ids && CARTES ? `<div class="ph">${imgsTrio(ids)}</div>` : ''}<span class="tag">${tag}</span><div class="t">${t}</div><div class="v">${v}</div><div class="s">${sub}</div>${pills}</a>`;
+  const L = [];
+  if (C) {
+    const b0 = CP.j.meilleurs?.Les6?.[0] || CP.j.meilleurs?.Moyenne?.[0], G = C.avecCau ? C.cau : C.camp;
+    const pills = (C.avecCau ? C.cau.map((r, i) => r.combats ? `<span class="pill ${'nde'[i]}">${['Normal', 'Difficile', 'Extrême'][i]} ${r.troisEtoilesSur ?? 0}</span>` : '').join('') : '') + (C.avecCau && C.n(C.camp) ? `<span class="pill">Campagne ${C.ok(C.camp)}/${C.n(C.camp)}</span>` : '');
+    L.push(carteMode('campagne', '', '3 étoiles', b0?.ids, C.avecCau ? 'Cauchemar' : 'Campagne', `${C.ok(G)}<small>/ ${C.n(G)}</small>`, `combats gagnés à 3★, un trio par combat · ${quand(C.e.date || CP.j.date)}`, `<div class="pills">${pills}</div>`));
+  } else L.push(carteMode('campagne', 'soon', 'à calculer', null, 'Campagne', '-', 'Lance le calcul des 3 étoiles'));
+  const t0 = TW.j?.trios?.[0], tx = X.tour, tt = tx || t0;
+  if (tt) L.push(carteMode('tour', '', tx ? 'départage exact' : 'étage moyen', tt.ids, "Tour de l'infini", 'Étage ' + (tx ? fmt(tx.etage) : fmt(t0.etageMoyen)), esc(eqList(tt.equipe).map(court).join(' / ')) + (!tx && t0.max ? ` · record ${t0.max}` : '')));
+  else L.push(carteMode('tour', 'soon', 'à calculer', null, "Tour de l'infini", '-', 'Lance le calcul de la Tour'));
+  const ext = !!document.querySelector('#nav a[data-p="arene"]'), ar = X.arene;
+  if (ar) L.push(carteMode('arene', '', 'privé', ar.ids, 'Arène', `${fmt(ar.pc)} %`, 'de victoires contre les fantômes' + (ar.gain ? ' · ' + esc(ar.gain) : '')));
+  else L.push(carteMode(ext ? 'arene' : 'arene0', 'soon', ext ? 'privé' : 'PvP', null, 'Arène', ext ? '…' : 'Sans conseil', ext ? 'lecture des résultats' : 'mode joueur contre joueur'));
+  setH('dbModes', L.join(''));
+  // ce qu'il reste a faire : rien ne se lance tout seul
+  const T = [], s = E.sauvegarde, todo = (c, b, t, btn, act) => `<div class="dbt"><span class="d" style="background:var(--${c})"></span><div class="x"><b>${b}</b>${t ? ' <span>· ' + t + '</span>' : ''}</div>${btn ? `<button class="ghost" onclick="${act}">${btn}</button>` : ''}</div>`;
+  if (!s) T.push(todo('acc', 'Aucune sauvegarde', 'importe-la depuis le jeu', 'Importer', "go('sauvegarde')"));
+  else if (Date.now() - s.t > 864e5) T.push(todo('warn', 'Sauvegarde du ' + jourMois(s.t), 'réimporte-la depuis le jeu', 'Importer', "go('sauvegarde')"));
+  if ((E.calculConseille || []).length) T.push(todo('warn', 'Analyse complète du ' + (E.dernier ? jourMois(E.dernier.date) : '-'), 'à relancer', "Mettre à jour l'IA", "lancer('complet')"));
+  if (C?.sans) T.push(todo('acc', C.sans + ' combats sans 3★', 'aucun trio trouvé', 'Voir', "go('campagne')"));
+  if (C?.e.specialistes?.restants) T.push(todo('warn', 'Spécialistes à finir', C.e.specialistes.restants + ' combats à chercher', 'Campagne', "go('campagne')"));
+  setH('dbTodo', T.join('') || todo('ok', 'Tout est à jour', ''));
 }
 
 // ---------- Tour de l'infini (resultats/tour.json, sinon l'analyse complete) ----------
