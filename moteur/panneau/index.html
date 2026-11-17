@@ -714,7 +714,8 @@ addEventListener('hashchange', () => route());
 // Repos : calcul en cours, fenetre cachee ou pas au premier plan. Fenetre cachee : pas de rafraichissement ; pas au premier plan : toutes les 6 s.
 let refreshT = 0;
 const majRepos = () => document.body.classList.toggle('repos', !!(E?.job && !E.job.fin) || document.hidden || !document.hasFocus());
-async function refreshDoux() { if (document.hidden) return; if (!document.hasFocus() && Date.now() - refreshT < 6000) return; await refresh(); }
+// Au premier plan sans calcul en cours : toutes les 5 s au lieu de 1,5 s (5.18), rien ne bouge vite. Un clic ou une action rafraichit tout de suite.
+async function refreshDoux() { if (document.hidden) return; const run = E?.job && !E.job.fin, dt = Date.now() - refreshT; if (!document.hasFocus() ? dt < 6000 : !run && dt < 5000) return; await refresh(); }
 window.addEventListener('focus', () => { majRepos(); refresh(); }); window.addEventListener('blur', majRepos);
 document.addEventListener('visibilitychange', () => { majRepos(); if (!document.hidden) refresh(); });
 async function refresh() {

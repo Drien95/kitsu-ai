@@ -18,7 +18,10 @@ import { listerPoids, restaurerPoids } from './lib/historique.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
-let ENG = await loadEngine(), MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8'));
+// Moteur du jeu charge au premier appel du panneau seulement (5.18) : le script (ping, conseil, equipes) n'a besoin que de la version
+// et du manifeste, les calculs ont leur propre copie dans les fils. Serveur seul : ~45 Mo au lieu de ~145 Mo (mesure du 17/11).
+let VER = readFileSync(D('engine', 'current.txt'), 'utf8').trim(), MAN = JSON.parse(readFileSync(D('engine', VER, 'manifest.json'), 'utf8')), ENG = null;
+const moteur = async () => ENG ||= await loadEngine(VER);
 const NCPU = os.availableParallelism?.() || os.cpus().length;
 // Fils du conseil en combat crees a la demande et fermes apres 3 min sans conseil (5.18) : au repos, le serveur ne garde plus
 // 11 copies du moteur du jeu en memoire (~300 Mo). Quand ils servent : meme nombre de fils et memes paquets, donc memes conseils.
@@ -41,10 +44,10 @@ let scriptVu = null, jeu = null;
 let COMBATS_DIFF = null;
 function prevision() {
   const G = ENG.G, sv = readJ(D('data', 'sauvegarde.json')), cartes = Object.keys(sv?.owned || {}).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r)).length;
-  if (COMBATS_DIFF?.v !== ENG.version) {
+  if (COMBATS_DIFF?.v !== VER) {
     const camp = G.ALL_WORLDS.filter(w => w.id !== 'halloween').flatMap(w => w.fights.map(f => f.id));
     const n = suf => camp.filter(f => { try { return !!G.findFight(f + suf); } catch { return false; } }).length;
-    COMBATS_DIFF = { v: ENG.version, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') } };
+    COMBATS_DIFF = { v: VER, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') } };
   }
   let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^cauchemar3-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
   const d = readJ(D('resultats', 'cauchemar3.json'));
@@ -84,7 +87,7 @@ const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), 
 function calculConseille() {
   const d = readJ(D('resultats', 'dernier.json')), sv = readJ(D('data', 'sauvegarde.json')), out = [];
   if (!d) { if (sv) out.push('aucune analyse complete pour ta collection'); return out; }
-  if (d.version && d.version !== ENG.version) out.push('le jeu a change depuis la derniere analyse');
+  if (d.version && d.version !== VER) out.push('le jeu a change depuis la derniere analyse');
   if (sv && d.saveHash != null && d.saveHash !== hashSave(sv)) out.push('ta collection a change (cartes, niveaux ou etoiles)');
   const pw = readJ(D('data', 'poids.json')); if (pw?.t && Date.parse(d.date) < pw.t) out.push("l'IA a ete reentrainee depuis");
   return out;
@@ -137,7 +140,7 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const add = d => { for (const l of String(d).split(/\r?\n/)) if (l.trim()) { job.lignes.push(l); if (job.lignes.length > 2000) job.lignes.shift(); } };
   p.stdout.on('data', add); p.stderr.on('data', add);
   p.on('close', async code => { if (apres && !(chaine && chaine.arretee)) { history.unshift({ nom: A.nom, debut: Date.now(), fin: Date.now(), code }); return apres(code); } job.fin = Date.now(); job.code = code; history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); alerter('calcul', 'job-' + job.id, code === 0 ? `${job.nom} : termine` : `${job.nom} : arrete`, `En ${Math.round((job.fin - job.debut) / 60000)} min.`); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
-    if (action === 'telecharger') { try { const v = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); if (v !== ENG.version) { say(`nouveau moteur ${v} : redemarre le panneau (KitsuAI.bat) pour l'utiliser dans le conseil en combat`); } } catch {} } });
+    if (action === 'telecharger') { try { const v = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); if (v !== VER) { say(`nouveau moteur ${v} : redemarre le panneau (KitsuAI.bat) pour l'utiliser dans le conseil en combat`); } } catch {} } });
   say(`${A.nom} : lance (${args.join(' ')})`);
   return job.id;
 }
@@ -171,7 +174,7 @@ function etat() {
   const res = existsSync(D('resultats')) ? readdirSync(D('resultats')).filter(f => /\.(csv|json|txt)$/.test(f) && f !== 'dernier.json').map(f => { const x = statSync(D('resultats', f)); return { f, t: x.mtimeMs, o: x.size }; }).sort((a, b) => b.t - a.t) : [];
   let disque = null; try { disque = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); } catch {}
   return {
-    moteur: ENG.version, moteurDisque: disque, mondes: ENG.G.ALL_WORLDS.map(w => `${w.id} (${w.fights.length})`), cartes: Object.keys(CH).length,
+    moteur: VER, moteurDisque: disque, mondes: ENG.G.ALL_WORLDS.map(w => `${w.id} (${w.fights.length})`), cartes: Object.keys(CH).length,
     cpu: os.cpus()[0]?.model, coeurs: NCPU, fils: NPOOL, memoire: Math.round(os.totalmem() / 2 ** 30), uptime: Math.round((Date.now() - T0) / 1000),
     conseil: { n: nConseil, dernier: lastConseil }, port: PORT,
     sauvegarde: sv ? { t: sv.t, script: sv.script, cartes: own.length, lr: own.filter(i => CH[i]?.r === 'M').length, ur: own.filter(i => CH[i]?.r === 'L').length, ssr: own.filter(i => CH[i]?.r === 'E').length, equipe: (sv.team || []).map(i => CH[i]?.n), guilde: sv.guild?.boss ? `${sv.guild.boss.name} niv ${sv.guild.boss.lv}` : null, compte: sv.acct?.lv } : null,
@@ -196,7 +199,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204, '', 'text/plain', CORS);
     if (EXT?.route && await EXT.route({ req, res, u, send, body, ENG, CORS, own, say, D })) return;
     // Pour le script du jeu
-    if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: ENG.version, dom: MAN.dom, fils: NPOOL, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
+    if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: VER, dom: MAN.dom, fils: NPOOL, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
     if (u.pathname === '/poids') { const p = readJ(D('data', 'poids.json')); return send(res, p ? 200 : 404, p || {}, 'application/json', CORS); }
     const duScript = req.headers['x-kitsu-script'] === '1';
     if (['/sauvegarde', '/equipes', '/jeu'].includes(u.pathname) && req.method === 'POST' && !duScript) return send(res, 403, { err: 'reserve au script KitsuAI' }, 'application/json', CORS);
@@ -230,6 +233,7 @@ http.createServer(async (req, res) => {
     // Panneau
     if (u.pathname === '/' || u.pathname === '/index.html') return send(res, 200, readFileSync(path.join(here, 'panneau', 'index.html'), 'utf8').replace('__TOKEN__', TOKEN).replace('<!--EXT-->', EXT?.panneau?.() || ''), 'text/html; charset=utf-8');
     if (u.pathname.startsWith('/api/')) {
+      await moteur();
       if (!own(req)) return send(res, 403, { err: 'jeton invalide (recharge le panneau)' });
       if (u.pathname === '/api/etat') return send(res, 200, etat());
       if (u.pathname === '/api/lancer' && req.method === 'POST') { const q = JSON.parse(await body(req)); return send(res, 200, { id: lancer(q.action, q.options || {}) }); }
@@ -241,8 +245,8 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [] }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
-      if (u.pathname === '/api/fiche') { if (FICHE.v !== ENG.version) FICHE = { v: ENG.version, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: ENG.version, ...FICHE.j }); }
-      if (u.pathname === '/api/cartes') { if (CARTES.v !== ENG.version) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: ENG.version, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
+      if (u.pathname === '/api/fiche') { if (FICHE.v !== VER) FICHE = { v: VER, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: VER, ...FICHE.j }); }
+      if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
       if (u.pathname === '/api/poids-historique') { const p = readJ(D('data', 'poids.json')); return send(res, 200, { actuel: p ? { regles: p.t || null, gains: p.gains || {}, equipes: Object.keys(p.equipes || {}).length, imitation: !!p.distillation, restaure: p.restaure || null } : null, copies: listerPoids() }); }
       if (u.pathname === '/api/poids-restaurer' && req.method === 'POST') { if (job && !job.fin) return send(res, 409, { err: 'attends la fin du calcul en cours' }); const { f } = JSON.parse(await body(req)); try { restaurerPoids(f); } catch (e) { return send(res, 400, { err: e.message }); } say('reglages de l\'IA restaures (' + f + ')'); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/patch-vu' && req.method === 'POST') { const f = D('data', 'patchs.json'), all = readJ(f) || []; all.forEach(p => p.vu = true); writeFileSync(f, JSON.stringify(all)); return send(res, 200, { ok: true }); }
@@ -252,13 +256,13 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/resultat') { const f = path.basename(u.searchParams.get('f') || ''); const p = D('resultats', f); if (!existsSync(p)) return send(res, 404, { err: 'introuvable' }); return send(res, 200, readFileSync(p), /\.json$/.test(f) ? 'application/json' : 'text/plain; charset=utf-8'); }
       if (u.pathname === '/api/sauvegarde' && req.method === 'POST') { const b = await body(req); const j = JSON.parse(b); if (!j.owned || !j.lv) return send(res, 400, { err: "ce n'est pas un export KitsuAI" }); mkdirSync(D('data'), { recursive: true }); writeFileSync(D('data', 'sauvegarde.json'), b); say(`sauvegarde importee (${Object.keys(j.owned).length} cartes)`); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/dossier' && req.method === 'POST') { const d = { resultats: 'resultats', data: 'data', moteur: '.' }[JSON.parse(await body(req)).d] || '.'; const p = D(d); mkdirSync(p, { recursive: true }); exec(process.platform === 'win32' ? `explorer "${p}"` : `xdg-open "${p}"`); return send(res, 200, { ok: true }); }
-      if (u.pathname === '/api/redemarrer-pool' && req.method === 'POST') { await fermerPool(); ENG = await loadEngine(); MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8')); say(`moteur recharge : ${ENG.version}`); return send(res, 200, { ok: true, version: ENG.version }); }
+      if (u.pathname === '/api/redemarrer-pool' && req.method === 'POST') { await fermerPool(); ENG = await loadEngine(); VER = ENG.version; MAN = JSON.parse(readFileSync(D('engine', VER, 'manifest.json'), 'utf8')); say(`moteur recharge : ${VER}`); return send(res, 200, { ok: true, version: VER }); }
     }
     send(res, 404, { err: 'introuvable' });
   } catch (e) { send(res, 500, { err: String(e.message || e) }); }
 }).on('error', e => { // un serveur KitsuAI tourne deja sur ce port (application + KitsuAI.bat) : on s'arrete au lieu de garder ~500 Mo pour rien
   if (e.code === 'EADDRINUSE') { say(`le port ${PORT} est deja pris (KitsuAI deja lance ?) : ce serveur s'arrete.`); process.exit(0); } throw e;
 }).listen(PORT, '127.0.0.1', () => {
-  say(`panneau KitsuAI : http://127.0.0.1:${PORT}  (moteur ${ENG.version}, ${NPOOL} fils pour le conseil, crees a la demande)`);
+  say(`panneau KitsuAI : http://127.0.0.1:${PORT}  (moteur ${VER}, ${NPOOL} fils pour le conseil, crees a la demande)`);
   if (process.argv.includes('--ouvrir')) exec(process.platform === 'win32' ? `start "" http://127.0.0.1:${PORT}/` : `xdg-open http://127.0.0.1:${PORT}/`);
 });

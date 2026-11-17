@@ -25,6 +25,10 @@ Moins de lag pendant les calculs (YouTube et kitsu.games qui saccadaient), sans 
   - le dock ne resérialise plus le HTML de ses panneaux à chaque tick, le guide lit les textes sans forcer de mise en page ;
   - onglet caché : dock, guide, conseiller, équipe, plan et invocations ne tournent plus (l'alerte d'énergie et la synchro continuent).
 - Panneau : l'état (toutes les 1,5 s) ne réécrit plus que ce qui a changé ; le serveur ne relit plus sauvegarde, réglages, patchs et derniers résultats tant que leurs fichiers ne changent pas.
+- Encore moins au repos :
+  - launcher fermé dans la barre des tâches : la fenêtre est détruite au lieu d'être cachée (son processus d'affichage ne reste plus en mémoire), elle est recréée au clic sur l'icône ; démarrage avec Windows sans fenêtre ; correcteur orthographique coupé ;
+  - le serveur ne charge le moteur du jeu qu'à la première ouverture du panneau : le script (ping, conseil, équipes) n'en a pas besoin, les fils ont leur copie. Mesuré le 17/11 : ~72 Mo au repos au lieu de ~150 Mo ;
+  - panneau au premier plan sans calcul en cours : état demandé toutes les 5 s au lieu de 1,5 s (toujours 1,5 s pendant un calcul).
 
 ## 5.17.0
 
