@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.15.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.16.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -728,6 +728,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.11.4 | Combat : le calcul du PC ne remplace plus un bon coup par « Respirer » quand tous les coups se valent |
 | 5.12.0 | Tour de l'infini : trio cherché pour la Tour, étages qui bloquent, collectifs, réglages de combat appris pour la Tour, Pain, conseils d'échange au marché ; les analyses tiennent compte des collectifs |
 | 5.12.1 | Le jeu ne ralentit plus avec le temps : l'objectif de bannière n'est plus recalculé toutes les 0,4 s (il relisait le journal des gains, qui grossit à chaque combat), les contours du conseiller ne sont plus retirés et remis 7 fois par seconde, le journal de calibration n'est plus relu à chaque coup |
+| 5.16.0 | Campagne : meilleur trio PAR COMBAT (Campagne et Cauchemar) : les meilleurs trios de la course et ceux du script jouent chaque combat, les combats sans trio sûr sont cherchés sur TOUS les trios par priorité dans un budget de temps (reprise la nuit suivante), plan minimal de trios ; vue par monde et par combat dans la page Campagne ; le script Tampermonkey ajoute ces trios à son classement de l'écran d'équipe |
 | 5.15.0 | Tour de l'infini : TOUS les trios de tes SSR/UR/LR en course avec élimination (une montée par manche, même graine pour tous), finale de 30 montées pour les 20 meilleurs, journal des montées gardé entre deux calculs ; page Tour comme la Campagne (ce que fera le calcul, progression, podium, carte à partager en PNG, course des trios, planche PNG) |
 | 5.14.1 | Launcher : pages sur toute la largeur de l'écran, notes de version sur plusieurs colonnes ; Campagne : trios, combats, mémoire et durée du 1er tour affichés avant le calcul, progression pendant ; rappel de réinstaller le script Tampermonkey avec une mise à jour du launcher, carte « Script à mettre à jour » tant que Tampermonkey a l'ancienne version |
 | 5.14.0 | Refonte du launcher : barre latérale par groupes (Modes de jeu, Analyses, Outils), mise à jour du launcher en évidence, onglets Tour, Événements et guilde, Raids ; Campagne en 6 difficultés (Campagne et Cauchemar N/D/E), podium, carte à partager en PNG, comparateur ; collection avec recherche et filtres, fiche de carte, Ctrl+K, fond animé, responsive |

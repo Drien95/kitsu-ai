@@ -89,7 +89,7 @@ const ACTIONS = {
   imitation: { nom: "IA par imitation", cmd: ['distiller.mjs'], opts: o => ['--types', o.types || 'nm,boss', '--combats', String(o.combats || 160)] },
   equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--generations', String(o.generations || 25)] },
   tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
-  cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes'] },
+  cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes', '--budget-specialistes', String(o.specialistes == null ? 60 : Math.max(0, Math.min(1440, Math.round(+o.specialistes) || 0)))] },
   conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos,marche'] },
 };
 // Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
@@ -192,7 +192,12 @@ http.createServer(async (req, res) => {
     if (u.pathname === '/jeu' && req.method === 'POST') { jeu = { ...JSON.parse(await body(req)), t: Date.now() }; verifierAlertes(); return send(res, 200, { ok: true }, 'application/json', CORS); }
     if (u.pathname === '/equipes' && req.method === 'POST') {
       // Classement des trios pour un combat, demande par le guide : 24 tirages par trio sur tous les coeurs.
-      const q = JSON.parse(await body(req)); if (q.dom && q.dom !== MAN.dom) return send(res, 409, { err: 'version' }, 'application/json', CORS);
+      const q = JSON.parse(await body(req));
+      if (q.conseil) { // trios du calcul Campagne pour ce combat (meilleur et trio du plan), lecture seule
+        const c3 = readJ(D('resultats', 'cauchemar3.json')), e = c3?.etages, row = e?.combats?.find(c => c[0] === String(q.fid));
+        return send(res, 200, { trios: row ? [...new Set([row[2], row[4]])].filter(i => i >= 0).map(i => e.trios[i]) : [], niveaux: c3?.niveaux ?? null }, 'application/json', CORS);
+      }
+      if (q.dom && q.dom !== MAN.dom) return send(res, 409, { err: 'version' }, 'application/json', CORS);
       const t0 = Date.now(), seeds = Array.from({ length: q.seeds || 24 }, (_, i) => i + 1);
       const r = await pool.runAll(q.equipes.map(team => ({ team, fights: [q.fid], seeds })), q.W, {}, 4);
       return send(res, 200, { ms: Date.now() - t0, res: r }, 'application/json', CORS);

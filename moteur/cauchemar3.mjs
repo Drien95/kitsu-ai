@@ -8,6 +8,7 @@
 // Journal (cache/cauchemar3-*.jsonl) : rien n'est recalcule tant que le combat, la carte, son niveau, ses etoiles,
 // ses collectifs, les combats et l'IA sont les memes ; il sert aussi de point de reprise apres une coupure.
 //   node cauchemar3.mjs [--niveaux 99|actuel] [--difficultes toutes|cauchemar] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
+//   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--seuil 60] [--sans-etages]
 //   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
@@ -17,6 +18,7 @@ import { arg, log, SAVE, WA, shuffle } from './lib/commun.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal } from './lib/journal.mjs';
 import { garderEveille } from './lib/eveil.mjs';
+import { parCombat } from './lib/etages.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, SIM = makeSim(G, B);
 const NIV = String(arg('niveaux', '99')), K = +arg('garder', 30), Z = +arg('z', 3), PAQ = +arg('paquet', 16);
@@ -39,7 +41,8 @@ let trios = []; for (let a = 0; a < IDS.length; a++) for (let b = a + 1; b < IDS
 if (arg('max-trios')) trios = shuffle(trios, 5).slice(0, +arg('max-trios'));
 const T = trios.length, cleTrio = trios.map(t => t.map(id => cleCarte(id)).sort().join(','));
 // Signature d'un combat : les ennemis tels que le jeu les met en place (stats, niveau, boss).
-const sigCombat = f => { try { return f + JSON.stringify(B.enemies(G.setupBattle(G.findFight(f), [{ id: IDS[0], lv: 1, stars: 0 }], 1).st).map(e => [e.id, e.name, e.lv, e.atk, e.def, e.maxHp, e.spd, e.boss ? 1 : 0])); } catch { return f; } };
+const sigCombat0 = f => { try { return f + JSON.stringify(B.enemies(G.setupBattle(G.findFight(f), [{ id: IDS[0], lv: 1, stars: 0 }], 1).st).map(e => [e.id, e.name, e.lv, e.atk, e.def, e.maxHp, e.spd, e.boss ? 1 : 0])); } catch { return f; } };
+const sigCache = new Map(), sigCombat = f => sigCache.get(f) ?? sigCache.set(f, sigCombat0(f)).get(f);
 const camp = G.ALL_WORLDS.filter(w => w.id !== 'halloween').flatMap(w => w.fights.map(f => f.id));
 const paquets = DIFF.map(([d, suf], di) => {
   let fl = shuffle(camp.map(f => f + suf).filter(f => { try { return !!G.findFight(f); } catch { return false; } }), 101 + di);
@@ -163,11 +166,30 @@ if (!arg('sans-collectifs') && G.activeLinks && G.linkKey) for (const x of tops[
   if (lignes.length) collectifs.push({ equipe: tr.map(nom), cartes: lignes });
 }
 
+// ---------- meilleur trio par combat (lib/etages.mjs) ----------
+// Trios que le script Tampermonkey essaie sur l'ecran d'equipe : ceux de tes 10 cartes les plus fortes (meme formule que pool(10)).
+const force = id => { const c = CH[id]; let st; try { st = G.statsAt(c, LVA(id), ET(id)); } catch { st = { atk: c.atk, def: c.def }; } return (st.atk + st.def) * (c.hpK || 1.1) * ({ M: 1.25, L: 1.15, E: 1.1 }[c.r] || 1); };
+const dix = new Set(IDS.slice().sort((a, b) => force(b) - force(a)).slice(0, 10)), indexTrio = new Map(trios.map((t, i) => [t.join('-'), i]));
+const scriptSet = new Set(trios.map((t, i) => t.every(id => dix.has(id)) ? i : -1).filter(i => i >= 0));
+let etages = null;
+if (!arg('sans-etages')) {
+  const objE = TOUTES ? OBJ.indexOf('Les6') : IMOY, enCourse = new Set(alive), NCE = +arg('candidats-etages', 120);
+  const classes = [...Array(T).keys()].filter(t => N[t * ND]).map(t => ({ t, a: enCourse.has(t) ? 1 : 0, ...score(t, objE) })).sort((x, y) => y.a - x.a || (y.p - Z * y.se) - (x.p - Z * x.se));
+  const cur = indexTrio.get(equipe.slice().sort((a, b) => a - b).join('-'));
+  const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...scriptSet, ...(cur != null ? [cur] : [])])];
+  const sigColl = h53(IDS.map(id => cleCarte(id)).join(','));
+  etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
+    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60) });
+  etages.scriptCartes = [...dix].map(nom);
+  // Nom, monde et place de chaque combat de base, pour l'affichage par etage.
+  etages.infos = {}; const vus = new Set(etages.combats.map(c => c[8])); for (const w of G.ALL_WORLDS) for (const f of w.fights) if (vus.has(f.id)) etages.infos[f.id] = [w.id, f.idx ?? w.fights.indexOf(f), f.t || f.id, f.boss ? 1 : 0];
+}
+
 // ---------- resultats ----------
 const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, trios: T, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
   vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, mondes: MONDES, repartition,
-  meilleurs: Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), equipeActuelle, maintenant, cartesCles, collectifs };
+  meilleurs: Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), equipeActuelle, maintenant, cartesCles, collectifs, etages };
 mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
 for (const [o, l] of Object.entries(out.meilleurs)) { log(`== 3 etoiles, ${o} ==`); l.slice(0, 5).forEach((x, i) => log(`  ${i + 1}. ${x.equipe.join(' / ')} : ${x.troisEtoiles} % (+/- ${x.marge}) | ${x.parDifficulte.map(d => `${d.difficulte} ${d.troisEtoiles} / 2* ${d.deuxEtoiles}`).join(', ')}`)); }
 for (const c of collectifs) for (const l of c.cartes) log(`collectifs ${c.equipe.join(' / ')}, ${l.carte} : 3 etoiles ${l.avant} -> ${l.apres} %${l.utile ? ' : ' + l.conseil.join(', ') : ' (pas mieux que les tiens)'}`);

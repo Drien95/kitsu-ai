@@ -4,6 +4,17 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.16.0
+
+- Campagne : meilleur trio **par combat** (nouvelle étape du calcul, `lib/etages.mjs`). La course classe les trios sur un score global et peut écarter tôt un trio qui serait le seul à faire 3 étoiles sur un combat. Désormais :
+  - les 120 meilleurs trios de la course, les trios que le script essaie (tes 10 cartes les plus fortes) et ton équipe jouent chaque combat (2 tirages), puis les 8 meilleurs de chaque combat 6 tirages de plus ;
+  - les combats sous 60 % de 3 étoiles sont cherchés sur TOUS les trios (Campagne d'abord, puis Cauchemar Normal, Difficile, Extrême), dans un budget de temps choisi au lancement (« Spécialistes par combat », 1 h par défaut) ; le journal garde chaque combat fini, la nuit suivante reprend ;
+  - plan minimal : le moins de trios possible pour couvrir tous les combats, à un tirage près du meilleur.
+- Page Campagne : carte « Meilleur trio par combat » (par difficulté : combats sûrs, comparaison avec le script, spécialistes, combats sans 3 étoiles, recherche restante et temps estimé), le plan, et chaque combat par monde avec filtres.
+- Script : sur l'écran d'équipe, le trio du plan et le meilleur trio du combat (demandés au PC par `/equipes`) sont ajoutés aux trios essayés et rejoués à tes niveaux actuels (badge « calcul Campagne »).
+- Le hasard d'un combat est tiré par le jeu au lancement de chaque essai : les résultats sont des chances de 3 étoiles par essai.
+
+
 ## 5.15.0
 
 ### Ajouté
