@@ -4,6 +4,19 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.13.0
+
+### Ajouté
+- **Meilleur trio pour les 3 étoiles en Cauchemar Normal, Difficile et Extrême** (`node moteur/cauchemar3.mjs`) : tous les trios de tes SSR/UR/LR (383 306 pour 133 cartes), sans tri préalable par carte seule. Course avec élimination : mêmes combats et mêmes tirages pour tous, un trio n'est écarté que s'il est nettement derrière (z = 3) pour chaque objectif (Normal, Difficile, Extrême, moyenne). Les finalistes jouent tous les combats puis 2 tirages de plus ; 2 étoiles et victoires des meilleurs ; collectifs des 5 meilleurs trios.
+- **Journal des essais** (`lib/journal.mjs`) : un résultat n'est recalculé que si le code de combat du jeu, la carte (stats, kit, collectifs), son niveau, ses étoiles, ses collectifs choisis, les combats ou les réglages de l'IA changent. Un patch qui ne touche que les bannières ne vide plus rien. Sert aussi de point de reprise.
+- **PC gardé éveillé pendant un long calcul** (`lib/eveil.mjs`), sans modifier les réglages d'alimentation.
+
+### Amélioré
+- Simulation : option `stop3`, le combat s'arrête dès que les 3 étoiles sont perdues (cycle 9, ou un K.O. quand personne dans l'équipe ne peut ranimer). 1,8 fois plus rapide, 3 étoiles identiques (vérifié sur 9840 combats et par un nouveau test).
+- Tests du moteur : 12 (arrêt des 3 étoiles perdues, journal).
+
+---
+
 ## 5.12.1
 
 ### Corrigé

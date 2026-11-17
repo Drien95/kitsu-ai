@@ -17,6 +17,13 @@ const tw = [1, 2].map(() => S.tower(team, 3, pol, 60));
 t('Tour : meme tirage = meme etage', tw[0] === tw[1] && tw[0] > 0, String(tw));
 const c = fights.map(f => S.fight(f, team, 7, pol, { stop2: true }));
 t('arret a 2 K.O. : memes 2 etoiles', a.filter(r => r.stars >= 2).length === c.filter(r => r.stars >= 2).length);
+// Arret des que les 3 etoiles sont perdues : memes 3 etoiles combat par combat, y compris avec une carte qui ranime.
+const rev = Object.values(G.CHAR_BY_ID).find(x => /ranimer/.test(JSON.stringify(B.KITS?.[x.id] || {})));
+const teams3 = [team, ...(rev ? [[rev.id, ids[0], ids[1]].map(id => ({ id, lv: 99, stars: 0 }))] : [])];
+const eq3 = teams3.every(tm => fights.every(f => (S.fight(f, tm, 7, pol).stars === 3) === (S.fight(f, tm, 7, pol, { stop3: true }).stars === 3)));
+t('arret des 3 etoiles perdues : memes 3 etoiles', eq3 && !!rev);
+const { h53 } = await import('./lib/journal.mjs');
+t('journal : cle stable et distincte', h53('abc') === h53('abc') && h53('abc') !== h53('abd'));
 const pool = await makePool(2), jobs = fights.slice(0, 12).map(f => ({ team, fights: [f], seeds: [7] }));
 const pr = await pool.runAll(jobs, W_DEFAUT, {}, 3); await pool.close();
 t('multithread = fil unique', pr.every((r, i) => r.s2 === (a[i].stars >= 2 ? 1 : 0) && r.win === (a[i].win ? 1 : 0)));
