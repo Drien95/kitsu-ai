@@ -12,6 +12,8 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
   - plan minimal : le moins de trios possible pour couvrir tous les combats, à un tirage près du meilleur.
 - Page Campagne : carte « Meilleur trio par combat » (par difficulté : combats sûrs, comparaison avec le script, spécialistes, combats sans 3 étoiles, recherche restante et temps estimé), le plan, et chaque combat par monde avec filtres.
 - Script : sur l'écran d'équipe, le trio du plan et le meilleur trio du combat (demandés au PC par `/equipes`) sont ajoutés aux trios essayés et rejoués à tes niveaux actuels (badge « calcul Campagne »).
+- Nouvelle page « Règles et effets » (Outils) : les 33 statuts (malus, bonus, protections) avec ce qu'ils font et leur valeur par défaut, les règles du combat (tour de jeu, énergie, endurance, formule des dégâts, critique, types, rupture, boss, étoiles), les 146 passifs et la progression. Tout est lu dans le moteur du jeu à chaque version (`lib/fiche.mjs`, `/api/fiche`) ; un statut inconnu est marqué « nouveau ».
+- Tour : le calcul garde aussi la suite du classement (`classementLarge`, 1 500 trios) pour le départage exact.
 - Correction : la page Tour (et Campagne) ne rechargeait pas les résultats à la fin d'un calcul suivi en direct ; il fallait recharger le launcher.
 - Le hasard d'un combat est tiré par le jeu au lancement de chaque essai : les résultats sont des chances de 3 étoiles par essai.
 

@@ -52,6 +52,8 @@ const ligne = x => ({ equipe: x.t.map(nom), ids: x.t, etageMoyen: +x.moy.toFixed
 const out = { version, date: new Date().toISOString(), niveaux: NIV, record: SAVE.tower?.best ?? null, triosEssayes: essais, cartes: IDS.length,
   methode: 'course', entonnoir: C.entonnoir, monteesSimulees: C.montees, reprisesJournal: C.repris, duree: Math.round((Date.now() - T0) / 1000), vitesse: Math.round(C.montees / Math.max(1, C.duree)),
   classement: C.classement.slice(0, 200).map(x => ({ ids: x.t, etageMoyen: +x.moy.toFixed(1), montees: x.n })),
+  // Suite du classement (trios en course apres les 200 premiers, puis les mieux places des ecartes) : prefiltre du departage exact.
+  classementLarge: [...C.classement.slice(200), ...C.ecartes].slice(0, 1500).map(x => ({ ids: x.t, etageMoyen: +x.moy.toFixed(1), montees: x.n })),
   cartesSeules: solo.slice(0, 10).map(x => ({ carte: nom(x.id), id: x.id, etage: x.etage })), trios: fin.slice(0, 8).map(ligne), equipeActuelle: act ? ligne(act) : null };
 log(`cartes seules : ${solo.slice(0, 5).map(x => `${nom(x.id)} ${x.etage}`).join(', ')}`);
 fin.slice(0, 5).forEach((x, i) => log(`  ${i + 1}. ${noms(x.t)} : etage moyen ${x.moy.toFixed(1)} (+/- ${(2 * x.se).toFixed(1)}), 10 % des montees sous ${x.p10}, max ${x.max}`));
