@@ -189,6 +189,11 @@
   .fx i { position: absolute; bottom: -20px; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle, #ffd27a, #ff7a3d 45%, transparent 70%); box-shadow: 0 0 12px 3px rgba(255,122,61,.55); animation: monte linear infinite; opacity: 0; will-change: transform, opacity; }
   @keyframes monte { 0% { transform: translate(0,0) scale(.6); opacity: 0; } 10% { opacity: .9; } 100% { transform: translate(var(--dx), -105vh) scale(1.1); opacity: 0; } }
   .fx.pause i { animation-play-state: paused; } body.calme .fx { display: none; }
+  /* Repos (v5.18.0) : pendant un calcul, ou quand la fenetre n'est pas au premier plan, plus d'effets animes ni de flou :
+     ils occupaient ~20 % du processeur (fenetre + carte graphique, en priorite normale) au detriment de tes videos et du calcul. */
+  body.repos .fx { display: none; }
+  body.repos .maj::after, body.repos .pf.r-LR, body.repos .pf.r-LR::before, body.repos .upd, body.repos .blink, body.repos .skel { animation: none !important; }
+  body.repos .top, body.repos .veil { backdrop-filter: none; }
   @media (prefers-reduced-motion: reduce) { .fx i, .maj::after, .pf.r-LR, .pf.r-LR::before, .upd, .blink { animation: none !important; } }
   .app { position: relative; z-index: 1; display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
   .side { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 18px 14px; border-right: 1px solid var(--line); background: rgba(9,10,15,.86); backdrop-filter: blur(8px); z-index: 30; }
@@ -691,6 +696,8 @@ const IC = {
 const ic = k => IC[k] ? `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>` : '';
 // N'ecrit le HTML que s'il a change : les portraits ne sont pas recharges toutes les 1,5 s.
 const HC = new Map(); const setH = (id, h) => { if (HC.get(id) === h) return; HC.set(id, h); $(id).innerHTML = h; };
+// refresh() (toutes les 1,5 s) n'ecrit plus le HTML que s'il a change (5.18) : hp(id).innerHTML = h passe par setH.
+const HP = {}; const hp = id => HP[id] ||= { set innerHTML(h) { setH(id, h); } };
 
 const dur = s => s < 60 ? s + ' s' : s < 3600 ? Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s' : Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min';
 const quand = t => t ? new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
@@ -704,29 +711,37 @@ function go(p) { location.hash = p; }
 addEventListener('hashchange', () => route());
 
 // ---------- rafraichissement ----------
+// Repos : calcul en cours, fenetre cachee ou pas au premier plan. Fenetre cachee : pas de rafraichissement ; pas au premier plan : toutes les 6 s.
+let refreshT = 0;
+const majRepos = () => document.body.classList.toggle('repos', !!(E?.job && !E.job.fin) || document.hidden || !document.hasFocus());
+// Au premier plan sans calcul en cours : toutes les 5 s au lieu de 1,5 s (5.18), rien ne bouge vite. Un clic ou une action rafraichit tout de suite.
+async function refreshDoux() { if (document.hidden) return; const run = E?.job && !E.job.fin, dt = Date.now() - refreshT; if (!document.hasFocus() ? dt < 6000 : !run && dt < 5000) return; await refresh(); }
+window.addEventListener('focus', () => { majRepos(); refresh(); }); window.addEventListener('blur', majRepos);
+document.addEventListener('visibilitychange', () => { majRepos(); if (!document.hidden) refresh(); });
 async function refresh() {
-  try { E = await api('/api/etat'); } catch (e) { $('chipSrv').innerHTML = '<span class="dot bad"></span>Serveur injoignable'; return; }
-  const run = E.job && !E.job.fin, maj = E.moteurDisque && E.moteurDisque !== E.moteur;
-  $('chipSrv').innerHTML = `<span class="dot ${maj ? 'warn' : ''}"></span>${E.fils} fils`; $('chipSrv').title = 'Serveur local actif sur 127.0.0.1:' + E.port;
+  refreshT = Date.now();
+  try { E = await api('/api/etat'); } catch (e) { hp('chipSrv').innerHTML = '<span class="dot bad"></span>Serveur injoignable'; return; }
+  const run = E.job && !E.job.fin, maj = E.moteurDisque && E.moteurDisque !== E.moteur; majRepos();
+  hp('chipSrv').innerHTML = `<span class="dot ${maj ? 'warn' : ''}"></span>${E.fils} fils`; $('chipSrv').title = 'Serveur local actif sur 127.0.0.1:' + E.port;
   $('chipVer').textContent = 'v' + (E.appVersion || E.script?.version || '-');
   // etapes de "tout lancer"
   const ch = E.job?.chaine;
-  $('steps').innerHTML = STEPS.map(([t, s], i) => { const st = ch ? (i < ch.i ? 'done' : i === ch.i && run ? 'on' : (E.job.fin && i < ch.i) ? 'done' : '') : ''; return `<div class="step ${st}"><b>${i + 1}. ${t}</b><span>${st === 'done' ? 'terminé' : st === 'on' ? 'en cours' : s}</span></div>`; }).join('');
+  hp('steps').innerHTML = STEPS.map(([t, s], i) => { const st = ch ? (i < ch.i ? 'done' : i === ch.i && run ? 'on' : (E.job.fin && i < ch.i) ? 'done' : '') : ''; return `<div class="step ${st}"><b>${i + 1}. ${t}</b><span>${st === 'done' ? 'terminé' : st === 'on' ? 'en cours' : s}</span></div>`; }).join('');
   document.querySelectorAll('[data-act], #btnTout').forEach(b => b.disabled = run); $('stop').disabled = $('stop2').disabled = !run;
   // tache en cours
   if (E.job) {
     const el = Math.round(((E.job.fin || Date.now()) - E.job.debut) / 1000), etat = run ? 'en cours depuis ' + dur(el) : (E.job.code === 0 ? 'terminée en ' : 'arrêtée ou en erreur après ') + dur(el);
-    $('jobh').innerHTML = `<b style="color:var(--txt)">${esc(E.job.nom)}</b> · ${etat}`; $('jobh2').innerHTML = $('jobh').innerHTML;
+    hp('jobh').innerHTML = `<b style="color:var(--txt)">${esc(E.job.nom)}</b> · ${etat}`; hp('jobh2').innerHTML = $('jobh').innerHTML;
     $('prog').className = 'prog' + (run ? ' run' : ''); $('prog').firstElementChild.style.width = run ? '' : (E.job.code === 0 ? '100%' : '0');
     const L = E.job.lignes.filter(l => l.trim()); $('lastline').textContent = L[L.length - 1] || '...';
     if (E.job.lignes.length !== lastLog) { const pre = $('joblog'), b = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30; pre.textContent = E.job.lignes.join('\n'); lastLog = E.job.lignes.length; if (b) pre.scrollTop = pre.scrollHeight; }
   }
-  $('journal').textContent = E.journal.join('\n'); $('journal').scrollTop = 1e9;
-  $('hist').innerHTML = (E.historique || []).map(h => `<div><span>${esc(h.nom)}</span><span class="${h.code === 0 ? 'okc' : 'badc'}" style="flex:0">${h.code === 0 ? 'OK' : 'erreur'}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(h.fin)}</span></div>`).join('') || '<div class="muted">Rien pour l’instant.</div>';
+  { const t = E.journal.join('\n'); if ($('journal').textContent !== t) { $('journal').textContent = t; $('journal').scrollTop = 1e9; } }
+  hp('hist').innerHTML = (E.historique || []).map(h => `<div><span>${esc(h.nom)}</span><span class="${h.code === 0 ? 'okc' : 'badc'}" style="flex:0">${h.code === 0 ? 'OK' : 'erreur'}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(h.fin)}</span></div>`).join('') || '<div class="muted">Rien pour l’instant.</div>';
   // tuiles
   const s = E.sauvegarde, sc = E.script || {}, vu = sc.vu, scOk = vu && vu.v === sc.version && Date.now() - vu.t < 180000;
   const tile = (k, v, sub, cls = '') => `<div class="tile ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
-  $('tiles').innerHTML = [
+  hp('tiles').innerHTML = [
     tile('Moteur du jeu', esc(E.moteur), maj ? 'nouvelle version téléchargée, recharge-le' : `${E.mondes.length} mondes · ${E.cartes} cartes`, maj ? 'warn' : ''),
     tile('Processeur', E.fils + ' fils', esc((E.cpu || '').replace(/\(R\)|\(TM\)|Processor|\s+/g, ' ').trim())),
     tile('Script du jeu', vu ? 'v' + esc(vu.v) : 'non vu', !vu ? 'ouvre kitsu.games avec le script' : scOk ? 'à jour et connecté' : vu.v !== sc.version ? `disponible : v${esc(sc.version)}` : 'pas de nouvelles depuis ' + dur(Math.round((Date.now() - vu.t) / 1000)), !vu ? 'warn' : vu.v !== sc.version ? 'warn' : ''),
@@ -745,7 +760,7 @@ async function refresh() {
   } else { setH('dashPhare', ''); setH('resume', '<div class="muted">Pas encore d’analyse. Lance <b>Tout lancer</b>.</div>'); }
   // bandeaux : patch du jeu non vu, calcul conseille
   const pk = (E.patchs || [])[0], cc = E.calculConseille || [];
-  $('bandeaux').innerHTML = (pk && !pk.vu && !pk.vide ? `<div class="banner patch"><b>Patch KITSU détecté</b><div class="t">${esc(resumePatch(pk))}<div>moteur ${esc(pk.de)} puis ${esc(pk.vers)}</div></div><button onclick="go('nouveautes')">Voir le détail</button><button class="ghost" onclick="api('/api/patch-vu',{method:'POST'}).then(refresh)">Vu</button></div>` : '')
+  hp('bandeaux').innerHTML = (pk && !pk.vu && !pk.vide ? `<div class="banner patch"><b>Patch KITSU détecté</b><div class="t">${esc(resumePatch(pk))}<div>moteur ${esc(pk.de)} puis ${esc(pk.vers)}</div></div><button onclick="go('nouveautes')">Voir le détail</button><button class="ghost" onclick="api('/api/patch-vu',{method:'POST'}).then(refresh)">Vu</button></div>` : '')
     + (cc.length && !run ? `<div class="banner calc"><b>Calcul conseillé</b><div class="t">${esc(cc.join(' ; '))}<div>Lance « Tout lancer » pour remettre les équipes à jour.</div></div></div>` : '');
   $('btnTout').classList.toggle('blink', !!cc.length && !run);
   // alertes
@@ -754,23 +769,23 @@ async function refresh() {
   if (location.hash === '#journal' && nv.length) try { localStorage.setItem('kitsuAlertesVues', String(Math.max(...al.map(a => a.id)))); } catch {}
   if (!APP) for (const a of al.filter(a => a.id > lastAlerte)) { toast(a.titre + ' : ' + a.texte); if (window.Notification?.permission === 'granted' && lastAlerte) new Notification(a.titre, { body: a.texte }); }
   lastAlerte = Math.max(lastAlerte, ...al.map(a => a.id), 0);
-  $('alist').innerHTML = al.slice().reverse().map(a => `<div><span><b>${esc(a.titre)}</b><br><span class="muted">${esc(a.texte)}</span></span><span class="muted" style="flex:0;white-space:nowrap">${quand(a.t)}</span></div>`).join('') || '<div class="muted">Aucune alerte.</div>';
+  hp('alist').innerHTML = al.slice().reverse().map(a => `<div><span><b>${esc(a.titre)}</b><br><span class="muted">${esc(a.texte)}</span></span><span class="muted" style="flex:0;white-space:nowrap">${quand(a.t)}</span></div>`).join('') || '<div class="muted">Aucune alerte.</div>';
   // patchs
-  $('pk').innerHTML = (E.patchs || []).filter(p => !p.vide).map(p => `<details class="rel" ${p === pk ? 'open' : ''}><summary><b>${esc(p.de)} puis ${esc(p.vers)}</b><span>${quand(p.date)} · ${esc(resumePatch(p))}</span></summary><div class="body">${detailPatch(p)}</div></details>`).join('') || '<div class="muted">Aucun patch détecté depuis l’installation. KitsuAI compare chaque nouvelle version du jeu à la précédente.</div>';
+  hp('pk').innerHTML = (E.patchs || []).filter(p => !p.vide).map(p => `<details class="rel" ${p === pk ? 'open' : ''}><summary><b>${esc(p.de)} puis ${esc(p.vers)}</b><span>${quand(p.date)} · ${esc(resumePatch(p))}</span></summary><div class="body">${detailPatch(p)}</div></details>`).join('') || '<div class="muted">Aucun patch détecté depuis l’installation. KitsuAI compare chaque nouvelle version du jeu à la précédente.</div>';
   // reglages
   renderReglages();
   // calculs
-  $('poids').innerHTML = E.poids ? `Derniers réglages : ${quand(E.poids.t)} · ` + Object.entries(E.poids.gains || {}).map(([k, g]) => `${{ nm: 'Cauchemar', boss: 'Boss', norm: 'Normal' }[k] || k} ${g.depart} puis ${g.fin}`).join(' · ') : 'Pas encore d’entraînement.';
+  hp('poids').innerHTML = E.poids ? `Derniers réglages : ${quand(E.poids.t)} · ` + Object.entries(E.poids.gains || {}).map(([k, g]) => `${{ nm: 'Cauchemar', boss: 'Boss', norm: 'Normal' }[k] || k} ${g.depart} puis ${g.fin}`).join(' · ') : 'Pas encore d’entraînement.';
   // sauvegarde
-  $('sv').innerHTML = s ? [['Mise à jour', quand(s.t) + (E.sauvegardeAuto ? ' (automatique, par le script)' : ' (import manuel)')], ['Cartes', `${s.cartes} (LR ${s.lr}, UR ${s.ur}, SSR ${s.ssr})`], ['Équipe', (s.equipe || []).join(', ') || '-'], ['Niveau du compte', s.compte ?? '-'], ['Boss de guilde', s.guilde || 'non exporté']].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('') : '<span>Aucune</span><span class="muted">importe ta sauvegarde</span>';
+  hp('sv').innerHTML = s ? [['Mise à jour', quand(s.t) + (E.sauvegardeAuto ? ' (automatique, par le script)' : ' (import manuel)')], ['Cartes', `${s.cartes} (LR ${s.lr}, UR ${s.ur}, SSR ${s.ssr})`], ['Équipe', (s.equipe || []).join(', ') || '-'], ['Niveau du compte', s.compte ?? '-'], ['Boss de guilde', s.guilde || 'non exporté']].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('') : '<span>Aucune</span><span class="muted">importe ta sauvegarde</span>';
   // script
-  $('scrTiles').innerHTML = [
+  hp('scrTiles').innerHTML = [
     tile('Version disponible', sc.trouve ? 'v' + esc(sc.version) : '-', sc.trouve ? `${sc.lignes} lignes · ${Math.round(sc.taille / 1024)} Ko` : 'fichier introuvable'),
     tile('Version installée', vu ? 'v' + esc(vu.v) : 'inconnue', vu ? 'vue ' + quand(vu.t) : 'ouvre kitsu.games avec le script', !vu || vu.v !== sc.version ? 'warn' : ''),
     tile('Connexion au PC', scOk ? 'active' : vu ? 'en veille' : 'aucune', scOk ? 'le conseil en combat est calculé ici' : 'le script contacte KitsuAI toutes les minutes', scOk ? '' : 'warn'),
   ].join('');
   // resultats
-  $('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
+  hp('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
   sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'sauvegarde') colRender();
 }
@@ -1290,7 +1305,7 @@ function campRender() {
   setH('c3body', h);
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
-setInterval(() => { if (E) { campEtat(); twEtat(); } }, 1500);
+setInterval(() => { if (E && !document.hidden) { campEtat(); twEtat(); } }, 1500);
 addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.j) campCharger(); });
 campCharger();
 
@@ -1541,7 +1556,7 @@ setInterval(() => { if (!E) return; const j = E.job; if (j?.nom === "Tour de l'i
 twCharger(); colCharger();
 
 route();
-refresh(); setInterval(refresh, 1500); chargerCartes();
+refresh(); setInterval(refreshDoux, 1500); chargerCartes();
 </script>
 </body>
 </html>

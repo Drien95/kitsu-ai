@@ -16,8 +16,11 @@ const PORT = 47123;
 const ROOT = app.isPackaged ? path.join(process.resourcesPath, 'moteur') : path.join(__dirname, '..', 'moteur');
 const DATA = app.getPath('userData');
 const ICON = path.join(__dirname, 'build', 'icon.png');
-let win = null, tray = null, srv = null, quitting = false, srvLog = [];
+let win = null, tray = null, srv = null, quitting = false, srvLog = [], pret = false;
 
+// Pas d'acceleration graphique (5.18) : le panneau n'a besoin que de texte, de SVG et d'un canvas. Mesure du 17/11 : le processus
+// graphique du launcher prenait ~205 Mo de memoire video et ~360 Mo de RAM, au repos. KITSU_GPU=1 pour la remettre.
+if (process.env.KITSU_GPU !== '1') app.disableHardwareAcceleration();
 if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.on('second-instance', () => show());
 
@@ -44,28 +47,32 @@ async function startServer() {
   return false;
 }
 
-function show() { if (!win) createWindow(); win.show(); win.focus(); }
+// Fenetre fermee = fenetre detruite (5.18) : le panneau ne garde aucun processus d'affichage en memoire quand on ne le regarde pas
+// (~100 a 150 Mo rendus). Elle est recreee au clic sur l'icone ; le serveur et le conseil en combat continuent.
+function show(page = '') { const url = `http://127.0.0.1:${PORT}/${page}`; if (!win) { createWindow(); if (pret) win.loadURL(url); } else if (page) win.loadURL(url); win.show(); win.focus(); }
 function createWindow() {
-  win = new BrowserWindow({ width: 1360, height: 900, minWidth: 900, minHeight: 600, backgroundColor: '#0a0b10', title: 'KitsuAI', icon: ICON, autoHideMenuBar: true, webPreferences: { contextIsolation: true, sandbox: true, preload: path.join(__dirname, 'preload.js') } });
+  win = new BrowserWindow({ width: 1360, height: 900, minWidth: 900, minHeight: 600, backgroundColor: '#0a0b10', title: 'KitsuAI', icon: ICON, autoHideMenuBar: true, show: false, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: false, preload: path.join(__dirname, 'preload.js') } });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
-  win.on('close', e => { if (!quitting) { e.preventDefault(); win.hide(); if (Notification.isSupported() && !app.__trayHint) { app.__trayHint = 1; new Notification({ title: 'KitsuAI continue en arriere-plan', body: "Le conseil en combat reste actif. Clic droit sur l'icone pres de l'horloge pour quitter.", icon: ICON }).show(); } } });
+  win.once('ready-to-show', () => win?.show());
+  win.on('closed', () => { win = null; });
+  win.on('close', () => { if (!quitting) { if (Notification.isSupported() && !app.__trayHint) { app.__trayHint = 1; new Notification({ title: 'KitsuAI continue en arriere-plan', body: "Le conseil en combat reste actif. Clic droit sur l'icone pres de l'horloge pour quitter.", icon: ICON }).show(); } } });
 }
 function createTray() {
   tray = new Tray(nativeImage.createFromPath(ICON).resize({ width: 16, height: 16 }));
   tray.setToolTip('KitsuAI : serveur local actif');
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Ouvrir le panneau', click: show },
+    { label: 'Ouvrir le panneau', click: () => show() },
     { label: 'Ouvrir kitsu.games', click: () => shell.openExternal('https://kitsu.games/') },
     { type: 'separator' },
     { label: 'Installer le script Tampermonkey', click: () => shell.openExternal('https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js') },
     { label: 'Dossier des donnees', click: () => shell.openPath(DATA) },
     { label: 'Wiki et aide', click: () => shell.openExternal('https://github.com/Drien95/kitsu-ai/wiki') },
-    { label: 'Rechercher une mise a jour', click: () => { checkUpdates(true); show(); win?.loadURL(`http://127.0.0.1:${PORT}/#nouveautes`); } },
+    { label: 'Rechercher une mise a jour', click: () => { checkUpdates(true); show('#nouveautes'); } },
     { label: `Version ${app.getVersion()}`, enabled: false },
     { type: 'separator' },
     { label: 'Quitter KitsuAI', click: () => { quitting = true; app.quit(); } },
   ]));
-  tray.on('double-click', show);
+  tray.on('double-click', () => show());
 }
 
 // ---------- mises a jour ----------
@@ -93,7 +100,7 @@ ipcMain.handle('app:demarrage', (_e, on) => { if (typeof on === 'boolean') app.s
 let alerteDepuis = Date.now() - 1000;
 function lireAlertes() {
   const r = http.get({ host: '127.0.0.1', port: PORT, path: '/app/alertes?depuis=' + alerteDepuis, headers: { 'X-Kitsu-App': SECRET }, timeout: 3000 }, x => {
-    let b = ''; x.on('data', d => b += d); x.on('end', () => { try { for (const a of JSON.parse(b)) { alerteDepuis = Math.max(alerteDepuis, a.id); if (Notification.isSupported()) { const n = new Notification({ title: a.titre, body: a.texte, icon: ICON }); n.on('click', show); n.show(); } } } catch {} });
+    let b = ''; x.on('data', d => b += d); x.on('end', () => { try { for (const a of JSON.parse(b)) { alerteDepuis = Math.max(alerteDepuis, a.id); if (Notification.isSupported()) { const n = new Notification({ title: a.titre, body: a.texte, icon: ICON }); n.on('click', () => show()); n.show(); } } } catch {} });
   }); r.on('error', () => {}); r.on('timeout', () => r.destroy());
 }
 ipcMain.handle('maj:etat', () => MAJ);
@@ -103,8 +110,10 @@ ipcMain.handle('maj:installer', () => { if (MAJ.etat === 'prete') { quitting = t
 
 app.whenReady().then(async () => {
   app.setAppUserModelId('io.github.drien95.kitsuai');
-  createWindow(); createTray(); if (process.argv.includes('--cache')) win.hide();
-  if (await startServer()) { if (!process.argv.includes('--cache')) win.loadURL(`http://127.0.0.1:${PORT}/`); else { win.loadURL(`http://127.0.0.1:${PORT}/`); win.hide(); } setInterval(lireAlertes, 15000); }
+  // Lance avec Windows (--cache) : aucune fenetre tant qu'on ne clique pas sur l'icone.
+  const cache = process.argv.includes('--cache');
+  if (!cache) createWindow(); createTray();
+  if (await startServer()) { pret = true; win?.loadURL(`http://127.0.0.1:${PORT}/`); setInterval(lireAlertes, 15000); }
   checkUpdates(); setInterval(checkUpdates, 6 * 3600 * 1000);
 });
 app.on('window-all-closed', e => e.preventDefault());

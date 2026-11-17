@@ -12,27 +12,42 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEngine } from './lib/charger.mjs';
 import { fiche } from './lib/fiche.mjs';
-import { makePool } from './lib/pool.mjs';
+import { makePool, baisserPriorite } from './lib/pool.mjs';
 import { dir as D, DATA, CODE } from './lib/chemins.mjs';
 import { listerPoids, restaurerPoids } from './lib/historique.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
-let ENG = await loadEngine(), MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8'));
+// Moteur du jeu charge au premier appel du panneau seulement (5.18) : le script (ping, conseil, equipes) n'a besoin que de la version
+// et du manifeste, les calculs ont leur propre copie dans les fils. Serveur seul : ~45 Mo au lieu de ~145 Mo (mesure du 17/11).
+let VER = readFileSync(D('engine', 'current.txt'), 'utf8').trim(), MAN = JSON.parse(readFileSync(D('engine', VER, 'manifest.json'), 'utf8')), ENG = null;
+const moteur = async () => ENG ||= await loadEngine(VER);
 const NCPU = os.availableParallelism?.() || os.cpus().length;
-let pool = await makePool(Math.max(1, NCPU - 1));
+// Fils du conseil en combat crees a la demande et fermes apres 3 min sans conseil (5.18) : au repos, le serveur ne garde plus
+// 11 copies du moteur du jeu en memoire (~300 Mo). Quand ils servent : meme nombre de fils et memes paquets, donc memes conseils.
+const NPOOL = Math.max(1, NCPU - 1), POOL_REPOS = 3 * 60 * 1000;
+baisserPriorite(os.constants.priority.PRIORITY_BELOW_NORMAL); // avant : fixee par la creation des fils au demarrage
+let poolP = null, poolUtil = 0, poolActifs = 0;
+const getPool = () => { poolUtil = Date.now(); return poolP ||= makePool(NPOOL, undefined, os.constants.priority.PRIORITY_BELOW_NORMAL).catch(e => { poolP = null; throw e; }); };
+const avecPool = async f => { const p = await getPool(); poolActifs++; try { return await f(p); } finally { poolActifs--; poolUtil = Date.now(); } };
+const fermerPool = async () => { const p = poolP; poolP = null; if (p) try { await (await p).close(); } catch {} };
+setInterval(() => { if (poolP && !poolActifs && Date.now() - poolUtil > POOL_REPOS) fermerPool(); }, 30000).unref();
 const T0 = Date.now(); let nConseil = 0, lastConseil = null;
 const readJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return null; } };
+// Lecture gardee en memoire tant que le fichier ne change pas (5.18) : le panneau demande l'etat toutes les 1,5 s et relisait/reparsait
+// chaque fois sauvegarde, poids, patchs, dernier resultat... Seulement pour etat(), qui ne modifie pas ces objets (copie JSON a l'envoi).
+const jCache = new Map();
+const readJc = f => { let st; try { st = statSync(f); } catch { jCache.delete(f); return null; } const c = jCache.get(f), k = st.mtimeMs + ':' + st.size; if (c && c.k === k) return c.v; const v = readJ(f); jCache.set(f, { k, v }); return v; };
 let scriptVu = null, jeu = null;
 // ---------- campagne : ce que coutera le calcul des 3 etoiles (affiche avant le lancement) ----------
 // Memes regles que cauchemar3.mjs : cartes SSR/UR/LR possedees, combats de la campagne (sans halloween) par difficulte.
 let COMBATS_DIFF = null;
 function prevision() {
   const G = ENG.G, sv = readJ(D('data', 'sauvegarde.json')), cartes = Object.keys(sv?.owned || {}).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r)).length;
-  if (COMBATS_DIFF?.v !== ENG.version) {
+  if (COMBATS_DIFF?.v !== VER) {
     const camp = G.ALL_WORLDS.filter(w => w.id !== 'halloween').flatMap(w => w.fights.map(f => f.id));
     const n = suf => camp.filter(f => { try { return !!G.findFight(f + suf); } catch { return false; } }).length;
-    COMBATS_DIFF = { v: ENG.version, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') } };
+    COMBATS_DIFF = { v: VER, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') } };
   }
   let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^cauchemar3-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
   const d = readJ(D('resultats', 'cauchemar3.json'));
@@ -72,7 +87,7 @@ const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), 
 function calculConseille() {
   const d = readJ(D('resultats', 'dernier.json')), sv = readJ(D('data', 'sauvegarde.json')), out = [];
   if (!d) { if (sv) out.push('aucune analyse complete pour ta collection'); return out; }
-  if (d.version && d.version !== ENG.version) out.push('le jeu a change depuis la derniere analyse');
+  if (d.version && d.version !== VER) out.push('le jeu a change depuis la derniere analyse');
   if (sv && d.saveHash != null && d.saveHash !== hashSave(sv)) out.push('ta collection a change (cartes, niveaux ou etoiles)');
   const pw = readJ(D('data', 'poids.json')); if (pw?.t && Date.parse(d.date) < pw.t) out.push("l'IA a ete reentrainee depuis");
   return out;
@@ -116,19 +131,22 @@ function lancerChaine(action, o) {
 function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const A = ACTIONS[action]; if (!A) throw new Error('action inconnue');
   const fils = Math.max(1, NCPU - Math.max(1, reglages().filsReserves)); // des fils restent libres pour le conseil en combat
-  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour', 'cauchemar3'].includes(action) ? ['--fils', String(fils)] : [])];
+  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour', 'cauchemar3', 'tourExact'].includes(action) ? ['--fils', String(fils)] : [])];
   const p = spawn(process.execPath, args, { cwd: here, env: { ...process.env, KITSU_MOTEUR: here } });
+  // Priorite « inactive » pour tout calcul (prive compris) : YouTube, le jeu et le conseil en combat passent devant, sans perte quand le PC est libre.
+  try { os.setPriority(p.pid, os.constants.priority.PRIORITY_LOW); } catch {}
   const prev = chaine && job ? job.lignes : [];
   job = { id: Date.now(), action, nom: chaine ? `${chaine.nom} (${chaine.i + 1}/${chaine.etapes.length} : ${A.nom})` : A.nom, args: args.join(' '), debut: chaine ? chaine.debut : Date.now(), lignes: chaine ? [...prev, `=== ${A.nom} ===`] : [], fin: null, code: null, proc: p, chaine };
   const add = d => { for (const l of String(d).split(/\r?\n/)) if (l.trim()) { job.lignes.push(l); if (job.lignes.length > 2000) job.lignes.shift(); } };
   p.stdout.on('data', add); p.stderr.on('data', add);
   p.on('close', async code => { if (apres && !(chaine && chaine.arretee)) { history.unshift({ nom: A.nom, debut: Date.now(), fin: Date.now(), code }); return apres(code); } job.fin = Date.now(); job.code = code; history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); alerter('calcul', 'job-' + job.id, code === 0 ? `${job.nom} : termine` : `${job.nom} : arrete`, `En ${Math.round((job.fin - job.debut) / 60000)} min.`); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
-    if (action === 'telecharger') { try { const v = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); if (v !== ENG.version) { say(`nouveau moteur ${v} : redemarre le panneau (KitsuAI.bat) pour l'utiliser dans le conseil en combat`); } } catch {} } });
+    if (action === 'telecharger') { try { const v = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); if (v !== VER) { say(`nouveau moteur ${v} : redemarre le panneau (KitsuAI.bat) pour l'utiliser dans le conseil en combat`); } } catch {} } });
   say(`${A.nom} : lance (${args.join(' ')})`);
   return job.id;
 }
 // ---------- conseil en combat ----------
-async function conseil({ st, key, cands, W, budget }) {
+async function conseil(q) { return avecPool(pool => conseil0(pool, q)); }
+async function conseil0(pool, { st, key, cands, W, budget }) {
   budget = budget || reglages().conseilMs;
   const t0 = Date.now(), stats = cands.map((c, i) => ({ ...c, i, n: 0, s2: 0, s3: 0, win: 0, hp: 0 }));
   // Tour de l'infini : les etoiles ne comptent pas, seuls la victoire et les PV gardes pour les etages suivants (12 % de soin seulement).
@@ -151,21 +169,21 @@ async function conseil({ st, key, cands, W, budget }) {
 }
 // ---------- etat ----------
 function etat() {
-  const sv = readJ(D('data', 'sauvegarde.json')), pw = readJ(D('data', 'poids.json'));
+  const sv = readJc(D('data', 'sauvegarde.json')), pw = readJc(D('data', 'poids.json'));
   const CH = ENG.G.CHAR_BY_ID, own = Object.keys(sv?.owned || {}).map(Number);
-  const res = existsSync(D('resultats')) ? readdirSync(D('resultats')).filter(f => /\.(csv|json|txt)$/.test(f) && f !== 'dernier.json').map(f => ({ f, t: statSync(D('resultats', f)).mtimeMs, o: statSync(D('resultats', f)).size })).sort((a, b) => b.t - a.t) : [];
+  const res = existsSync(D('resultats')) ? readdirSync(D('resultats')).filter(f => /\.(csv|json|txt)$/.test(f) && f !== 'dernier.json').map(f => { const x = statSync(D('resultats', f)); return { f, t: x.mtimeMs, o: x.size }; }).sort((a, b) => b.t - a.t) : [];
   let disque = null; try { disque = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); } catch {}
   return {
-    moteur: ENG.version, moteurDisque: disque, mondes: ENG.G.ALL_WORLDS.map(w => `${w.id} (${w.fights.length})`), cartes: Object.keys(CH).length,
-    cpu: os.cpus()[0]?.model, coeurs: NCPU, fils: pool.n, memoire: Math.round(os.totalmem() / 2 ** 30), uptime: Math.round((Date.now() - T0) / 1000),
+    moteur: VER, moteurDisque: disque, mondes: ENG.G.ALL_WORLDS.map(w => `${w.id} (${w.fights.length})`), cartes: Object.keys(CH).length,
+    cpu: os.cpus()[0]?.model, coeurs: NCPU, fils: NPOOL, memoire: Math.round(os.totalmem() / 2 ** 30), uptime: Math.round((Date.now() - T0) / 1000),
     conseil: { n: nConseil, dernier: lastConseil }, port: PORT,
     sauvegarde: sv ? { t: sv.t, script: sv.script, cartes: own.length, lr: own.filter(i => CH[i]?.r === 'M').length, ur: own.filter(i => CH[i]?.r === 'L').length, ssr: own.filter(i => CH[i]?.r === 'E').length, equipe: (sv.team || []).map(i => CH[i]?.n), guilde: sv.guild?.boss ? `${sv.guild.boss.name} niv ${sv.guild.boss.lv}` : null, compte: sv.acct?.lv } : null,
     poids: pw ? { t: pw.t, gains: pw.gains } : null,
     job: job ? { id: job.id, nom: job.nom, args: job.args, debut: job.debut, fin: job.fin, code: job.code, lignes: job.lignes.slice(-400), chaine: job.chaine ? { etapes: job.chaine.etapes, i: job.chaine.i } : null } : null,
-    script: scriptInfo(), appVersion: process.env.KITSU_APP_VERSION || null, reglages: reglages(), alertes: alertes.slice(-20), calculConseille: calculConseille(), patchs: (readJ(D('data', 'patchs.json')) || []).slice(0, 10), jeu, sauvegardeAuto: sv?.auto || false,
+    script: scriptInfo(), appVersion: process.env.KITSU_APP_VERSION || null, reglages: reglages(), alertes: alertes.slice(-20), calculConseille: calculConseille(), patchs: (readJc(D('data', 'patchs.json')) || []).slice(0, 10), jeu, sauvegardeAuto: sv?.auto || false,
     historique: history, resultats: res.slice(0, 40), journal: logs.slice(-60),
-    dernier: readJ(D('resultats', 'dernier.json')),
-    conseils: readJ(D('resultats', 'conseils-ia.json')), imitation: readJ(D('resultats', 'ia-imitation.json')),
+    dernier: readJc(D('resultats', 'dernier.json')),
+    conseils: readJc(D('resultats', 'conseils-ia.json')), imitation: readJc(D('resultats', 'ia-imitation.json')),
   };
 }
 // ---------- serveur HTTP ----------
@@ -181,7 +199,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204, '', 'text/plain', CORS);
     if (EXT?.route && await EXT.route({ req, res, u, send, body, ENG, CORS, own, say, D })) return;
     // Pour le script du jeu
-    if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: ENG.version, dom: MAN.dom, fils: pool.n, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
+    if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: VER, dom: MAN.dom, fils: NPOOL, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
     if (u.pathname === '/poids') { const p = readJ(D('data', 'poids.json')); return send(res, p ? 200 : 404, p || {}, 'application/json', CORS); }
     const duScript = req.headers['x-kitsu-script'] === '1';
     if (['/sauvegarde', '/equipes', '/jeu'].includes(u.pathname) && req.method === 'POST' && !duScript) return send(res, 403, { err: 'reserve au script KitsuAI' }, 'application/json', CORS);
@@ -201,7 +219,7 @@ http.createServer(async (req, res) => {
       }
       if (q.dom && q.dom !== MAN.dom) return send(res, 409, { err: 'version' }, 'application/json', CORS);
       const t0 = Date.now(), seeds = Array.from({ length: q.seeds || 24 }, (_, i) => i + 1);
-      const r = await pool.runAll(q.equipes.map(team => ({ team, fights: [q.fid], seeds })), q.W, {}, 4);
+      const r = await avecPool(pool => pool.runAll(q.equipes.map(team => ({ team, fights: [q.fid], seeds })), q.W, {}, 4));
       return send(res, 200, { ms: Date.now() - t0, res: r }, 'application/json', CORS);
     }
     if (u.pathname === '/conseil' && req.method === 'POST') {
@@ -215,6 +233,7 @@ http.createServer(async (req, res) => {
     // Panneau
     if (u.pathname === '/' || u.pathname === '/index.html') return send(res, 200, readFileSync(path.join(here, 'panneau', 'index.html'), 'utf8').replace('__TOKEN__', TOKEN).replace('<!--EXT-->', EXT?.panneau?.() || ''), 'text/html; charset=utf-8');
     if (u.pathname.startsWith('/api/')) {
+      await moteur();
       if (!own(req)) return send(res, 403, { err: 'jeton invalide (recharge le panneau)' });
       if (u.pathname === '/api/etat') return send(res, 200, etat());
       if (u.pathname === '/api/lancer' && req.method === 'POST') { const q = JSON.parse(await body(req)); return send(res, 200, { id: lancer(q.action, q.options || {}) }); }
@@ -226,8 +245,8 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [] }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
-      if (u.pathname === '/api/fiche') { if (FICHE.v !== ENG.version) FICHE = { v: ENG.version, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: ENG.version, ...FICHE.j }); }
-      if (u.pathname === '/api/cartes') { if (CARTES.v !== ENG.version) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: ENG.version, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
+      if (u.pathname === '/api/fiche') { if (FICHE.v !== VER) FICHE = { v: VER, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: VER, ...FICHE.j }); }
+      if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
       if (u.pathname === '/api/poids-historique') { const p = readJ(D('data', 'poids.json')); return send(res, 200, { actuel: p ? { regles: p.t || null, gains: p.gains || {}, equipes: Object.keys(p.equipes || {}).length, imitation: !!p.distillation, restaure: p.restaure || null } : null, copies: listerPoids() }); }
       if (u.pathname === '/api/poids-restaurer' && req.method === 'POST') { if (job && !job.fin) return send(res, 409, { err: 'attends la fin du calcul en cours' }); const { f } = JSON.parse(await body(req)); try { restaurerPoids(f); } catch (e) { return send(res, 400, { err: e.message }); } say('reglages de l\'IA restaures (' + f + ')'); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/patch-vu' && req.method === 'POST') { const f = D('data', 'patchs.json'), all = readJ(f) || []; all.forEach(p => p.vu = true); writeFileSync(f, JSON.stringify(all)); return send(res, 200, { ok: true }); }
@@ -237,11 +256,13 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/resultat') { const f = path.basename(u.searchParams.get('f') || ''); const p = D('resultats', f); if (!existsSync(p)) return send(res, 404, { err: 'introuvable' }); return send(res, 200, readFileSync(p), /\.json$/.test(f) ? 'application/json' : 'text/plain; charset=utf-8'); }
       if (u.pathname === '/api/sauvegarde' && req.method === 'POST') { const b = await body(req); const j = JSON.parse(b); if (!j.owned || !j.lv) return send(res, 400, { err: "ce n'est pas un export KitsuAI" }); mkdirSync(D('data'), { recursive: true }); writeFileSync(D('data', 'sauvegarde.json'), b); say(`sauvegarde importee (${Object.keys(j.owned).length} cartes)`); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/dossier' && req.method === 'POST') { const d = { resultats: 'resultats', data: 'data', moteur: '.' }[JSON.parse(await body(req)).d] || '.'; const p = D(d); mkdirSync(p, { recursive: true }); exec(process.platform === 'win32' ? `explorer "${p}"` : `xdg-open "${p}"`); return send(res, 200, { ok: true }); }
-      if (u.pathname === '/api/redemarrer-pool' && req.method === 'POST') { await pool.close(); ENG = await loadEngine(); MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8')); pool = await makePool(Math.max(1, NCPU - 1), ENG.version); say(`moteur recharge : ${ENG.version}`); return send(res, 200, { ok: true, version: ENG.version }); }
+      if (u.pathname === '/api/redemarrer-pool' && req.method === 'POST') { await fermerPool(); ENG = await loadEngine(); VER = ENG.version; MAN = JSON.parse(readFileSync(D('engine', VER, 'manifest.json'), 'utf8')); say(`moteur recharge : ${VER}`); return send(res, 200, { ok: true, version: VER }); }
     }
     send(res, 404, { err: 'introuvable' });
   } catch (e) { send(res, 500, { err: String(e.message || e) }); }
+}).on('error', e => { // un serveur KitsuAI tourne deja sur ce port (application + KitsuAI.bat) : on s'arrete au lieu de garder ~500 Mo pour rien
+  if (e.code === 'EADDRINUSE') { say(`le port ${PORT} est deja pris (KitsuAI deja lance ?) : ce serveur s'arrete.`); process.exit(0); } throw e;
 }).listen(PORT, '127.0.0.1', () => {
-  say(`panneau KitsuAI : http://127.0.0.1:${PORT}  (moteur ${ENG.version}, ${pool.n} fils)`);
+  say(`panneau KitsuAI : http://127.0.0.1:${PORT}  (moteur ${VER}, ${NPOOL} fils pour le conseil, crees a la demande)`);
   if (process.argv.includes('--ouvrir')) exec(process.platform === 'win32' ? `start "" http://127.0.0.1:${PORT}/` : `xdg-open http://127.0.0.1:${PORT}/`);
 });

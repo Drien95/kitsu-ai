@@ -4,6 +4,32 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.18.0
+
+Moins de lag pendant les calculs (YouTube et kitsu.games qui saccadaient), sans perte de vitesse de calcul.
+
+- Calculs en priorité **inactive** (la plus basse de Windows) au lieu de « inférieure à la normale » : le navigateur, les vidéos et le jeu passent toujours devant. Avant, le calcul était au même niveau que les onglets d'arrière-plan du navigateur. Quand rien d'autre ne tourne, le calcul garde tout le processeur. Vaut pour tous les calculs lancés par le launcher (`serveur.mjs` à chaque lancement, `lib/pool.mjs` par défaut ; une priorité plus basse n'est jamais remontée).
+- Le serveur (conseil en combat) reste en « inférieure à la normale » : pendant un calcul, ton conseil en combat passe maintenant devant lui.
+- Launcher : pendant un calcul, ou quand sa fenêtre n'est pas au premier plan, plus d'effets animés (braises, reflets, clignotements) ni de flou. Mesuré le 17/11 : la fenêtre et sa carte graphique prenaient ~22 % du processeur pendant un calcul, en priorité normale et haute. Fenêtre cachée : plus de rafraîchissement ; pas au premier plan : toutes les 6 s au lieu de 1,5 s. Ce temps revient au calcul.
+- Script : la sauvegarde du jeu, lue plusieurs fois par seconde par les conseils, n'est plus reparsée que si elle a changé.
+- Le départage exact de la Tour suit aussi le réglage « fils réservés ».
+- Moins de mémoire au repos (mesure du 17/11 : KitsuAI prenait ~1,1 Go de RAM et 205 Mo de mémoire vidéo sans rien calculer) :
+  - le serveur ne garde plus 11 copies du moteur du jeu pour le conseil en combat : les fils sont créés au premier conseil et fermés après 3 min sans conseil (environ 95 Mo de moins par fil). Mêmes fils et mêmes paquets quand ils servent : conseils identiques ;
+  - un second serveur lancé alors que KitsuAI tourne déjà (application + `KitsuAI.bat`) s'arrête tout de suite au lieu de rester en mémoire (~500 Mo) ;
+  - le launcher n'utilise plus l'accélération graphique : plus de mémoire vidéo ni de processus graphique pour un panneau de texte et de graphiques (`KITSU_GPU=1` pour la remettre).
+- Script : le worker de calcul (copie du moteur du jeu, ~100 Mo dans l'onglet) est fermé après 3 min sans calcul et recréé au besoin ; le contour du conseil clignote 3 fois puis reste fixe, au lieu de redessiner la page en continu.
+- Script plus léger dans la page du jeu :
+  - les objets du jeu (combat, écran d'équipe) sont retrouvés par leur nom retenu au lieu de parcourir tous les exports du jeu plusieurs fois par seconde ;
+  - hors combat, le conseiller ne cherche un combat que toutes les 600 ms (au lieu de 150) et ne nettoie les contours qu'une fois, à la fin du combat ;
+  - les accents ne sont corrigés qu'une fois par texte (avant : ~40 remplacements repassés sur tout le dock toutes les 400 ms) ;
+  - le dock ne resérialise plus le HTML de ses panneaux à chaque tick, le guide lit les textes sans forcer de mise en page ;
+  - onglet caché : dock, guide, conseiller, équipe, plan et invocations ne tournent plus (l'alerte d'énergie et la synchro continuent).
+- Panneau : l'état (toutes les 1,5 s) ne réécrit plus que ce qui a changé ; le serveur ne relit plus sauvegarde, réglages, patchs et derniers résultats tant que leurs fichiers ne changent pas.
+- Encore moins au repos :
+  - launcher fermé dans la barre des tâches : la fenêtre est détruite au lieu d'être cachée (son processus d'affichage ne reste plus en mémoire), elle est recréée au clic sur l'icône ; démarrage avec Windows sans fenêtre ; correcteur orthographique coupé ;
+  - le serveur ne charge le moteur du jeu qu'à la première ouverture du panneau : le script (ping, conseil, équipes) n'en a pas besoin, les fils ont leur copie. Mesuré le 17/11 : ~72 Mo au repos au lieu de ~150 Mo ;
+  - panneau au premier plan sans calcul en cours : état demandé toutes les 5 s au lieu de 1,5 s (toujours 1,5 s pendant un calcul).
+
 ## 5.17.0
 
 - Nouvelle page « Règles et effets » (Outils) : les 33 statuts (malus, bonus, protections) avec ce qu'ils font et leur valeur par défaut, les règles du combat (tour de jeu, énergie, endurance, formule des dégâts, critique, types, rupture, boss, étoiles), les 146 passifs et la progression. Tout est lu dans le moteur du jeu à chaque version (`lib/fiche.mjs`, `/api/fiche`) ; un statut inconnu est marqué « nouveau ».
