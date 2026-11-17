@@ -1,7 +1,8 @@
 // Entrainement local de l'IA (entropie croisee) avec le moteur du jeu, sur tes meilleures equipes.
-// Objectif : 2 etoiles ou plus, puis 3 etoiles, sur des combats disputes. Resultat : data/poids.json,
+// Objectif (17/11/2026, demande d'Adrien) : les 3 etoiles (0 K.O., 8 cycles au plus) sur des combats disputes ;
+// --objectif 2etoiles reprend l'ancien score (2 etoiles ou plus + moitie des 3 etoiles). Resultat : data/poids.json,
 // que le script KitsuAI recupere tout seul quand le serveur local tourne.
-//   node entrainer.mjs [--types nm,boss,norm] [--generations 40] [--fils 10]
+//   node entrainer.mjs [--types nm,boss,norm] [--generations 40] [--fils 10] [--objectif 3etoiles|2etoiles]
 import { archiverPoids } from './lib/historique.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -29,7 +30,7 @@ const shuffle = (a, s = 11) => { a = a.slice(); for (let i = a.length - 1; i > 0
 const all = [], bosses = []; for (const w of G.ALL_WORLDS) for (const f of w.fights) { all.push(f.id); if (f.boss) bosses.push(f.id); }
 const TYPES = { nm: { fights: all.map(f => f + '@xn'), cats: ['cauchemar', 'cauchemar_multi', 'cauchemar_boss'] }, boss: { fights: bosses.map(f => f + '@x'), cats: ['boss_extreme'] }, norm: { fights: all.filter(f => !bosses.includes(f)).map(f => f + '@x'), cats: ['campagne_extreme'] } };
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
-const GENS = +arg('generations', 40), POP = 16, ELITE = 4;
+const GENS = +arg('generations', 40), POP = 16, ELITE = 4, TROIS = arg('objectif', '3etoiles') !== '2etoiles';
 const rn = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const gains = {};
 log(`moteur ${version}, ${pool.n} fils, ${GENS} generations max`);
@@ -39,7 +40,7 @@ async function entrainer(kind, teams, fightsAll, gens, etiquette) {
   const probe = await pool.runAll(cand.map(f => ({ team: teams[0], fights: [f], seeds: [1, 2] })), W, {}, 20);
   const hard = cand.filter((f, i) => probe[i].s3 < 2).slice(0, 120); const tr = hard.slice(0, 80), ho = hard.slice(80);
   if (tr.length < 10) { log(etiquette, ': trop peu de combats disputes, rien a apprendre'); return null; }
-  const fit = async (w, fl, seeds) => { const Wt = { ...W, [kind]: w }; const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), Wt, { stop2: true }, 16); const n = r.reduce((a, x) => a + x.n, 0); return r.reduce((a, x) => a + x.s2 + 0.5 * x.s3, 0) / n; };
+  const fit = async (w, fl, seeds) => { const Wt = { ...W, [kind]: w }; const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), Wt, TROIS ? { stop3: true } : { stop2: true }, 16); const n = r.reduce((a, x) => a + x.n, 0); return r.reduce((a, x) => a + (TROIS ? x.s3 : x.s2 + 0.5 * x.s3), 0) / n; };
   let mu = W[kind].slice(), sd = Array(mu.length).fill(0.35), best = mu.slice(), bestHo = await fit(best, ho.length >= 10 ? ho : tr, [901, 902, 903]), stale = 0;
   const start = bestHo; log(`${etiquette} : ${teams.length} equipe(s), ${tr.length} combats d'entrainement, ${ho.length} de controle ; depart ${(100 * start).toFixed(1)}`);
   for (let g = 0; g < gens && stale < 8; g++) {
@@ -94,9 +95,9 @@ for (const kind of String(arg('types', 'nm,boss,norm')).split(',').filter(Boolea
   const teams = teamsFor(T.cats).map(mkT);
   if (!teams.length) { log(kind, ': aucune equipe'); continue; }
   const r = await entrainer(kind, teams, T.fights, GENS, kind); if (!r) continue;
-  W[kind] = r.w; gains[kind] = { depart: r.depart, fin: r.fin };
+  W[kind] = r.w; gains[kind] = { depart: r.depart, fin: r.fin, objectif: TROIS ? '3etoiles' : '2etoiles' };
   sauver({ W, gains });
-  log(`${kind} : ${r.depart} -> ${r.fin} (score de controle : 2+ etoiles + moitie des 3 etoiles)`);
+  log(`${kind} : ${r.depart} -> ${r.fin} (score de controle : ${TROIS ? '% de 3 etoiles' : '2+ etoiles + moitie des 3 etoiles'})`);
 }
 // Entrainement par equipe : des reglages Cauchemar propres a chacune de tes meilleures equipes,
 // gardes seulement s'ils battent les reglages generaux sur ses combats de controle.
