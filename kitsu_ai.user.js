@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.17.0
+// @version      5.18.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -69,7 +69,10 @@
         let G = null, APP = null, DOMM = null;
         // Pity : 1 point tous les 10 tirages (50 points = LR garantie), donc 50 gemmes par point.
         const GEMS_PER_PITY = 50;
-        const save = () => lsGet('shokan_save_v1', {});
+        // Sauvegarde du jeu : lue plusieurs fois par seconde par les conseils. On ne la reparse que si son texte a change
+        // (avant : JSON.parse complet a chaque appel, donc beaucoup de travail et de memoire a ramasser pendant que tu joues).
+        let svRaw = null, svObj = {};
+        const save = () => { try { const r = localStorage.getItem('shokan_save_v1'); if (r !== svRaw) { svObj = (r && JSON.parse(r)) || {}; svRaw = r; } return svObj; } catch { return {}; } };
         const assetUrl = re => performance.getEntriesByType('resource').map(r => r.name).find(n => re.test(n));
         const loadModules = async () => {
           if (!G) { const u = assetUrl(/\/assets\/dom-[^/]+\.js$/); DOMM = u ? await import(u) : null; G = DOMM ? DOMM.g : null; }
@@ -201,10 +204,14 @@
             worker = w; return w;
           } catch { worker = false; health.err('worker indisponible, calculs sur le fil principal'); return null; }
         };
+        // Worker ferme apres 3 min sans calcul (5.18) : il garde une copie complete du moteur du jeu (~100 Mo) dans l'onglet.
+        // Il est recree au calcul suivant (1 a 2 s, moteur deja en cache). Memes calculs, memes resultats.
+        let wUse = 0, wBusy = 0;
+        clearInterval(window.__kitsuWkT); window.__kitsuWkT = setInterval(() => { if (worker && !wBusy && Date.now() - wUse > 180000) { try { worker.terminate(); } catch {} worker = null; } }, 30000);
         // jobs : [{ fid, team: [{id, lv, stars}], seeds: [...] }] -> [{ w, s3, s, n }]
         const simBatch = async (jobs, W) => {
           const w = await getWorker();
-          if (w) { const id = ++wSeq; const r = await new Promise(res => { wWait[id] = res; w.postMessage({ id, W, jobs }); }); if (r.ok) return r.out; health.err('worker : ' + r.err); }
+          if (w) { const id = ++wSeq; wBusy++; wUse = Date.now(); let r; try { r = await new Promise(res => { wWait[id] = res; w.postMessage({ id, W, jobs }); }); } finally { wBusy--; wUse = Date.now(); } if (r.ok) return r.out; health.err('worker : ' + r.err); }
           const pol = smartPol(W), out = [];
           for (const j of jobs) { let w2 = 0, s3 = 0, sc = 0; for (const sd of j.seeds) { const st = playOut(G.setupBattle(G.findFight(j.fid), j.team, sd).st, pol); sc += score(st); if (B.outcome(st) === 'win') { w2++; if (B.allies(st).every(u => u.alive) && st.cycle <= 8) s3++; } } out.push({ w: w2, s3, s: sc, n: j.seeds.length }); await idle(); }
           return out;
@@ -988,7 +995,7 @@
             if (!on) { clr(); pill?.remove(); lsSet('kitsu_ai_guide', false); return 'guide desactive'; }
             lsSet('kitsu_ai_guide', true);
             ui();
-            if (!document.getElementById('kitsuGuideCss')) { const s = document.createElement('style'); s.id = 'kitsuGuideCss'; s.textContent = '.kitsu-guide{outline:4px solid #38bdf8!important;outline-offset:3px;box-shadow:0 0 26px 6px rgba(56,189,248,.8)!important;border-radius:12px;animation:kitsuPulse 1.2s ease-in-out infinite}@keyframes kitsuPulse{50%{outline-color:#fff}}.kitsu-add{outline:4px solid #22c55e!important;outline-offset:3px;box-shadow:0 0 22px 5px rgba(34,197,94,.8)!important;border-radius:12px}.kitsu-rm{outline:4px solid #ef4444!important;outline-offset:3px;box-shadow:0 0 22px 5px rgba(239,68,68,.8)!important;border-radius:12px}'; document.head.appendChild(s); }
+            if (!document.getElementById('kitsuGuideCss')) { const s = document.createElement('style'); s.id = 'kitsuGuideCss'; s.textContent = '.kitsu-guide{outline:4px solid #38bdf8!important;outline-offset:3px;box-shadow:0 0 26px 6px rgba(56,189,248,.8)!important;border-radius:12px;animation:kitsuPulse 1.2s ease-in-out 3}@keyframes kitsuPulse{50%{outline-color:#fff}}.kitsu-add{outline:4px solid #22c55e!important;outline-offset:3px;box-shadow:0 0 22px 5px rgba(34,197,94,.8)!important;border-radius:12px}.kitsu-rm{outline:4px solid #ef4444!important;outline-offset:3px;box-shadow:0 0 22px 5px rgba(239,68,68,.8)!important;border-radius:12px}'; document.head.appendChild(s); }
             if (!pill) { pill = document.createElement('div'); pill.id = 'kitsuGuide'; pill.className = 'kitsu-panel'; document.body.appendChild(pill); }
             // Sous la barre de navigation du jeu (sinon elle cache les onglets du haut).
             { const nav = [...document.querySelectorAll('header,nav,.topbar,#topbar')].find(e => e.offsetParent && e.getBoundingClientRect().top < 5); const top = nav ? Math.round(nav.getBoundingClientRect().bottom) + 8 : 72; pill.style.cssText = `top:${top}px;left:50%;right:auto;transform:translateX(-50%);border:1px solid #38bdf8;font-size:13px;display:block;text-align:center;max-width:520px`; }

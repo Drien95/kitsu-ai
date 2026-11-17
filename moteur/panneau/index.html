@@ -189,6 +189,11 @@
   .fx i { position: absolute; bottom: -20px; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle, #ffd27a, #ff7a3d 45%, transparent 70%); box-shadow: 0 0 12px 3px rgba(255,122,61,.55); animation: monte linear infinite; opacity: 0; will-change: transform, opacity; }
   @keyframes monte { 0% { transform: translate(0,0) scale(.6); opacity: 0; } 10% { opacity: .9; } 100% { transform: translate(var(--dx), -105vh) scale(1.1); opacity: 0; } }
   .fx.pause i { animation-play-state: paused; } body.calme .fx { display: none; }
+  /* Repos (v5.18.0) : pendant un calcul, ou quand la fenetre n'est pas au premier plan, plus d'effets animes ni de flou :
+     ils occupaient ~20 % du processeur (fenetre + carte graphique, en priorite normale) au detriment de tes videos et du calcul. */
+  body.repos .fx { display: none; }
+  body.repos .maj::after, body.repos .pf.r-LR, body.repos .pf.r-LR::before, body.repos .upd, body.repos .blink, body.repos .skel { animation: none !important; }
+  body.repos .top, body.repos .veil { backdrop-filter: none; }
   @media (prefers-reduced-motion: reduce) { .fx i, .maj::after, .pf.r-LR, .pf.r-LR::before, .upd, .blink { animation: none !important; } }
   .app { position: relative; z-index: 1; display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
   .side { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 18px 14px; border-right: 1px solid var(--line); background: rgba(9,10,15,.86); backdrop-filter: blur(8px); z-index: 30; }
@@ -704,9 +709,16 @@ function go(p) { location.hash = p; }
 addEventListener('hashchange', () => route());
 
 // ---------- rafraichissement ----------
+// Repos : calcul en cours, fenetre cachee ou pas au premier plan. Fenetre cachee : pas de rafraichissement ; pas au premier plan : toutes les 6 s.
+let refreshT = 0;
+const majRepos = () => document.body.classList.toggle('repos', !!(E?.job && !E.job.fin) || document.hidden || !document.hasFocus());
+async function refreshDoux() { if (document.hidden) return; if (!document.hasFocus() && Date.now() - refreshT < 6000) return; await refresh(); }
+window.addEventListener('focus', () => { majRepos(); refresh(); }); window.addEventListener('blur', majRepos);
+document.addEventListener('visibilitychange', () => { majRepos(); if (!document.hidden) refresh(); });
 async function refresh() {
+  refreshT = Date.now();
   try { E = await api('/api/etat'); } catch (e) { $('chipSrv').innerHTML = '<span class="dot bad"></span>Serveur injoignable'; return; }
-  const run = E.job && !E.job.fin, maj = E.moteurDisque && E.moteurDisque !== E.moteur;
+  const run = E.job && !E.job.fin, maj = E.moteurDisque && E.moteurDisque !== E.moteur; majRepos();
   $('chipSrv').innerHTML = `<span class="dot ${maj ? 'warn' : ''}"></span>${E.fils} fils`; $('chipSrv').title = 'Serveur local actif sur 127.0.0.1:' + E.port;
   $('chipVer').textContent = 'v' + (E.appVersion || E.script?.version || '-');
   // etapes de "tout lancer"
@@ -1290,7 +1302,7 @@ function campRender() {
   setH('c3body', h);
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
-setInterval(() => { if (E) { campEtat(); twEtat(); } }, 1500);
+setInterval(() => { if (E && !document.hidden) { campEtat(); twEtat(); } }, 1500);
 addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.j) campCharger(); });
 campCharger();
 
@@ -1541,7 +1553,7 @@ setInterval(() => { if (!E) return; const j = E.job; if (j?.nom === "Tour de l'i
 twCharger(); colCharger();
 
 route();
-refresh(); setInterval(refresh, 1500); chargerCartes();
+refresh(); setInterval(refreshDoux, 1500); chargerCartes();
 </script>
 </body>
 </html>

@@ -12,7 +12,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEngine } from './lib/charger.mjs';
 import { fiche } from './lib/fiche.mjs';
-import { makePool } from './lib/pool.mjs';
+import { makePool, baisserPriorite } from './lib/pool.mjs';
 import { dir as D, DATA, CODE } from './lib/chemins.mjs';
 import { listerPoids, restaurerPoids } from './lib/historique.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -20,7 +20,15 @@ const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toStrin
 let FICHE = { v: null };
 let ENG = await loadEngine(), MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8'));
 const NCPU = os.availableParallelism?.() || os.cpus().length;
-let pool = await makePool(Math.max(1, NCPU - 1));
+// Fils du conseil en combat crees a la demande et fermes apres 3 min sans conseil (5.18) : au repos, le serveur ne garde plus
+// 11 copies du moteur du jeu en memoire (~300 Mo). Quand ils servent : meme nombre de fils et memes paquets, donc memes conseils.
+const NPOOL = Math.max(1, NCPU - 1), POOL_REPOS = 3 * 60 * 1000;
+baisserPriorite(os.constants.priority.PRIORITY_BELOW_NORMAL); // avant : fixee par la creation des fils au demarrage
+let poolP = null, poolUtil = 0, poolActifs = 0;
+const getPool = () => { poolUtil = Date.now(); return poolP ||= makePool(NPOOL, undefined, os.constants.priority.PRIORITY_BELOW_NORMAL).catch(e => { poolP = null; throw e; }); };
+const avecPool = async f => { const p = await getPool(); poolActifs++; try { return await f(p); } finally { poolActifs--; poolUtil = Date.now(); } };
+const fermerPool = async () => { const p = poolP; poolP = null; if (p) try { await (await p).close(); } catch {} };
+setInterval(() => { if (poolP && !poolActifs && Date.now() - poolUtil > POOL_REPOS) fermerPool(); }, 30000).unref();
 const T0 = Date.now(); let nConseil = 0, lastConseil = null;
 const readJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return null; } };
 let scriptVu = null, jeu = null;
@@ -116,8 +124,10 @@ function lancerChaine(action, o) {
 function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const A = ACTIONS[action]; if (!A) throw new Error('action inconnue');
   const fils = Math.max(1, NCPU - Math.max(1, reglages().filsReserves)); // des fils restent libres pour le conseil en combat
-  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour', 'cauchemar3'].includes(action) ? ['--fils', String(fils)] : [])];
+  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour', 'cauchemar3', 'tourExact'].includes(action) ? ['--fils', String(fils)] : [])];
   const p = spawn(process.execPath, args, { cwd: here, env: { ...process.env, KITSU_MOTEUR: here } });
+  // Priorite « inactive » pour tout calcul (prive compris) : YouTube, le jeu et le conseil en combat passent devant, sans perte quand le PC est libre.
+  try { os.setPriority(p.pid, os.constants.priority.PRIORITY_LOW); } catch {}
   const prev = chaine && job ? job.lignes : [];
   job = { id: Date.now(), action, nom: chaine ? `${chaine.nom} (${chaine.i + 1}/${chaine.etapes.length} : ${A.nom})` : A.nom, args: args.join(' '), debut: chaine ? chaine.debut : Date.now(), lignes: chaine ? [...prev, `=== ${A.nom} ===`] : [], fin: null, code: null, proc: p, chaine };
   const add = d => { for (const l of String(d).split(/\r?\n/)) if (l.trim()) { job.lignes.push(l); if (job.lignes.length > 2000) job.lignes.shift(); } };
@@ -128,7 +138,8 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
   return job.id;
 }
 // ---------- conseil en combat ----------
-async function conseil({ st, key, cands, W, budget }) {
+async function conseil(q) { return avecPool(pool => conseil0(pool, q)); }
+async function conseil0(pool, { st, key, cands, W, budget }) {
   budget = budget || reglages().conseilMs;
   const t0 = Date.now(), stats = cands.map((c, i) => ({ ...c, i, n: 0, s2: 0, s3: 0, win: 0, hp: 0 }));
   // Tour de l'infini : les etoiles ne comptent pas, seuls la victoire et les PV gardes pour les etages suivants (12 % de soin seulement).
@@ -157,7 +168,7 @@ function etat() {
   let disque = null; try { disque = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); } catch {}
   return {
     moteur: ENG.version, moteurDisque: disque, mondes: ENG.G.ALL_WORLDS.map(w => `${w.id} (${w.fights.length})`), cartes: Object.keys(CH).length,
-    cpu: os.cpus()[0]?.model, coeurs: NCPU, fils: pool.n, memoire: Math.round(os.totalmem() / 2 ** 30), uptime: Math.round((Date.now() - T0) / 1000),
+    cpu: os.cpus()[0]?.model, coeurs: NCPU, fils: NPOOL, memoire: Math.round(os.totalmem() / 2 ** 30), uptime: Math.round((Date.now() - T0) / 1000),
     conseil: { n: nConseil, dernier: lastConseil }, port: PORT,
     sauvegarde: sv ? { t: sv.t, script: sv.script, cartes: own.length, lr: own.filter(i => CH[i]?.r === 'M').length, ur: own.filter(i => CH[i]?.r === 'L').length, ssr: own.filter(i => CH[i]?.r === 'E').length, equipe: (sv.team || []).map(i => CH[i]?.n), guilde: sv.guild?.boss ? `${sv.guild.boss.name} niv ${sv.guild.boss.lv}` : null, compte: sv.acct?.lv } : null,
     poids: pw ? { t: pw.t, gains: pw.gains } : null,
@@ -181,7 +192,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204, '', 'text/plain', CORS);
     if (EXT?.route && await EXT.route({ req, res, u, send, body, ENG, CORS, own, say, D })) return;
     // Pour le script du jeu
-    if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: ENG.version, dom: MAN.dom, fils: pool.n, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
+    if (u.pathname === '/ping') { if (u.searchParams.get('v')) scriptVu = { v: u.searchParams.get('v'), t: Date.now() }; } if (u.pathname === '/ping') return send(res, 200, { ok: true, version: ENG.version, dom: MAN.dom, fils: NPOOL, poidsT: readJ(D('data', 'poids.json'))?.t || 0 }, 'application/json', CORS);
     if (u.pathname === '/poids') { const p = readJ(D('data', 'poids.json')); return send(res, p ? 200 : 404, p || {}, 'application/json', CORS); }
     const duScript = req.headers['x-kitsu-script'] === '1';
     if (['/sauvegarde', '/equipes', '/jeu'].includes(u.pathname) && req.method === 'POST' && !duScript) return send(res, 403, { err: 'reserve au script KitsuAI' }, 'application/json', CORS);
@@ -201,7 +212,7 @@ http.createServer(async (req, res) => {
       }
       if (q.dom && q.dom !== MAN.dom) return send(res, 409, { err: 'version' }, 'application/json', CORS);
       const t0 = Date.now(), seeds = Array.from({ length: q.seeds || 24 }, (_, i) => i + 1);
-      const r = await pool.runAll(q.equipes.map(team => ({ team, fights: [q.fid], seeds })), q.W, {}, 4);
+      const r = await avecPool(pool => pool.runAll(q.equipes.map(team => ({ team, fights: [q.fid], seeds })), q.W, {}, 4));
       return send(res, 200, { ms: Date.now() - t0, res: r }, 'application/json', CORS);
     }
     if (u.pathname === '/conseil' && req.method === 'POST') {
@@ -237,11 +248,13 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/resultat') { const f = path.basename(u.searchParams.get('f') || ''); const p = D('resultats', f); if (!existsSync(p)) return send(res, 404, { err: 'introuvable' }); return send(res, 200, readFileSync(p), /\.json$/.test(f) ? 'application/json' : 'text/plain; charset=utf-8'); }
       if (u.pathname === '/api/sauvegarde' && req.method === 'POST') { const b = await body(req); const j = JSON.parse(b); if (!j.owned || !j.lv) return send(res, 400, { err: "ce n'est pas un export KitsuAI" }); mkdirSync(D('data'), { recursive: true }); writeFileSync(D('data', 'sauvegarde.json'), b); say(`sauvegarde importee (${Object.keys(j.owned).length} cartes)`); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/dossier' && req.method === 'POST') { const d = { resultats: 'resultats', data: 'data', moteur: '.' }[JSON.parse(await body(req)).d] || '.'; const p = D(d); mkdirSync(p, { recursive: true }); exec(process.platform === 'win32' ? `explorer "${p}"` : `xdg-open "${p}"`); return send(res, 200, { ok: true }); }
-      if (u.pathname === '/api/redemarrer-pool' && req.method === 'POST') { await pool.close(); ENG = await loadEngine(); MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8')); pool = await makePool(Math.max(1, NCPU - 1), ENG.version); say(`moteur recharge : ${ENG.version}`); return send(res, 200, { ok: true, version: ENG.version }); }
+      if (u.pathname === '/api/redemarrer-pool' && req.method === 'POST') { await fermerPool(); ENG = await loadEngine(); MAN = JSON.parse(readFileSync(D('engine', ENG.version, 'manifest.json'), 'utf8')); say(`moteur recharge : ${ENG.version}`); return send(res, 200, { ok: true, version: ENG.version }); }
     }
     send(res, 404, { err: 'introuvable' });
   } catch (e) { send(res, 500, { err: String(e.message || e) }); }
+}).on('error', e => { // un serveur KitsuAI tourne deja sur ce port (application + KitsuAI.bat) : on s'arrete au lieu de garder ~500 Mo pour rien
+  if (e.code === 'EADDRINUSE') { say(`le port ${PORT} est deja pris (KitsuAI deja lance ?) : ce serveur s'arrete.`); process.exit(0); } throw e;
 }).listen(PORT, '127.0.0.1', () => {
-  say(`panneau KitsuAI : http://127.0.0.1:${PORT}  (moteur ${ENG.version}, ${pool.n} fils)`);
+  say(`panneau KitsuAI : http://127.0.0.1:${PORT}  (moteur ${ENG.version}, ${NPOOL} fils pour le conseil, crees a la demande)`);
   if (process.argv.includes('--ouvrir')) exec(process.platform === 'win32' ? `start "" http://127.0.0.1:${PORT}/` : `xdg-open http://127.0.0.1:${PORT}/`);
 });

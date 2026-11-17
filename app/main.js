@@ -18,6 +18,9 @@ const DATA = app.getPath('userData');
 const ICON = path.join(__dirname, 'build', 'icon.png');
 let win = null, tray = null, srv = null, quitting = false, srvLog = [];
 
+// Pas d'acceleration graphique (5.18) : le panneau n'a besoin que de texte, de SVG et d'un canvas. Mesure du 17/11 : le processus
+// graphique du launcher prenait ~205 Mo de memoire video et ~360 Mo de RAM, au repos. KITSU_GPU=1 pour la remettre.
+if (process.env.KITSU_GPU !== '1') app.disableHardwareAcceleration();
 if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.on('second-instance', () => show());
 

@@ -4,6 +4,21 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.18.0
+
+Moins de lag pendant les calculs (YouTube et kitsu.games qui saccadaient), sans perte de vitesse de calcul.
+
+- Calculs en priorité **inactive** (la plus basse de Windows) au lieu de « inférieure à la normale » : le navigateur, les vidéos et le jeu passent toujours devant. Avant, le calcul était au même niveau que les onglets d'arrière-plan du navigateur. Quand rien d'autre ne tourne, le calcul garde tout le processeur. Vaut pour tous les calculs lancés par le launcher (`serveur.mjs` à chaque lancement, `lib/pool.mjs` par défaut ; une priorité plus basse n'est jamais remontée).
+- Le serveur (conseil en combat) reste en « inférieure à la normale » : pendant un calcul, ton conseil en combat passe maintenant devant lui.
+- Launcher : pendant un calcul, ou quand sa fenêtre n'est pas au premier plan, plus d'effets animés (braises, reflets, clignotements) ni de flou. Mesuré le 17/11 : la fenêtre et sa carte graphique prenaient ~22 % du processeur pendant un calcul, en priorité normale et haute. Fenêtre cachée : plus de rafraîchissement ; pas au premier plan : toutes les 6 s au lieu de 1,5 s. Ce temps revient au calcul.
+- Script : la sauvegarde du jeu, lue plusieurs fois par seconde par les conseils, n'est plus reparsée que si elle a changé.
+- Le départage exact de la Tour suit aussi le réglage « fils réservés ».
+- Moins de mémoire au repos (mesure du 17/11 : KitsuAI prenait ~1,1 Go de RAM et 205 Mo de mémoire vidéo sans rien calculer) :
+  - le serveur ne garde plus 11 copies du moteur du jeu pour le conseil en combat : les fils sont créés au premier conseil et fermés après 3 min sans conseil (environ 95 Mo de moins par fil). Mêmes fils et mêmes paquets quand ils servent : conseils identiques ;
+  - un second serveur lancé alors que KitsuAI tourne déjà (application + `KitsuAI.bat`) s'arrête tout de suite au lieu de rester en mémoire (~500 Mo) ;
+  - le launcher n'utilise plus l'accélération graphique : plus de mémoire vidéo ni de processus graphique pour un panneau de texte et de graphiques (`KITSU_GPU=1` pour la remettre).
+- Script : le worker de calcul (copie du moteur du jeu, ~100 Mo dans l'onglet) est fermé après 3 min sans calcul et recréé au besoin ; le contour du conseil clignote 3 fois puis reste fixe, au lieu de redessiner la page en continu.
+
 ## 5.17.0
 
 - Nouvelle page « Règles et effets » (Outils) : les 33 statuts (malus, bonus, protections) avec ce qu'ils font et leur valeur par défaut, les règles du combat (tour de jeu, énergie, endurance, formule des dégâts, critique, types, rupture, boss, étoiles), les 146 passifs et la progression. Tout est lu dans le moteur du jeu à chaque version (`lib/fiche.mjs`, `/api/fiche`) ; un statut inconnu est marqué « nouveau ».
