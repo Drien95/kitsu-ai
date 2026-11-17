@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.17.0
+
+- Nouvelle page « Règles et effets » (Outils) : les 33 statuts (malus, bonus, protections) avec ce qu'ils font et leur valeur par défaut, les règles du combat (tour de jeu, énergie, endurance, formule des dégâts, critique, types, rupture, boss, étoiles), les 146 passifs et la progression. Tout est lu dans le moteur du jeu à chaque version (`lib/fiche.mjs`, `/api/fiche`) ; un statut inconnu est marqué « nouveau ».
+- Entraînement de l'IA PvE : objectif 3 étoiles par défaut (`entrainer.mjs --objectif 3etoiles`, `2etoiles` pour l'ancien) ; les réglages sont gardés s'ils font plus de 3 étoiles sur les combats jamais vus.
+- Conseils (collectifs, plan d'XP, tirage, duos, marché) : la note vise maintenant les 3 étoiles (3 étoiles + 2 étoiles / 4). Le plan d'XP donne aussi un nombre estimé de combats gagnés à 3 étoiles pour atteindre chaque niveau.
+- Tour : le calcul garde aussi la suite du classement (`classementLarge`, 1 500 trios) pour le départage exact.
+- Correction : la page Tour (et Campagne) ne rechargeait pas les résultats à la fin d'un calcul suivi en direct ; il fallait recharger le launcher.
+
 ## 5.16.0
 
 - Campagne : meilleur trio **par combat** (nouvelle étape du calcul, `lib/etages.mjs`). La course classe les trios sur un score global et peut écarter tôt un trio qui serait le seul à faire 3 étoiles sur un combat. Désormais :
@@ -12,11 +20,6 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
   - plan minimal : le moins de trios possible pour couvrir tous les combats, à un tirage près du meilleur.
 - Page Campagne : carte « Meilleur trio par combat » (par difficulté : combats sûrs, comparaison avec le script, spécialistes, combats sans 3 étoiles, recherche restante et temps estimé), le plan, et chaque combat par monde avec filtres.
 - Script : sur l'écran d'équipe, le trio du plan et le meilleur trio du combat (demandés au PC par `/equipes`) sont ajoutés aux trios essayés et rejoués à tes niveaux actuels (badge « calcul Campagne »).
-- Nouvelle page « Règles et effets » (Outils) : les 33 statuts (malus, bonus, protections) avec ce qu'ils font et leur valeur par défaut, les règles du combat (tour de jeu, énergie, endurance, formule des dégâts, critique, types, rupture, boss, étoiles), les 146 passifs et la progression. Tout est lu dans le moteur du jeu à chaque version (`lib/fiche.mjs`, `/api/fiche`) ; un statut inconnu est marqué « nouveau ».
-- Entraînement de l'IA PvE : objectif 3 étoiles par défaut (`entrainer.mjs --objectif 3etoiles`, `2etoiles` pour l'ancien) ; les réglages sont gardés s'ils font plus de 3 étoiles sur les combats jamais vus.
-- Conseils (collectifs, plan d'XP, tirage, duos, marché) : la note vise maintenant les 3 étoiles (3 étoiles + 2 étoiles / 4). Le plan d'XP donne aussi un nombre estimé de combats gagnés à 3 étoiles pour atteindre chaque niveau.
-- Tour : le calcul garde aussi la suite du classement (`classementLarge`, 1 500 trios) pour le départage exact.
-- Correction : la page Tour (et Campagne) ne rechargeait pas les résultats à la fin d'un calcul suivi en direct ; il fallait recharger le launcher.
 - Le hasard d'un combat est tiré par le jeu au lancement de chaque essai : les résultats sont des chances de 3 étoiles par essai.
 
 
