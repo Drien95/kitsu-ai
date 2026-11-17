@@ -4,6 +4,12 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.14.1
+
+### Amélioré
+- Le panneau utilise toute la largeur de l'écran (jusqu'à 1800 px au lieu de 1320 px). Les notes de version s'étalent sur plusieurs colonnes quand il n'y a qu'une catégorie.
+- **Rappel du script** : une mise à jour du launcher apporte en général un nouveau script. La carte de mise à jour et la page Nouveautés le disent, puis la carte devient « Script à mettre à jour » (bouton Installer le script) tant que Tampermonkey a l'ancienne version.
+
 ## 5.14.0
 
 ### Ajouté
