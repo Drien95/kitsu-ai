@@ -105,6 +105,13 @@
   .files div { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); align-items: center; font-size: 13px; }
   .files div span { flex: 1; }
   .files a { color: var(--acc2); cursor: pointer; font-weight: 800; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  figure.cg { margin: 0; position: relative; } figure.cg svg { display: block; border: 1px solid var(--line); border-radius: 12px; }
+  figure.cg figcaption { position: absolute; right: 12px; top: 10px; opacity: .55; transition: opacity .15s; } figure.cg:hover figcaption { opacity: 1; }
+  figure.cg button { padding: 5px 10px; font-size: 10px; }
+  .c3t td, .c3t th { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; } .c3t tr.c3top td { background: rgba(247,197,72,.06); }
+  .c3k { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); } .c3k .tmn { width: 210px; } .c3k b { width: 28px; text-align: right; }
+  .c3b { flex: 1; height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; } .c3b i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc), var(--gold)); }
+  .c3c { padding: 8px 0; border-bottom: 1px solid var(--line); } .c3s { font-size: 11.5px; } a.lnk { color: var(--acc2); font-weight: 800; }
   .muted { color: var(--mute); } .okc { color: var(--ok); } .warnc { color: var(--warn); } .badc { color: var(--acc); }
   .note { background: rgba(255,122,61,.07); border: 1px solid rgba(255,122,61,.3); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #e9ded0; }
   ol.how { margin: 0; padding-left: 20px; color: #d9d3c9; } ol.how li { margin: 6px 0; }
@@ -199,6 +206,7 @@
     <a href="#accueil" data-p="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tableau de bord</span></a>
     <a href="#calculs" data-p="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Calculs</span></a>
     <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Résultats</span></a>
+    <a href="#campagne" data-p="campagne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span>Campagne</span></a>
     <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span></a>
     <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
     <a href="#nouveautes" data-p="nouveautes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 20 12 16.6 6.5 20 8 13.4 3 9l6.4-.7z"/></svg><span>Nouveautés</span></a>
@@ -343,6 +351,25 @@
       <h2>Fichiers <span class="r"><button class="ghost" onclick="dossier('resultats')">Ouvrir le dossier</button></span></h2>
       <div class="files" id="files"></div>
     </div>
+  </section>
+
+  <!-- ===================== CAMPAGNE ===================== -->
+  <section class="page" id="p-campagne">
+    <div class="eyebrow">Cauchemar Normal, Difficile, Extrême</div>
+    <h1>Campagne</h1>
+    <p class="lead">Le meilleur trio pour les 3 étoiles : tous les trios de tes cartes SSR, UR et LR, chaque combat de la campagne Cauchemar, collectifs et effets compris.</p>
+    <div class="card hot">
+      <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="campPlanche()">Exporter la planche PNG</button></span></h2>
+      <div class="row" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <label>Niveaux <select id="o_c3niv"><option value="99">Toutes au niveau 99 (potentiel)</option><option value="actuel">Tes niveaux actuels</option></select></label>
+        <button class="big" data-act="cauchemar3">Calculer la campagne</button>
+      </div>
+      <p class="muted" style="margin:12px 0 0">Premier calcul : environ 3 h sur 11 fils (des centaines de milliers de trios). Ensuite, seuls les trios touchés par un changement sont refaits : nouvelle carte, étoile ou niveau gagné, patch qui modifie une carte ou les combats. Le PC ne se met pas en veille pendant le calcul. Tu peux l'arrêter : il reprend là où il en était.</p>
+      <p id="c3job" class="muted" style="margin:8px 0 0"></p>
+    </div>
+    <div class="sp"></div>
+    <div class="sub" id="c3tabs"></div>
+    <div id="c3body"></div>
   </section>
 
   <!-- ===================== SCRIPT ===================== -->
@@ -709,6 +736,7 @@ async function lancer(action) {
   if (action === 'plafond') Object.assign(o, { n: +$('o_n').value });
   if (action === 'conseils') { const p = [['collectifs', 'o_ccol'], ['xp', 'o_cxp'], ['tirage', 'o_ctir'], ['duos', 'o_cduo'], ['marche', 'o_cmar']].filter(([, i]) => $(i).checked).map(([k]) => k); if (!p.length) return; o.parties = p.join(','); }
   if (action === 'equipes') o.n = +$('o_neq').value;
+  if (action === 'cauchemar3') o.niveaux = $('o_c3niv').value;
   if (action === 'imitation') o.combats = +$('o_nim').value;
   if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;
   try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; toast('Lancé'); refresh(); } catch (e) { alert(e.message); }
@@ -732,6 +760,146 @@ const drop = $('drop'); drop.onclick = () => $('file').click(); $('file').onchan
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('hot'); }; drop.ondragleave = () => drop.classList.remove('hot');
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hot'); e.dataTransfer.files[0] && importer(e.dataTransfer.files[0]); };
 addEventListener('keydown', e => { if (e.key === 'Escape') $('modal').style.display = 'none'; });
+// ---------- campagne : 3 etoiles en Cauchemar (resultats/cauchemar3.json) ----------
+// Les graphiques sont des SVG aux couleurs ecrites en dur (pas de variables CSS) : ils s'exportent tels quels en PNG.
+// Aucun portrait dans les SVG : une image d'une autre adresse rendrait le canvas illisible pour l'export.
+const CP = { j: null, obj: 'Moyenne', fin: undefined, err: '' };
+const CC = { bg: '#11131a', line: '#232633', txt: '#f4ede3', mute: '#8f96a6', N: '#2fd27a', D: '#f5a524', E: '#ff4b3e', gold: '#f7c548', acc2: '#ff7a3d' };
+const DIFFS = [['normal', 'Normal', CC.N], ['difficile', 'Difficile', CC.D], ['extreme', 'Extrême', CC.E]];
+const OBJS = [['Normal', 'Normal'], ['Difficile', 'Difficile'], ['Extreme', 'Extrême'], ['Moyenne', 'Les trois']];
+const fmt = v => v == null ? '-' : (Math.round(v * 10) / 10).toLocaleString('fr-FR');
+const court = n => String(n).replace(/\s*\(.*\)/, '').trim().split(/\s+/)[0];
+const trioCourt = e => e.map(court).join(' / ');
+const DI = o => ({ Normal: 0, Difficile: 1, Extreme: 2 })[o] ?? 3;
+// valeur d'une ligne pour une difficulte (0..2) ou la moyenne des trois (3)
+const pdVal = (pd, di, f = 'troisEtoiles') => di < 3 ? pd?.[di]?.[f] : pd?.length ? pd.reduce((a, x) => a + (x?.[f] || 0), 0) / pd.length : null;
+const valMonde = (pd, id, di) => { const xs = (di < 3 ? [pd?.[di]] : pd || []).map(x => x?.mondes?.[id]).filter(Boolean); const n = xs.reduce((a, x) => a + x.n, 0); return n ? xs.reduce((a, x) => a + x.troisEtoiles * x.n, 0) / n : null; };
+const chaud = v => { const t = Math.max(0, Math.min(1, v / 100)), a = [52, 58, 76], b = [47, 210, 122]; return `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * t)).join(',')})`; };
+
+function cadre(titre, sous, h, corps, W = 760) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${h}" width="100%" font-family="Manrope, Segoe UI, Arial, sans-serif"><rect width="${W}" height="${h}" rx="12" fill="${CC.bg}"/><rect x="20" y="16" width="7" height="7" fill="${CC.E}" transform="rotate(45 23.5 19.5)"/><text x="34" y="24" fill="${CC.E}" font-size="10" font-weight="800" letter-spacing="2">KITSUAI · CAMPAGNE</text><text x="20" y="50" fill="${CC.txt}" font-family="Anton, Impact, Arial Narrow, sans-serif" font-size="22">${esc(titre.toUpperCase())}</text><text x="20" y="69" fill="${CC.mute}" font-size="12">${esc(sous)}</text>${corps}</svg>`;
+}
+const fig = (id, svg) => `<figure class="cg" id="cg-${id}">${svg}<figcaption><button class="ghost" onclick="campPng('${id}')">PNG</button></figcaption></figure>`;
+function legende(series, W = 760) { let b = '', x = W - 20; for (const s of series.slice().reverse()) { x -= s.nom.length * 6.6 + 24; b += `<rect x="${x}" y="40" width="10" height="10" rx="2" fill="${s.c}"/><text x="${x + 15}" y="49" fill="${CC.mute}" font-size="11">${esc(s.nom)}</text>`; } return b; }
+
+// Barres verticales groupees (pourcentages).
+function barres(titre, sous, groupes, series) {
+  const W = 760, y0 = 96, y1 = 290, x0 = 52, gw = (W - x0 - 20) / groupes.length, bw = Math.min(54, (gw - 24) / series.length);
+  let b = legende(series);
+  for (let v = 0; v <= 100; v += 25) { const y = y1 - (y1 - y0) * v / 100; b += `<line x1="${x0}" x2="${W - 20}" y1="${y}" y2="${y}" stroke="${CC.line}"/><text x="${x0 - 8}" y="${y + 4}" fill="${CC.mute}" font-size="10" text-anchor="end">${v} %</text>`; }
+  groupes.forEach((g, i) => {
+    const cx = x0 + gw * i + gw / 2, s0 = cx - bw * series.length / 2;
+    g.vals.forEach((v, k) => { if (v == null) return; const h = (y1 - y0) * Math.min(100, v) / 100, x = s0 + k * bw; b += `<rect x="${x + 3}" y="${y1 - h}" width="${bw - 6}" height="${Math.max(1.5, h)}" rx="4" fill="${series[k].c}"/><text x="${x + bw / 2}" y="${y1 - h - 6}" fill="${CC.txt}" font-size="11" font-weight="700" text-anchor="middle">${fmt(v)}</text>`; });
+    b += `<text x="${cx}" y="${y1 + 20}" fill="${CC.txt}" font-size="12" font-weight="700" text-anchor="middle">${esc(g.nom)}</text>` + (g.sous ? `<text x="${cx}" y="${y1 + 36}" fill="${CC.mute}" font-size="10.5" text-anchor="middle">${esc(g.sous)}</text>` : '');
+  });
+  return cadre(titre, sous, y1 + 52, b);
+}
+// Classement horizontal avec la marge d'erreur (2 ecarts-types).
+function classement(titre, sous, L) {
+  const W = 760, rh = 30, y0 = 88, x0 = 270, x1 = W - 80, mx = Math.max(10, ...L.map(l => l.troisEtoiles + l.marge));
+  let b = '';
+  L.forEach((l, i) => {
+    const y = y0 + i * rh, w = (x1 - x0) * l.troisEtoiles / mx, m = (x1 - x0) * l.marge / mx;
+    b += `<text x="22" y="${y + 18}" fill="${i ? CC.mute : CC.gold}" font-size="12" font-weight="800">${i + 1}</text><text x="44" y="${y + 18}" fill="${CC.txt}" font-size="12">${esc(trioCourt(l.equipe))}</text>`
+      + `<rect x="${x0}" y="${y + 6}" width="${Math.max(2, w)}" height="16" rx="4" fill="${i ? CC.acc2 : CC.gold}" opacity="${i ? .78 : 1}"/><line x1="${Math.max(x0, x0 + w - m)}" x2="${x0 + w + m}" y1="${y + 14}" y2="${y + 14}" stroke="${CC.txt}" stroke-width="1.5" opacity=".7"/>`
+      + `<text x="${x1 + 10}" y="${y + 18}" fill="${CC.txt}" font-size="12" font-weight="700">${fmt(l.troisEtoiles)} %</text>`;
+  });
+  return cadre(titre, sous, y0 + L.length * rh + 18, b);
+}
+// Carte de chaleur : trios x mondes.
+function chaleur(titre, sous, L, di) {
+  const M = CP.j.mondes || [], W = 760, x0 = 200, y0 = 150, ch = 32, cw = (W - x0 - 70) / Math.max(1, M.length);
+  let b = '';
+  M.forEach((m, k) => { const x = x0 + cw * k + cw / 2; b += `<text transform="translate(${x - 4} ${y0 - 10}) rotate(-38)" fill="${CC.mute}" font-size="10.5">${esc(m.nom)}</text>`; });
+  L.forEach((l, i) => {
+    const y = y0 + i * ch; b += `<text x="20" y="${y + 20}" fill="${CC.txt}" font-size="11.5">${esc(trioCourt(l.equipe))}</text>`;
+    M.forEach((m, k) => { const v = valMonde(l.parDifficulte, m.id, di), x = x0 + cw * k; b += v == null ? `<rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="5" fill="${CC.line}" opacity=".5"/>` : `<rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="5" fill="${chaud(v)}"/><text x="${x + cw / 2}" y="${y + 20}" fill="${v > 60 ? '#07080c' : CC.txt}" font-size="11" font-weight="700" text-anchor="middle">${Math.round(v)}</text>`; });
+  });
+  return cadre(titre, sous, y0 + L.length * ch + 20, b);
+}
+// Entonnoir de la course (echelle logarithmique : de centaines de milliers a quelques dizaines).
+function entonnoir(titre, sous, vals) {
+  const W = 760, y0 = 88, rh = 30, cx = 420, lw = 130, lg = v => Math.log10(v + 1) / Math.log10(vals[0] + 1);
+  let b = '';
+  vals.forEach((v, i) => { const y = y0 + i * rh, w = Math.max(6, lw * 2 * lg(v)); b += `<text x="22" y="${y + 19}" fill="${CC.mute}" font-size="12">${i ? (i === vals.length - 1 ? 'Finalistes' : 'Après la manche ' + i) : 'Départ'}</text><rect x="${cx - w / 2}" y="${y + 5}" width="${w}" height="20" rx="5" fill="${i === vals.length - 1 ? CC.gold : CC.acc2}" opacity="${1 - i * .5 / vals.length}"/><text x="${W - 22}" y="${y + 19}" fill="${CC.txt}" font-size="12" font-weight="700" text-anchor="end">${v.toLocaleString('fr-FR')}</text>`; });
+  return cadre(titre, sous, y0 + vals.length * rh + 16, b);
+}
+// Histogramme des finalistes par tranche de 5 % de 3 etoiles.
+function histo(titre, sous, R) {
+  const W = 760, y0 = 104, y1 = 290, x0 = 52, bw = (W - x0 - 20) / R.length, mx = Math.max(1, ...R);
+  let b = '';
+  R.forEach((v, i) => { const h = (y1 - y0) * v / mx, x = x0 + i * bw; b += `<rect x="${x + 2}" y="${y1 - h}" width="${bw - 4}" height="${Math.max(v ? 2 : 0, h)}" rx="3" fill="${chaud(i * 5 + 2.5)}"/>` + (v ? `<text x="${x + bw / 2}" y="${y1 - h - 5}" fill="${CC.txt}" font-size="10" text-anchor="middle">${v}</text>` : ''); });
+  for (let p = 0; p <= 100; p += 25) b += `<text x="${x0 + p / 5 * bw}" y="${y1 + 18}" fill="${CC.mute}" font-size="10" text-anchor="middle">${p} %</text>`;
+  return cadre(titre, sous, y1 + 34, b + `<line x1="${x0}" x2="${W - 20}" y1="${y1}" y2="${y1}" stroke="${CC.line}"/>`);
+}
+
+// ---------- export PNG ----------
+async function svgCanvas(svg, k = 2) {
+  const vb = svg.viewBox.baseVal, c = document.createElement('canvas'), s = svg.cloneNode(true);
+  c.width = vb.width * k; c.height = vb.height * k; s.setAttribute('width', vb.width); s.setAttribute('height', vb.height);
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(s)], { type: 'image/svg+xml' })), img = new Image();
+  try { await new Promise((ok, ko) => { img.onload = ok; img.onerror = ko; img.src = url; }); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); } finally { URL.revokeObjectURL(url); }
+  return c;
+}
+const pngNom = id => `kitsuai-campagne-${CP.obj.toLowerCase()}-${id}-${(CP.j?.date || '').slice(0, 10)}.png`;
+const telecharger = (c, nom) => { const a = document.createElement('a'); a.download = nom; a.href = c.toDataURL('image/png'); a.click(); };
+async function campPng(id) { const s = document.querySelector(`#cg-${id} svg`); if (s) telecharger(await svgCanvas(s), pngNom(id)); }
+async function campPlanche() {
+  const cs = []; for (const s of document.querySelectorAll('#p-campagne figure.cg svg')) cs.push(await svgCanvas(s));
+  if (!cs.length) return; const g = 32, W = Math.max(...cs.map(c => c.width)) + 2 * g, H = cs.reduce((a, c) => a + c.height + g, g), c = document.createElement('canvas');
+  c.width = W; c.height = H; const x = c.getContext('2d'); x.fillStyle = '#07080c'; x.fillRect(0, 0, W, H); let y = g; for (const k of cs) { x.drawImage(k, g, y); y += k.height + g; }
+  telecharger(c, pngNom('planche')); toast('Planche exportée');
+}
+
+// ---------- chargement et rendu ----------
+async function campCharger() { try { CP.j = await api('/api/resultat?f=cauchemar3.json'); CP.err = ''; } catch (e) { CP.j = null; CP.err = String(e.message); } HC.delete('c3body'); campRender(); }
+function campEtat() {
+  if (CP.j && CARTES && !CP.rc) { CP.rc = 1; campRender(); } // portraits arrives apres le premier rendu
+  const run = E?.job && !E.job.fin, moi = E?.job?.nom === 'Campagne : 3 etoiles en Cauchemar';
+  const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}. Le PC reste éveillé ; tu peux arrêter, la reprise repart du journal.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les combats déjà faits sont gardés.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
+  setH('c3job', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : ''));
+  if (moi && E.job.fin && CP.fin !== E.job.fin) { const premier = CP.fin === undefined; CP.fin = E.job.fin; if (!premier || !CP.j) campCharger(); }
+}
+function campRender() {
+  const j = CP.j;
+  if (!j) { setH('c3body', `<div class="card"><div class="muted">${CP.err && !/introuvable|404/.test(CP.err) ? 'Lecture impossible : ' + esc(CP.err) : 'Aucun calcul de campagne pour l’instant. Lance-le avec le bouton ci-dessus.'}</div></div>`); $('c3tabs').innerHTML = ''; return; }
+  $('c3tabs').innerHTML = OBJS.map(([k, n]) => `<a class="${k === CP.obj ? 'on' : ''}" onclick="CP.obj='${k}';campRender()">${k === 'Moyenne' ? 'Les trois difficultés' : 'Cauchemar ' + n}</a>`).join('');
+  const L = j.meilleurs?.[CP.obj] || [], di = DI(CP.obj), b0 = L[0], nivTxt = j.niveaux === '99' ? 'toutes les cartes au niveau 99' : 'tes niveaux actuels', ea = j.equipeActuelle, mt = j.maintenant || [];
+  const objNom = di < 3 ? 'Cauchemar ' + DIFFS[di][1] : 'moyenne des trois difficultés';
+  const tile = (k, v, s, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  const nC = (j.combats?.normal || 0) + (j.combats?.difficile || 0) + (j.combats?.extreme || 0);
+  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), 'Normal, Difficile, Extrême')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div>`;
+  // tableau du classement avec portraits
+  h += `<div class="card"><h2>Les 10 meilleurs trios <span class="r">${esc(objNom)} · ${esc(nivTxt)}</span></h2><table class="c3t"><tr><th>#</th><th>Trio</th><th>3★ Normal</th><th>3★ Difficile</th><th>3★ Extrême</th><th>2★ moyen</th><th>Victoire</th><th>Note</th></tr>`
+    + L.map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids, true)}<div class="muted c3s">niveaux ${l.niveaux.join(' / ')} · étoiles ${l.etoiles.join(' / ')}</div></td>${DIFFS.map((_, d) => `<td><b style="color:${DIFFS[d][2]}">${fmt(pdVal(l.parDifficulte, d))}</b> %</td>`).join('')}<td>${fmt(pdVal(l.parDifficulte, 3, 'deuxEtoiles'))} %</td><td>${fmt(pdVal(l.parDifficulte, 3, 'victoire'))} %</td><td><b>${fmt(l.troisEtoiles)} %</b> <span class="muted">± ${fmt(l.marge)}</span></td></tr>`).join('') + '</table></div><div class="sp"></div>';
+  // graphiques
+  const ser = DIFFS.map(([, n, c]) => ({ nom: n, c })), groupes = [];
+  if (b0) groupes.push({ nom: 'Meilleur trio', sous: trioCourt(b0.equipe), vals: DIFFS.map((_, d) => pdVal(b0.parDifficulte, d)) });
+  if (ea) groupes.push({ nom: 'Ton équipe', sous: trioCourt(ea.equipe) + (j.niveaux === '99' ? ' (niv. 99)' : ''), vals: DIFFS.map((_, d) => pdVal(j.niveaux === '99' ? ea.niveau99 : ea.actuel, d)) });
+  if (mt[0]) groupes.push({ nom: 'Meilleur trio, tes niveaux', sous: trioCourt(mt[0].equipe), vals: DIFFS.map((_, d) => pdVal(mt[0].parDifficulte, d)) });
+  const figs = [];
+  if (L.length) figs.push(fig('classement', classement('Classement des 3 étoiles', `${objNom}, ${nivTxt}, trait = marge d'erreur`, L)));
+  if (groupes.length) figs.push(fig('comparaison', barres('3 étoiles par difficulté', 'Meilleur trio, ton équipe et ce que tu peux faire tout de suite', groupes, ser)));
+  if (b0) figs.push(fig('boss', barres('Boss contre autres combats', 'Meilleur trio : 3 étoiles par type de combat', DIFFS.map(([, n], d) => ({ nom: n, sous: (b0.parDifficulte?.[d]?.boss?.n || 0) + ' boss, ' + (b0.parDifficulte?.[d]?.autres?.n || 0) + ' autres', vals: [b0.parDifficulte?.[d]?.boss?.troisEtoiles, b0.parDifficulte?.[d]?.autres?.troisEtoiles] })), [{ nom: 'Boss', c: CC.gold }, { nom: 'Autres', c: CC.acc2 }])));
+  if (L.length && j.mondes?.length) figs.push(fig('mondes', chaleur('3 étoiles par monde', `5 meilleurs trios, ${objNom}, en %`, L.slice(0, 5), di)));
+  if (j.entonnoir?.length) figs.push(fig('course', entonnoir('La course des trios', 'Trios gardés après chaque manche (échelle logarithmique)', [j.trios, ...j.entonnoir])));
+  if (j.repartition?.some(Boolean)) figs.push(fig('repartition', histo('Répartition des finalistes', '3 étoiles en moyenne sur les trois difficultés, par tranche de 5 %', j.repartition)));
+  h += `<div class="grid gc">${figs.join('')}</div><div class="sp"></div>`;
+  // ton equipe
+  if (ea) { const row = (nom, pd) => `<tr><td>${nom}</td>${DIFFS.map((_, d) => `<td><b style="color:${DIFFS[d][2]}">${fmt(pd?.[d]?.troisEtoiles)}</b> % <span class="muted">· 2★ ${fmt(pd?.[d]?.deuxEtoiles)} % · victoire ${fmt(pd?.[d]?.victoire)} %</span></td>`).join('')}</tr>`;
+    h += `<div class="grid g2"><div class="card"><h2>Ton équipe actuelle</h2>${equipeHTML(ea.ids)}<div class="sp"></div><table class="c3t"><tr><th></th>${DIFFS.map(([, n]) => `<th>${n}</th>`).join('')}</tr>${row('Tes niveaux', ea.actuel)}${row('Niveau 99', ea.niveau99)}</table></div>`; } else h += '<div class="grid g2"><div class="card"><h2>Ton équipe actuelle</h2><div class="muted">Aucune équipe de 3 dans la sauvegarde.</div></div>';
+  h += `<div class="card"><h2>Tout de suite, à tes niveaux</h2>${mt.length ? `<table class="c3t"><tr><th>Trio</th>${DIFFS.map(([, n]) => `<th>3★ ${n}</th>`).join('')}</tr>${mt.map(m => `<tr><td>${equipeHTML(m.ids, true)}</td>${DIFFS.map((_, d) => `<td><b style="color:${DIFFS[d][2]}">${fmt(m.parDifficulte?.[d]?.troisEtoiles)}</b> %</td>`).join('')}</tr>`).join('')}</table>` : '<div class="muted">-</div>'}</div></div><div class="sp"></div>`;
+  // cartes cles et collectifs
+  const ck = j.cartesCles?.[CP.obj] || [], mx = Math.max(1, ...ck.map(c => c.dans));
+  h += `<div class="grid g2"><div class="card"><h2>Cartes clés <span class="r">présence dans les 50 meilleurs trios</span></h2>${ck.map(c => `<div class="c3k">${pf(c.id)}<span class="tmn">${esc(c.carte)}<br><span class="muted c3s">${esc(carte(c.id).r || c.rarete)} · niveau ${c.niveau}</span></span><span class="c3b"><i style="width:${100 * c.dans / mx}%"></i></span><b>${c.dans}</b></div>`).join('') || '<div class="muted">-</div>'}</div>`;
+  const col = j.collectifs || [];
+  h += `<div class="card"><h2>Collectifs conseillés <span class="r">quand une carte en a plus de 6</span></h2>${col.length ? col.map(c => `<div class="c3c"><div class="muted c3s">${esc(c.equipe.join(' / '))}</div>${c.cartes.map(x => `<div><b>${esc(x.carte)}</b> · ${x.possibles} possibles · ${fmt(x.avant)} % vers ${fmt(x.apres)} % ${x.utile ? '<span class="okc">à changer</span>' : '<span class="muted">garder les actuels</span>'}${x.utile ? `<div class="muted c3s">${x.conseil.map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`).join('') : '<div class="muted">Aucune carte des 5 meilleurs trios n’a plus de 6 collectifs possibles : les choix du jeu suffisent.</div>'}</div></div><div class="sp"></div>`;
+  h += `<div class="card"><h2>Méthode</h2><div class="muted">Tous les trios de tes cartes SSR, UR et LR (${(j.trios || 0).toLocaleString('fr-FR')}) jouent les ${nC.toLocaleString('fr-FR')} combats de la campagne Cauchemar avec l'IA de KitsuAI. Course par manches : un trio est retiré seulement quand il est nettement derrière (z ${'>'} 3). Les finalistes rejouent tout avec d'autres tirages. Un combat est arrêté dès que les 3 étoiles sont perdues (cycle 9 ou un K.O. sans carte qui ranime) : même résultat, 1,8 fois plus vite. Le journal garde chaque paquet de combats : il n'est refait que si le jeu, une carte, ses niveaux, ses étoiles, ses collectifs ou l'IA changent.<br>Moteur ${esc(j.version)} · signature ${esc(j.signatureCombat)} · ${quand(j.date)}</div></div>`;
+  setH('c3body', h);
+}
+setInterval(() => { if (E) campEtat(); }, 1500);
+addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.j) campCharger(); });
+campCharger();
 refresh(); setInterval(refresh, 1500); chargerCartes();
 </script>
 </body>
