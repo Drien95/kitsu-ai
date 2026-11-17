@@ -1,11 +1,13 @@
-// Meilleur trio pour les 3 etoiles en Cauchemar Normal, Difficile et Extreme : TOUS les trios de tes SSR/UR/LR.
+// Meilleur trio pour les 3 etoiles en Campagne et en Cauchemar (Normal, Difficile, Extreme) : TOUS les trios de tes SSR/UR/LR.
 // Methode (course avec elimination) : chaque trio joue les memes paquets de combats avec les memes tirages ;
 // apres chaque tour (des le premier), un trio n'est abandonne que s'il est nettement derriere (borne haute sous la borne basse du
-// Ke meilleur, z = 3) pour CHAQUE objectif (Normal, Difficile, Extreme, moyenne des trois ; les 4 premiers tours : moyenne et Normal). Les survivants jouent
+// Ke meilleur, z = 3) pour CHAQUE objectif Cauchemar (Normal, Difficile, Extreme, moyenne des trois ; les 4 premiers tours : moyenne et Normal).
+// La Campagne (Normal, Difficile, Extreme) est jouee aussi mais n'elimine pas : beaucoup de trios y font 100 %, ils resteraient tous en course.
+// Son classement est donc celui des finalistes du Cauchemar. Les survivants jouent
 // tous les combats, puis 2 tirages de plus. Combat arrete des que les 3 etoiles sont perdues (verifie : memes 3 etoiles).
 // Journal (cache/cauchemar3-*.jsonl) : rien n'est recalcule tant que le combat, la carte, son niveau, ses etoiles,
 // ses collectifs, les combats et l'IA sont les memes ; il sert aussi de point de reprise apres une coupure.
-//   node cauchemar3.mjs [--niveaux 99|actuel] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
+//   node cauchemar3.mjs [--niveaux 99|actuel] [--difficultes toutes|cauchemar] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
 //   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
@@ -18,7 +20,12 @@ import { garderEveille } from './lib/eveil.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, SIM = makeSim(G, B);
 const NIV = String(arg('niveaux', '99')), K = +arg('garder', 30), Z = +arg('z', 3), PAQ = +arg('paquet', 16);
-const DIFF = [['normal', '@n'], ['difficile', '@hn'], ['extreme', '@xn']], OBJ = ['Normal', 'Difficile', 'Extreme', 'Moyenne'];
+// Ordre fixe : les 3 Cauchemar d'abord (cles du journal et resultats inchanges), puis la Campagne si demandee.
+const TOUTES = String(arg('difficultes', 'toutes')) !== 'cauchemar';
+const DIFF = [['normal', '@n'], ['difficile', '@hn'], ['extreme', '@xn'], ...(TOUTES ? [['campNormal', ''], ['campDifficile', '@h'], ['campExtreme', '@x']] : [])], ND = DIFF.length;
+// Objectifs : { nom, difficultes moyennees, elimine }. Les noms Normal/Difficile/Extreme/Moyenne restent ceux du Cauchemar.
+const OBJS = [{ k: 'Normal', d: [0], e: 1 }, { k: 'Difficile', d: [1], e: 1 }, { k: 'Extreme', d: [2], e: 1 }, { k: 'Moyenne', d: [0, 1, 2], e: 1 },
+  ...(TOUTES ? [{ k: 'CampNormal', d: [3] }, { k: 'CampDifficile', d: [4] }, { k: 'CampExtreme', d: [5] }, { k: 'Les6', d: [0, 1, 2, 3, 4, 5] }] : [])], OBJ = OBJS.map(o => o.k), IMOY = 3;
 const LV = id => NIV === '99' ? 99 : (SAVE.lv?.[id]?.l || 1), ET = id => SAVE.stars?.[id] || 0, LK = id => SAVE.lk?.[id] || null;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r)).sort((a, b) => a - b);
@@ -60,10 +67,10 @@ async function jouer(items) { // items : { di, pi, seed, team, ck } -> [n, s3]
 }
 
 // ---------- course avec elimination ----------
-const N = new Uint32Array(T * 3), S3 = new Uint32Array(T * 3);
+const N = new Uint32Array(T * ND), S3 = new Uint32Array(T * ND);
 const score = (t, o) => { // proportion de 3 etoiles et erreur type, par difficulte ou en moyenne
-  const ps = o < 3 ? [o] : [0, 1, 2]; let p = 0, v = 0;
-  for (const d of ps) { const n = N[t * 3 + d], q = n ? S3[t * 3 + d] / n : 0, qq = (S3[t * 3 + d] + 1) / (n + 2); p += q; v += qq * (1 - qq) / Math.max(1, n); }
+  const ps = OBJS[o].d; let p = 0, v = 0;
+  for (const d of ps) { const n = N[t * ND + d], q = n ? S3[t * ND + d] / n : 0, qq = (S3[t * ND + d] + 1) / (n + 2); p += q; v += qq * (1 - qq) / Math.max(1, n); }
   return { p: p / ps.length, se: Math.sqrt(v) / ps.length };
 };
 // Les 4 premiers tours, seuls la moyenne et le Normal eliminent : en Extreme, les 3 etoiles sont si rares au debut
@@ -71,7 +78,7 @@ const score = (t, o) => { // proportion de 3 etoiles et erreur type, par difficu
 function eliminer(alive, pi) {
   if (alive.length <= K) return alive;
   const garde = new Uint8Array(T);
-  for (const o of pi < 4 ? [3, 0] : [0, 1, 2, 3]) {
+  for (const o of pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0)) {
     const sc = alive.map(t => ({ t, ...score(t, o) })); const lo = sc.map(x => x.p - Z * x.se).sort((a, b) => b - a), bar = lo[Math.min(K, lo.length) - 1];
     for (const x of sc) if (x.p + Z * x.se >= bar) garde[x.t] = 1;
   }
@@ -79,7 +86,7 @@ function eliminer(alive, pi) {
 }
 async function tour(alive, pi, seed) {
   const items = [], idx = [];
-  for (const t of alive) for (let di = 0; di < 3; di++) if (paquets[di][pi]) { items.push({ di, pi, seed, team: trios[t].map(id => carte(id)), ck: cleTrio[t] }); idx.push(t * 3 + di); }
+  for (const t of alive) for (let di = 0; di < ND; di++) if (paquets[di][pi]) { items.push({ di, pi, seed, team: trios[t].map(id => carte(id)), ck: cleTrio[t] }); idx.push(t * ND + di); }
   for (let a = 0; a < items.length; a += 60000) {
     const r = await jouer(items.slice(a, a + 60000));
     r.forEach(([n, s3], j) => { N[idx[a + j]] += n; S3[idx[a + j]] += s3; });
@@ -88,7 +95,7 @@ async function tour(alive, pi, seed) {
 }
 
 const eveil = garderEveille(), T0 = Date.now(); let dernierLog = Date.now();
-log(`moteur ${version} (signature combat ${sigG}), ${IDS.length} cartes, ${T} trios, niveaux ${NIV === '99' ? '99' : 'actuels'}, combats ${NCOMB.join(' / ')} (N / D / E), ${pool.n} fils, journal ${J.taille()} paquets${eveil.ok ? ', PC garde eveille' : ''}`);
+log(`moteur ${version} (signature combat ${sigG}), ${IDS.length} cartes, ${T} trios, niveaux ${NIV === '99' ? '99' : 'actuels'}, combats ${NCOMB.join(' / ')} (${DIFF.map(d => d[0]).join(' / ')}), ${pool.n} fils, journal ${J.taille()} paquets${eveil.ok ? ', PC garde eveille' : ''}`);
 let alive = [...Array(T).keys()]; const entonnoir = [];
 for (let pi = 0; pi < TOURS; pi++) {
   await tour(alive, pi, 1);
@@ -125,22 +132,22 @@ log(`detail complet : ${details.size} trios`);
 // Ton equipe (niveaux actuels et niveau 99) et les 5 meilleurs trios a tes niveaux actuels : ce qui est faisable tout de suite.
 const equipe = (SAVE.team || []).map(Number).filter(id => CH[id]);
 const equipeActuelle = equipe.length === 3 ? { equipe: equipe.map(nom), ids: equipe, niveaux: equipe.map(LVA), actuel: await complet(equipe, LVA), niveau99: await complet(equipe, () => 99) } : null;
-const maintenant = []; for (const x of tops[3].slice(0, 5)) maintenant.push({ equipe: trios[x.t].map(nom), ids: trios[x.t], niveaux: trios[x.t].map(LVA), parDifficulte: await complet(trios[x.t], LVA) });
+const maintenant = []; for (const x of tops[IMOY].slice(0, 5)) maintenant.push({ equipe: trios[x.t].map(nom), ids: trios[x.t], niveaux: trios[x.t].map(LVA), parDifficulte: await complet(trios[x.t], LVA) });
 // Cartes qui reviennent le plus dans les 50 meilleurs trios de chaque objectif.
 const cartesCles = Object.fromEntries(OBJ.map((o, i) => { const c = new Map(); for (const x of top(i, 50)) for (const id of trios[x.t]) c.set(id, (c.get(id) || 0) + 1); return [o, [...c].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([id, k]) => ({ id, carte: nom(id), rarete: CH[id].r, niveau: LVA(id), dans: k }))]; }));
 // Repartition des 3 etoiles (moyenne) chez les finalistes.
-const repartition = Array(20).fill(0); for (const t of alive) repartition[Math.min(19, Math.floor(score(t, 3).p * 20))]++;
+const repartition = Array(20).fill(0); for (const t of alive) repartition[Math.min(19, Math.floor(score(t, IMOY).p * 20))]++;
 
 // ---------- collectifs des 5 meilleurs trios (moyenne) : cartes qui ont plus de 6 collectifs possibles ----------
 const comb = (a, k) => { const r = []; const f = (s, c) => { if (c.length === k) { r.push(c); return; } for (let i = s; i < a.length && r.length < 252; i++) f(i + 1, [...c, a[i]]); }; f(0, []); return r; };
-async function note3(tr, lk, nPaq = TOURS) { // 3 etoiles moyennes sur les 3 difficultes, tirage 1
+async function note3(tr, lk, nPaq = TOURS) { // 3 etoiles moyennes sur les 3 difficultes du Cauchemar, tirage 1
   const items = []; for (let pi = 0; pi < nPaq; pi++) for (let di = 0; di < 3; di++) if (paquets[di][pi]) items.push({ di, pi, seed: 1, team: tr.map(id => carte(id, lk[id] || LK(id))), ck: tr.map(id => cleCarte(id, lk[id] || LK(id))).sort().join(',') });
   const r = await jouer(items); const n = [0, 0, 0], s = [0, 0, 0]; r.forEach(([a, b], i) => { n[items[i].di] += a; s[items[i].di] += b; });
   const ps = [0, 1, 2].map(d => s[d] / Math.max(1, n[d])), se = Math.sqrt([0, 1, 2].reduce((v, d) => v + ps[d] * (1 - ps[d]) / Math.max(1, n[d]), 0)) / 3;
   return { p: (ps[0] + ps[1] + ps[2]) / 3, se };
 }
 const collectifs = [];
-if (!arg('sans-collectifs') && G.activeLinks && G.linkKey) for (const x of tops[3].slice(0, 5)) {
+if (!arg('sans-collectifs') && G.activeLinks && G.linkKey) for (const x of tops[IMOY].slice(0, 5)) {
   const tr = trios[x.t], choix = {}, lignes = [];
   for (const id of tr) {
     const mine = G.activeLinks(tr).filter(l => l.ids.includes(id)); if (mine.length <= (G.LINK_CAP || 6)) continue;
@@ -157,7 +164,7 @@ if (!arg('sans-collectifs') && G.activeLinks && G.linkKey) for (const x of tops[
 }
 
 // ---------- resultats ----------
-const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, trios: T, combats: { normal: NCOMB[0], difficile: NCOMB[1], extreme: NCOMB[2] },
+const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, trios: T, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
   vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, mondes: MONDES, repartition,
   meilleurs: Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), equipeActuelle, maintenant, cartesCles, collectifs };
