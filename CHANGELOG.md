@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.15.0
+
+### Ajouté
+- **Tour de l'infini : tous tes trios sont essayés.** Avant, seuls les trios des 26 meilleures cartes seules étaient montés, et le tri des cartes seules ratait des combinaisons fortes. Maintenant, tous les trios de tes SSR, UR et LR font une course avec élimination : une montée par manche (même graine pour tous), un trio est écarté quand il est nettement derrière le 200e. Les 20 meilleurs refont ensuite 30 montées. Essai sur 3 000 trios : 136 restent après la 1re manche.
+- **Journal des montées** (`cache/tour-*.jsonl`) : une montée déjà faite n'est pas refaite tant que le combat, la Tour, les cartes (niveau, étoiles, collectifs) et l'IA sont les mêmes. Il sert aussi de reprise après un arrêt. PC gardé éveillé pendant le calcul.
+- **Page Tour comme la Campagne** : avant de lancer, cartes, trios à tester, déjà en mémoire et durée de la 1re manche ; pendant, barre de progression, manche en cours et trios encore en course ; après, résumé, podium, **carte à partager en PNG**, course des trios, planche PNG.
+- Le résultat garde le classement des 200 meilleurs trios de la course (`classement` dans `tour.json`).
+
 ## 5.14.1
 
 ### Amélioré

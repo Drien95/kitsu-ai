@@ -37,6 +37,14 @@ function prevision() {
   return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
     dernier: d ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.trios, combatsSimules: d.combatsSimules, cartes: d.cartes } : null };
 }
+// Tour : meme principe (cartes SSR/UR/LR possedees, tous leurs trios), journal cache/tour-*.jsonl.
+function previsionTour() {
+  const G = ENG.G, sv = readJ(D('data', 'sauvegarde.json')), cartes = Object.keys(sv?.owned || {}).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r)).length;
+  let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^tour-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
+  const d = readJ(D('resultats', 'tour.json'));
+  return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal, record: sv?.tower?.best ?? null,
+    dernier: d?.methode === 'course' ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.triosEssayes } : null };
+}
 // ---------- reglages (onglet Reglages du panneau) ----------
 const REG_DEF = { conseilMs: 700, filsReserves: 2, objectif: 's2', alertes: { energie: true, guilde: true, evenements: true, bannieres: true, patch: true, calcul: true, calculConseille: true } };
 const reglages = () => { const r = readJ(D('data', 'reglages.json')) || {}; return { ...REG_DEF, ...r, alertes: { ...REG_DEF.alertes, ...(r.alertes || {}) } }; };
@@ -210,6 +218,7 @@ http.createServer(async (req, res) => {
       // le panneau les affiche depuis leur adresse d'origine, comme le jeu.
       if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [] }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
+      if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
       if (u.pathname === '/api/cartes') { if (CARTES.v !== ENG.version) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: ENG.version, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
       if (u.pathname === '/api/poids-historique') { const p = readJ(D('data', 'poids.json')); return send(res, 200, { actuel: p ? { regles: p.t || null, gains: p.gains || {}, equipes: Object.keys(p.equipes || {}).length, imitation: !!p.distillation, restaure: p.restaure || null } : null, copies: listerPoids() }); }
       if (u.pathname === '/api/poids-restaurer' && req.method === 'POST') { if (job && !job.fin) return send(res, 409, { err: 'attends la fin du calcul en cours' }); const { f } = JSON.parse(await body(req)); try { restaurerPoids(f); } catch (e) { return send(res, 400, { err: e.message }); } say('reglages de l\'IA restaures (' + f + ')'); return send(res, 200, { ok: true }); }

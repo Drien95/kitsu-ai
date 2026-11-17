@@ -2,6 +2,7 @@
 // Regles lues dans le code du jeu : ennemis fixes par etage, PV reportes (+12 %, +30 % apres un boss),
 // 1 a 3 cartes choisies au depart, une defaite termine la montee.
 // Utilise par tour.mjs (analyse detaillee) et tout.mjs (categorie « tour » de l'analyse complete).
+import { h53 as h53j } from './journal.mjs';
 const MAXFL = 400;
 const range = (n, from = 1) => Array.from({ length: n }, (_, i) => from + i);
 export const statsEtages = fl => {
@@ -55,5 +56,29 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
     }
     return lignes;
   }
-  return { climb, trios, murs, collectifs };
+  // Course avec elimination sur TOUS les trios (comme la Campagne) : a chaque manche, chaque trio encore en course fait une montee
+  // (meme graine pour tous). Un trio est abandonne quand sa borne haute passe sous la borne basse du Ke meilleur.
+  // Ecart type d'une montee pris au moins egal a SD0 etages (prudent avec peu de montees). Journal : montee deja faite = reprise.
+  // ctx : { trios, cle(t) -> cle du trio, J (journal), garder, z, manches, onManche(log) }
+  async function course({ trios: tr, cle, J, garder = 200, z = 3, manches = 10, sd0 = 4, onManche = () => {} }) {
+    const T = tr.length, n = new Uint16Array(T), s1 = new Float64Array(T), s2 = new Float64Array(T);
+    let alive = [...Array(T).keys()], montees = 0, repris = 0; const entonnoir = [], t0 = Date.now();
+    const borne = t => { const m = s1[t] / n[t], v = n[t] > 1 ? Math.max(0, (s2[t] - n[t] * m * m) / (n[t] - 1)) : 0; const se = Math.sqrt(Math.max(v, sd0 * sd0) / n[t]); return { m, lo: m - z * se, hi: m + z * se }; };
+    for (let r = 1; r <= manches; r++) {
+      const todo = [];
+      for (const t of alive) { const k = h53j(cle(t) + '|' + r), v = J.get(k); if (v != null) { const f = +v; n[t]++; s1[t] += f; s2[t] += f * f; repris++; } else todo.push([t, k]); }
+      for (let a = 0; a < todo.length; a += 20000) {
+        const part = todo.slice(a, a + 20000), res = await climb(part.map(([t]) => mk(tr[t])), [r], 16);
+        part.forEach(([t, k], j) => { const f = res[j][0]; n[t]++; s1[t] += f; s2[t] += f * f; J.set(k, String(f)); montees++; });
+        J.flush(); if (todo.length > 20000) onManche({ r, manches, fait: Math.min(todo.length, a + 20000), total: todo.length, montees, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000) });
+      }
+      const avant = alive.length;
+      if (alive.length > garder) { const b = alive.map(t => ({ t, ...borne(t) })), lo = b.map(x => x.lo).sort((x, y) => y - x)[garder - 1]; alive = b.filter(x => x.hi >= lo).map(x => x.t); }
+      entonnoir.push(alive.length);
+      onManche({ r, manches, avant, apres: alive.length, montees, repris, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000), fin: true });
+    }
+    const classement = alive.map(t => ({ t: tr[t], moy: s1[t] / n[t], n: n[t] })).sort((a, b) => b.moy - a.moy);
+    return { classement, entonnoir, montees, repris, duree: Math.round((Date.now() - t0) / 1000) };
+  }
+  return { climb, trios, murs, collectifs, course };
 }

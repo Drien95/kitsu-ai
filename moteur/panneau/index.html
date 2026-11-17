@@ -360,8 +360,14 @@
   <section class="page" id="p-tour">
     <div class="eyebrow">Modes de jeu</div>
     <h1>Tour de l'infini</h1>
-    <p class="lead">Le trio qui monte le plus haut, cherché sur les vrais étages (les PV sont gardés d'un étage à l'autre), les étages où tes montées s'arrêtent et les collectifs à cocher.</p>
-    <div class="card hot"><h2>Lancer le calcul</h2><div class="row"><label>Niveaux <select id="o_twniv"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99</option></select></label><button data-act="tour" style="margin-left:auto">Lancer</button></div><p class="muted" style="font-size:12px;margin:10px 0 0">Quelques minutes.</p></div>
+    <p class="lead">Le trio qui monte le plus haut. Tous les trios de tes cartes SSR, UR et LR montent sur les vrais étages (les PV sont gardés d'un étage à l'autre), les plus faibles sont écartés manche après manche, puis les meilleurs refont 30 montées. Aussi : les étages où tes montées s'arrêtent et les collectifs à cocher.</p>
+    <div class="card hot">
+      <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="planche('#p-tour', 'tw-planche')">Exporter la planche PNG</button></span></h2>
+      <div class="row"><label>Niveaux <select id="o_twniv" onchange="twPrev()"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99 (potentiel)</option></select></label><button data-act="tour" style="margin-left:auto">Lancer le calcul</button></div>
+      <div id="twPrev" class="grid g5" style="margin-top:14px"></div>
+      <p class="muted" style="font-size:12px;margin:10px 0 0">Le PC reste éveillé, tu peux jouer pendant ce temps. Si tu arrêtes, la reprise repart du journal : les montées déjà faites ne sont pas refaites.</p>
+      <div id="twJob" class="muted" style="margin:8px 0 0"></div>
+    </div>
     <div class="sp"></div>
     <div id="twBody"><div class="skel"></div></div>
   </section>
@@ -448,7 +454,7 @@
         </div>
       </div>
       <div class="card act">
-        <h3><span class="dur">quelques min</span><i data-ic="tour"></i>Tour de l'infini</h3>
+        <h3><span class="dur">10 à 30 min</span><i data-ic="tour"></i>Tour de l'infini</h3>
         <p>Le meilleur trio pour la Tour, cherché sur les vrais étages (PV gardés d'un étage à l'autre), les étages où tes montées s'arrêtent et les collectifs à cocher. Quelques minutes.</p>
         <div class="row">
           <button data-act="tour">Lancer</button>
@@ -1016,31 +1022,32 @@ async function svgCanvas(svg, k = 2) {
 const pngNom = id => /^tw-/.test(id) ? `kitsuai-tour-${id.slice(3)}-${(TW.j?.date || '').slice(0, 10)}.png` : `kitsuai-campagne-${CP.obj.toLowerCase()}-${id}-${(CP.j?.date || '').slice(0, 10)}.png`;
 const telecharger = (c, nom) => { const a = document.createElement('a'); a.download = nom; a.href = c.toDataURL('image/png'); a.click(); };
 async function campPng(id) { const s = document.querySelector(`#cg-${id} svg`); if (s) telecharger(await svgCanvas(s), pngNom(id)); }
-async function campPlanche() {
-  const cs = []; for (const s of document.querySelectorAll('#p-campagne figure.cg svg')) cs.push(await svgCanvas(s));
+const campPlanche = () => planche('#p-campagne', 'planche');
+async function planche(page, nom) {
+  const cs = []; for (const s of document.querySelectorAll(page + ' figure.cg svg')) cs.push(await svgCanvas(s));
   if (!cs.length) return; const g = 32, W = Math.max(...cs.map(c => c.width)) + 2 * g, H = cs.reduce((a, c) => a + c.height + g, g), c = document.createElement('canvas');
   c.width = W; c.height = H; const x = c.getContext('2d'); x.fillStyle = '#07080c'; x.fillRect(0, 0, W, H); let y = g; for (const k of cs) { x.drawImage(k, g, y); y += k.height + g; }
-  telecharger(c, pngNom('planche')); toast('Planche exportée');
+  telecharger(c, pngNom(nom)); toast('Planche exportée');
 }
 
 // ---------- carte a partager (portraits depuis leur adresse d'origine, rien n'est copie) ----------
 const imgCors = src => new Promise(ok => { if (!src) return ok(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.referrerPolicy = 'no-referrer'; im.onload = () => ok(im); im.onerror = () => ok(null); im.src = src + (src.includes('?') ? '&' : '?') + 'kitsuai=cors'; }); // adresse d'origine ; le parametre evite la copie en cache chargee sans CORS
 const RCOL = { N: '#7d828f', R: '#3fbf6f', SR: '#3f8cff', SSR: '#b35cff', UR: '#ff4b3e', LR: '#f7c548' };
-async function carteSouvenir(cv, l, titre, sansImages) {
+async function carteSouvenir(cv, l, titre, sansImages, o = null) {
   const W = 1200, H = 630, x = cv.getContext('2d'); cv.width = W; cv.height = H;
   try { await document.fonts?.load('italic 100px Anton'); } catch {}
   const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1d0f14'); g.addColorStop(1, '#0b0c12'); x.fillStyle = g; x.fillRect(0, 0, W, H);
   x.strokeStyle = 'rgba(255,255,255,.03)'; x.lineWidth = 2; for (let k = -H; k < W; k += 16) { x.beginPath(); x.moveTo(k, H); x.lineTo(k + H * .47, 0); x.stroke(); }
   const rg = x.createRadialGradient(W * .78, H * .3, 10, W * .78, H * .3, 520); rg.addColorStop(0, 'rgba(255,122,61,.28)'); rg.addColorStop(1, 'transparent'); x.fillStyle = rg; x.fillRect(0, 0, W, H);
   x.fillStyle = CC.E; x.save(); x.translate(64, 64); x.rotate(Math.PI / 4); x.fillRect(-6, -6, 12, 12); x.restore();
-  x.font = '800 20px Manrope, Segoe UI, sans-serif'; x.fillText('KITSUAI · CAMPAGNE', 86, 71);
+  x.font = '800 20px Manrope, Segoe UI, sans-serif'; x.fillText('KITSUAI · ' + (o?.lab || 'CAMPAGNE'), 86, 71);
   x.fillStyle = CC.txt; let fz = 54; do { x.font = `italic ${fz}px Anton, Impact, sans-serif`; fz -= 2; } while (fz > 26 && x.measureText(titre.toUpperCase()).width > 570); x.fillText(titre.toUpperCase(), 56, 150);
-  x.fillStyle = CC.gold; x.font = 'italic 150px Anton, Impact, sans-serif'; x.fillText(fmt(l.troisEtoiles) + ' %', 50, 315);
-  x.fillStyle = CC.mute; x.font = '700 24px Manrope, Segoe UI, sans-serif'; x.fillText('des combats finis en 3 étoiles', 58, 358);
+  x.fillStyle = CC.gold; x.font = 'italic 150px Anton, Impact, sans-serif'; x.fillText(o ? o.val : fmt(l.troisEtoiles) + ' %', 50, 315);
+  x.fillStyle = CC.mute; x.font = '700 24px Manrope, Segoe UI, sans-serif'; x.fillText(o ? o.sous : 'des combats finis en 3 étoiles', 58, 358);
   let px = 58; x.font = '800 21px Manrope, Segoe UI, sans-serif';
-  for (const [d, , c, n] of dVis()) { const t = `${n} ${fmt(pdVal(l.parDifficulte, [d]))} %`, w = x.measureText(t).width + 28; if (px + w > 600) break; x.fillStyle = 'rgba(255,255,255,.06)'; x.beginPath(); x.roundRect(px, 392, w, 40, 20); x.fill(); x.fillStyle = c; x.fillText(t, px + 14, 419); px += w + 10; }
+  for (const [t0, c] of o ? o.pills : dVis().map(([d, , c, n]) => [`${n} ${fmt(pdVal(l.parDifficulte, [d]))} %`, c])) { const t = t0, w = x.measureText(t).width + 28; if (px + w > 600) break; x.fillStyle = 'rgba(255,255,255,.06)'; x.beginPath(); x.roundRect(px, 392, w, 40, 20); x.fill(); x.fillStyle = c; x.fillText(t, px + 14, 419); px += w + 10; }
   x.fillStyle = CC.txt; x.font = '700 24px Manrope, Segoe UI, sans-serif'; x.fillText(l.equipe.join(' · '), 58, 492);
-  x.fillStyle = CC.mute; x.font = '600 19px Manrope, Segoe UI, sans-serif'; x.fillText(`${CP.j.niveaux === '99' ? 'Toutes les cartes au niveau 99' : 'Niveaux actuels'} · ${(CP.j.trios || 0).toLocaleString('fr-FR')} trios essayés · ${new Date(CP.j.date).toLocaleDateString('fr-FR')}`, 58, 572);
+  x.fillStyle = CC.mute; x.font = '600 19px Manrope, Segoe UI, sans-serif'; x.fillText(o ? o.pied : `${CP.j.niveaux === '99' ? 'Toutes les cartes au niveau 99' : 'Niveaux actuels'} · ${(CP.j.trios || 0).toLocaleString('fr-FR')} trios essayés · ${new Date(CP.j.date).toLocaleDateString('fr-FR')}`, 58, 572);
   const ims = sansImages ? [] : await Promise.all(l.ids.map(id => imgCors(carte(id).img)));
   l.ids.forEach((id, i) => {
     const c = carte(id), w = 168, h = 228, X = 660 + i * 178, Y = 150 + (i === 1 ? -26 : 0), col = RCOL[c.r] || '#5b6172';
@@ -1053,11 +1060,11 @@ async function carteSouvenir(cv, l, titre, sansImages) {
     x.strokeStyle = col; x.lineWidth = 4; x.beginPath(); x.roundRect(X + 2, Y + 2, w - 4, h - 4, 16); x.stroke();
     x.fillStyle = CC.txt; x.font = '800 19px Manrope, Segoe UI, sans-serif'; x.textAlign = 'center'; x.fillText(court(c.n), X + w / 2, Y + h + 34); x.textAlign = 'left';
   });
-  try { cv.toDataURL(); return true; } catch { if (!sansImages) return carteSouvenir(cv, l, titre, true).then(() => false); return false; }
+  try { cv.toDataURL(); return true; } catch { if (!sansImages) return carteSouvenir(cv, l, titre, true, o).then(() => false); return false; }
 }
-async function partager(act) {
-  const cv = $('c3share'); if (!cv) return;
-  if (act === 'png') return telecharger(cv, pngNom('carte'));
+async function partager(act, id = 'c3share') {
+  const cv = $(id); if (!cv) return;
+  if (act === 'png') return telecharger(cv, pngNom(id === 'twshare' ? 'tw-carte' : 'carte'));
   try { const b = await new Promise(ok => cv.toBlob(ok, 'image/png')); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); toast('Image copiée : colle-la où tu veux'); } catch { toast('Copie impossible ici : utilise Télécharger'); }
 }
 
@@ -1146,7 +1153,7 @@ function campRender() {
   setH('c3body', h);
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
-setInterval(() => { if (E) campEtat(); }, 1500);
+setInterval(() => { if (E) { campEtat(); twEtat(); } }, 1500);
 addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.j) campCharger(); });
 campCharger();
 
@@ -1248,7 +1255,7 @@ function dashRender() {
 
 // ---------- Tour de l'infini (resultats/tour.json, sinon l'analyse complete) ----------
 const TW = { j: null, fin: undefined, charge: false };
-async function twCharger() { TW.charge = true; try { TW.j = await api('/api/resultat?f=tour.json'); } catch { TW.j = null; } TW.charge = false; HC.delete('twBody'); if (pageAct() === 'tour') { twRender(); vedette(); } }
+async function twCharger() { twPrev(); TW.charge = true; try { TW.j = await api('/api/resultat?f=tour.json'); } catch { TW.j = null; } TW.charge = false; HC.delete('twBody'); if (pageAct() === 'tour') { twRender(); vedette(); } }
 function etageBarres(titre, sous, L) { // intervalle min..max, 10 % les plus bas, mediane et moyenne
   const W = 760, rh = 30, y0 = 108, x0 = 250, x1 = W - 40, lo = Math.max(0, Math.min(...L.map(l => l.min ?? l.etageMin ?? l.etageMoyen)) - 5), hi = Math.max(...L.map(l => l.max ?? l.etageMoyen)) + 5, X = v => x0 + (x1 - x0) * (v - lo) / Math.max(1, hi - lo);
   let b = ''; for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) b += `<line x1="${X(v)}" x2="${X(v)}" y1="${y0 - 6}" y2="${y0 + L.length * rh}" stroke="${CC.line}"/><text x="${X(v)}" y="${y0 - 12}" fill="${CC.mute}" font-size="10" text-anchor="middle">${v}</text>`;
@@ -1259,19 +1266,65 @@ function etageBarres(titre, sous, L) { // intervalle min..max, 10 % les plus bas
   return cadre(titre, sous, y0 + L.length * rh + 16, b);
 }
 const ennemiCarte = n => { const k = String(n).replace(/^Écho de\s+/, ''); return CARTES && PAR_NOM[k] ? pf(PAR_NOM[k]) : ''; };
+// Ce que fera le calcul de la Tour (avant le lancement) et ou il en est (pendant).
+async function twPrev() {
+  try { TW.prev = await api('/api/tour/prevision'); } catch { TW.prev = null; }
+  const P = TW.prev; if (!P) return setH('twPrev', '');
+  if (!P.cartes) return setH('twPrev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>');
+  // Vitesse : celle du dernier calcul complet sur ce PC, sinon environ 100 montees par seconde et par fil (mesure du 17/11/2026).
+  const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 100 * P.fils, s1 = P.trios / vit;
+  const tile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  setH('twPrev', tile('Cartes', fmt(P.cartes), 'tes SSR, UR et LR')
+    + tile('Trios à tester', P.trios.toLocaleString('fr-FR'), 'toutes les combinaisons de 3')
+    + tile('Montées, 1re manche', P.trios.toLocaleString('fr-FR'), 'une par trio, jusqu’à la défaite')
+    + tile('Déjà en mémoire', P.journalOctets ? (P.journalOctets / 1048576).toFixed(1).replace('.', ',') + ' Mo' : 'rien', P.journalOctets ? 'ces montées ne sont pas refaites' : 'premier calcul sur ce PC')
+    + tile('Durée, 1re manche', s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), 'les manches suivantes sont bien plus courtes'));
+}
+// « manche 3/10 : 392084 -> 812 trios en course, 400000 montees simulees (1000/s) » et « manche 1 : 120000 / 392084 montees »
+function twProgres(L) {
+  let t = null, p = null, fin = null;
+  for (const l of L) { const a = l.match(/manche (\d+)\/(\d+) : (\d+) -> (\d+) trios en course.*\((\d+)\/s\)/); if (a) t = a; const b = l.match(/manche (\d+) : (\d+) \/ (\d+) montees/); if (b) p = b; if (/finale :|cartes seules :|collectifs /.test(l)) fin = l; }
+  if (fin) return { pct: 96, txt: 'Finale, étages qui bloquent et collectifs.' };
+  if (!t && !p) return { pct: 2, txt: 'Préparation : moteur, trios, journal, puis chaque carte seule.' };
+  const k = t ? +t[1] : 0, n = t ? +t[2] : 10, enCours = p && (!t || +p[1] > k) ? p : null;
+  // La 1re manche fait presque tout le travail (tous les trios), les suivantes ne gardent que les meilleurs.
+  const pct = Math.min(94, Math.round(k ? 70 + 24 * (k - 1) / Math.max(1, n - 1) : 70 * (enCours ? +enCours[2] / +enCours[3] : 0)));
+  return { pct, txt: (t ? `Manche ${k}/${n} finie : ${(+t[4]).toLocaleString('fr-FR')} trios encore en course (sur ${(+t[3]).toLocaleString('fr-FR')}), ${(+t[5]).toLocaleString('fr-FR')} montées/s.` : '') + (enCours ? ` Manche ${enCours[1]} : ${(+enCours[2]).toLocaleString('fr-FR')} / ${(+enCours[3]).toLocaleString('fr-FR')} montées.` : '') };
+}
+function twEtat() {
+  const run = E?.job && !E.job.fin, moi = /^Tour de l'infini/.test(E?.job?.nom || '');
+  const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les montées déjà faites sont gardées.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
+  const pg = moi && run ? twProgres((E.job.lignes || []).filter(l => l.trim())) : null;
+  setH('twJob', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
+  if (moi && E.job.fin && TW.fin !== E.job.fin) { const premier = TW.fin === undefined; TW.fin = E.job.fin; if (!premier) { twCharger(); } }
+}
+const tuile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
 function twRender() {
   const j = TW.j, M = E?.dernier?.modes, m = M?.actuel || (M && M[Object.keys(M)[0]]), tr = j?.trios || m?.tour?.top || [], murs = j?.murs || m?.tour?.murs || [], t0 = tr[0];
   if (!t0) { setH('twBody', TW.charge || !E ? '<div class="skel"></div>' : '<div class="card"><div class="muted">Pas encore de calcul de la Tour. Lance-le avec le bouton ci-dessus.</div></div>'); return; }
-  LAB = 'TOUR DE L’INFINI'; const ea = j?.equipeActuelle;
-  let h = `<div class="card hero"><div class="bgimg">${imgsTrio(t0.ids)}</div><div class="trio">${eqList(t0.ids || t0.equipe).map(x => pf(x, 'xl')).join('')}</div><div class="txt"><div class="k">Meilleur trio · ${j ? (j.niveaux === '99' ? 'toutes au niveau 99' : 'tes niveaux actuels') : 'analyse complète'}</div><div class="bigv">Étage ${fmt(t0.etageMoyen)}</div><div class="s">${esc(eqList(t0.equipe).join(' · '))}${t0.marge ? ` · ± ${fmt(t0.marge)}` : ''}</div><div class="pills">${t0.min ?? t0.etageMin ? `<span class="pill e">pire ${t0.min ?? t0.etageMin}</span>` : ''}${t0.p10 ? `<span class="pill d">9 fois sur 10 : ${t0.p10}+</span>` : ''}${t0.mediane ? `<span class="pill">médiane ${t0.mediane}</span>` : ''}${t0.max ? `<span class="pill n">record ${t0.max}</span>` : ''}${ea ? `<span class="pill p">ton équipe : ${fmt(ea.etageMoyen)}</span>` : ''}</div></div></div><div class="sp"></div>`;
-  h += `<div class="grid gc">${fig('tw-etages', etageBarres('Étages atteints par trio', 'point = moyenne, barre colorée = 9 montées sur 10, gris = du pire au record', tr.slice(0, 10)))}`;
+  LAB = 'TOUR DE L’INFINI'; const ea = j?.equipeActuelle, nivTxt = j ? (j.niveaux === '99' ? 'toutes au niveau 99' : 'tes niveaux actuels') : 'analyse complète', course = j?.methode === 'course';
+  let h = `<div class="card hero"><div class="bgimg">${imgsTrio(t0.ids)}</div><div class="trio">${eqList(t0.ids || t0.equipe).map(x => pf(x, 'xl')).join('')}</div><div class="txt"><div class="k">Meilleur trio · ${nivTxt}${j?.date ? ' · ' + quand(j.date) : ''}</div><div class="bigv">Étage ${fmt(t0.etageMoyen)}</div><div class="s">${esc(eqList(t0.equipe).join(' · '))}${t0.marge ? ` · ± ${fmt(t0.marge)}` : ''} · étage moyen atteint</div><div class="pills">${t0.min ?? t0.etageMin ? `<span class="pill e">pire ${t0.min ?? t0.etageMin}</span>` : ''}${t0.p10 ? `<span class="pill d">9 fois sur 10 : ${t0.p10}+</span>` : ''}${t0.mediane ? `<span class="pill">médiane ${t0.mediane}</span>` : ''}${t0.max ? `<span class="pill n">record ${t0.max}</span>` : ''}${ea ? `<span class="pill p">ton équipe : ${fmt(ea.etageMoyen)}</span>` : ''}${j?.record ? `<span class="pill">ton record en jeu : ${j.record}</span>` : ''}</div></div></div><div class="sp"></div>`;
+  // resume du calcul
+  if (j) h += `<div class="grid g5">${tuile('Meilleur trio', 'Étage ' + fmt(t0.etageMoyen), esc(trioCourt(eqList(t0.equipe))))}${tuile('Trios testés', (j.triosEssayes || 0).toLocaleString('fr-FR'), course ? `${j.cartes || '?'} cartes SSR, UR, LR` : 'ancienne méthode : les 26 meilleures cartes seules')}${tuile('Montées simulées', course ? (j.monteesSimulees || 0).toLocaleString('fr-FR') : '-', course ? `${(j.entonnoir || []).length} manches puis la finale` : 'relance pour la nouvelle méthode')}${tuile('Repris du journal', course ? (j.reprisesJournal || 0).toLocaleString('fr-FR') : '-', 'montées déjà faites, pas refaites')}${tuile('Durée', j.duree ? dur(j.duree).replace(/ \d+ s$/, '') : '-', j.vitesse ? `${j.vitesse.toLocaleString('fr-FR')} montées par seconde` : '')}</div><div class="sp"></div>`;
+  // podium
+  if (tr.length >= 3) h += `<div class="card"><h2>Podium <span class="r">étage moyen · ${esc(nivTxt)}</span></h2><div class="sp"></div><div class="podium">${tr.slice(0, 3).map((l, i) => `<div class="pod ${['first', 'second', 'third'][i]}"><div class="rk">${i + 1}</div><div class="trio">${eqList(l.ids || l.equipe).map(id => pf(id, i ? 'lg' : 'xl')).join('')}</div><div class="nm">${esc(eqList(l.equipe).join(' · '))}</div><div class="sc">Étage ${fmt(l.etageMoyen)}</div><div class="muted" style="font-size:12px">${l.marge ? '± ' + fmt(l.marge) : ''}</div><div class="pills">${l.p10 ? `<span class="pill d">9/10 : ${l.p10}+</span>` : ''}${l.max ? `<span class="pill n">record ${l.max}</span>` : ''}</div></div>`).join('')}</div></div><div class="sp"></div>`;
+  h += '<div id="twExt"></div>'; // place pour une extension locale (window.twApres)
+  // carte a partager
+  if (j) h += `<div class="card"><h2>Carte à partager <span class="r"><button class="ghost" onclick="partager('copier','twshare')">Copier</button><button onclick="partager('png','twshare')">Télécharger PNG</button></span></h2><div class="share"><canvas id="twshare" width="1200" height="630"></canvas><div class="muted" style="font-size:13px">Ton meilleur trio de Tour en image, avec les portraits des cartes. Les portraits viennent de leur adresse d'origine ; si une adresse refuse, ses initiales les remplacent.</div></div></div><div class="sp"></div>`;
+  // graphiques
+  const figs = [fig('tw-etages', etageBarres('Étages atteints par trio', 'point = moyenne, barre colorée = 9 montées sur 10, gris = du pire au record', tr.slice(0, 10)))];
+  if (j?.entonnoir?.length) figs.push(fig('tw-course', entonnoir('La course des trios', 'Trios gardés après chaque manche (échelle logarithmique)', [j.triosEssayes, ...j.entonnoir])));
+  h += `<div class="grid gc">${figs.join('')}</div><div class="sp"></div>`;
   const cs = j?.cartesSeules?.slice(0, 10) || [], mx = Math.max(1, ...cs.map(c => c.etage));
-  h += `<div class="card"><h2>Cartes seules <span class="r">étage moyen avec deux cartes faibles</span></h2>${cs.map(c => `<div class="c3k">${pf(c.id)}<span class="tmn">${esc(c.carte)}</span><span class="c3b"><i style="width:${100 * c.etage / mx}%"></i></span><b style="width:40px">${fmt(c.etage)}</b></div>`).join('') || '<div class="muted">Relance le calcul de la Tour pour voir ce classement.</div>'}</div></div><div class="sp"></div>`;
-  h += `<div class="grid gc"><div class="card"><h2>Où tes montées s’arrêtent <span class="r">meilleur trio</span></h2>${murs.slice(0, 8).map(w => `<div class="floor"><div class="fn">${w.etage}</div><div style="flex:1;min-width:0"><b>${w.boss ? 'Boss · ' : ''}${w.part} % des montées</b><div class="muted c3s">${(w.ennemis || []).map(esc).join(', ')}</div></div><div class="tm sm">${(w.ennemis || []).slice(0, 3).map(ennemiCarte).join('')}</div></div>`).join('') || '<div class="muted">-</div>'}</div>`;
+  h += `<div class="grid gc"><div class="card"><h2>Cartes seules <span class="r">étage moyen d’une carte seule</span></h2>${cs.map(c => `<div class="c3k">${pf(c.id)}<span class="tmn">${esc(c.carte)}</span><span class="c3b"><i style="width:${100 * c.etage / mx}%"></i></span><b style="width:40px">${fmt(c.etage)}</b></div>`).join('') || '<div class="muted">Relance le calcul de la Tour pour voir ce classement.</div>'}</div>`;
+  h += `<div class="card"><h2>Où tes montées s’arrêtent <span class="r">meilleur trio</span></h2>${murs.slice(0, 8).map(w => `<div class="floor"><div class="fn">${w.etage}</div><div style="flex:1;min-width:0"><b>${w.boss ? 'Boss · ' : ''}${w.part} % des montées</b><div class="muted c3s">${(w.ennemis || []).map(esc).join(', ')}</div></div><div class="tm sm">${(w.ennemis || []).slice(0, 3).map(ennemiCarte).join('')}</div></div>`).join('') || '<div class="muted">-</div>'}</div></div><div class="sp"></div>`;
   const col = j?.collectifs || m?.tour?.collectifs || [];
-  h += `<div class="card"><h2>Collectifs pour la Tour</h2>${col.map(c => `<div class="floor">${pf(c.id || c.carte)}<div style="flex:1;min-width:0"><b>${esc(c.carte)}</b> <span class="muted c3s">${c.possibles ? c.possibles + ' possibles' : ''}</span><div class="muted c3s">${c.utile === false ? 'garde les tiens (pas de gain net)' : (c.conseil || []).map(esc).join(', ')}</div></div>${c.avant != null && c.apres != null ? `<span class="pill ${c.utile === false ? '' : 'n'}" title="étage moyen avant et après${c.utile === false ? ' (écart dans la marge d’erreur)' : ''}">${fmt(c.avant)} vers ${fmt(c.apres)}</span>` : ''}</div>`).join('') || '<div class="muted">Aucune carte du trio n’a plus de 6 collectifs possibles.</div>'}</div></div>`;
-  if (tr.length > 1) h += `<div class="sp"></div><div class="card"><h2>Les meilleurs trios</h2><table class="c3t"><tr><th>#</th><th>Trio</th><th>Étage moyen</th><th>Pire</th><th>9 sur 10</th><th>Médiane</th><th>Record</th></tr>${tr.slice(0, 10).map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids || l.equipe, 1)}</td><td><b>${fmt(l.etageMoyen)}</b>${l.marge ? ` <span class="muted">± ${fmt(l.marge)}</span>` : ''}</td><td>${l.min ?? l.etageMin ?? '-'}</td><td>${l.p10 ?? '-'}</td><td>${l.mediane ?? '-'}</td><td>${l.max ?? '-'}</td></tr>`).join('')}</table></div>`;
+  h += `<div class="card"><h2>Collectifs pour la Tour <span class="r">meilleur trio</span></h2>${col.map(c => `<div class="floor">${pf(c.id || c.carte)}<div style="flex:1;min-width:0"><b>${esc(c.carte)}</b> <span class="muted c3s">${c.possibles ? c.possibles + ' possibles' : ''}</span><div class="muted c3s">${c.utile === false ? 'garde les tiens (pas de gain net)' : (c.conseil || []).map(esc).join(', ')}</div></div>${c.avant != null && c.apres != null ? `<span class="pill ${c.utile === false ? '' : 'n'}" title="étage moyen avant et après${c.utile === false ? ' (écart dans la marge d’erreur)' : ''}">${fmt(c.avant)} vers ${fmt(c.apres)}</span>` : ''}</div>`).join('') || '<div class="muted">Aucune carte du trio n’a plus de 6 collectifs possibles.</div>'}</div>`;
+  if (tr.length > 1) h += `<div class="sp"></div><div class="card"><h2>Les meilleurs trios <span class="r">finale : ${tr[0].fl?.length || 30} montées chacun</span></h2><table class="c3t"><tr><th>#</th><th>Trio</th><th>Étage moyen</th><th>Pire</th><th>9 sur 10</th><th>Médiane</th><th>Record</th></tr>${tr.slice(0, 10).map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids || l.equipe, 1)}</td><td><b>${fmt(l.etageMoyen)}</b>${l.marge ? ` <span class="muted">± ${fmt(l.marge)}</span>` : ''}</td><td>${l.min ?? l.etageMin ?? '-'}</td><td>${l.p10 ?? '-'}</td><td>${l.mediane ?? '-'}</td><td>${l.max ?? '-'}</td></tr>`).join('')}</table><p class="muted" style="font-size:12px;margin:10px 0 0">Étage moyen : moyenne des montées simulées, chacune jusqu’à la première défaite. « 9 sur 10 » : 9 montées sur 10 vont au moins jusque-là. La marge (±) est l’erreur possible sur la moyenne.</p></div>`;
   LAB = 'CAMPAGNE'; setH('twBody', h);
+  if (typeof window.twApres === 'function') try { window.twApres(j); } catch {}
+  if (j && CARTES) { const cv = $('twshare'), cle = t0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle;
+    carteSouvenir(cv, { ids: t0.ids, equipe: eqList(t0.equipe) }, 'Meilleur trio · Tour de l’infini', false, { lab: 'TOUR DE L’INFINI', val: 'Étage ' + fmt(t0.etageMoyen), sous: 'étage moyen atteint en simulation', pills: [t0.p10 ? [`9 fois sur 10 : ${t0.p10}+`, CC.E] : null, t0.max ? [`record ${t0.max}`, CC.gold] : null].filter(Boolean), pied: `${nivTxt[0].toUpperCase() + nivTxt.slice(1)} · ${(j.triosEssayes || 0).toLocaleString('fr-FR')} trios essayés · ${new Date(j.date).toLocaleDateString('fr-FR')}` }); } }
 }
 
 // ---------- evenements et guilde (analyse complete) ----------
