@@ -14,6 +14,14 @@ Raid « Le Destin Effacé » (Diavolo) : calcul du meilleur trio dans le launche
 - **Conseil du script pendant le raid** (lecture seule, aucun clic) : dans le salon, le meilleur trio avec les vraies cartes de tes partenaires (ou des partenaires inconnus si le groupe n'est pas complet) ; à chaque tour, l'action de chacune de tes cartes avec sa raison (contour vert : Rupture ou Réanimer, orange : Garde, pointillé : attaque), qui rompt dans le groupe, et les chances de victoire avec et sans le conseil ; en fin de raid, le résultat et les conseils suivis, gardés pour l'onglet Raids. Le pont du script accepte `/raid` (réservé au script, comme `/sauvegarde`).
 - Tests : 16 au lieu de 12 (même graine même raid, conseils acceptés par le jeu, coordination meilleure que frapper seulement, `/raid` réservé au script).
 
+## 5.19.1
+
+Tour de l'infini avec le script privé installé : le choix de la compo suit le trio de son calcul exact.
+
+- Le script privé publie son trio de la Tour (`html[data-kar-tour]`, seulement les identifiants des cartes et l'étage visé). Sur l'écran de choix de la compo de la Tour, le script entoure alors les cartes à retirer puis à ajouter, puis « Lancer la montée », même s'il reste des combats au plan.
+- Sans script privé, rien ne change : le trio vient toujours de la simulation faite dans la page.
+- Tous les autres conseils (Campagne, plan, boutique, combat) restent ceux du script public.
+
 ## 5.19.0
 
 Nouvelle direction artistique du script dans la page du jeu, alignée sur le launcher (maquette validée le 17/11). Mêmes conseils, mêmes calculs : seul l'habillage change.
