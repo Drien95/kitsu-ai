@@ -32,6 +32,7 @@ parentPort.on('message', ({ id, W, jobs, opt }) => {
       if (j.type === 'tower') return { fl: j.seeds.map(sd => S.tower(j.team, sd, pol, j.maxFl)) };
       if (j.type === 'roll') return roll(j);
       if (j.type === 'teach') return { samples: S.teach(j.fid, j.team, j.seed, globalThis.__W, j.opt || {}) };
+      if (j.type === 'etoiles') { let st = ''; for (const sd of j.seeds) for (const fid of j.fights) st += S.fight(fid, j.team, sd, pol, opt).stars | 0; return { st }; } // etoiles de chaque combat (cauchemar3, par combat)
       if (j.type === 'gw') return { dmg: j.seeds.map(sd => S.gw(j.team, sd, pol, j.boss)) };
       let n = 0, win = 0, s2 = 0, s3 = 0;
       for (const sd of j.seeds) for (const fid of j.fights) { const r = S.fight(fid, j.team, sd, pol, opt); n++; win += r.win; s2 += r.stars >= 2; s3 += r.stars === 3; }

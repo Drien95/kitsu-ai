@@ -1,0 +1,116 @@
+// Meilleur trio PAR COMBAT (Campagne et Cauchemar), apres la course globale de cauchemar3.mjs.
+// La course classe les trios sur un score global : un trio qui serait le seul a faire 3 etoiles sur un combat precis y est
+// ecarte tot. Ici, chaque combat est regarde seul, en trois temps :
+//   1) candidats (meilleurs trios de la course + trios que le script Tampermonkey essaie + ton equipe) : chaque combat, 2 tirages ;
+//   2) confirmation : sur chaque combat, les 8 meilleurs candidats jouent `conf` tirages de plus ;
+//   3) specialistes : sur les combats encore sous le seuil, TOUS les trios jouent le combat seul (1 tirage, puis 2 de plus pour
+//      ceux qui font 3 etoiles, puis `conf` de plus pour les 20 meilleurs), par priorite (Campagne puis Cauchemar Normal,
+//      Difficile, Extreme) dans un budget de temps (`budget` minutes) ; le journal garde chaque combat fini : la nuit suivante reprend.
+// Le hasard d'un combat est tire a chaque essai par le jeu (fightStart) : un resultat est une probabilite de 3 etoiles par essai.
+// Plan minimal : le moins de trios possible pour couvrir tous les combats, a un tirage pres du meilleur trio de chaque combat.
+import { h53 } from './journal.mjs';
+
+const ORDRE = ['campNormal', 'campDifficile', 'campExtreme', 'normal', 'difficile', 'extreme'];
+
+export async function parCombat(o) {
+  const { pool, J, WA, paquets, DIFF, trios, cleTrio, equipeDe, cands, scriptSet, sigG, wKey, sigColl, sigCombat, log } = o;
+  const seuil = o.seuil ?? 0.6, budget = (o.budget ?? 60) * 60e3, conf = o.conf ?? 6, garde = 8, T0 = Date.now();
+  let simules = 0, repris = 0, dernier = Date.now();
+  const tic = m => { if (Date.now() - dernier > 60000) { dernier = Date.now(); log(m()); } };
+  // Combats : index global, difficulte, paquet, place dans le paquet.
+  const F = []; paquets.forEach((ps, di) => ps.forEach((p, pi) => p.f.forEach((f, k) => F.push({ f, di, pi, k }))));
+  const NF = F.length, NC = cands.length, idxF = new Map(F.map((x, i) => [x.di + '|' + x.pi + '|' + x.k, i]));
+  const n = new Uint8Array(NC * NF), s = new Uint8Array(NC * NF);
+  const run = async (jobs, taille) => { const r = await pool.runAll(jobs, WA, { stop3: true }, taille); simules += jobs.reduce((a, j) => a + j.fights.length * j.seeds.length, 0); return r; };
+
+  // 1) candidats, paquet par paquet (journal : une ligne par trio, paquet et tirage, etoiles de chaque combat)
+  log(`par combat : ${NC} trios candidats sur ${NF} combats, 2 tirages`);
+  const items = []; for (let ci = 0; ci < NC; ci++) paquets.forEach((ps, di) => ps.forEach((p, pi) => { for (const seed of [1, 2]) items.push({ ci, di, pi, seed }); }));
+  for (let a = 0; a < items.length; a += 20000) {
+    const part = items.slice(a, a + 20000), todo = [];
+    const cle = x => h53(`E|${sigG}|${wKey}|${paquets[x.di][x.pi].cle}|${x.seed}|${cleTrio[cands[x.ci]]}`);
+    const poser = (x, st) => { for (let k = 0; k < st.length; k++) { const i = x.ci * NF + idxF.get(x.di + '|' + x.pi + '|' + k); n[i]++; if (st[k] === '3') s[i]++; } };
+    for (const x of part) { const v = J.get(cle(x)); if (v) { poser(x, v); repris++; } else todo.push(x); }
+    if (todo.length) {
+      const r = await run(todo.map(x => ({ type: 'etoiles', team: equipeDe(cands[x.ci]), fights: paquets[x.di][x.pi].f, seeds: [x.seed] })), 8);
+      r.forEach((y, j) => { poser(todo[j], y.st); J.set(cle(todo[j]), y.st); }); J.flush();
+    }
+    tic(() => `  par combat, candidats : ${Math.min(items.length, a + 20000)} / ${items.length} paquets, ${Math.round(simules / ((Date.now() - T0) / 1000))} combats/s`);
+  }
+
+  // 2) confirmation : les 8 meilleurs candidats de chaque combat (au moins une fois 3 etoiles) jouent `conf` tirages de plus
+  const seeds2 = Array.from({ length: conf }, (_, i) => 3 + i), conf2 = [];
+  for (let fi = 0; fi < NF; fi++) {
+    const L = []; for (let ci = 0; ci < NC; ci++) if (s[ci * NF + fi]) L.push(ci);
+    L.sort((a, b) => s[b * NF + fi] - s[a * NF + fi] || a - b); for (const ci of L.slice(0, garde)) conf2.push({ ci, fi });
+  }
+  log(`par combat : confirmation de ${conf2.length} paires trio / combat (${conf} tirages de plus)`);
+  for (let a = 0; a < conf2.length; a += 20000) {
+    const part = conf2.slice(a, a + 20000), todo = [];
+    const cle = x => h53(`E2|${sigG}|${wKey}|${sigCombat(F[x.fi].f)}|${conf}|${cleTrio[cands[x.ci]]}`);
+    const poser = (x, st) => { const i = x.ci * NF + x.fi; for (const c of st) { n[i]++; if (c === '3') s[i]++; } };
+    for (const x of part) { const v = J.get(cle(x)); if (v) { poser(x, v); repris++; } else todo.push(x); }
+    if (todo.length) {
+      const r = await run(todo.map(x => ({ type: 'etoiles', team: equipeDe(cands[x.ci]), fights: [F[x.fi].f], seeds: seeds2 })), 16);
+      r.forEach((y, j) => { poser(todo[j], y.st); J.set(cle(todo[j]), y.st); }); J.flush();
+    }
+    tic(() => `  par combat, confirmation : ${Math.min(conf2.length, a + 20000)} / ${conf2.length}`);
+  }
+  const P = (ci, fi) => { const i = ci * NF + fi; return n[i] ? s[i] / n[i] : 0; }, plein = 2 + conf;
+  // Meilleur trio de chaque combat (seulement les trios confirmes : `plein` tirages)
+  const meilleur = F.map((_, fi) => { let b = -1, bp = 0; for (let ci = 0; ci < NC; ci++) if (n[ci * NF + fi] >= plein && P(ci, fi) > bp) { bp = P(ci, fi); b = ci; } return { t: b >= 0 ? cands[b] : -1, p: bp, n: b >= 0 ? n[b * NF + fi] : 0, spec: false }; });
+
+  // 3) specialistes sur les combats sous le seuil
+  const durs = F.map((x, fi) => fi).filter(fi => meilleur[fi].p < seuil).sort((a, b) => ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || (meilleur[b].p > 0) - (meilleur[a].p > 0) || a - b); // dans une difficulte : d'abord les combats deja gagnes parfois
+  const T = trios.length, seedsS = Array.from({ length: conf }, (_, i) => 4 + i), specs = new Map();
+  const cleS = fi => h53(`S|${sigG}|${wKey}|${sigCombat(F[fi].f)}|${sigColl}|${conf}`);
+  for (const fi of durs) { const v = J.get(cleS(fi)); if (v) { specs.set(fi, JSON.parse(v)); repris++; } }
+  const reste = durs.filter(fi => !specs.has(fi)), debutS = Date.now(), msCombat = [];
+  log(`par combat : ${durs.length} combats sous ${Math.round(seuil * 100)} % de 3 etoiles, ${specs.size} deja cherches (journal), ${reste.length} a chercher sur tous les ${T} trios, budget ${Math.round(budget / 60e3)} min`);
+  let k = 0;
+  for (const fi of reste) {
+    if (Date.now() - debutS >= budget) break;
+    const f = F[fi].f, cle = cleS(fi); k++;
+    const t0 = Date.now(), ok1 = [];
+    for (let a = 0; a < T; a += 50000) { const ts = []; for (let t = a; t < Math.min(T, a + 50000); t++) ts.push(t);
+      const r = await run(ts.map(t => ({ type: 'etoiles', team: equipeDe(t), fights: [f], seeds: [1] })), 256); r.forEach((y, j) => { if (y.st === '3') ok1.push(ts[j]); }); }
+    const L1 = ok1.slice(0, 20000), r2 = await run(L1.map(t => ({ type: 'etoiles', team: equipeDe(t), fights: [f], seeds: [2, 3] })), 64);
+    const L2 = L1.map((t, j) => ({ t, s: 1 + [...r2[j].st].filter(c => c === '3').length })).sort((a, b) => b.s - a.s || a.t - b.t).slice(0, 20);
+    const r3 = await run(L2.map(x => ({ type: 'etoiles', team: equipeDe(x.t), fights: [f], seeds: seedsS })), 4);
+    const L3 = L2.map((x, j) => ({ ids: trios[x.t], s: x.s + [...r3[j].st].filter(c => c === '3').length, n: 3 + conf })).sort((a, b) => b.s - a.s).slice(0, 10);
+    specs.set(fi, L3); J.set(cle, JSON.stringify(L3)); J.flush();
+    msCombat.push(Date.now() - t0);
+    log(`  specialistes ${k}/${reste.length} : ${f} (${DIFF[F[fi].di][0]}), ${ok1.length} trios a 3 etoiles au 1er tirage, meilleur ${L3[0] ? Math.round(100 * L3[0].s / L3[0].n) + ' %' : 'aucun'} (avant ${Math.round(100 * meilleur[fi].p)} %), ${Math.round((Date.now() - t0) / 1000)} s`);
+  }
+  const restants = durs.filter(fi => !specs.has(fi)).length, msMoy = msCombat.length ? msCombat.reduce((a, b) => a + b, 0) / msCombat.length : simules ? 1.05 * T / (simules / ((Date.now() - T0) / 1000)) * 1000 : null; // sinon : estime a la vitesse de ce calcul
+  const indexTrio = new Map(trios.map((t, i) => [t.join('-'), i]));
+  let trouves = 0;
+  for (const [fi, L] of specs) { const x = L[0]; if (x && x.s / x.n > meilleur[fi].p) { meilleur[fi] = { t: indexTrio.get(x.ids.join('-')), p: x.s / x.n, n: x.n, spec: true }; trouves++; } }
+
+  // Plan minimal : trio qui couvre le plus de combats encore non couverts (a un tirage pres du meilleur), puis le suivant.
+  const tol = 1 / plein + 1e-9, couvert = new Uint8Array(NF), plan = [], planDe = new Int32Array(NF).fill(-1);
+  const pDe = (t, fi) => { const ci = cands.indexOf(t); if (ci >= 0 && n[ci * NF + fi] >= plein) return P(ci, fi); const L = specs.get(fi), x = L?.find(y => y.ids.join('-') === trios[t].join('-')); return x ? x.s / x.n : -1; };
+  const vise = F.map((_, fi) => meilleur[fi].p > 0);
+  const pool2 = [...new Set([...cands, ...meilleur.filter(m => m.spec).map(m => m.t)])];
+  while (plan.length < 15) {
+    let best = -1, bc = 0;
+    for (const t of pool2) { let c = 0; for (let fi = 0; fi < NF; fi++) if (vise[fi] && !couvert[fi] && pDe(t, fi) >= meilleur[fi].p - tol) c++; if (c > bc) { bc = c; best = t; } }
+    if (best < 0 || bc === 0) break;
+    for (let fi = 0; fi < NF; fi++) if (vise[fi] && !couvert[fi] && pDe(best, fi) >= meilleur[fi].p - tol) { couvert[fi] = 1; planDe[fi] = best; }
+    plan.push({ t: best, combats: bc });
+  }
+
+  // Comparaison avec le script Tampermonkey (trios de tes 10 cartes les plus fortes) : meilleur trio du script sur chaque combat.
+  const pScript = F.map((_, fi) => { let b = 0; for (let ci = 0; ci < NC; ci++) if (scriptSet.has(cands[ci]) && n[ci * NF + fi]) b = Math.max(b, P(ci, fi)); return b; });
+  const table = [], ti = new Map(), refT = t => { if (t < 0) return -1; if (!ti.has(t)) { ti.set(t, table.length); table.push(trios[t]); } return ti.get(t); };
+  plan.forEach(x => refT(x.t));
+  const r1 = x => Math.round(100 * x);
+  const combats = F.map((x, fi) => { const m = meilleur[fi], fd = x.f.split('@')[0]; return [x.f, x.di, refT(m.t), r1(m.p), refT(planDe[fi]), planDe[fi] >= 0 ? r1(pDe(planDe[fi], fi)) : 0, m.spec ? 1 : 0, r1(pScript[fi]), fd]; });
+  const resume = DIFF.map(([d], di) => { const L = combats.filter(c => c[1] === di); return { difficulte: d, combats: L.length, troisEtoilesSur: L.filter(c => c[3] >= Math.round(seuil * 100)).length, script: L.filter(c => c[7] >= Math.round(seuil * 100)).length, specialistes: L.filter(c => c[6]).length, impossibles: L.filter(c => c[3] === 0).length }; });
+  const duree = Math.round((Date.now() - T0) / 1000);
+  log(`par combat termine en ${duree} s : ${trouves} combats ameliores par un specialiste, plan de ${plan.length} trios ; ${resume.map(r => `${r.difficulte} ${r.troisEtoilesSur}/${r.combats} (script ${r.script})`).join(', ')}`);
+  return { date: new Date().toISOString(), duree, candidats: NC, tirages: plein, seuil: r1(seuil), simules, repris,
+    specialistes: { sousSeuil: durs.length, cherches: specs.size, cetteFois: msCombat.length, restants, minutesParCombat: msMoy ? +(msMoy / 60e3).toFixed(2) : null, minutesRestantes: msMoy ? Math.round(restants * msMoy / 60e3) : null, budget: Math.round(budget / 60e3), ameliores: trouves },
+    colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase'],
+    trios: table, plan: plan.map(x => ({ trio: ti.get(x.t), combats: x.combats })), resume, combats };
+}

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.15.0
+// @version      5.16.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -21,7 +21,7 @@
       && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
-      // KitsuAI v5.15.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
+      // KitsuAI v5.16.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
       // Lecture seule : ne clique rien, n'envoie rien au serveur. Tout est simule localement
       // avec le moteur du jeu (BattleCore) et ses donnees (setupBattle, mondes, bannieres).
       // Desactive en arene (PvP).
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.15.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.16.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -535,7 +535,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.15.0',
+          __v: '5.16.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -556,7 +556,7 @@
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
             lvSnap(); clearInterval(window.__kitsuLvT); window.__kitsuLvT = setInterval(lvSnap, 3600000);
-            return 'KitsuAI v5.15.0 actif';
+            return 'KitsuAI v5.16.0 actif';
           },
 
           // ---------- Bloc 2 : recompenses et plan de progression ----------
@@ -1746,10 +1746,15 @@
             const trc = lsGet('kitsu_ai_training', null), tr0 = [...(trc?.objectif?.equipe || []), ...(trc?.cartes || []).slice(0, 2).map(c => c.id)].filter(id => S.owned?.[id]);
             const xw0 = xpWeights(), focusT = (trc?.objectif?.equipe || []).filter(id => S.owned?.[id]);
             const list = trios([...new Set([...pool(10, S), ...tr0])]);
+            // Trios du calcul Campagne du PC (meilleur trio de ce combat parmi TOUS tes trios, et trio du plan) : ajoutes a la liste,
+            // puis classes comme les autres a tes niveaux actuels.
+            const calc = new Set();
+            if (localPC.ok) { const c = await localAsk('/equipes', { conseil: 1, fid }, 4000).catch(() => null); for (const x of c?.trios || []) { const ids = x.map(Number).sort((a, b) => a - b); if (ids.length === 3 && ids.every(id => S.owned?.[id])) { const k = ids.join('-'); calc.add(k); if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === k)) list.push(ids); } } }
             // Calcul sur le PC (serveur local) : 24 tirages par trio au lieu de 8, sinon calcul dans le navigateur.
             let res = null;
             if (localPC.ok) { const r = await localAsk('/equipes', { dom: domFile(), fid, equipes: list.map(t => teamOf(t, S)), W: this.W, seeds: 24 }, 15000); if (r?.res?.length === list.length) res = list.map((t, i) => ({ t, w: r.res[i].win / r.res[i].n, s: r.res[i].s2 / r.res[i].n, s3: r.res[i].s3 / r.res[i].n, pc: 1 })); }
             if (!res) { const out = await simBatch(list.map(t => ({ fid, team: teamOf(t, S), seeds })), this.W); res = list.map((t, i) => ({ t, w: out[i].w / out[i].n, s: out[i].s / out[i].n, s3: out[i].s3 / out[i].n })); }
+            for (const r of res) if (calc.has(r.t.slice().sort((a, b) => a - b).join('-'))) r.calc = 1;
             res.sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
             const c2 = lsGet('kitsu_ai_teams', {}); c2[key] = { t: Date.now(), res };
             const keys = Object.keys(c2).sort((a, b) => c2[b].t - c2[a].t).slice(0, 25);
@@ -1910,7 +1915,7 @@
                 // Les 8 premiers sont rejoues 32 fois avant d'etre affiches : 8 simulations ne suffisent pas a dire
                 // qu'une equipe fait 3 etoiles a coup sur.
                 const seeds32 = Array.from({ length: 32 }, (_, i) => i + 1), evalL = ids => { let w = 0, s = 0, s3 = 0; for (const sd of seeds32) { const st = playOut(mk(W.f.id, ids, sd, S), pol); s += score(st); if (B.outcome(st) === 'win') { w++; if (B.allies(st).every(u => u.alive) && st.cycle <= 8) s3++; } } return { w: w / 32, s: s / 32, s3: s3 / 32 }; };
-                const head = res.splice(0, 8).map(r => ({ t: r.t, ...evalL(r.t) })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
+                const head = res.splice(0, 8).map(r => ({ t: r.t, calc: r.calc, ...evalL(r.t) })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
                 res.unshift(...head);
                 const xw = xpWeights(), near = r => r.s3 >= Math.max(0.95, res[0].s3 - 0.02) && r.w >= res[0].w - 0.02;
                 const top = res.slice(0, 8).filter(near).sort((a, b) => xpScore(b.t, xw) - xpScore(a.t, xw) || b.s3 - a.s3 || b.s - a.s);
@@ -1928,7 +1933,7 @@
                   : xpBetter || (pickXp.length && pick.s3 >= 0.95) ? `3 etoiles ${Math.round(pick.s3 * 100)} % et fait monter ${pickXp.map(short).join(', ')}` : `la plus sure : 3 etoiles ${Math.round(pick.s3 * 100)} %`;
                 const same = (a, b) => a.length === b.length && a.every(id => b.includes(id));
                 const rows = res.slice(0, 5); if (cur && !rows.some(r => same(r.t, team))) rows.push({ t: team, ...cur, mine: true });
-                const tag = r => { const x = r.t.filter(id => xw[id]); return x.length ? ` <span style="color:#38bdf8;font-size:11px">XP : ${x.map(short).join(', ')}</span>` : ''; };
+                const tag = r => { const x = r.t.filter(id => xw[id]); return (x.length ? ` <span style="color:#38bdf8;font-size:11px">XP : ${x.map(short).join(', ')}</span>` : '') + (r.calc ? ' <span style="color:#a78bfa;font-size:11px">calcul Campagne</span>' : ''); };
                 tb.innerHTML = `<div style="color:#22c55e;font-weight:700;margin-bottom:4px">Equipe pour « ${W.f.t} »${W.f.boss ? ' (boss)' : ''}</div>`
                   + `<div style="margin-bottom:6px;padding:5px 7px;border:1px solid ${pickXp.length ? '#38bdf8' : '#22c55e'};border-radius:6px"><b style="color:${pickXp.length ? '#38bdf8' : '#22c55e'}">A jouer : ${pick.t.map(short).join(', ')}</b>${same(pick.t, team) ? ' (ton equipe)' : ''}<br><span style="font-size:11px;opacity:.85">${why}</span></div>`
                   + rows.map((r, k) => `<div style="opacity:${same(r.t, pick.t) ? 1 : .75}">${same(r.t, pick.t) ? '<b>&gt; ' : ''}${r.mine ? 'Ton equipe' : k + 1 + '.'} ${r.t.map(short).join(', ')}${same(r.t, pick.t) ? '</b>' : ''} <span style="color:${r.s3 >= 0.95 ? '#fbbf24' : '#f87171'}">3 etoiles ${Math.round(r.s3 * 100)} %</span>${tag(r)}</div>`).join('')
