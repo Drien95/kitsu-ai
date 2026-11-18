@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.38.0
+
+Script : la règle privé/public est respectée sur l'écran d'équipe.
+
+- Avant (5.28) : le trio du calcul Campagne exact (script privé) n'était choisi que s'il faisait 3 étoiles au moins 50 % du temps et dépassait de 10 points la simulation publique.
+- Maintenant : dès que ce trio est jouable (ses 3 cartes au niveau du calcul, 3 étoiles > 0 avec le conseil exact), il est choisi ; le meilleur trio public n'est qu'un repli quand le privé n'a rien pour ce combat.
+
 ## 5.37.0
 
 Script : le farm fait monter plusieurs cartes à la fois, dans l'ordre du plan d'XP global (Campagne, Tour, Raid, Arène), sans perdre les 3 étoiles.
