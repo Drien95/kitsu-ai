@@ -16,7 +16,7 @@ const lireJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch {
 // Reglages du partage (data/reglages.json, cle partage) et identite (data/partage.json, cle secrete tiree au hasard).
 export function reglagesPartage() {
   const r = lireJ(D('data', 'reglages.json'))?.partage || {};
-  return { utiliser: !!r.utiliser, envoyer: !!r.envoyer && !!r.verifier, verifier: !!r.verifier, url: r.url || process.env.KITSU_PARTAGE_URL || URL_DEFAUT };
+  return { utiliser: !!r.utiliser, envoyer: !!r.envoyer && !!r.verifier, verifier: !!r.verifier, controler: r.controler !== false, url: r.url || process.env.KITSU_PARTAGE_URL || URL_DEFAUT };
 }
 export function identite() {
   const f = D('data', 'partage.json'); let o = lireJ(f);
@@ -163,5 +163,8 @@ export async function regrouper(reg, { log = () => {} } = {}) {
   return faits;
 }
 
+export async function etatBase(reg) { return (await appel(reg.url, '/v1/etat')).json(); }
+// Lots calcules sur ce PC qui attendent d'etre envoyes (pas d'internet, quota du jour).
+export function enFile() { try { return readdirSync(FILE()).filter(f => f.endsWith('.json.gz')).length; } catch { return 0; } }
 export async function moi(reg) { return (await appel(reg.url, '/v1/moi', { id: identite() })).json(); }
 export async function supprimerMesEnvois(reg) { return (await appel(reg.url, '/v1/moi', { methode: 'DELETE', id: identite() })).json(); }

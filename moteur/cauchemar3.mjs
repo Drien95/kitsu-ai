@@ -231,8 +231,8 @@ const out = { version, signatureCombat: sigG, date: new Date().toISOString(), ni
 if (PARTAGE_OK) {
   versFile(true);
   if (PART.envoyer) try { const n = await PARTAGE.viderFile(PART, log); log(`partage : ${envoyes} resultats mis en file, ${n} lots envoyes`); } catch (e) { log('partage : envoi reporte (' + e.message + ')'); }
-  if (PART.verifier) try { await PARTAGE.controler(PART, versionPartage, rejouerLignes, { max: PARTAGE.identite().admin ? 40 : 2, log }); } catch (e) { log('partage : controles reportes (' + e.message + ')'); }
-  if (PARTAGE.identite().admin) try { await PARTAGE.regrouper(PART, { log }); } catch (e) { log('partage : regroupement reporte (' + e.message + ')'); }
+  if (PART.verifier) try { await PARTAGE.controler(PART, versionPartage, rejouerLignes, { max: PARTAGE.identite().admin && PART.controler ? 40 : 2, log }); } catch (e) { log('partage : controles reportes (' + e.message + ')'); }
+  if (PARTAGE.identite().admin && PART.controler) try { await PARTAGE.regrouper(PART, { log }); } catch (e) { log('partage : regroupement reporte (' + e.message + ')'); }
 }
 out.partage = PARTAGE_OK ? { recus, envoyes, ia: 'commune' } : null;
 mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
