@@ -558,7 +558,7 @@
     <div id="mdConquete">
       <h2>La conquête <span class="r" id="mdScore"></span></h2>
       <div class="md-vz"><svg id="mdSvg1" viewBox="0 0 1200 500"></svg></div>
-      <div class="md-ctl"><button id="mdPlay1" onclick="mdJouer(1)">▶ Rejouer l'apprentissage</button><input type="range" id="mdR1" min="0" max="0" value="0" oninput="mdSet1(+this.value)"><span class="lab" id="mdL1"></span></div>
+      <div class="md-ctl"><button id="mdPlay1" onclick="mdJouer(1)">▶ Rejouer l'apprentissage</button><span class="muted" id="mdMsg1" style="font-size:13px"></span><input type="range" id="mdR1" min="0" max="0" value="0" oninput="mdSet1(+this.value)"><span class="lab" id="mdL1"></span></div>
       <div class="md-leg"><span><i style="background:#f7c548"></i>3★ sûr</span><span><i style="background:#ff7a3d"></i>3★ souvent</span><span><i style="background:#ff4b3e"></i>3★ parfois</span><span><i style="background:#2a2d3a"></i>jamais 3★</span><span>Une case = un combat Cauchemar, avec le meilleur trio trouvé (niveau 99)</span></div>
     </div>
     <div id="mdCerveau" style="display:none">
@@ -566,7 +566,7 @@
       <div class="md-side">
         <div>
           <div class="md-vz"><svg id="mdSvg2" viewBox="0 0 900 560"></svg></div>
-          <div class="md-ctl"><button onclick="mdJouer(2)">▶ Rejouer l'apprentissage</button><input type="range" id="mdR2" min="0" max="0" value="0" oninput="mdSet2(+this.value)"><span class="lab" id="mdL2"></span></div>
+          <div class="md-ctl"><button id="mdPlay2" onclick="mdJouer(2)">▶ Rejouer l'apprentissage</button><span class="muted" id="mdMsg2" style="font-size:13px"></span><input type="range" id="mdR2" min="0" max="0" value="0" oninput="mdSet2(+this.value)"><span class="lab" id="mdL2"></span></div>
           <div class="md-leg"><span><i style="background:#ff4b3e"></i>Campagne</span><span><i style="background:#f7c548"></i>Tour</span><span><i style="background:#2fd27a"></i>Raid</span><span><i style="background:#4fa8ff"></i>Arène · privé</span><span>Taille = combien l'IA s'en sert · trait = cartes jouées ensemble</span></div>
         </div>
         <div class="card" id="mdFiche" style="padding:16px 18px"></div>
@@ -1865,6 +1865,8 @@ async function mdCharger() {
   try { MD.j = await api('/api/modele'); } catch { MD.j = { historique: [], adn: [] }; }
   MD.charge = false; MD.g2 = null; MD.i1 = MD.i2 = Math.max(0, MD.j.historique.length - 1);
   mdMini(); if (pageAct() === 'modele') mdRender();
+  // Nouvel instantane pris par le serveur apres la reponse : on redemande une fois, quelques secondes plus tard.
+  if (MD.j.enCours && !MD.relance) { MD.relance = true; setTimeout(() => { MD.relance = false; MD.j = null; mdCharger(); }, 8000); }
 }
 // Nouveaux resultats (fin d'un calcul) : on recharge a la prochaine vue.
 function mdMaj() { const k = (E?.resultats || []).map(f => f.f + f.t).join() + (E?.poids?.t || '') + (CARTES ? 'c' : ''); if (k === MD.cle) return; MD.cle = k; MD.j = null; if (pageAct() === 'modele' || pageAct() === 'accueil') mdCharger(); }
@@ -1874,7 +1876,9 @@ function mdRender() {
   document.querySelectorAll('#mdTabs a').forEach(a => { a.classList.toggle('on', a.dataset.c === MD.vue); a.onclick = () => { MD.vue = a.dataset.c; mdRender(); }; });
   $('mdConquete').style.display = MD.vue === 'conquete' ? '' : 'none'; $('mdCerveau').style.display = MD.vue === 'cerveau' ? '' : 'none';
   if (!H.length) { $('mdSvg1').innerHTML = ''; mdTxt($('mdSvg1'), 600, 250, 'Pas encore de résultats : lance un calcul Campagne, Tour ou Raid.', { a: 'middle', s: 16 }); $('mdEv').innerHTML = ''; return; }
-  for (const k of [1, 2]) { const r = $('mdR' + k); r.max = H.length - 1; r.disabled = H.length < 2; }
+  // Rejeu : il faut au moins 2 instantanes. Sinon on le dit au lieu d'un bouton qui ne fait rien.
+  const seul = H.length < 2, msg = MD.j.enCours ? 'Instantané en cours (quelques secondes)…' : seul ? 'Un seul instantané pour l\'instant : le rejeu marchera après ton prochain calcul (Campagne, Tour, Raid ou entraînement).' : '';
+  for (const k of [1, 2]) { const r = $('mdR' + k); r.max = H.length - 1; r.disabled = seul; r.style.display = seul ? 'none' : ''; const b = $('mdPlay' + k); b.disabled = seul; b.title = seul ? msg : ''; $('mdMsg' + k).textContent = msg; }
   mdDessin1(); mdSet1(MD.i1);
   if (MD.vue === 'cerveau') { if (!MD.g2) mdDessin2(); mdSet2(MD.i2); }
   mdJournal(); mdAdn();

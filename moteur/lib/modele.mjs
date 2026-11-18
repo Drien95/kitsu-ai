@@ -49,12 +49,22 @@ export function historique() { const h = lire(F()); return Array.isArray(h) ? h 
 export function noter(s) {
   if (s?.score == null && !Object.keys(s?.c || {}).length) return false;
   const h = historique(), d = h[h.length - 1];
-  if (d && empreinte(d) === empreinte(s)) return false;
+  if (d && empreinte(d) === empreinte(s)) { if (s.sig && d.sig !== s.sig) { d.sig = s.sig; writeFileSync(F(), JSON.stringify(h)); } return false; }
   if (d && s.t <= d.t) s.t = d.t + 1;
   h.push(s); mkdirSync(D('data'), { recursive: true });
   writeFileSync(F(), JSON.stringify(h.slice(-GARDER)));
   return true;
 }
+
+// Empreinte des fichiers qui changent l'instantane : resultats/*.json et data/poids.json (date + taille, ~1 ms).
+// Si elle n'a pas bouge depuis le dernier instantane, inutile de recalculer le plan (plusieurs secondes sur une grosse collection).
+export function signature() {
+  const L = []; const add = f => { try { const st = statSync(f); L.push(Math.round(st.mtimeMs) + ':' + st.size); } catch {} };
+  try { for (const f of readdirSync(D('resultats')).filter(x => x.endsWith('.json')).sort()) { L.push(f); add(D('resultats', f)); } } catch {}
+  add(D('data', 'poids.json'));
+  return createHash('sha1').update(L.join('|')).digest('hex').slice(0, 12);
+}
+export const aJour = () => historique().at(-1)?.sig === signature();
 
 // Date des resultats : celle du dernier fichier ecrit (pas celle de l'ouverture du panneau).
 export function dateResultats() {
