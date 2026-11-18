@@ -9,7 +9,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const DATA = mkdtempSync(path.join(tmpdir(), 'kitsu-partage-')); process.env.KITSU_DATA = DATA;
 const worker = (await import('./src/index.js')).default;
-const { verifierLot, ecarts, cleTrioDe, cartesDuLot, decoderCartes, fusionner } = await import('../moteur/lib/partage-format.mjs');
+const { verifierLot, ecarts, cleTrioDe, cartesDuLot, decoderCartes, fusionner, VERSION_SERVEUR } = await import('../moteur/lib/partage-format.mjs');
 const P = await import('../moteur/lib/partage.mjs');
 const { envTest } = await import('./imitation.mjs');
 
@@ -185,6 +185,10 @@ await test('supprimer mes envois : lots, fichiers et ID effaces', async () => {
   // Les 3 lots de A, verifies, ont ete regroupes en un paquet au test precedent.
   const avant = blocs(), r = (await appel('DELETE', '/v1/moi', { cle: A })).j; assert.equal(r.supprime, 1);
   assert.equal(blocs(), avant - 1); assert.equal(env.DB._db.prepare('SELECT COUNT(*) AS n FROM lots WHERE id = ?').get(idA).n, 0); assert.equal((await appel('GET', '/v1/moi', { cle: A })).j.connu, false);
+});
+
+await test('etat public : version du serveur annoncee', async () => {
+  const e = (await appel('GET', '/v1/etat')).j; assert.equal(e.serveur, VERSION_SERVEUR); assert.ok(Number.isInteger(e.joueurs));
 });
 
 await test('comparaison des controles', async () => {

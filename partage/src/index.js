@@ -16,7 +16,7 @@
 // Admin (jeton secret ADMIN_JETON, seulement sur le PC d'Adrien) : X-Kitsu-Admin sur /v1/missions, POST /v1/admin/bannir,
 // GET /v1/admin/a-regrouper et POST /v1/admin/paquets (regroupe les lots verifies d'un meme joueur en gros paquets :
 // moins de fichiers a telecharger et une liste des lots plus courte).
-import { tirerIndices } from '../../moteur/lib/partage-format.mjs';
+import { tirerIndices, VERSION_SERVEUR } from '../../moteur/lib/partage-format.mjs';
 
 const MAX_LOT = 1.9e6, JOUR = 86400e3, K_CONTROLE = 24, MISSION_MS = 6 * 3600e3, CRED_FIABLE = 3;
 const LIGNES_LOT = 60000, LIGNES_PAQUET = 400000, MAX_CARTES = 20000;
@@ -212,7 +212,7 @@ async function moi(env, req, supprimer) {
 async function etat(env) {
   const r = await env.DB.prepare('SELECT statut, COUNT(*) AS lots, SUM(lignes) AS lignes FROM lots WHERE statut != \'regroupe\' GROUP BY statut').all();
   const j = await env.DB.prepare('SELECT COUNT(*) AS n FROM joueurs WHERE banni = 0').first();
-  return json({ joueurs: j.n, parStatut: r.results }, 200, { 'cache-control': 'public, max-age=300' });
+  return json({ serveur: VERSION_SERVEUR, joueurs: j.n, parStatut: r.results }, 200, { 'cache-control': 'public, max-age=300' });
 }
 
 export default {
@@ -236,7 +236,7 @@ export default {
           await ecarter(env, jid); return json({ ok: true });
         }
       }
-      if (p === '/') return json({ service: 'base commune KitsuAI', notice: 'https://github.com/Drien95/kitsu-ai/wiki/Partage-des-calculs' });
+      if (p === '/') return json({ service: 'base commune KitsuAI', serveur: VERSION_SERVEUR, notice: 'https://github.com/Drien95/kitsu-ai/wiki/Partage-des-calculs' });
       return err(404, 'route inconnue');
     } catch (e) { return err(500, 'erreur serveur'); }
   },

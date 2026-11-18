@@ -666,6 +666,7 @@
         </div>
         <div class="pt-adm" id="pt_adm" style="display:none">
           <div class="k">Visible seulement sur ton PC · validateur de confiance</div>
+          <div class="set"><div class="x"><b>Serveur de la base</b><span id="pt_srv">…</span></div><button class="ghost" id="pt_dep" onclick="ptDeployer()">Mettre à jour le serveur</button></div>
           <div class="set"><div class="x"><b>Contrôler la base</b><span id="pt_admTxt">À la fin de tes calculs, ton PC rejoue un échantillon des nouveaux lots (jusqu'à 40), peut écarter un ID, et regroupe les lots vérifiés.</span></div><label class="sw"><input type="checkbox" id="pt_c" data-pt="controler"><span></span></label></div>
         </div>
       </div>
@@ -931,6 +932,9 @@ function ptReg() {
   const j = PT.j; if (!j || j.err || !$('pt_u')) return; const R = j.reglages;
   $('pt_u').checked = R.utiliser; $('pt_v').checked = R.verifier; $('pt_e').checked = R.envoyer; $('pt_e').disabled = !R.verifier; $('pt_c').checked = R.controler;
   $('pt_id').textContent = 'k-' + j.id; $('pt_adm').style.display = j.admin ? '' : 'none';
+  if (j.admin) { const en = j.etat?.serveur ?? (j.etat ? 1 : null), a = j.serveurAttendu, vieux = en != null && en < a;
+    $('pt_srv').textContent = en == null ? 'Injoignable pour l’instant.' : vieux ? `En ligne : version ${en}. Ton appli apporte la version ${a} : mets-le à jour.` : `En ligne : version ${en}, à jour. Rien à faire tant que le code du serveur ne change pas.`;
+    $('pt_dep').classList.toggle('ghost', !vieux); }
   $('pt_etat').textContent = j.base?.err ? 'base injoignable' : j.base?.ecarte ? 'ID écarté' : (R.utiliser || R.envoyer) ? 'allumée' : 'coupée';
 }
 async function ptSauver(k, v) {
@@ -943,6 +947,10 @@ async function ptSauver(k, v) {
 }
 async function ptChangerId() { if (!confirm('Changer d’ID ? Tes envois passés restent liés à l’ancien ID (supprime-les d’abord si tu veux qu’ils disparaissent).')) return; const r = await api('/api/partage/changer-id', { method: 'POST' }); toast('Nouvel ID : k-' + r.id); ptCharger(); }
 async function ptSupprimer() { if (!confirm('Supprimer de la base commune tout ce que tu as envoyé avec cet ID ?')) return; try { const r = await api('/api/partage/supprimer', { method: 'POST' }); toast(`${r.supprime || 0} lot(s) supprimé(s)`); } catch (e) { alert('Base injoignable : ' + e.message); } ptCharger(); }
+async function ptDeployer() {
+  if (!confirm('Mettre à jour le serveur de la base commune ? Ton PC passe les migrations de la base qui manquent, déploie la nouvelle version (wrangler, déjà connecté) puis efface le dossier temporaire. Environ une minute.')) return;
+  try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action: 'deployerPartage' }) }); toast('Mise à jour du serveur lancée : suis-la dans Calculs'); } catch (e) { alert(e.message); }
+}
 const ptNotice = () => window.open(NOTICE, '_blank', 'noopener'); // l'application l'ouvre dans le navigateur
 function ptCamp() {
   if (!$('c3baseB')) return; const j = PT.j;
