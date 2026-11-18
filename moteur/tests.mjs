@@ -26,6 +26,22 @@ t('arret des 3 etoiles perdues : memes 3 etoiles', eq3 && !!rev);
 const { jouer } = await import('./lib/diagnostic.mjs');
 const dj = fights.map(f => jouer(G, B, S, pol, f, team, 7));
 t('diagnostic : memes etoiles que le simulateur, cause juste', dj.every((r, i) => r.stars === a[i].stars && (r.stars === 3) === (r.cause == null) && (r.cause !== 'cycle' || (r.win && r.ko === 0 && r.cycle > 8)) && (r.cause !== 'ko' || (r.win && r.ko > 0 && r.cycle <= 8))));
+// Collectifs calcules une fois par trio (5.32) : memes combats que le moteur du jeu sans copie, et repli si fonction absente.
+{
+  const { memoriserCollectifs } = await import('./lib/charger.mjs');
+  const code = `import { loadEngine } from './lib/charger.mjs'; import { makeSim, W_DEFAUT } from './lib/sim.mjs';
+const { G, B, memoCollectifs } = await loadEngine(); const S = makeSim(G, B), pol = S.smartPol(W_DEFAUT);
+const C = Object.values(G.CHAR_BY_ID).filter(c => c.r === 'M' || c.r === 'L'); let r = 7; const rnd = () => (r = (r * 1103515245 + 12345) % 2147483648) / 2147483648;
+const fl = []; for (const w of G.ALL_WORLDS) w.fights.forEach((f, i) => { if (i % 40 === 0) fl.push(f.id + '@xn'); });
+let out = ''; for (let k = 0; k < 40; k++) { const t = [0, 1, 2].map(() => C[Math.floor(rnd() * C.length)].id); if (new Set(t).size < 3) continue;
+  const team = t.map(id => ({ id, lv: 99, stars: 0 })); for (const f of fl) for (const o of [{}, { stop3: true }]) { const x = S.fight(f, team, 11, pol, o); out += x.stars + '' + x.ko + x.cycle + ','; } }
+console.log(JSON.stringify({ memo: memoCollectifs || null, out })); process.kill(process.pid, 'SIGKILL');`;
+  const lancer = env => new Promise(res => { const p = spawn(process.execPath, ['--input-type=module', '-e', code], { env: { ...process.env, ...env } }); let o = ''; p.stdout.on('data', d => o += d); p.on('close', () => { try { res(JSON.parse(o.trim().split('\n').pop())); } catch { res(null); } }); });
+  const [avec, sans] = await Promise.all([lancer({}), lancer({ KITSU_SANS_MEMO: '1' })]);
+  t('collectifs memorises : copie du moteur active', !!avec?.memo, JSON.stringify(avec?.memo));
+  t('collectifs memorises : combats identiques au moteur du jeu', !!avec && !!sans && !sans.memo && avec.out === sans.out && avec.out.length > 1000, `${avec?.out.length} / ${sans?.out.length}`);
+  t('collectifs memorises : repli si la fonction est absente', memoriserCollectifs('function a(b){return 1}') === null);
+}
 const { h53 } = await import('./lib/journal.mjs');
 t('journal : cle stable et distincte', h53('abc') === h53('abc') && h53('abc') !== h53('abd'));
 const pool = await makePool(2), jobs = fights.slice(0, 12).map(f => ({ team, fights: [f], seeds: [7] }));
