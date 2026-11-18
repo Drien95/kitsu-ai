@@ -10,7 +10,7 @@ import path from 'node:path';
 import { dir as D } from './chemins.mjs';
 import { FORMAT, LIMITES, verifierLot, cleTrioDe } from './partage-format.mjs';
 
-export const URL_DEFAUT = 'https://kitsu-partage.workers.dev'; // a remplacer par l'adresse reelle apres le premier deploiement
+export const URL_DEFAUT = 'https://kitsu-partage.kitsu-partage-whag.workers.dev';
 const lireJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return null; } };
 
 // Reglages du partage (data/reglages.json, cle partage) et identite (data/partage.json, cle secrete tiree au hasard).

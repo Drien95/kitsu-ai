@@ -2,6 +2,10 @@
 
 Cloudflare Worker (offre **gratuite** seulement) : tout est dans D1 (index et lots compressés). **Aucun moyen de paiement** : ne jamais ajouter de carte ni d'abonnement (R2 en demande une, c'est pour ça qu'on ne l'utilise pas). Il ne rejoue jamais un combat : le moteur du jeu n'est jamais sur un serveur, les contrôles sont faits par les PC.
 
+Adresse actuelle : `https://kitsu-partage.kitsu-partage-whag.workers.dev` (base D1 `kitsu-partage`).
+
+Pour mettre à jour le serveur après une modification de `partage/` : `cd partage` puis `npx wrangler@4 deploy` (et `npx wrangler@4 d1 execute kitsu-partage --remote --file schema.sql` si le schéma change).
+
 ## Mise en ligne (une fois)
 
 | Étape | Commande ou action |
