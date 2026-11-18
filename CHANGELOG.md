@@ -4,6 +4,17 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.34.0
+
+Moins de lag hors combat (carte, fin de combat, choix de l'équipe) : les simulations du script ne tournent plus sur le fil du jeu.
+
+- **Mesure avant** (18/11, ton navigateur, 20,7 min de jeu avec un calcul en cours, script privé 0.24 qui note chaque image affichée en retard et le script responsable) : 883 images en retard, 255 s de retard au total, dont **210 s** dans les calculs de fond du script public (plan du moment, relancé après chaque combat et sur la carte, entre deux `idle()`). Écrans : carte 111 s bloquées, fin de combat 42 s, combat 41 s. Le script privé : 0 s. Le jeu lui-même : ~18 s (effets d'arène surtout).
+- **Ce qui change** : le plan du moment (meilleur trio par combat, murs à venir, combat de farm), la vérification de l'équipe sur l'écran d'équipe (12 tirages) et les 32 tirages des 8 meilleurs trios de l'écran d'équipe passent par le worker (`simBatch`) déjà utilisé pour l'entraînement et la boutique. Mêmes graines, mêmes équipes, même code de simulation : mêmes résultats. Sans worker, repli sur le fil principal comme avant.
+- **2e passe** (mesure après la 1re passe, 12,9 min : fin de combat 2,0 à 1,4 s bloquées par minute, combat 2,0 à 1,1 s, mais page des bannières 44 s) : la valeur des bannières (`pulls`), le banc de combats de référence (`buildBench`), tes 3 meilleurs trios (`defaultTeams`) et `xpPlan` passent aussi dans le worker (`simTrios`), avec les mêmes graines, les mêmes équipes et le même ordre de somme.
+- Restent sur le fil du jeu : le conseil en combat (`evalLive`, ~60 ms par tour), la Tour simulée une fois par jour et l'équipe du boss de guilde (une fois par boss).
+- Mesure : `window.__kitsuPerf` compte le temps passé sur le fil du jeu après chaque pause, par fonction (`idle:Object.plan`...), et celui du conseil en combat (`evalLive`). Lu par la mesure du lag du script privé (0.24.2+), lecture seule.
+- Aucun cœur ni fil bridé.
+
 ## 5.33.3
 
 Script : le guide ne t'envoie plus vers le monde Halloween, fermé depuis le 1er novembre.
