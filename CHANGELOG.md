@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.27.0
+
+Campagne : moins de combats pour les mêmes résultats (mesuré : 122 s au lieu de 208 s de calcul sur un petit test, mêmes % de 3★ partout).
+
+- **La Campagne n'est jouée que par les finalistes.** Pendant la course, seuls les trois Cauchemar éliminent ; la Campagne Normal, Difficile et Extrême était pourtant jouée par tous les trios. Elle est maintenant jouée après la course, par les finalistes seulement, avec les mêmes tirages : résultats identiques pour eux, moitié moins de combats pour les trios écartés.
+- **Les combats de la course ne sont plus rejoués.** La course joue déjà chaque trio sur chaque combat (tirage 1, et tirages 2 et 3 pour les finalistes). Elle garde maintenant l'étoile de chaque combat (1 octet par trio et par combat, ~13 Mo pour toute une collection), et l'étape « meilleur trio par combat » la reprend : candidats et première passe des spécialistes ne rejouent plus le même trio sur le même combat avec la même graine (le simulateur est déterministe, donc même résultat). Le journal garde aussi ces étoiles (`n,s3,etoiles`) : une reprise après coupure en profite. Les anciennes lignes du journal et celles de la base commune restent valables.
+- Test avant / après (90 trios, 192 combats, mêmes réglages) : 122 s au lieu de 208 s de processeur (-40 %), étape par combat 31 s au lieu de 64 s, 21 580 combats repris de la course. Tous les % de 3★, le résumé et le plan sont identiques ; sur 2 combats sur 192, le meilleur trio affiché est un autre trio **au même %** (ordre des ex aequo).
+- Base commune : format des lots inchangé.
+
 ## 5.26.0
 
 Campagne : savoir pourquoi la 3e étoile saute, pour viser le bon remède (trios qui frappent plus fort, ou plus de protection).
