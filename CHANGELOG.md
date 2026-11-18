@@ -4,15 +4,23 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.39.0
+## 5.40.0
 
 Launcher : une visite guidée qu'on peut rejouer, racontée par Kiko, le renard de KitsuAI.
 
 - Kiko : personnage original dessiné en SVG dans le panneau, tiré de l'icône KitsuAI (5 expressions). Aucune image téléchargée.
 - La visite : 9 chapitres, 22 étapes (bienvenue, sauvegarde, Mettre à jour l'IA, Campagne, Tour, Arène privée, script dans le jeu, le modèle, rejouer). Un projecteur éclaire l'élément dont Kiko parle, avec une étiquette ; sa boîte de dialogue reste en bas (ou en haut si elle cacherait l'élément). Les étapes « À toi » attendent que tu ouvres l'onglet toi-même. Clavier : flèches, Entrée, Échap.
 - Rejouer : bouton « ? » dans la barre du haut et page Outils > Guides (visite entière, reprise au premier chapitre pas vu, ou un chapitre seul ; chapitres vus cochés), aussi dans Réglages > Application.
-- Premier lancement : une carte d'accueil propose la visite, jamais lancée d'office. Après une mise à jour qui a des nouveautés, un point rouge sur « ? » ouvre un mini guide de la version (5.39 : le guide lui-même).
+- Premier lancement : une carte d'accueil propose la visite, jamais lancée d'office. Après une mise à jour qui a des nouveautés, un point rouge sur « ? » ouvre un mini guide de la version (5.40 : le guide lui-même).
 - Options sur la page Guides : carte d'accueil, nouveautés, texte instantané (sans machine à écrire, aussi coupé si le système demande moins d'animations). État gardé dans le navigateur (`kitsuGuide`). Le projecteur ne suit le panneau que pendant que le guide est ouvert.
+
+## 5.39.0
+
+Script : le farm fait enfin monter les cartes basses du plan d'XP.
+
+- Mesure du 18/11 : plan d'XP du PC avec Cell (558) et 137777 au niveau 1 en tête (Campagne +2 912 combats au 99), mais le farm jouait encore Shanks, Tobi et Kanki, tous au 99. Le farm exigeait 3 étoiles à 90 % ; une carte niveau 1 est souvent K.O., donc aucun trio avec elle ne passait et le farm retombait sur un trio sans XP utile.
+- Règle du jeu lue dans le moteur : à la victoire, chaque carte gagne l'XP du combat, la moitié si elle est K.O. ; une défaite ne donne rien. Le farm rejoue des combats déjà à 3 étoiles, où les étoiles ne rapportent plus rien.
+- Nouveau critère : le trio doit gagner 95 % du temps. Il est classé par XP utile = cartes à monter pondérées x (0,5 + 0,5 x 3 étoiles), le taux de 3 étoiles servant d'estimation basse des combats sans K.O.
 
 ## 5.38.0
 

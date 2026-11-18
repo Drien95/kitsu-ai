@@ -2142,7 +2142,7 @@ refresh(); setInterval(refreshDoux, 1500); chargerCartes();
 // Calque par-dessus le panneau : projecteur sur l'element dont parle Kiko, etiquette, boite de dialogue.
 // Etapes « A toi » : on avance quand tu ouvres toi-meme l'onglet montre. Rien ne se lance, rien n'est clique a ta place.
 // Etat dans localStorage (kitsuGuide) : chapitres vus, version des nouveautes vues, options. Aucune animation hors du calque ouvert.
-const KG_VER = '5.39.0';
+const KG_VER = '5.40.0';
 function kgFox(ex, id) {
   id = id || 'kf' + Math.random().toString(36).slice(2, 7);
   const D = '#07080c', C = '#f4ede3', oeil = (x) => `<ellipse cx="${x}" cy="107" rx="7.5" ry="8.5" fill="${D}"/><circle cx="${x + 2.5}" cy="104" r="2.4" fill="#fff"/>`;
@@ -2207,7 +2207,7 @@ const KG = [
     { x: 'malin', p: 'guides', s: ['#kgList'], tag: 'Chapitres', t: "Les chapitres vus ont une coche. Après une mise à jour, je te montre <em>seulement ce qui a changé</em>." }] }
 ];
 // Nouveautes par version : le point rouge sur « ? » s'allume tant que celles de la version installee n'ont pas ete vues.
-const KG_NEWS = { '5.39.0': [
+const KG_NEWS = { '5.40.0': [
   { x: 'surpris', p: 'accueil', t: "Nouvelle version ! Une seule nouveauté, mais elle a des oreilles." },
   { x: 'joie', p: 'accueil', s: ['#kgHelp'], tag: 'Nouveau', t: "Ce <em>?</em> ouvre la visite guidée, à rejouer en entier ou par chapitre." },
   { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="guides"]'], tag: 'Nouveau', t: "Tu la retrouves aussi dans <em>Outils, Guides</em>, avec le choix de quand je me montre." }] };

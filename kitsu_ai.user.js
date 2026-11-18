@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.39.0
+// @version      5.40.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.39.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.40.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.39.0',
+          __v: '5.40.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1930,13 +1930,16 @@
               // Trios essayes : tes 6 cartes les plus fortes et les 5 cartes a faire monter les plus utiles (plan d'XP, prochains murs).
               const aMonter = Object.entries(xw).filter(([id, v]) => v > 0 && S.owned?.[id] && (S.lv?.[id]?.l || 1) < 99).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => +id);
               const base = [...new Set([...pool(6, S), ...aMonter])].sort((a, b) => a - b);
-              // Combat retenu : celui qui donne le plus d'XP utile par energie (XP du combat x cartes a monter du trio, ponderees),
-              // avec un trio qui gagne 95 % et fait 3 etoiles 90 % du temps.
+              // 5.39 : le farm rejoue des combats deja a 3 etoiles, les etoiles n'y rapportent plus rien. Regle du jeu (lue dans le moteur) :
+              // a la victoire, chaque carte gagne l'XP du combat, la moitie si elle est K.O. ; rien en cas de defaite. Il suffit donc de
+              // gagner (95 %). Avant, il fallait aussi 3 etoiles a 90 % : une carte basse (K.O. souvent) n'etait jamais prise.
+              // XP utile d'un trio = cartes a monter ponderees x (1 sans K.O., 0,5 avec) ; « 3 etoiles » sert d'estimation basse du sans K.O.
+              const gainXp = x => xpScore(x.t, xw) * (0.5 + 0.5 * x.s3);
               let row = null, meilleur = -1;
               for (const r of essais) {
                 const res = await this._rankTeams(r.id, S, base);
-                const ok = res.filter(x => x.w >= 0.95 && x.s3 >= 0.9).sort((a, b) => xpScore(b.t, xw) - xpScore(a.t, xw) || b.s3 - a.s3)[0];
-                const v = ok ? (xpScore(ok.t, xw) || 0.01) * r.xp / r.c : -1;
+                const ok = res.filter(x => x.w >= 0.95).sort((a, b) => gainXp(b) - gainXp(a) || b.w - a.w || b.s3 - a.s3)[0];
+                const v = ok ? (gainXp(ok) || 0.01) * r.xp / r.c : -1;
                 if (v > meilleur) { meilleur = v; const suf = r.id.split('@')[1]; row = { id: r.id, nom: r.f.t + (suf ? ` (${MODE[suf] || suf})` : ''), equipe: ok.t, troisEtoiles: ok.s3, victoire: ok.w, etoiles: 3, xp: r.xp, cout: r.c, gemmesEsperees: 0, farm: true }; }
                 await idle();
               }
