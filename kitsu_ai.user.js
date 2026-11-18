@@ -987,7 +987,7 @@
               + '.kd-tab{position:relative;font:600 11px/1.3 system-ui,sans-serif;color:#9199a6;padding:6px 5px 5px;cursor:pointer}.kd-tab.on{color:#f2ede6}.kd-tab.on::after{content:"";position:absolute;left:5px;right:5px;bottom:-1px;height:2px;background:#ff7a2f}.kd-tab.rel::before{content:"";position:absolute;top:4px;right:1px;width:5px;height:5px;border-radius:50%;background:#2fd27a}'
               + '#kitsuDockBody{padding:9px 12px 10px 13px;max-height:62vh;overflow:auto}#kitsuDock.min #kitsuDockBody,#kitsuDock.min #kitsuDockTabs{display:none}'
               // 5.19 : conseil exact du script prive en cours -> le dock se replie sur une ligne (clic sur la ligne : tout voir).
-              + 'html[data-kar-avis] #kitsuDock.exact:not([data-voir]){display:none!important}#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
+              + 'html[data-kar-avis] #kitsuDock:not([data-voir]){display:none!important}#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
               + '#kitsuDock .kitsu-panel{position:static!important;transform:none!important;max-width:none!important;min-width:0!important;border:none!important;background:none!important;padding:0!important;box-shadow:none!important;pointer-events:auto!important}'
               + tabs.map(([k, , id]) => `#kitsuDock:not([data-tab="${k}"]) #${id}{display:none!important}`).join('');
             document.head.appendChild(css);

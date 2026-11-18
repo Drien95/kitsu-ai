@@ -12,6 +12,13 @@ Moins de lag hors combat (carte, fin de combat, choix de l'équipe) : les simula
 - **Ce qui change** : le plan du moment (meilleur trio par combat, murs à venir, combat de farm), la vérification de l'équipe sur l'écran d'équipe (12 tirages) et les 32 tirages des 8 meilleurs trios de l'écran d'équipe passent par le worker (`simBatch`) déjà utilisé pour l'entraînement et la boutique. Mêmes graines, mêmes équipes, même code de simulation : mêmes résultats. Sans worker, repli sur le fil principal comme avant.
 - Aucun cœur ni fil bridé.
 
+## 5.33.1
+
+Script : avec le script privé (0.24.1+), le cadre public reste caché pendant tout le combat, tours adverses compris.
+
+- En 5.32.0, le cadre public se cachait seulement pendant ton tour et sur l'onglet Conseil : il revenait à chaque tour adverse, donc deux cadres à l'écran une bonne partie du combat. Il reste maintenant caché tant que le privé annonce son avis (`html[data-kar-avis]`). Clic sur les lignes d'avis du privé pour le revoir.
+- Repli inchangé : si le privé n'a pas de réponse (calcul exact impossible, combat non pris en charge), il retire l'annonce et le cadre public revient.
+
 ## 5.33.0
 
 Calculs plus rapides, résultats identiques : les collectifs d'un trio ne sont plus recalculés à chaque combat.
