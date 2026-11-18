@@ -964,11 +964,24 @@ function ptCamp() {
   const apport = (mien('verifie').lignes || 0) + (mien('attente').lignes || 0) + (mien('conteste').lignes || 0);
   setH('c3baseB', `<div class="grid g5" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">`
     + tile('Résultats vérifiés', fmt(st('verifie').lignes || 0), `${fmt(st('verifie').lots || 0)} lots, plus ${fmt(st('attente').lignes || 0)} en attente de contrôle`)
-    + tile('Joueurs', fmt(j.etat?.joueurs || 0), 'IDs qui partagent')
-    + tile('Ton apport', fmt(apport), j.base?.connu ? `${fmt(mien('verifie').lignes || 0)} vérifiés · crédit ${j.base.cred}` : 'rien envoyé pour l’instant', j.base?.ecarte ? 'bad' : '')
+    + tile('Joueurs', fmt(j.etat?.joueurs || 0), 'IDs qui ont déjà envoyé des résultats')
+    + tile('Ton apport', fmt(apport), !R.envoyer ? '« Partager mes calculs » est coupé' : j.base?.connu ? `${fmt(mien('verifie').lignes || 0)} vérifiés · crédit ${j.base.cred}` : 'rien envoyé pour l’instant', j.base?.ecarte ? 'bad' : '')
     + tile('En attente d’envoi', fmt(j.enFile) + ' lot' + (j.enFile > 1 ? 's' : ''), 'partiront au prochain calcul', j.enFile ? 'warn' : '')
     + tile('Dernier calcul', d ? fmt(d.recus) : '-', d ? `résultats repris de la base, ${fmt(d.envoyes)} envoyés` : 'pas encore de calcul partagé')
-    + `</div>${j.base?.ecarte ? '<div class="note" style="margin-top:12px">Ton ID a été écarté après un contrôle : tes envois ne sont plus acceptés. Tu peux toujours utiliser la base.</div>' : ''}`);
+    + `</div>${ptActivite(j, R)}${j.base?.ecarte ? '<div class="note" style="margin-top:12px">Ton ID a été écarté après un contrôle : tes envois ne sont plus acceptés. Tu peux toujours utiliser la base.</div>' : ''}`);
+}
+// Quand ca bouge : uniquement pendant un calcul Campagne lance sur ce PC. Journal tenu par lib/partage.mjs (noter).
+function ptActivite(j, R) {
+  const etapes = [R.utiliser ? 'au début, ton PC récupère les résultats vérifiés pour tes cartes' : null, R.envoyer ? 'pendant le calcul, il range tes résultats par lots de 20 000 ; à la fin, il les envoie (ce qui dépasse le quota du jour part au calcul suivant)' : null, R.verifier ? 'à la fin, il contrôle 2 lots des autres (quelques secondes)' : null].filter(Boolean);
+  const mo = o => o >= 1e5 ? `, ${nbFr(Math.round(o / 1e5) / 10)} Mo téléchargés` : '';
+  const txt = x => x.type === 'recu' ? `Récupéré : ${fmt(x.lignes)} résultats pour tes cartes, dans ${fmt(x.lots)} lot${x.lots > 1 ? 's' : ''} vérifié${x.lots > 1 ? 's' : ''}${mo(x.octets)}.`
+    : x.type === 'envoi' ? `Envoyé : ${fmt(x.lots)} lot${x.lots > 1 ? 's' : ''} (${fmt(x.lignes)} résultats)${x.attente ? `, ${fmt(x.attente)} en attente` : ''}${x.raison ? ` (${esc(x.raison)})` : ''}.`
+    : x.type === 'controle' ? `Contrôle d’un lot d’un autre joueur (${x.lignes} résultats rejoués) : ${esc(x.quoi)}.`
+    : x.type === 'regroupe' ? `Regroupé ${fmt(x.lots)} lots vérifiés en un paquet de ${fmt(x.lignes)} résultats.`
+    : `Problème : ${esc(x.quoi || '')}.`;
+  const L = (j.journal || []).slice(0, 8);
+  return `<p class="muted" style="font-size:12px;margin:12px 0 0">Le partage ne tourne que pendant un calcul Campagne que tu lances : ${etapes.join(' ; ') || 'rien n’est allumé'}. Allumer un interrupteur seul n’envoie rien et ne compte pas encore comme joueur.</p>`
+    + (L.length ? `<table style="margin-top:10px"><tr><th>Quand</th><th>Échange avec la base</th></tr>${L.map(x => `<tr><td style="white-space:nowrap">${quand(x.t)}</td><td>${txt(x)}</td></tr>`).join('')}</table>` : '<p class="muted" style="font-size:12px;margin:6px 0 0">Aucun échange pour l’instant.</p>');
 }
 async function sauverReg() { const al = {}; document.querySelectorAll('[data-al]').forEach(i => al[i.dataset.al] = i.checked); await api('/api/reglages', { method: 'POST', body: JSON.stringify({ conseilMs: +$('r_ms').value, filsReserves: +$('r_fils').value, alertes: al }) }); toast('Réglages enregistrés'); }
 async function renderMaj() {

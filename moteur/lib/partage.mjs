@@ -60,12 +60,13 @@ export async function envoyerLot(reg, lot) {
 const FILE = () => D('cache', 'partage', 'a-envoyer');
 export function mettreEnFile(lot) { mkdirSync(FILE(), { recursive: true }); const b = gzipSync(JSON.stringify(lot)); writeFileSync(path.join(FILE(), createHash('sha256').update(b).digest('hex').slice(0, 20) + '.json.gz'), b); }
 export async function viderFile(reg, log = () => {}) {
-  if (!existsSync(FILE())) return 0; let n = 0;
+  if (!existsSync(FILE())) return 0; let n = 0, lignes = 0, raison = '';
   for (const f of readdirSync(FILE())) {
     const p = path.join(FILE(), f);
-    try { await envoyerLot(reg, JSON.parse(gunzipSync(readFileSync(p)))); unlinkSync(p); n++; }
-    catch (e) { log(`partage : envoi reporte (${e.message})`); if (/^4(29|03)/.test(e.message)) break; if (/^400/.test(e.message)) unlinkSync(p); }
+    try { const lot = JSON.parse(gunzipSync(readFileSync(p))); await envoyerLot(reg, lot); unlinkSync(p); n++; lignes += lot.l.length; }
+    catch (e) { log(`partage : envoi reporte (${e.message})`); raison = e.message; if (/^4(29|03)/.test(e.message)) break; if (/^400/.test(e.message)) unlinkSync(p); }
   }
+  if (n || raison) noter('envoi', { lots: n, lignes, attente: enFile(), ...(raison ? { raison: /^429/.test(raison) ? 'quota du jour' : /^403/.test(raison) ? 'ID ecarte' : raison.slice(0, 80) } : {}) });
   return n;
 }
 
@@ -104,6 +105,7 @@ export async function telecharger(reg, { sigG, wKey }, { cleCarteLocale, onLigne
     const ok = lot.t.map(tr => tr.every(c => cleCarteLocale(c[0]) === `${c[0]}:${c[1]}:${c[2]}:${c[3].join('+')}:${c[4]}`) ? cleTrioDe(tr) : null);
     for (const [ti, pj, g, n, s3] of lot.l) if (ok[ti]) { lignes++; onLigne({ ck: ok[ti], di: lot.p[pj][0], pi: lot.p[pj][1], clePaquet: lot.p[pj][2], graine: g, n, s3 }); }
   }
+  noter('recu', { lots, lignes, octets });
   log(`partage : ${lots} lots verifies lus${ignores ? `, ${ignores} sans tes cartes ignores` : ''} (${Math.round(octets / 1e5) / 10} Mo telecharges), ${lignes} resultats pour tes cartes`);
   return lignes;
 }
@@ -130,6 +132,7 @@ export async function controler(reg, { sigG, wKey }, rejouer, { max = 2, log = (
       }
     } catch (e) { rendu = { incompatible: true }; quoi = 'lot illisible ici (' + e.message + ')'; }
     const r = await (await appel(reg.url, '/v1/missions/' + m.mission, { methode: 'POST', corps: rendu, id, admin })).json();
+    noter('controle', { lignes: m.indices.length, quoi: quoi + (r.decision ? ', ' + r.decision : '') });
     log(`partage : controle d'un lot (${m.indices.length} lignes) : ${quoi}${r.decision ? ', ' + r.decision : ''}`);
     faits++;
   }
@@ -157,12 +160,16 @@ export async function regrouper(reg, { log = () => {} } = {}) {
       const r = await (await appel(reg.url, '/v1/admin/paquets', { methode: 'POST', corps: z, gz: true, admin, entetes: { 'x-kitsu-meta': JSON.stringify(metaDe(p)), 'x-kitsu-remplace': m.map(x => x.id).join(',') } })).json();
       mkdirSync(DOSSIER_LOTS(), { recursive: true }); writeFileSync(path.join(DOSSIER_LOTS(), r.id + '.json.gz'), z);
       for (const x of m) try { unlinkSync(path.join(DOSSIER_LOTS(), x.id + '.json.gz')); } catch {}
-      faits++; log(`partage : ${m.length} lots regroupes en un paquet de ${p.l.length} lignes (${Math.round(z.length / 1e4) / 100} Mo)`);
+      faits++; noter('regroupe', { lots: m.length, lignes: p.l.length }); log(`partage : ${m.length} lots regroupes en un paquet de ${p.l.length} lignes (${Math.round(z.length / 1e4) / 100} Mo)`);
     }
   }
   return faits;
 }
 
+// Journal des echanges avec la base (data/partage-journal.json, 40 derniers) : affiche dans Campagne, bloc Base commune.
+const FJ = () => D('data', 'partage-journal.json');
+export function noter(type, o = {}) { try { const l = lireJ(FJ()) || []; l.unshift({ t: Date.now(), type, ...o }); mkdirSync(path.dirname(FJ()), { recursive: true }); writeFileSync(FJ(), JSON.stringify(l.slice(0, 40))); } catch {} }
+export const journalPartage = () => lireJ(FJ()) || [];
 export async function etatBase(reg) { return (await appel(reg.url, '/v1/etat')).json(); }
 // Lots calcules sur ce PC qui attendent d'etre envoyes (pas d'internet, quota du jour).
 export function enFile() { try { return readdirSync(FILE()).filter(f => f.endsWith('.json.gz')).length; } catch { return 0; } }
