@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.32.0
+// @version      5.33.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.32.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.33.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -574,7 +574,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.32.0',
+          __v: '5.33.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -984,7 +984,7 @@
               + '.kd-tab{position:relative;font:600 11px/1.3 system-ui,sans-serif;color:#9199a6;padding:6px 5px 5px;cursor:pointer}.kd-tab.on{color:#f2ede6}.kd-tab.on::after{content:"";position:absolute;left:5px;right:5px;bottom:-1px;height:2px;background:#ff7a2f}.kd-tab.rel::before{content:"";position:absolute;top:4px;right:1px;width:5px;height:5px;border-radius:50%;background:#2fd27a}'
               + '#kitsuDockBody{padding:9px 12px 10px 13px;max-height:62vh;overflow:auto}#kitsuDock.min #kitsuDockBody,#kitsuDock.min #kitsuDockTabs{display:none}'
               // 5.19 : conseil exact du script prive en cours -> le dock se replie sur une ligne (clic sur la ligne : tout voir).
-              + '#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
+              + 'html[data-kar-avis] #kitsuDock.exact:not([data-voir]){display:none!important}#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
               + '#kitsuDock .kitsu-panel{position:static!important;transform:none!important;max-width:none!important;min-width:0!important;border:none!important;background:none!important;padding:0!important;box-shadow:none!important;pointer-events:auto!important}'
               + tabs.map(([k, , id]) => `#kitsuDock:not([data-tab="${k}"]) #${id}{display:none!important}`).join('');
             document.head.appendChild(css);
@@ -1751,7 +1751,7 @@
                 // Hors combat : on ne cherche un combat que toutes les 600 ms (4 ticks) et on ne nettoie qu'une fois, a la fin du combat (5.18).
                 if (wasOver && (++tick & 3)) return;
                 const T = liveBattle();
-                if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; window.__kitsuCoup = null; clearMarks(badge); } wasOver = true; return; }
+                if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; window.__kitsuCoup = null; window.__kitsuAvis = null; clearMarks(badge); } wasOver = true; return; }
                 if (document.hidden) return;
                 wasOver = false; box.style.display = 'block';
                 const st = T.st, a = T.active;
@@ -1774,6 +1774,8 @@
                 logDecision(T, res);
                 const b0 = res[0].c, m0 = mv(a, b0.kind);
                 cur = { me: a.key, kind: b0.kind, tgt: b0.target?.key, all: b0.kind !== 'rest' && b0.kind !== 'basic' && !b0.target && B.kitRole(a, b0.kind).aoe > 0, label: m0.name };
+                // 5.32 : avis du public et du calcul du PC pour le script prive (un seul cadre quand il a le coup exact). Lecture seule.
+                window.__kitsuAvis = { sig, me: a.key, pub: { kind: b0.kind, tgt: b0.target?.key ?? null, label: m0.name, cible: b0.target?.name || null }, pc: localPC.ok ? { etat: 'attente' } : null };
                 const nm = c => mv(a, c.kind).name + (c.target ? ' sur ' + c.target.name : '');
                 const decisive = res.length > 1 && res[0].win - res[1].win >= 0.15;
                 const charging = B.foes(st, a).filter(e => e.charging).map(e => e.name);
@@ -1792,12 +1794,14 @@
                   localAsk('/conseil', { dom: domFile(), st: JSON.stringify(rest), key: a.key, cands: cl.map(c => ({ kind: c.kind, tgt: c.target?.key })), W: this.W, budget: 700 }, 5000).then(r => {
                     const el = document.getElementById('kitsuPC');
                     if (last !== mySig) return;
-                    if (!r || r.err || !r.res?.length) { if (r?.err === 'version') { localPC.ok = false; localPC.msg = 'moteur du PC pas a jour : relance serveur.bat'; } if (el) el.innerHTML = '<div class="t" style="color:#9199a6">Calcul du PC<span>' + (r?.err === 'version' ? 'moteur pas à jour (relance serveur.bat)' : 'pas de réponse') + '</span></div>'; return; }
+                    const av = window.__kitsuAvis?.sig === mySig ? window.__kitsuAvis : null;
+                    if (!r || r.err || !r.res?.length) { if (av) av.pc = { etat: 'erreur' }; if (r?.err === 'version') { localPC.ok = false; localPC.msg = 'moteur du PC pas a jour : relance serveur.bat'; } if (el) el.innerHTML = '<div class="t" style="color:#9199a6">Calcul du PC<span>' + (r?.err === 'version' ? 'moteur pas à jour (relance serveur.bat)' : 'pas de réponse') + '</span></div>'; return; }
                     // Le PC ne remplace le conseil que s'il trouve STRICTEMENT mieux : a egalite (combat gagne a 3 etoiles quel que
                     // soit le coup, ou perdu quoi qu'on fasse), son classement garderait le premier coup de la liste, le repos.
                     const pcB0 = r.res.find(x => x.kind === b0.kind && (x.tgt ?? null) === (b0.target?.key ?? null));
                     const b = pcB0 && r.res[0].v - pcB0.v < 0.03 ? pcB0 : r.res[0], c1 = cl.find(c => c.kind === b.kind && (c.target?.key ?? null) === (b.tgt ?? null)); if (!c1) return;
                     const changed = c1.kind !== b0.kind || (c1.target?.key ?? null) !== (b0.target?.key ?? null);
+                    if (av) av.pc = { etat: changed ? 'change' : 'confirme', kind: c1.kind, tgt: c1.target?.key ?? null, label: mv(a, c1.kind).name, cible: c1.target?.name || null, s2: b.s2, s3: b.s3, win: b.win, hp: b.hp ?? null, tour: !!T.tower, sims: r.sims, ms: r.ms };
                     cur = { me: a.key, kind: c1.kind, tgt: c1.target?.key, all: c1.kind !== 'rest' && c1.kind !== 'basic' && !c1.target && B.kitRole(a, c1.kind).aoe > 0, label: mv(a, c1.kind).name };
                     if (el) el.outerHTML = `<div id="kitsuPC" class="k-pc${changed ? ' chg' : ''}"><div class="t">Calcul du PC · ${changed ? 'change le conseil' : 'confirme'}<span>${r.sims} suites · ${r.ms} ms</span></div><b>${nm(c1)}</b> · ${T.tower && b.hp != null ? `victoire <b class="k-gold">${Math.round(b.win * 100)} %</b> · PV gardés ${Math.round(100 * b.hp / Math.max(0.01, b.win))} %` : `2+ étoiles <b class="k-gold">${Math.round(b.s2 * 100)} %</b> · 3 étoiles <b class="k-gold">${Math.round(b.s3 * 100)} %</b>`}${r.res[1] ? `<br><span class="k-mute">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
                     // 5.19 : le coup affiche en grand suit le conseil du PC quand il le change (comme les contours).

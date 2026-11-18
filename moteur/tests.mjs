@@ -26,7 +26,7 @@ t('arret des 3 etoiles perdues : memes 3 etoiles', eq3 && !!rev);
 const { jouer } = await import('./lib/diagnostic.mjs');
 const dj = fights.map(f => jouer(G, B, S, pol, f, team, 7));
 t('diagnostic : memes etoiles que le simulateur, cause juste', dj.every((r, i) => r.stars === a[i].stars && (r.stars === 3) === (r.cause == null) && (r.cause !== 'cycle' || (r.win && r.ko === 0 && r.cycle > 8)) && (r.cause !== 'ko' || (r.win && r.ko > 0 && r.cycle <= 8))));
-// Collectifs calcules une fois par trio (5.32) : memes combats que le moteur du jeu sans copie, et repli si fonction absente.
+// Collectifs calcules une fois par trio (5.33) : memes combats que le moteur du jeu sans copie, et repli si fonction absente.
 {
   const { memoriserCollectifs } = await import('./lib/charger.mjs');
   const code = `import { loadEngine } from './lib/charger.mjs'; import { makeSim, W_DEFAUT } from './lib/sim.mjs';

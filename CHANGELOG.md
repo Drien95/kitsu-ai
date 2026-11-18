@@ -4,7 +4,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.32.0
+## 5.33.0
 
 Calculs plus rapides, résultats identiques : les collectifs d'un trio ne sont plus recalculés à chaque combat.
 
@@ -15,6 +15,14 @@ Calculs plus rapides, résultats identiques : les collectifs d'un trio ne sont p
   - 1 000 trios × 6 combats Cauchemar durs, coupés dès que la 3★ est perdue (comme les spécialistes), 3 essais : médiane 3,89 s puis 3,12 s (1,25 fois). Les 6 000 étoiles sont identiques caractère par caractère.
   - Calcul Campagne de test (90 trios, 192 combats, diagnostic compris), 2 essais : 36 et 39 s, puis 23 et 25 s (environ 1,55 fois). `cauchemar3.json` identique hors dates et durées.
   - Le gain réel sur un calcul complet reste à mesurer sur ton PC : compare sa durée à celle du dernier calcul.
+
+## 5.32.0
+
+Script : un seul cadre de conseil quand le script privé a le coup exact (Tour, Campagne).
+
+- Le script public publie son avis pour le tour en cours dans `window.__kitsuAvis` : son coup (`pub`) et le résultat du calcul du PC (`pc` : en attente, confirme, change, avec les % ; erreur). Lecture seule, rien n'est envoyé.
+- Si le script privé annonce qu'il affiche cet avis (`html[data-kar-avis]`, privé 0.23+), le cadre public disparaît entièrement pendant le conseil exact au lieu de rester replié en une ligne. Un clic sur les lignes d'avis du privé le réaffiche.
+- Sans script privé, ou avec un privé plus ancien : rien ne change. Quand le privé n'a pas de réponse pour un tour, le cadre public revient comme avant.
 
 ## 5.31.1
 

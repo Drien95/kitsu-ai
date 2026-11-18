@@ -20,7 +20,7 @@ function shim() {
   g.Image = function () { return el(); }; g.Audio = function () { return el(); };
   g.CustomEvent = class { constructor(t, o) { this.type = t; this.detail = o?.detail; } };
 }
-// 5.32 : collectifs du trio calcules une fois. A chaque combat, setupBattle recalcule les collectifs actifs du trio en
+// 5.33 : collectifs du trio calcules une fois. A chaque combat, setupBattle recalcule les collectifs actifs du trio en
 // parcourant toute la liste des collectifs du jeu (21 a 30 % du temps d'un combat coupe tot). Le resultat ne depend que des
 // cartes (dans l'ordre de l'equipe) et des collectifs choisis (lk) : on charge une copie du fichier du moteur ou cette
 // fonction garde ses resultats deja calcules. Meme entree, meme objet rendu, lu sans etre modifie : combats identiques
