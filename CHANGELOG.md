@@ -15,6 +15,13 @@ Moins de lag hors combat (carte, fin de combat, choix de l'équipe) : les simula
 - Mesure : `window.__kitsuPerf` compte le temps passé sur le fil du jeu après chaque pause, par fonction (`idle:Object.plan`...), et celui du conseil en combat (`evalLive`). Lu par la mesure du lag du script privé (0.24.2+), lecture seule.
 - Aucun cœur ni fil bridé.
 
+## 5.33.2
+
+Panneau : « Ta collection » suit la sauvegarde envoyée automatiquement par le script.
+
+- Avant, la collection était lue une seule fois à l'ouverture du panneau, puis seulement après un import manuel. Quand le script mettait la sauvegarde à jour (nouvelle carte tirée), « Export actuel » affichait le nouveau compte (ex. 7 LR) mais la collection gardait l'ancien (6 LR) jusqu'au redémarrage.
+- Maintenant, dès que la date de la sauvegarde change, la collection est rechargée (vérifié toutes les 1,5 s avec l'état déjà lu, sans requête en plus tant que rien ne change).
+
 ## 5.33.1
 
 Script : avec le script privé (0.24.1+), le cadre public reste caché pendant tout le combat, tours adverses compris.

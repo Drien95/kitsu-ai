@@ -743,6 +743,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
 | 5.34.0 | Moins de lag hors combat : plan du moment et contrôles de l'écran d'équipe simulés dans le worker et non plus sur le fil du jeu (mesuré : 210 s de page bloquée sur 20,7 min), mêmes résultats. |
+| 5.33.2 | Panneau : la collection (page Sauvegarde) se recharge quand le script met la sauvegarde à jour |
 | 5.33.1 | Script : avec le privé 0.24.1+, le cadre public reste caché pendant tout le combat, tours adverses compris |
 | 5.33.0 | Calculs plus rapides à résultats identiques : les collectifs d'un trio sont calculés une fois au lieu d'à chaque combat (test VM : 1,25 fois sur les combats durs coupés, environ 1,55 fois sur un petit calcul Campagne ; `cauchemar3.json` identique) |
 | 5.32.0 | Script : avec le script privé (0.23+), un seul cadre de conseil en Tour et Campagne ; l'avis du public et du calcul du PC y tient en une ligne |

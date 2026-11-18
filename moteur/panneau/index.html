@@ -1846,7 +1846,7 @@ addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLower
 document.querySelectorAll('i[data-ic]').forEach(i => { i.outerHTML = ic(i.dataset.ic); });
 { const ext = document.querySelector('#nav a[data-p="arene"]'), ph = $('navArene0'); if (ext && ph) { ext.innerHTML = ph.innerHTML; ph.replaceWith(ext); $('p-arene0')?.remove(); } }
 document.body.classList.toggle('calme', !FXON); $('r_fx').checked = FXON;
-setInterval(() => { if (!E) return; const j = E.job; if (j?.nom === "Tour de l'infini" && j.fin && TW.fin !== j.fin) { const premier = TW.fin === undefined; TW.fin = j.fin; if (!premier || !TW.j) twCharger(); } if (j?.nom === "Import de la sauvegarde") colCharger(); }, 1500);
+setInterval(() => { if (!E) return; const j = E.job; if (j?.nom === "Tour de l'infini" && j.fin && TW.fin !== j.fin) { const premier = TW.fin === undefined; TW.fin = j.fin; if (!premier || !TW.j) twCharger(); } if (j?.nom === "Import de la sauvegarde") colCharger(); else if (E.sauvegarde?.t && !COL.charge && (!COL.j || COL.j.t !== E.sauvegarde.t)) colCharger(); }, 1500);
 twCharger(); rdCharger(); colCharger();
 
 // ---------- le modele vivant (5.28) : conquete, cerveau, journal de bord ----------
