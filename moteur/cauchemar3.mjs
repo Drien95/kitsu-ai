@@ -32,6 +32,7 @@ const DIFF = [['normal', '@n'], ['difficile', '@hn'], ['extreme', '@xn'], ...(TO
 // Objectifs : { nom, difficultes moyennees, elimine }. Les noms Normal/Difficile/Extreme/Moyenne restent ceux du Cauchemar.
 const OBJS = [{ k: 'Normal', d: [0], e: 1 }, { k: 'Difficile', d: [1], e: 1 }, { k: 'Extreme', d: [2], e: 1 }, { k: 'Moyenne', d: [0, 1, 2], e: 1 },
   ...(TOUTES ? [{ k: 'CampNormal', d: [3] }, { k: 'CampDifficile', d: [4] }, { k: 'CampExtreme', d: [5] }, { k: 'Les6', d: [0, 1, 2, 3, 4, 5] }] : [])], OBJ = OBJS.map(o => o.k), IMOY = 3;
+const DIS_TOUTES = DIFF.map((_, i) => i), DIS_ELIM = DIS_TOUTES.filter(i => i < 3), DIS_CAMP = DIS_TOUTES.filter(i => i >= 3);
 const LV = id => NIV === '99' ? 99 : (SAVE.lv?.[id]?.l || 1), ET = id => SAVE.stars?.[id] || 0, LK = id => SAVE.lk?.[id] || null;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // Partage des calculs (Reglages > Partage, coupe par defaut) : seulement avec les reglages standard du calcul,
@@ -85,16 +86,39 @@ async function rejouerLignes(lot, lignes) {
   return (await pool.runAll(jobs, WA, { stop3: true }, 8)).map(x => [x.n, x.s3]);
 }
 
+// ---------- etoiles combat par combat deja jouees (5.27) ----------
+// La course joue deja chaque trio sur chaque combat (tirage 1 ; tirages 2 et 3 pour les finalistes). On garde l'etoile de chaque
+// combat : les etapes par combat (lib/etages.mjs) la reprennent au lieu de rejouer le meme trio sur le meme combat avec la meme
+// graine (resultat identique, le simulateur est deterministe). Tirage 1 : 1 octet par trio et par combat ; tirages 2 et 3 :
+// seulement les trios qui les jouent (finalistes).
+const OFF = DIFF.map(() => []); let NFT = 0; paquets.forEach((ps, di) => ps.forEach((p, pi) => { OFF[di][pi] = NFT; NFT += p.f.length; }));
+const VU1 = new Uint8Array(T * NFT), VU23 = new Map();
+let vusReutilises = 0;
+function noter(t, di, pi, seed, st) {
+  if (t == null || typeof st !== 'string' || st.length !== paquets[di][pi].f.length) return;
+  if (seed === 1) { const b = t * NFT + OFF[di][pi]; for (let k = 0; k < st.length; k++) VU1[b + k] = st[k] === '3' ? 2 : 1; }
+  else if (seed === 2 || seed === 3) VU23.set(`${t}|${di}|${pi}|${seed}`, st);
+}
+// Etoiles d'un trio sur un paquet pour une graine (chaine '3'/'0' par combat), ou null si pas encore joue.
+function connu(t, di, pi, seed) {
+  if (seed === 1) { const b = t * NFT + OFF[di][pi], n = paquets[di][pi].f.length; let st = ''; for (let k = 0; k < n; k++) { const v = VU1[b + k]; if (!v) return null; st += v === 2 ? '3' : '0'; } vusReutilises += n; return st; }
+  const st = VU23.get(`${t}|${di}|${pi}|${seed}`); if (st) vusReutilises += st.length; return st || null;
+}
+// Tirage 1 d'un trio sur un combat (index global, meme ordre que lib/etages.mjs) : 0 inconnu, 1 pas 3 etoiles, 2 trois etoiles.
+const connu1 = (t, fi) => { const v = VU1[t * NFT + fi]; if (v) vusReutilises++; return v; };
+
 // ---------- calcul d'un lot (journal d'abord, combats manquants en parallele) ----------
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined, version);
 let simules = 0, repris = 0;
-async function jouer(items) { // items : { di, pi, seed, team, ck } -> [n, s3]
+async function jouer(items) { // items : { di, pi, seed, team, ck, t? } -> [n, s3]
   const out = new Array(items.length), todo = [];
-  items.forEach((x, i) => { const k = cle(x.di, x.pi, x.seed, x.ck), v = J.get(k); if (v) { out[i] = v.split(',').map(Number); repris++; } else todo.push([i, k]); });
+  items.forEach((x, i) => { const k = cle(x.di, x.pi, x.seed, x.ck), v = J.get(k); if (v) { const a = v.split(','); out[i] = [+a[0], +a[1]]; noter(x.t, x.di, x.pi, x.seed, a[2]); repris++; } else todo.push([i, k]); });
   for (let a = 0; a < todo.length; a += 24000) {
     const part = todo.slice(a, a + 24000);
-    const r = await pool.runAll(part.map(([i]) => ({ team: items[i].team, fights: paquets[items[i].di][items[i].pi].f, seeds: [items[i].seed] })), WA, { stop3: true }, 40);
-    r.forEach((x, j) => { out[part[j][0]] = [x.n, x.s3]; J.set(part[j][1], x.n + ',' + x.s3); simules += x.n;
+    // Type 'etoiles' : meme simulation, mais l'etoile de chaque combat revient aussi (n = combats, s3 = combats a 3 etoiles).
+    const r = (await pool.runAll(part.map(([i]) => ({ type: 'etoiles', team: items[i].team, fights: paquets[items[i].di][items[i].pi].f, seeds: [items[i].seed] })), WA, { stop3: true }, 40))
+      .map(y => ({ n: y.st.length, s3: [...y.st].filter(c => c === '3').length, st: y.st }));
+    r.forEach((x, j) => { out[part[j][0]] = [x.n, x.s3]; J.set(part[j][1], x.n + ',' + x.s3 + ',' + x.st); simules += x.n; noter(items[part[j][0]].t, items[part[j][0]].di, items[part[j][0]].pi, items[part[j][0]].seed, x.st);
       const it = items[part[j][0]]; if (PARTAGE_OK && PART.envoyer && it.seed <= 3) { const cartes = it.team.map(carteLot); if (cleTrioDe(cartes) === it.ck) aEnvoyer.push({ cartes, di: it.di, pi: it.pi, clePaquet: paquets[it.di][it.pi].cle, graine: it.seed, n: x.n, s3: x.s3 }); } });
     J.flush(); versFile();
   }
@@ -119,9 +143,9 @@ function eliminer(alive, pi) {
   }
   return alive.filter(t => garde[t]);
 }
-async function tour(alive, pi, seed) {
+async function tour(alive, pi, seed, dis = DIS_TOUTES) {
   const items = [], idx = [];
-  for (const t of alive) for (let di = 0; di < ND; di++) if (paquets[di][pi]) { items.push({ di, pi, seed, team: trios[t].map(id => carte(id)), ck: cleTrio[t] }); idx.push(t * ND + di); }
+  for (const t of alive) for (const di of dis) if (paquets[di][pi]) { items.push({ di, pi, seed, team: trios[t].map(id => carte(id)), ck: cleTrio[t], t }); idx.push(t * ND + di); }
   for (let a = 0; a < items.length; a += 60000) {
     const r = await jouer(items.slice(a, a + 60000));
     r.forEach(([n, s3], j) => { N[idx[a + j]] += n; S3[idx[a + j]] += s3; });
@@ -141,13 +165,16 @@ if (PARTAGE_OK) {
     J.flush(); log(`partage : ${recus} resultats ajoutes au journal depuis la base commune`);
   } catch (e) { PARTAGE.noter('erreur', { quoi: 'base injoignable au debut du calcul' }); log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
 } else if (PART_ON) log(`partage : coupe pour ce calcul (${!WCX ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
+// 5.27 : la Campagne (Normal, Difficile, Extreme) n'elimine personne : pendant la course, seuls les Cauchemar sont joues ;
+// les finalistes jouent ensuite la Campagne avec les memes graines (memes resultats pour eux, moitie moins de combats pour les autres).
 let alive = [...Array(T).keys()]; const entonnoir = [];
 for (let pi = 0; pi < TOURS; pi++) {
-  await tour(alive, pi, 1);
+  await tour(alive, pi, 1, DIS_ELIM);
   const avant = alive.length; alive = eliminer(alive, pi); entonnoir.push(alive.length);
   const ecoule = (Date.now() - T0) / 1000, vit = simules / Math.max(1, ecoule);
   log(`tour ${pi + 1}/${TOURS} : ${avant} -> ${alive.length} trios en course, ${simules} combats simules (${Math.round(vit)}/s), ${repris} paquets repris du journal`);
 }
+if (DIS_CAMP.length) { for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, 1, DIS_CAMP); log(`Campagne : ${alive.length} finalistes, tirage 1`); }
 // Finale : 2 tirages de plus sur tous les combats pour les survivants (le hasard du combat compte).
 for (const seed of [2, 3]) for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, seed);
 log(`finale : ${alive.length} trios, ${simules} combats simules au total`);
@@ -221,8 +248,9 @@ if (!arg('sans-etages')) {
   const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...scriptSet, ...(cur != null ? [cur] : [])])];
   const sigColl = h53(IDS.map(id => cleCarte(id)).join(','));
   etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
-    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), dejaAu99: id => (SAVE.lv?.[id]?.l || 1) >= 99 });
-  etages.scriptCartes = [...dix].map(nom);
+    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: id => (SAVE.lv?.[id]?.l || 1) >= 99 });
+  etages.scriptCartes = [...dix].map(nom); etages.reprisCourse = vusReutilises;
+  log(`par combat : ${vusReutilises} combats repris de la course au lieu d'etre rejoues`);
   // Nom, monde et place de chaque combat de base, pour l'affichage par etage.
   etages.infos = {}; const vus = new Set(etages.combats.map(c => c[8])); for (const w of G.ALL_WORLDS) for (const f of w.fights) if (vus.has(f.id)) etages.infos[f.id] = [w.id, f.idx ?? w.fights.indexOf(f), f.t || f.id, f.boss ? 1 : 0];
 }

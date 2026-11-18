@@ -14,6 +14,8 @@ const ORDRE = ['campNormal', 'campDifficile', 'campExtreme', 'normal', 'difficil
 
 export async function parCombat(o) {
   const { pool, J, WA, paquets, DIFF, trios, cleTrio, equipeDe, cands, scriptSet, sigG, wKey, sigColl, sigCombat, log } = o;
+  // 5.27 : etoiles deja jouees pendant la course (meme trio, meme combat, meme graine : meme resultat), reprises sans rejouer.
+  const connu = o.connu || (() => null), connu1 = o.connu1 || (() => 0);
   const seuil = o.seuil ?? 0.6, budget = (o.budget ?? 60) * 60e3, conf = o.conf ?? 6, garde = 8, T0 = Date.now();
   let simules = 0, repris = 0, dernier = Date.now();
   const tic = m => { if (Date.now() - dernier > 60000) { dernier = Date.now(); log(m()); } };
@@ -30,7 +32,7 @@ export async function parCombat(o) {
     const part = items.slice(a, a + 20000), todo = [];
     const cle = x => h53(`E|${sigG}|${wKey}|${paquets[x.di][x.pi].cle}|${x.seed}|${cleTrio[cands[x.ci]]}`);
     const poser = (x, st) => { for (let k = 0; k < st.length; k++) { const i = x.ci * NF + idxF.get(x.di + '|' + x.pi + '|' + k); n[i]++; if (st[k] === '3') s[i]++; } };
-    for (const x of part) { const v = J.get(cle(x)); if (v) { poser(x, v); repris++; } else todo.push(x); }
+    for (const x of part) { const v = J.get(cle(x)) || connu(cands[x.ci], x.di, x.pi, x.seed); if (v) { poser(x, v); repris++; } else todo.push(x); }
     if (todo.length) {
       const r = await run(todo.map(x => ({ type: 'etoiles', team: equipeDe(cands[x.ci]), fights: paquets[x.di][x.pi].f, seeds: [x.seed] })), 8);
       r.forEach((y, j) => { poser(todo[j], y.st); J.set(cle(todo[j]), y.st); }); J.flush();
@@ -72,8 +74,9 @@ export async function parCombat(o) {
     if (Date.now() - debutS >= budget) break;
     const f = F[fi].f, cle = cleS(fi); k++;
     const t0 = Date.now(), ok1 = [];
-    for (let a = 0; a < T; a += 50000) { const ts = []; for (let t = a; t < Math.min(T, a + 50000); t++) ts.push(t);
+    for (let a = 0; a < T; a += 50000) { const ts = []; for (let t = a; t < Math.min(T, a + 50000); t++) { const v = connu1(t, fi); if (v === 2) ok1.push(t); else if (!v) ts.push(t); }
       const r = await run(ts.map(t => ({ type: 'etoiles', team: equipeDe(t), fights: [f], seeds: [1] })), 256); r.forEach((y, j) => { if (y.st === '3') ok1.push(ts[j]); }); }
+    ok1.sort((x, y) => x - y); // meme ordre qu'avant (trios dans l'ordre), pour garder les memes 20 000 premiers
     const L1 = ok1.slice(0, 20000), r2 = await run(L1.map(t => ({ type: 'etoiles', team: equipeDe(t), fights: [f], seeds: [2, 3] })), 64);
     const L2 = L1.map((t, j) => ({ t, s: 1 + [...r2[j].st].filter(c => c === '3').length })).sort((a, b) => b.s - a.s || a.t - b.t).slice(0, 20);
     const r3 = await run(L2.map(x => ({ type: 'etoiles', team: equipeDe(x.t), fights: [f], seeds: seedsS })), 4);
