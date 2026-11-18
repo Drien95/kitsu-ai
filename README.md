@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.27.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.28.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.28.0 | Écran d'équipe : avec le script privé, le trio de son calcul exact passe devant quand il fait nettement mieux que la simulation publique (calcul fait au 99 : seulement si ses 3 cartes y sont) ; page Campagne : place pour la carte du calcul exact |
 | 5.27.0 | Campagne : environ 40 % de calcul en moins pour les mêmes % de 3★ : la Campagne N/D/E n'est plus jouée que par les finalistes du Cauchemar, et l'étape « meilleur trio par combat » reprend les combats déjà joués pendant la course au lieu de les rejouer |
 | 5.26.0 | Campagne : « Pourquoi la 3★ saute » rejoue les combats sous le seuil avec leurs meilleurs trios et donne la cause (fini après le cycle 8, allié K.O., les deux, défaite), par difficulté et combat par combat ; fait tout seul à la fin du calcul Campagne ou en 15 s depuis l'onglet |
 | 5.25.0 | IA commune publiée depuis le launcher : après chaque entraînement, ton IA est comparée à l'IA commune sur les mêmes combats Cauchemar (test séquentiel) ; « Publier comme IA commune » passe en orange si elle est nettement meilleure ; les calculs partagés prennent l'IA commune du serveur |
