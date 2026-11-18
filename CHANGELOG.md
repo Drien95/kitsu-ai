@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.30.1
+
+Campagne : le meilleur trio de chaque combat de Campagne est de nouveau cherché parmi **tous** les trios.
+
+- Depuis la 5.27, la Campagne Normal, Difficile et Extrême n'est plus jouée par tous les trios pendant la course (seuls les finalistes du Cauchemar la jouent). Un trio écarté par le Cauchemar mais très fort sur un combat de Campagne précis n'avait donc sa chance que si ce combat était sous 60 %.
+- Maintenant, chaque combat de Campagne qui n'est pas à 100 % de 3★ chez les candidats passe par les spécialistes : tous les trios le jouent seul (1 tirage, puis 2 de plus pour ceux qui font 3★, puis 6 de plus pour les 20 meilleurs). Cette recherche ne compte pas dans le budget des spécialistes, qui reste pour le Cauchemar. Le Cauchemar ne change pas : il était déjà joué par tous les trios.
+- Coût : au plus ce que la course faisait avant la 5.27 sur la Campagne, et seulement sur les combats qui ne sont pas déjà à 100 %.
+
 ## 5.30.0
 
 IA par trio : des réglages propres aux trios que tu joues vraiment en Cauchemar.
