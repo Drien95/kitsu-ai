@@ -19,6 +19,7 @@ import * as PARTAGE from './lib/partage.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal } from './lib/journal.mjs';
 import { cleTrioDe } from './lib/partage-format.mjs';
+import { construireWC } from './lib/ia-commune.mjs';
 import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
 
@@ -35,8 +36,11 @@ const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // Partage des calculs (Reglages > Partage, coupe par defaut) : seulement avec les reglages standard du calcul,
 // et toujours avec l'IA commune (poids-communs.json), sinon les resultats ne se recoupent pas d'un PC a l'autre.
 const PART = PARTAGE.reglagesPartage();
-const PARTAGE_OK = !arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier) && !!WC && (PAQ === 16 && !arg('max-combats') && !arg('max-trios') || !!arg('partage-test'));
-const WA = PARTAGE_OK ? WC : WA_PC;
+// IA commune : celle publiee sur le serveur (cache si pas d'internet), sinon celle livree avec l'appli.
+const PART_ON = !arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier);
+const IAC = PART_ON ? await PARTAGE.iaCommune(PART) : null, WCX = IAC ? construireWC(IAC.p) : WC;
+const PARTAGE_OK = PART_ON && !!WCX && (PAQ === 16 && !arg('max-combats') && !arg('max-trios') || !!arg('partage-test'));
+const WA = PARTAGE_OK ? WCX : WA_PC;
 const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r)).sort((a, b) => a - b);
 if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la sauvegarde exportee.'); process.exit(1); }
 
@@ -127,7 +131,7 @@ async function tour(alive, pi, seed) {
 const eveil = garderEveille(), T0 = Date.now(); let dernierLog = Date.now();
 log(`moteur ${version} (signature combat ${sigG}), ${IDS.length} cartes, ${T} trios, niveaux ${NIV === '99' ? '99' : 'actuels'}, combats ${NCOMB.join(' / ')} (${DIFF.map(d => d[0]).join(' / ')}), ${pool.n} fils, journal ${J.taille()} paquets${eveil.ok ? ', PC garde eveille' : ''}`);
 if (PARTAGE_OK) {
-  log(`partage : IA commune${JSON.stringify(WC) === JSON.stringify(WA_PC) ? ' (la tienne)' : ' (differente de la tienne pour ce calcul)'}, ${PART.utiliser ? 'base utilisee' : 'base non utilisee'}, ${PART.envoyer ? 'envoi actif' : 'pas d envoi'}`);
+  log(`partage : IA commune ${IAC ? (IAC.source === 'serveur' ? 'du serveur' : 'du serveur (copie locale)') : 'livree avec l appli'}${JSON.stringify(WCX) === JSON.stringify(WA_PC) ? ' (la tienne)' : ' (differente de la tienne pour ce calcul)'}, ${PART.utiliser ? 'base utilisee' : 'base non utilisee'}, ${PART.envoyer ? 'envoi actif' : 'pas d envoi'}`);
   try { const n = await PARTAGE.viderFile(PART, log); if (n) log(`partage : ${n} lots en attente envoyes`); } catch (e) { log('partage : envoi impossible (' + e.message + ')'); }
   if (PART.utiliser) try {
     const mien = new Map(IDS.map(id => [id, cleCarte(id)]));
@@ -135,7 +139,7 @@ if (PARTAGE_OK) {
       onLigne: x => { if (paquets[x.di]?.[x.pi]?.cle !== x.clePaquet) return; const k = cle(x.di, x.pi, x.graine, x.ck); if (!J.get(k)) { J.set(k, x.n + ',' + x.s3); recus++; } } });
     J.flush(); log(`partage : ${recus} resultats ajoutes au journal depuis la base commune`);
   } catch (e) { PARTAGE.noter('erreur', { quoi: 'base injoignable au debut du calcul' }); log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
-} else if (!arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier)) log(`partage : coupe pour ce calcul (${!WC ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
+} else if (PART_ON) log(`partage : coupe pour ce calcul (${!WCX ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
 let alive = [...Array(T).keys()]; const entonnoir = [];
 for (let pi = 0; pi < TOURS; pi++) {
   await tour(alive, pi, 1);

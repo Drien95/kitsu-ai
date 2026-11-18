@@ -11,10 +11,11 @@
 //   POST /v1/missions/<id>              rendre un controle : { ecarts } ou { invalide: true } ou { incompatible: true }
 //   GET  /v1/moi                        etat de mon ID ; DELETE /v1/moi : supprimer tous mes envois
 //   GET  /v1/etat                       chiffres publics de la base
+//   GET  /v1/ia                         IA commune en service ({ W, equipes, version, t }), publiee par le PC validateur
 // Stockage : tout dans D1 (offre gratuite, sans moyen de paiement). Chaque lot compresse est une ligne de la table `blocs`
 // (D1 limite une ligne a 2 Mo : un lot fait au plus 1,9 Mo compresse).
 // Admin (jeton secret ADMIN_JETON, seulement sur le PC d'Adrien) : X-Kitsu-Admin sur /v1/missions, POST /v1/admin/bannir,
-// GET /v1/admin/a-regrouper et POST /v1/admin/paquets (regroupe les lots verifies d'un meme joueur en gros paquets :
+// POST /v1/admin/ia (publier l'IA commune), GET /v1/admin/a-regrouper et POST /v1/admin/paquets (regroupe les lots verifies d'un meme joueur en gros paquets :
 // moins de fichiers a telecharger et une liste des lots plus courte).
 import { tirerIndices, VERSION_SERVEUR } from '../../moteur/lib/partage-format.mjs';
 
@@ -212,6 +213,20 @@ async function moi(env, req, supprimer) {
   return json({ ok: true, supprime: n });
 }
 
+// IA commune : stockee telle que publiee (le PC qui la lit la verifie champ par champ, rien n'est execute).
+async function ia(env) {
+  const r = await env.DB.prepare('SELECT data, t FROM ia ORDER BY id DESC LIMIT 1').first();
+  if (!r) return err(404, 'pas encore d IA commune publiee : celle livree avec l appli sert');
+  return new Response(r.data, { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=300', ...CORS } });
+}
+async function publierIA(env, req) {
+  let o; try { o = JSON.parse(new TextDecoder().decode(await lireCorps(req, 2e5))); } catch { return err(400, 'corps'); }
+  if (!o?.W?.nm || !Array.isArray(o.W.nm)) return err(400, 'IA invalide');
+  const t = Date.now(), data = JSON.stringify({ ...o, t });
+  await env.DB.prepare('INSERT INTO ia (data, t) VALUES (?, ?)').bind(data, t).run();
+  return json({ ok: true, t });
+}
+
 async function etat(env) {
   const r = await env.DB.prepare('SELECT statut, COUNT(*) AS lots, SUM(lignes) AS lignes FROM lots WHERE statut != \'regroupe\' GROUP BY statut').all();
   const j = await env.DB.prepare('SELECT COUNT(DISTINCT joueur) AS n FROM lots WHERE statut IN (\'attente\', \'conteste\', \'verifie\')').first(); // IDs qui ont envoye, pas ceux qui ont juste allume le partage
@@ -230,10 +245,12 @@ export default {
       if (p.startsWith('/v1/missions/') && m === 'POST') return await rendreMission(env, req, p.slice(13));
       if (p === '/v1/moi' && (m === 'GET' || m === 'DELETE')) return await moi(env, req, m === 'DELETE');
       if (p === '/v1/etat' && m === 'GET') return await etat(env);
+      if (p === '/v1/ia' && m === 'GET') return await ia(env);
       if (p.startsWith('/v1/admin/')) {
         if (!estAdmin(env, req)) return err(403, 'admin');
         if (p === '/v1/admin/a-regrouper' && m === 'GET') return await aRegrouper(env);
         if (p === '/v1/admin/paquets' && m === 'POST') return await envoyerPaquet(env, req);
+        if (p === '/v1/admin/ia' && m === 'POST') return await publierIA(env, req);
         if (p === '/v1/admin/bannir' && m === 'POST') {
           const { joueur: jid } = await lireJson(req); if (!/^[0-9a-f]{32}$/.test(jid || '')) return err(400, 'id');
           await ecarter(env, jid); return json({ ok: true });

@@ -19,7 +19,7 @@ La liste des lots donne les cartes de chaque lot : ton PC ne télécharge que ce
 
 ## IA commune
 
-Les calculs partagés jouent tous avec la même IA (`moteur/poids-communs.json`, publiée avec la version). Ton IA à toi reste la tienne pour tous tes conseils. Une nouvelle IA commune n'est publiée que si elle bat nettement l'ancienne.
+Les calculs partagés jouent tous avec la même IA (`moteur/poids-communs.json`, publiée avec la version). Ton IA à toi reste la tienne pour tous tes conseils. Une nouvelle IA commune n'est publiée que si elle bat nettement l'ancienne : après chaque entraînement, le PC du mainteneur la compare à l'IA commune sur les mêmes combats et les mêmes tirages, et ne propose de la publier que si l'écart est net. Elle est alors distribuée par le serveur à tous les calculs partagés. Les résultats calculés avec l'ancienne IA ne se mélangent pas à ceux de la nouvelle.
 
 ## Notice (données personnelles)
 

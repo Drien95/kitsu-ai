@@ -10,7 +10,7 @@
 export const FORMAT = 1;
 // Version du serveur (partage/src) : a monter a chaque changement du serveur. Le launcher du PC validateur compare
 // avec celle que le serveur en ligne annonce et propose « Mettre a jour le serveur » quand elles different.
-export const VERSION_SERVEUR = 3;
+export const VERSION_SERVEUR = 4;
 export const LIMITES = { trios: 60000, paquets: 2000, lignes: 400000, octets: 40e6, graineMax: 3, paq: 16, collectifs: 6 };
 const RE_SIG = /^[0-9a-z]{1,14}$/, RE_TXT = /^[^\u0000-\u001f]{1,64}$/;
 const ent = (x, a, b) => Number.isInteger(x) && x >= a && x <= b;

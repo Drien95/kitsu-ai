@@ -19,6 +19,7 @@ import { planTour, planNaif, finir as finirRaid, sieges as siegesRaid } from './
 import { plan as planXp } from './lib/plan.mjs';
 import * as PARTAGE from './lib/partage.mjs';
 import { VERSION_SERVEUR } from './lib/partage-format.mjs';
+import { construireWC, cleIA } from './lib/ia-commune.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
@@ -146,6 +147,12 @@ async function raidConseil(q) {
   }
   return { err: 'demande inconnue' };
 }
+// IA commune en service et derniere comparaison avec ton IA (cadre validateur).
+async function infoIA() {
+  const c = await PARTAGE.iaCommune(PARTAGE.reglagesPartage()).catch(() => null), W = c ? construireWC(c.p) : construireWC(readJ(path.join(here, 'poids-communs.json')));
+  const cmp = readJ(D('resultats', 'comparaison-ia.json')), poids = readJ(D('data', 'poids.json'));
+  return { ia: { source: c?.source || 'appli', t: c?.p?.t || null, cle: cleIA(W) }, comparaison: cmp ? { ...cmp, aJour: cmp.commune === cleIA(W) && (cmp.poidsT || null) === (poids?.t || null) } : null };
+}
 const logs = []; const say = m => { const l = `[${new Date().toLocaleTimeString('fr-FR')}] ${m}`; logs.push(l); if (logs.length > 300) logs.shift(); console.log(l); };
 // ---------- taches (une a la fois : elles utilisent tout le processeur) ----------
 const ACTIONS = {
@@ -160,6 +167,7 @@ const ACTIONS = {
   tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
   cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes', '--budget-specialistes', String(o.specialistes == null ? 60 : Math.max(0, Math.min(1440, Math.round(+o.specialistes) || 0)))] },
   raid: { nom: 'Raid : meilleur trio', cmd: ['raid.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel', '--tirages', String(Math.max(2, Math.min(40, +o.tirages || 8)))] },
+  comparerIA: { nom: "Comparer ton IA a l'IA commune", cmd: ['comparer-ia.mjs'], admin: true },
   deployerPartage: { nom: 'Mettre a jour le serveur de la base commune', cmd: ['partage-deployer.mjs'], admin: true },
   conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos,marche'] },
 };
@@ -186,7 +194,7 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const A = ACTIONS[action]; if (!A) throw new Error('action inconnue');
   if (A.admin && !PARTAGE.identite().admin) throw new Error('reserve au PC validateur');
   const fils = Math.max(1, NCPU - Math.max(1, reglages().filsReserves)); // des fils restent libres pour le conseil en combat
-  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour', 'cauchemar3', 'tourExact'].includes(action) ? ['--fils', String(fils)] : [])];
+  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour', 'cauchemar3', 'tourExact', 'comparerIA'].includes(action) ? ['--fils', String(fils)] : [])];
   const p = spawn(process.execPath, args, { cwd: here, env: { ...process.env, KITSU_MOTEUR: here } });
   // Priorite « inactive » pour tout calcul (prive compris) : YouTube, le jeu et le conseil en combat passent devant, sans perte quand le PC est libre.
   try { os.setPriority(p.pid, os.constants.priority.PRIORITY_LOW); } catch {}
@@ -305,8 +313,10 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
       if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
       // Base commune (partage des calculs Campagne) : etat de mon ID, supprimer mes envois, changer d'ID. Les interrupteurs passent par /api/reglages.
-      if (u.pathname === '/api/partage') { const reg = PARTAGE.reglagesPartage(), id = PARTAGE.identite(); let base = null, etat = null; try { [base, etat] = await Promise.all([PARTAGE.moi(reg), PARTAGE.etatBase(reg)]); } catch (e) { base = { err: e.message }; } return send(res, 200, { reglages: { utiliser: reg.utiliser, envoyer: reg.envoyer, verifier: reg.verifier, controler: reg.controler }, id: id.id.slice(0, 8), admin: !!id.admin, base, etat, enFile: PARTAGE.enFile(), serveurAttendu: VERSION_SERVEUR, cfJeton: !!(id.admin && readJ(D('data', 'partage.json'))?.cloudflare), journal: PARTAGE.journalPartage().slice(0, 12) }); }
+      if (u.pathname === '/api/partage') { const reg = PARTAGE.reglagesPartage(), id = PARTAGE.identite(); let base = null, etat = null; try { [base, etat] = await Promise.all([PARTAGE.moi(reg), PARTAGE.etatBase(reg)]); } catch (e) { base = { err: e.message }; } return send(res, 200, { reglages: { utiliser: reg.utiliser, envoyer: reg.envoyer, verifier: reg.verifier, controler: reg.controler }, id: id.id.slice(0, 8), admin: !!id.admin, base, etat, enFile: PARTAGE.enFile(), serveurAttendu: VERSION_SERVEUR, cfJeton: !!(id.admin && readJ(D('data', 'partage.json'))?.cloudflare), journal: PARTAGE.journalPartage().slice(0, 12), ...(id.admin ? await infoIA() : {}) }); }
       if (u.pathname === '/api/partage/supprimer' && req.method === 'POST') { try { return send(res, 200, await PARTAGE.supprimerMesEnvois(PARTAGE.reglagesPartage())); } catch (e) { return send(res, 502, { err: e.message }); } }
+      // PC validateur : publier ton IA (data/poids.json) comme IA commune de tous les calculs partages.
+      if (u.pathname === '/api/partage/publier-ia' && req.method === 'POST') { if (!PARTAGE.identite().admin) return send(res, 403, { err: 'reserve au PC validateur' }); const p = readJ(D('data', 'poids.json')); if (!p?.W?.nm) return send(res, 400, { err: 'pas d IA entrainee sur ce PC' }); try { return send(res, 200, await PARTAGE.publierIA(PARTAGE.reglagesPartage(), { W: p.W, equipes: p.equipes || {}, version: p.version || '' })); } catch (e) { return send(res, 502, { err: e.message }); } }
       // PC validateur : jeton d'API Cloudflare pour « Mettre a jour le serveur » (garde dans data/partage.json, jamais renvoye).
       if (u.pathname === '/api/partage/cf-jeton' && req.method === 'POST') { if (!PARTAGE.identite().admin) return send(res, 403, { err: 'reserve au PC validateur' }); const j = String(JSON.parse(await body(req)).jeton || '').trim(); if (j && !/^[A-Za-z0-9_-]{30,200}$/.test(j)) return send(res, 400, { err: 'jeton illisible' }); const f = D('data', 'partage.json'), o = readJ(f) || {}; if (j) o.cloudflare = j; else delete o.cloudflare; writeFileSync(f, JSON.stringify(o, null, 1)); return send(res, 200, { ok: true, enregistre: !!j }); }
       if (u.pathname === '/api/partage/changer-id' && req.method === 'POST') return send(res, 200, { id: PARTAGE.changerIdentite().id.slice(0, 8) });

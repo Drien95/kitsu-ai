@@ -9,6 +9,7 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 import path from 'node:path';
 import { dir as D } from './chemins.mjs';
 import { FORMAT, LIMITES, verifierLot, cleTrioDe, cartesDuLot, decoderCartes, ecarts, fusionner } from './partage-format.mjs';
+import { iaValide } from './ia-commune.mjs';
 
 export const URL_DEFAUT = 'https://kitsu-partage.kitsu-partage-whag.workers.dev';
 const lireJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return null; } };
@@ -170,6 +171,24 @@ export async function regrouper(reg, { log = () => {} } = {}) {
 const FJ = () => D('data', 'partage-journal.json');
 export function noter(type, o = {}) { try { const l = lireJ(FJ()) || []; l.unshift({ t: Date.now(), type, ...o }); mkdirSync(path.dirname(FJ()), { recursive: true }); writeFileSync(FJ(), JSON.stringify(l.slice(0, 40))); } catch {} }
 export const journalPartage = () => lireJ(FJ()) || [];
+// IA commune en service : celle du serveur (gardee en cache pour les calculs sans internet), sinon null (l'appli
+// prend alors poids-communs.json). Renvoie { p, source: 'serveur' | 'cache' }.
+const FIA = () => D('cache', 'partage', 'ia-commune.json');
+export async function iaCommune(reg) {
+  try {
+    const r = await fetch(reg.url.replace(/\/$/, '') + '/v1/ia', { signal: AbortSignal.timeout(15000) });
+    if (r.status === 404) { try { unlinkSync(FIA()); } catch {} return null; }
+    if (r.ok) { const p = iaValide(await r.json()); if (p) { mkdirSync(path.dirname(FIA()), { recursive: true }); writeFileSync(FIA(), JSON.stringify(p)); return { p, source: 'serveur' }; } }
+  } catch {}
+  const c = iaValide(lireJ(FIA())); return c ? { p: c, source: 'cache' } : null;
+}
+// PC validateur seulement : l'IA donnee devient l'IA commune de tous les calculs partages.
+export async function publierIA(reg, p) {
+  const v = iaValide(p); if (!v) throw new Error('IA invalide');
+  const r = await (await appel(reg.url, '/v1/admin/ia', { methode: 'POST', corps: v, admin: identite().admin })).json();
+  mkdirSync(path.dirname(FIA()), { recursive: true }); writeFileSync(FIA(), JSON.stringify({ ...v, t: r.t }));
+  noter('ia', { quoi: 'nouvelle IA commune publiee' }); return r;
+}
 export async function etatBase(reg) { return (await appel(reg.url, '/v1/etat')).json(); }
 // Lots calcules sur ce PC qui attendent d'etre envoyes (pas d'internet, quota du jour).
 export function enFile() { try { return readdirSync(FILE()).filter(f => f.endsWith('.json.gz')).length; } catch { return 0; } }
