@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.33.0
+// @version      5.34.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.33.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.34.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -574,7 +574,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.33.0',
+          __v: '5.34.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -664,29 +664,32 @@
             const trc = lsGet('kitsu_ai_training', null), tr0 = [...(trc?.objectif?.equipe || []), ...(trc?.cartes || []).slice(0, 2).map(c => c.id)].filter(id => S.owned?.[id]);
             const xw0 = xpWeights(), focusT = (trc?.objectif?.equipe || []).filter(id => S.owned?.[id]);
             const tri = trios([...new Set([...pool(6, S), ...tr0])]), seeds = [1, 2, 3, 4];
-            const ev = (f, ids, n = 4) => { let w = 0, s3 = 0; const sds = Array.from({ length: n }, (_, i) => i + 1); for (const sd of sds) { const st = playOut(mk(f.id, ids, sd, S), pol); if (B.outcome(st) === 'win') { w++; if (B.allies(st).every(u => u.alive) && st.cycle <= 8) s3++; } } return { w: w / sds.length, s3: s3 / sds.length }; };
+            // 5.34 : simulations dans le worker (simBatch) et non plus sur le fil du jeu : memes graines, memes equipes, memes resultats.
+            // Mesure du 18/11 : ce plan, relance apres chaque combat et sur la carte, bloquait la page ~10 s par minute de jeu.
+            const evL = async (f, list, n = 4, SS = S) => { const seeds = Array.from({ length: n }, (_, i) => i + 1); const out = await simBatch(list.map(ids => ({ fid: f.id, team: teamOf(ids, SS), seeds })), this.W); return out.map(o => ({ w: o.w / o.n, s3: o.s3 / o.n })); };
+            const ev = async (f, ids, n = 4) => (await evL(f, [ids], n))[0];
             const rows = [];
             for (const f of playable) {
               let best = null;
               // Ton equipe actuelle d'abord : on ne propose de changer que si un autre trio fait nettement mieux.
               const curTeam = (S.pve?.team || []).filter(id => S.owned?.[id]);
-              const curR = curTeam.length === 3 ? ev(f, curTeam) : null;
+              const curR = curTeam.length === 3 ? await ev(f, curTeam) : null;
               // On garde ton equipe seulement si elle fait 3 etoiles au moins aussi souvent que la meilleure
               // (un K.O. = une etoile et un combat a refaire). Sur les boss, on simule 3 fois plus.
               // Equipe cible (cartes a faire progresser) : prise des qu'elle fait aussi 3 etoiles.
-              const focR = focusT.length === 3 && xpScore(focusT, xw0) > xpScore(curTeam, xw0) ? ev(f, focusT, 16) : null;
+              const focR = focusT.length === 3 && xpScore(focusT, xw0) > xpScore(curTeam, xw0) ? await ev(f, focusT, 16) : null;
               if (focR && focR.s3 >= 0.95) best = { t: focusT, ...focR, pourXp: true };
               else if (curR && curR.s3 >= 1 && !f.boss) best = { t: curTeam, ...curR, garder: true };
               else {
                 const xw = xpWeights();
                 // 1er tri rapide (4 simulations), puis les 6 meilleurs sont rejoues 16 fois : une equipe "pour l'XP"
                 // n'est retenue que si elle fait vraiment 3 etoiles (sinon on perd une carte et le combat est a refaire).
-                const quick = tri.map(t => ({ t, ...ev(f, t, f.boss ? 12 : 4) })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || xpScore(b.t, xw) - xpScore(a.t, xw)).slice(0, 6);
-                const sure = quick.map(x => ({ t: x.t, ...ev(f, x.t, 16) }));
+                const quick = (await evL(f, tri, f.boss ? 12 : 4)).map((r, i) => ({ t: tri[i], ...r })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || xpScore(b.t, xw) - xpScore(a.t, xw)).slice(0, 6);
+                const sure = (await evL(f, quick.map(x => x.t), 16)).map((r, i) => ({ t: quick[i].t, ...r }));
                 const s3max = Math.max(...sure.map(x => x.s3));
                 best = sure.filter(x => x.s3 >= s3max - 0.02).sort((a, b) => b.s3 - a.s3 || b.w - a.w || xpScore(b.t, xw) - xpScore(a.t, xw))[0];
                 if (best.s3 >= 0.95) { const xpPick = sure.filter(x => x.s3 >= 0.95).sort((a, b) => xpScore(b.t, xw) - xpScore(a.t, xw) || b.s3 - a.s3)[0]; if (xpPick) best = xpPick; }
-                const curB = curR && f.boss ? ev(f, curTeam, 12) : curR;
+                const curB = curR && f.boss ? await ev(f, curTeam, 12) : curR;
                 if (curB && curB.s3 >= best.s3 - 0.02 && curB.w >= best.w - 0.02 && xpScore(curTeam, xw) >= xpScore(best.t, xw)) best = { t: curTeam, ...curB, garder: true };
               }
               const cur = stars[f.id] || 0;
@@ -715,15 +718,15 @@
             for (const w of G.ALL_WORLDS) for (const f of w.fights) if ((stars[f.id] || 0) > 0) farm.push(f);
             farm.sort((a, b) => G.fightXp(b) / G.fightCost(b) - G.fightXp(a) / G.fightCost(a));
             const topTeams = [...new Set(rows.map(r => r.equipe.join(',')))].map(x => x.split(',').map(Number)).concat(tri).slice(0, 3);
-            const farmFight = farm.find(f => ev(f, topTeams[0]).w >= 1);
-            const ev4 = (f, t, SS) => { let w = 0; for (const sd of seeds) if (B.outcome(playOut(mk(f.id, t, sd, SS || S), pol)) === 'win') w++; return w / seeds.length; };
+            let farmFight; for (const f of farm) if ((await ev(f, topTeams[0])).w >= 1) { farmFight = f; break; }
+            const ev4 = async (f, t, SS) => (await evL(f, [t], seeds.length, SS || S))[0].w;
             if (!reuseWalls) for (const w of G.ALL_WORLDS) {
               let wall = null, idx = 0;
               for (const f of w.fights) {
                 idx++;
                 if ((stars[f.id] || 0) > 0) continue;
                 let best = 0, bt = topTeams[0];
-                for (const t of topTeams) { const r = ev4(f, t); if (r > best) { best = r; bt = t; } if (best >= 0.75) break; }
+                for (const t of topTeams) { const r = await ev4(f, t); if (r > best) { best = r; bt = t; } if (best >= 0.75) break; }
                 if (best < 0.75) { wall = { f, best, idx, t: bt }; break; }
                 if (idx % 10 === 0) await idle();
               }
@@ -732,7 +735,7 @@
               for (const k of [5, 10, 15, 20, 30, 40, 60]) {
                 const S2 = structuredClone(S); S2.lv ||= {};
                 for (const id of wall.t) S2.lv[id] = { l: Math.min(99, lvOf(id) + k), xp: 0 };
-                if (ev4(wall.f, wall.t, S2) >= 0.75) { need = k; break; }
+                if (await ev4(wall.f, wall.t, S2) >= 0.75) { need = k; break; }
               }
               const xp = need ? Math.max(...wall.t.map(id => xpTo(id, need))) : null;
               avenir.push({ monde: w.name || w.id, id: wall.f.id, nom: wall.f.t, boss: !!wall.f.boss, position: `${wall.idx}/${w.fights.length}`, victoire: wall.best, equipe: wall.t, niveauxEnPlus: need, xpParCarte: xp, combatsDeFarm: xp && farmFight ? Math.ceil(xp / G.fightXp(farmFight)) : null, farm: farmFight?.t });
@@ -1191,7 +1194,7 @@
                   const sig = W.f.id + '|' + team.join(',');
                   if (team.length === 3 && guideCheck.sig !== sig) {
                     guideCheck = { sig, ok: null };
-                    setTimeout(() => { let s3 = 0; const S0 = save(); const sds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; for (const sd of sds) { const st0 = playOut(mk(W.f.id, team, sd, S0), smartPol(KitsuAI.W)); if (B.outcome(st0) === 'win' && (isEv || (B.allies(st0).every(u => u.alive) && st0.cycle <= 8))) s3++; } if (guideCheck.sig === sig) guideCheck.ok = s3 / sds.length; }, 0);
+                    simBatch([{ fid: W.f.id, team: teamOf(team, save()), seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }], KitsuAI.W).then(([o]) => { if (guideCheck.sig === sig) guideCheck.ok = (isEv ? o.w : o.s3) / o.n; }).catch(() => {}); // 5.34 : dans le worker
                   }
                   const bestS3 = isEv ? Math.min(0.95, evRow?.victoire || 0) : next && W.f.id === next.id ? next.troisEtoiles : 0;
                   const planT = isEv ? evRow?.equipe : (next && W.f.id === next.id ? next.equipe : null), xwG = xpWeights();
@@ -2003,13 +2006,14 @@
                 // A 3 etoiles egales, on prefere le trio qui fait progresser les cartes a entrainer.
                 // Les 8 premiers sont rejoues 32 fois avant d'etre affiches : 8 simulations ne suffisent pas a dire
                 // qu'une equipe fait 3 etoiles a coup sur.
-                const seeds32 = Array.from({ length: 32 }, (_, i) => i + 1), evalL = ids => { let w = 0, s = 0, s3 = 0; for (const sd of seeds32) { const st = playOut(mk(W.f.id, ids, sd, S), pol); s += score(st); if (B.outcome(st) === 'win') { w++; if (B.allies(st).every(u => u.alive) && st.cycle <= 8) s3++; } } return { w: w / 32, s: s / 32, s3: s3 / 32 }; };
-                const head = res.splice(0, 8).map(r => ({ t: r.t, calc: r.calc, exact: r.exact, ...evalL(r.t) })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
+                const seeds32 = Array.from({ length: 32 }, (_, i) => i + 1), evalLs = async list => (await simBatch(list.map(ids => ({ fid: W.f.id, team: teamOf(ids, S), seeds: seeds32 })), this.W)).map(o => ({ w: o.w / o.n, s: o.s / o.n, s3: o.s3 / o.n })); // 5.34 : dans le worker, memes resultats
+                const head8 = res.splice(0, 8), evH = await evalLs(head8.map(r => r.t)); if (job !== my) return;
+                const head = head8.map((r, i) => ({ t: r.t, calc: r.calc, exact: r.exact, ...evH[i] })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
                 res.unshift(...head);
                 const xw = xpWeights(), near = r => r.s3 >= Math.max(0.95, res[0].s3 - 0.02) && r.w >= res[0].w - 0.02;
                 const top = res.slice(0, 8).filter(near).sort((a, b) => xpScore(b.t, xw) - xpScore(a.t, xw) || b.s3 - a.s3 || b.s - a.s);
                 res.splice(0, 0, ...top.filter((x, i) => i === 0 && x !== res[0]).map(x => { res.splice(res.indexOf(x), 1); return x; }));
-                const cur = team.length === 3 ? evalL(team) : null;
+                const cur = team.length === 3 ? (await evalLs([team]))[0] : null; if (job !== my) return;
                 const tie = top.length;
                 const keep = cur && near(cur);
                 const trainees = res[0].t.filter(id => xw[id]);
