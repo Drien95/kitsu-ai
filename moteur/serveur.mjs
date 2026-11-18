@@ -54,9 +54,16 @@ const planCalcule = async G => {
   return planXp({ G, S, campagne: R('cauchemar3.json'), tour: R('tour.json'), raid: R('raid.json'), conseils: R('conseils-ia.json'), jeu, prive });
 };
 // Le modele vivant (5.28) : instantane apres chaque calcul et a l'ouverture de la page, ajoute seulement si quelque chose a change.
+let MODELE_EN_COURS = null;
 async function noterModele() {
-  const plan = await planCalcule(ENG?.G || null), R = f => readJc(D('resultats', f));
-  return MODELE.noter(MODELE.instantane({ plan: plan.err ? null : plan, campagne: R('cauchemar3.json'), tour: R('tour.json'), raid: R('raid.json'), poids: readJc(D('data', 'poids.json')), t: MODELE.dateResultats() }));
+  if (MODELE.aJour()) return false; // rien n'a change depuis le dernier instantane : pas de plan a recalculer
+  if (MODELE_EN_COURS) return MODELE_EN_COURS;
+  return MODELE_EN_COURS = (async () => {
+    try {
+      const sig = MODELE.signature(), plan = await planCalcule(ENG?.G || null), R = f => readJc(D('resultats', f));
+      return MODELE.noter({ ...MODELE.instantane({ plan: plan.err ? null : plan, campagne: R('cauchemar3.json'), tour: R('tour.json'), raid: R('raid.json'), poids: readJc(D('data', 'poids.json')), t: MODELE.dateResultats() }), sig });
+    } finally { MODELE_EN_COURS = null; }
+  })();
 }
 // ---------- campagne : ce que coutera le calcul des 3 etoiles (affiche avant le lancement) ----------
 // Memes regles que cauchemar3.mjs : cartes SSR/UR/LR possedees, combats de la campagne (sans halloween) par difficulte.
@@ -322,7 +329,8 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
       if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
-      if (u.pathname === '/api/modele') { try { await noterModele(); } catch (e) { say('modele : ' + e.message); } return send(res, 200, { historique: MODELE.historique(), adn: MODELE.adn() }); }
+      // Repond tout de suite avec l'historique ; s'il manque un instantane, il est pris apres la reponse (le panneau redemande ensuite).
+      if (u.pathname === '/api/modele') { const enCours = !MODELE.aJour(); send(res, 200, { historique: MODELE.historique(), adn: MODELE.adn(), enCours }); if (enCours) setImmediate(() => noterModele().catch(e => say('modele : ' + e.message))); return; }
       // Base commune (partage des calculs Campagne) : etat de mon ID, supprimer mes envois, changer d'ID. Les interrupteurs passent par /api/reglages.
       if (u.pathname === '/api/partage') { const reg = PARTAGE.reglagesPartage(), id = PARTAGE.identite(); let base = null, etat = null; try { [base, etat] = await Promise.all([PARTAGE.moi(reg), PARTAGE.etatBase(reg)]); } catch (e) { base = { err: e.message }; } return send(res, 200, { reglages: { utiliser: reg.utiliser, envoyer: reg.envoyer, verifier: reg.verifier, controler: reg.controler }, id: id.id.slice(0, 8), admin: !!id.admin, base, etat, enFile: PARTAGE.enFile(), serveurAttendu: VERSION_SERVEUR, cfJeton: !!(id.admin && readJ(D('data', 'partage.json'))?.cloudflare), journal: PARTAGE.journalPartage().slice(0, 12), ...(id.admin ? await infoIA() : {}) }); }
       if (u.pathname === '/api/partage/supprimer' && req.method === 'POST') { try { return send(res, 200, await PARTAGE.supprimerMesEnvois(PARTAGE.reglagesPartage())); } catch (e) { return send(res, 502, { err: e.message }); } }

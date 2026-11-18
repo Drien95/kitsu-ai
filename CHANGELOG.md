@@ -4,6 +4,12 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.31.1
+
+Onglet « Le modèle » : plus d'attente à l'ouverture, et « Rejouer » explique quand il ne peut rien rejouer.
+
+- **Ouverture immédiate.** `/api/modele` recalculait tout le plan d'XP avant de répondre, même quand rien n'avait changé : 4,2 à 5,1 s mesurées sur un PC avec 75 cartes SSR+ (cauchemar3.json de 4,6 Mo), et le serveur ne répondait à rien d'autre pendant ce temps. Il rend maintenant l'historique tout de suite. Chaque instantané garde l'empreinte (date et taille) des fichiers de `resultats/` et de `poids.json` : tant qu'elle ne change pas, le plan n'est pas recalculé du tout, ni à l'ouverture ni à la fin d'une tâche qui n'écrit pas de résultat (par exemple « Mettre à jour le serveur »). Quand un résultat a changé, l'instantané est pris juste après la réponse et l'onglet se recharge seul quelques secondes plus tard.
+- **Rejouer** : avec un seul instantané, le bouton est grisé et un texte dit que le rejeu marchera après le prochain calcul (avant, le clic ne faisait rien).
 ## 5.31.0
 
 Base commune : ton IA passe devant l'IA commune pour la Campagne quand elle est nettement meilleure.
