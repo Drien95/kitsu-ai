@@ -118,7 +118,7 @@ for (const kind of String(arg('types', 'nm,boss,norm')).split(',').filter(Boolea
 }
 // Entrainement par equipe : des reglages Cauchemar propres a chacune de tes meilleures equipes,
 // gardes seulement s'ils battent les reglages generaux sur ses combats de controle.
-// 5.29 (--trios plan) : les trios du plan du calcul Campagne (cauchemar3.json, etages.plan), chacun sur SES combats Cauchemar
+// 5.30 (--trios plan) : les trios du plan du calcul Campagne (cauchemar3.json, etages.plan), chacun sur SES combats Cauchemar
 // (ceux que le plan lui donne et ceux dont il est le meilleur trio), aux niveaux du calcul ; completes par les autres combats
 // Cauchemar Extreme s'il y en a trop peu de disputes. Sans plan : les meilleures equipes de la derniere analyse, comme avant.
 const NE = +arg('par-equipe', 0), PLAN = arg('trios') === 'plan';
@@ -137,7 +137,7 @@ if (NE > 0 || PLAN) {
     const t = x.ids, key = t.slice().sort((a, b) => a - b).join('-'), nom = t.map(id => (CH[id]?.n || id)).join(' / ');
     const propres = shuffle(x.fights, 3), fl = propres.length >= 40 ? propres : [...propres, ...shuffle(TYPES.nm.fights.filter(f => !propres.includes(f)), 5)];
     const r = await entrainer('nm', [x.team], fl, Math.round(GENS * 0.6), 'equipe ' + nom, propres.length);
-    // 5.29 : verification sur des tirages jamais vus (memes combats, memes graines pour les deux reglages) : gardes si z >= 2.
+    // 5.30 : verification sur des tirages jamais vus (memes combats, memes graines pour les deux reglages) : gardes si z >= 2.
     const v = r && r.fin > r.depart + 0.5 ? await verifier(x.team, r.ho, r.w) : null;
     if (v) log(`equipe ${nom} : verification sur ${v.n} combats jamais joues : ${v.avant} -> ${v.apres} % de 3 etoiles (z = ${v.z})`);
     if (v?.garde) { equipes[key] = { nom, nm: r.w, depart: r.depart, fin: r.fin, verif: v, t: Date.now() }; log(`equipe ${nom} : ${r.depart} -> ${r.fin}, reglages propres gardes`); }
