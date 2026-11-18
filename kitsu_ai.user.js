@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.37.0
+// @version      5.38.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.37.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.38.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.37.0',
+          __v: '5.38.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -2097,8 +2097,9 @@
                 const trainees = res[0].t.filter(id => xw[id]);
                 const xpBetter = keep && xpScore(res[0].t, xw) > xpScore(team, xw);
                 // Un seul verdict en tete : l'equipe a jouer, et pourquoi.
-                // 5.28 : le calcul exact du script prive passe devant quand il fait mieux que la simulation publique (regle prive/public).
-                const exR = res.find(r => r.exact != null && r.exact >= 0.5 && r.exact > r.s3 + 0.1 && r.exact > (keep ? cur.s3 : res[0].s3));
+                // Regle prive/public : le trio du calcul exact du script prive passe devant des qu'il est jouable (ses 3 cartes a ton
+                // niveau, 3 etoiles > 0 en suivant le conseil exact) ; le public n'est qu'un repli. 5.38 : plus de seuil de 10 points.
+                const exR = res.find(r => r.exact != null && r.exact > 0);
                 const pick = exR || (keep && !xpBetter ? { t: team, ...cur } : res[0]);
                 window.__kitsuPick = { fid: W.f.id, t: pick.t.slice(), s3: pick.s3, at: Date.now() };
                 const pickXp = pick.t.filter(id => xw[id]);
