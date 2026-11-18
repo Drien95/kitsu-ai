@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.36.0
+
+Script : un seul cadre en combat avec le script privé (0.25+), comme si les deux scripts n'en faisaient qu'un.
+
+- Le cadre KitsuAI a maintenant une place `#kitsuPriv` en tête de son contenu. Quand le privé conseille un combat (Tour, Campagne, Arène contre les fantômes), il s'y installe : même cadre, même place, même en-tête (liseré et renard bleus, « Privé · Campagne · Exact »). Les onglets et le conseil public sont cachés dessous.
+- L'avis du public et du calcul du PC reste en une ligne dans le conseil du privé ; un clic dessus affiche le conseil public complet sous le privé, dans le même cadre.
+- Quand le privé n'a pas de réponse (calcul exact impossible), sa note reste en tête du cadre et le conseil public reprend juste dessous.
+- Avant (5.32 à 5.34), le cadre public était caché ou replié pendant que le privé gardait son propre cadre ailleurs : deux cadres dès qu'un des deux réapparaissait.
+- Sans script privé, ou avec un privé plus ancien : comportement de la 5.34.
 ## 5.35.0
 
 Conseiller en combat sans à-coups : son calcul de chaque tour tourne dans le worker, plus sur le fil du jeu.

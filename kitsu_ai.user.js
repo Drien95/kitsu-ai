@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.35.0
+// @version      5.36.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.35.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.36.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -624,7 +624,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.35.0',
+          __v: '5.36.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1037,12 +1037,17 @@
               + '.kd-tab{position:relative;font:600 11px/1.3 system-ui,sans-serif;color:#9199a6;padding:6px 5px 5px;cursor:pointer}.kd-tab.on{color:#f2ede6}.kd-tab.on::after{content:"";position:absolute;left:5px;right:5px;bottom:-1px;height:2px;background:#ff7a2f}.kd-tab.rel::before{content:"";position:absolute;top:4px;right:1px;width:5px;height:5px;border-radius:50%;background:#2fd27a}'
               + '#kitsuDockBody{padding:9px 12px 10px 13px;max-height:62vh;overflow:auto}#kitsuDock.min #kitsuDockBody,#kitsuDock.min #kitsuDockTabs{display:none}'
               // 5.19 : conseil exact du script prive en cours -> le dock se replie sur une ligne (clic sur la ligne : tout voir).
-              + 'html[data-kar-avis] #kitsuDock:not([data-voir]){display:none!important}#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
+              // 5.36 : cadre unique. Le script prive (0.25+) installe son conseil dans #kitsuPriv, en tete du dock : un seul cadre,
+              // liseré bleu. Le conseil public (#kitsuAdv) est cache dessous ; un clic sur les lignes d'avis du prive l'affiche.
+              + 'html[data-kar-avis] #kitsuDock:not(.priv):not([data-voir]){display:none!important}#kitsuPriv:empty{display:none}#kitsuDock.priv{box-shadow:inset 3px 0 0 #4fa8ff}#kitsuDock.priv #kitsuDockHead svg path:first-child{fill:#4fa8ff}#kitsuDock.priv #kitsuDockHead .kd-b em{color:#4fa8ff}'
+              + '#kitsuDock.priv #kitsuDockTabs,#kitsuDock.priv:not([data-voir]) #kitsuAdv,#kitsuDock.priv #kitsuGoal{display:none!important}#kitsuDock.priv.min #kitsuDockBody{display:block}#kitsuDock.priv #kitsuDockCtx{color:#4fa8ff}'
+              + '#kitsuDock.priv[data-voir] #kitsuAdv{display:block!important;margin-top:8px;padding-top:8px;border-top:1px solid #1c1f27}'
+              + '#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
               + '#kitsuDock .kitsu-panel{position:static!important;transform:none!important;max-width:none!important;min-width:0!important;border:none!important;background:none!important;padding:0!important;box-shadow:none!important;pointer-events:auto!important}'
               + tabs.map(([k, , id]) => `#kitsuDock:not([data-tab="${k}"]) #${id}{display:none!important}`).join('');
             document.head.appendChild(css);
             const d = document.createElement('div'); d.id = 'kitsuDock';
-            d.innerHTML = `<div id="kitsuDockHead"><svg viewBox="0 0 16 16"><path d="M1 2l4.2 3.4h5.6L15 2l-1.4 7L8 14.5 2.4 9z" fill="#ff7a2f"/><path d="M5.3 8.2l1.6.9M10.7 8.2l-1.6.9" stroke="#0c0e13" stroke-width="1.3" stroke-linecap="round"/></svg><span class="kd-b">Kitsu<em>AI</em></span><span id="kitsuDockCtx"></span><span id="kitsuDockPc">PC</span><span id="kitsuDockMin" title="Alt+K">–</span></div><div id="kitsuDockTabs">${tabs.map(([k, n]) => `<span class="kd-tab" data-kd="${k}">${n}</span>`).join('')}</div><div id="kitsuDockBody"></div>`;
+            d.innerHTML = `<div id="kitsuDockHead"><svg viewBox="0 0 16 16"><path d="M1 2l4.2 3.4h5.6L15 2l-1.4 7L8 14.5 2.4 9z" fill="#ff7a2f"/><path d="M5.3 8.2l1.6.9M10.7 8.2l-1.6.9" stroke="#0c0e13" stroke-width="1.3" stroke-linecap="round"/></svg><span class="kd-b">Kitsu<em>AI</em></span><span id="kitsuDockCtx"></span><span id="kitsuDockPc">PC</span><span id="kitsuDockMin" title="Alt+K">–</span></div><div id="kitsuDockTabs">${tabs.map(([k, n]) => `<span class="kd-tab" data-kd="${k}">${n}</span>`).join('')}</div><div id="kitsuDockBody"><div id="kitsuPriv"></div></div>`;
             document.body.appendChild(d);
             const pos = lsGet('kitsu_ai_dock', { right: 12, top: 110, min: false });
             const place = p => { d.style.top = p.top + 'px'; d.style.right = p.right + 'px'; d.classList.toggle('min', !!p.min); const m = d.querySelector('#kitsuDockMin'); if (m) m.textContent = p.min ? '+' : '–'; };
@@ -1072,10 +1077,15 @@
               d.querySelectorAll('.kd-tab').forEach(t => { t.classList.toggle('rel', rel[t.dataset.kd]); t.classList.toggle('on', d.dataset.tab === t.dataset.kd); });
               if (Date.now() - override > 30000) { const auto = ['adv', 'team', 'pull', 'road', 'plan'].find(k => rel[k]) || d.dataset.tab || 'plan'; d.dataset.tab = auto; }
               // 5.19 : ligne de contexte (onglet ouvert, ou conseil public replie quand le script prive donne un coup exact). Reecrite seulement si elle change.
-              const kc = document.documentElement.dataset.karCoup, exact = kc != null && d.dataset.tab === 'adv';
-              if (kc == null && d.dataset.voir) delete d.dataset.voir;
+              // 5.36 : le prive a installe son conseil dans le dock : onglet Combat, pas de repli « exact », contexte du prive.
+              const privEl = d.querySelector('#kitsuPriv'), priv = !!privEl?.firstElementChild && privEl.firstElementChild.style.display !== 'none' && document.documentElement.dataset.karAvis != null;
+              if (d.classList.contains('priv') !== priv) d.classList.toggle('priv', priv);
+              if (priv && d.dataset.tab !== 'adv') d.dataset.tab = 'adv';
+              const kc = priv ? null : document.documentElement.dataset.karCoup, exact = kc != null && d.dataset.tab === 'adv';
+              if (kc == null && !priv && d.dataset.voir) delete d.dataset.voir;
               if (d.classList.contains('exact') !== exact) d.classList.toggle('exact', exact);
               let ctx = '· ' + (tabs.find(t => t[0] === d.dataset.tab)?.[1] || '');
+              if (priv) ctx = '· ' + String(privEl.firstElementChild.dataset.ctx || 'Privé').replace(/[&<>"]/g, '');
               if (exact) { const c = window.__kitsuCoup, same = !!c && c.kind + '|' + (c.tgt || '') === kc; ctx = !kc || !c ? '· Public · conseil exact du privé' : `· Public · ${c.label}<span class="k-chip ${same ? 'ok' : 'warn'}">${same ? '=' : '≠'}</span>`; }
               if (ctxEl._v !== ctx) { ctxEl._v = ctx; ctxEl.innerHTML = ctx; }
               const pcOn = !!localPC.ok; if (pcEl._v !== pcOn) { pcEl._v = pcOn; pcEl.classList.toggle('on', pcOn); pcEl.title = pcOn ? 'Moteur du PC connecté' : 'Moteur du PC absent'; }
