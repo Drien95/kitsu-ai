@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.34.0
+// @version      5.35.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.34.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.35.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -193,12 +193,18 @@
       const hasBoss = ${hasBoss.toString()};
       const smartPol = ${smartPol.toString()};
       const playOut = ${playOut.toString()};
+      const clone = ${clone.toString()};
+      const evalLive = ${evalLive.toString()};
+      // 5.35 : le lot cede la main toutes les ~15 ms pour qu'un conseil en combat (live) passe devant au lieu d'attendre la fin du lot.
+      const pause = () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = r; c.port2.postMessage(0); });
       self.onmessage = async e => {
         const d = e.data;
         try {
           if (d.init) { const m = await import(d.init); G = m.g; ${B0} B = NS; postMessage({ id: d.id, ok: true }); return; }
-          const pol = smartPol(d.W), out = [];
+          if (d.live) { const res = evalLive(d.live.st, d.live.key, smartPol(d.W)); postMessage({ id: d.id, ok: true, out: res.map(r => ({ kind: r.c.kind, tgt: r.c.target?.key ?? null, n: r.n, v: r.v, w: r.w, s3n: r.s3n, mean: r.mean, win: r.win })) }); return; }
+          const pol = smartPol(d.W), out = []; let tP = performance.now();
           for (const j of d.jobs) {
+            if (performance.now() - tP > 15) { await pause(); tP = performance.now(); }
             let w = 0, s3 = 0, sc = 0;
             for (const sd of j.seeds) {
               const f = G.findFight(j.fid); const st = playOut(G.setupBattle(f, j.team, sd).st, pol);
@@ -314,6 +320,26 @@
           }
           res.forEach(r => { r.mean = r.v / r.n; r.win = r.w / r.n; });
           return res.sort((a, b) => b.mean - a.mean);
+        };
+
+        // 5.35 : le conseil en combat tourne dans le worker (meme fonction evalLive, meme budget de 60 ms, memes politiques).
+        // La page ne fait plus que copier l'etat du combat et relire le classement. Repli sur le fil du jeu si le worker
+        // n'est pas pret (il est lance en fond pour le tour suivant) ou ne repond pas en 3 s.
+        const evalLiveA = async (st, key, W) => {
+          const t0 = performance.now(), u0 = st.units.find(x => x.key === key);
+          const sync = () => { const t = performance.now(), r = evalLive(st, key, smartPol(W)); perfAdd('evalLive', performance.now() - t); return r; };
+          if (!worker) { if (worker === null) getWorker().catch(() => {}); return sync(); }
+          const w = worker, id = ++wSeq; wBusy++; wUse = Date.now();
+          let msg; try { msg = { id, W, live: { st: clone(st), key } }; } catch { wBusy--; return sync(); }
+          const p = new Promise(res => { wWait[id] = res; setTimeout(() => { if (wWait[id]) { delete wWait[id]; res({ ok: false, err: 'delai' }); } }, 3000); });
+          w.postMessage(msg); perfAdd('evalLive', performance.now() - t0);
+          let r; try { r = await p; } finally { wBusy--; wUse = Date.now(); }
+          perfAdd('evalLive:aller-retour', performance.now() - t0);
+          if (!r.ok) { health.err('conseil worker : ' + r.err); return sync(); }
+          const t1 = performance.now(), cl = cands(st, u0);
+          const res = r.out.map(o => ({ ...o, c: cl.find(c => c.kind === o.kind && (c.target?.key ?? null) === o.tgt) })).filter(o => o.c);
+          perfAdd('evalLive', performance.now() - t1);
+          return res.length ? res : sync();
         };
 
         // Pourquoi ce coup : traduit en clair les criteres qui ont le plus pese.
@@ -598,7 +624,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.34.0',
+          __v: '5.35.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1797,44 +1823,47 @@
                 const sig = a.key + '|' + (T.actions?.length || 0) + '|' + st.elapsed;
                 if (sig === last) return; last = sig;
                 if (T.tower) st.__tower = 1;
-                const tEv = performance.now(), res = evalLive(st, a.key, smartPol(this.W)); perfAdd('evalLive', performance.now() - tEv);
-                logDecision(T, res);
-                const b0 = res[0].c, m0 = mv(a, b0.kind);
-                cur = { me: a.key, kind: b0.kind, tgt: b0.target?.key, all: b0.kind !== 'rest' && b0.kind !== 'basic' && !b0.target && B.kitRole(a, b0.kind).aoe > 0, label: m0.name };
-                // 5.32 : avis du public et du calcul du PC pour le script prive (un seul cadre quand il a le coup exact). Lecture seule.
-                window.__kitsuAvis = { sig, me: a.key, pub: { kind: b0.kind, tgt: b0.target?.key ?? null, label: m0.name, cible: b0.target?.name || null }, pc: localPC.ok ? { etat: 'attente' } : null };
-                const nm = c => mv(a, c.kind).name + (c.target ? ' sur ' + c.target.name : '');
-                const decisive = res.length > 1 && res[0].win - res[1].win >= 0.15;
-                const charging = B.foes(st, a).filter(e => e.charging).map(e => e.name);
-                const pct = r => Math.round(calibrate(r.win) * 100);
-                box.innerHTML = `<div class="k-who"><b>${a.name}</b> joue</div><div class="k-move">${m0.name}${b0.target ? ` <i>→ ${b0.target.name}</i>` : ''}</div>`
-                  + `<div class="k-chips">${decisive ? '<span class="k-chip hot">Coup décisif</span>' : ''}<span class="k-chip acc">${TAG[b0.kind]} · ${COSTS[b0.kind] ? COSTS[b0.kind] + ' END' : 'gratuit'}</span>${charging.length ? `<span class="k-chip warn">${charging.join(', ')} charge !</span>` : ''}</div>`
-                  + `<div class="k-why">${why(st, a, b0, res)}</div><div class="k-desc">${m0.desc}</div>`
-                  + '<div class="k-sec"><span>Coups classés</span><span>victoire</span></div>'
-                  + res.slice(0, 4).map((r, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${nm(r.c)}</span><span class="p">${pct(r)} %<small>(${r.n})</small></span><span class="k-bar"><b style="width:${pct(r)}%"></b></span></div>`).join('')
-                  + `<div class="k-foot"><span>Endurance <b>${st.end}</b></span><span>Énergie <b>${a.energy ?? 0}/100</b></span><span>IA <b>${modeName(st)}</b></span></div>`;
-                // Anticipation poussee sur le PC (serveur local) : objectif 2 etoiles, puis 3 (en Tour : victoire puis PV gardes). Remplace le conseil s'il est meilleur.
-                if (Date.now() - localPC.t > 30000) localPing();
-                if (localPC.ok) {
-                  const mySig = sig, cl = cands(st, a), { rng, ...rest } = st;
-                  (box.querySelector('.k-desc') || box.firstElementChild)?.insertAdjacentHTML('afterend', '<div id="kitsuPC" class="k-pc"><div class="t">Calcul du PC<span>en cours...</span></div></div>');
-                  localAsk('/conseil', { dom: domFile(), st: JSON.stringify(rest), key: a.key, cands: cl.map(c => ({ kind: c.kind, tgt: c.target?.key })), W: this.W, budget: 700 }, 5000).then(r => {
-                    const el = document.getElementById('kitsuPC');
-                    if (last !== mySig) return;
-                    const av = window.__kitsuAvis?.sig === mySig ? window.__kitsuAvis : null;
-                    if (!r || r.err || !r.res?.length) { if (av) av.pc = { etat: 'erreur' }; if (r?.err === 'version') { localPC.ok = false; localPC.msg = 'moteur du PC pas a jour : relance serveur.bat'; } if (el) el.innerHTML = '<div class="t" style="color:#9199a6">Calcul du PC<span>' + (r?.err === 'version' ? 'moteur pas à jour (relance serveur.bat)' : 'pas de réponse') + '</span></div>'; return; }
-                    // Le PC ne remplace le conseil que s'il trouve STRICTEMENT mieux : a egalite (combat gagne a 3 etoiles quel que
-                    // soit le coup, ou perdu quoi qu'on fasse), son classement garderait le premier coup de la liste, le repos.
-                    const pcB0 = r.res.find(x => x.kind === b0.kind && (x.tgt ?? null) === (b0.target?.key ?? null));
-                    const b = pcB0 && r.res[0].v - pcB0.v < 0.03 ? pcB0 : r.res[0], c1 = cl.find(c => c.kind === b.kind && (c.target?.key ?? null) === (b.tgt ?? null)); if (!c1) return;
-                    const changed = c1.kind !== b0.kind || (c1.target?.key ?? null) !== (b0.target?.key ?? null);
-                    if (av) av.pc = { etat: changed ? 'change' : 'confirme', kind: c1.kind, tgt: c1.target?.key ?? null, label: mv(a, c1.kind).name, cible: c1.target?.name || null, s2: b.s2, s3: b.s3, win: b.win, hp: b.hp ?? null, tour: !!T.tower, sims: r.sims, ms: r.ms };
-                    cur = { me: a.key, kind: c1.kind, tgt: c1.target?.key, all: c1.kind !== 'rest' && c1.kind !== 'basic' && !c1.target && B.kitRole(a, c1.kind).aoe > 0, label: mv(a, c1.kind).name };
-                    if (el) el.outerHTML = `<div id="kitsuPC" class="k-pc${changed ? ' chg' : ''}"><div class="t">Calcul du PC · ${changed ? 'change le conseil' : 'confirme'}<span>${r.sims} suites · ${r.ms} ms</span></div><b>${nm(c1)}</b> · ${T.tower && b.hp != null ? `victoire <b class="k-gold">${Math.round(b.win * 100)} %</b> · PV gardés ${Math.round(100 * b.hp / Math.max(0.01, b.win))} %` : `2+ étoiles <b class="k-gold">${Math.round(b.s2 * 100)} %</b> · 3 étoiles <b class="k-gold">${Math.round(b.s3 * 100)} %</b>`}${r.res[1] ? `<br><span class="k-mute">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
-                    // 5.19 : le coup affiche en grand suit le conseil du PC quand il le change (comme les contours).
-                    if (changed) { const mvEl = box.querySelector('.k-move'); if (mvEl) mvEl.innerHTML = `${mv(a, c1.kind).name}${c1.target ? ` <i>→ ${c1.target.name}</i>` : ''}`; }
-                  });
-                }
+                cur = null; // le classement arrive du worker en quelques dizaines de ms : pas d'ancien contour sur le nouveau personnage
+                evalLiveA(st, a.key, this.W).then(res => { try {
+                  if (last !== sig) return;
+                  logDecision(T, res);
+                  const b0 = res[0].c, m0 = mv(a, b0.kind);
+                  cur = { me: a.key, kind: b0.kind, tgt: b0.target?.key, all: b0.kind !== 'rest' && b0.kind !== 'basic' && !b0.target && B.kitRole(a, b0.kind).aoe > 0, label: m0.name };
+                  // 5.32 : avis du public et du calcul du PC pour le script prive (un seul cadre quand il a le coup exact). Lecture seule.
+                  window.__kitsuAvis = { sig, me: a.key, pub: { kind: b0.kind, tgt: b0.target?.key ?? null, label: m0.name, cible: b0.target?.name || null }, pc: localPC.ok ? { etat: 'attente' } : null };
+                  const nm = c => mv(a, c.kind).name + (c.target ? ' sur ' + c.target.name : '');
+                  const decisive = res.length > 1 && res[0].win - res[1].win >= 0.15;
+                  const charging = B.foes(st, a).filter(e => e.charging).map(e => e.name);
+                  const pct = r => Math.round(calibrate(r.win) * 100);
+                  box.innerHTML = `<div class="k-who"><b>${a.name}</b> joue</div><div class="k-move">${m0.name}${b0.target ? ` <i>→ ${b0.target.name}</i>` : ''}</div>`
+                    + `<div class="k-chips">${decisive ? '<span class="k-chip hot">Coup décisif</span>' : ''}<span class="k-chip acc">${TAG[b0.kind]} · ${COSTS[b0.kind] ? COSTS[b0.kind] + ' END' : 'gratuit'}</span>${charging.length ? `<span class="k-chip warn">${charging.join(', ')} charge !</span>` : ''}</div>`
+                    + `<div class="k-why">${why(st, a, b0, res)}</div><div class="k-desc">${m0.desc}</div>`
+                    + '<div class="k-sec"><span>Coups classés</span><span>victoire</span></div>'
+                    + res.slice(0, 4).map((r, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${nm(r.c)}</span><span class="p">${pct(r)} %<small>(${r.n})</small></span><span class="k-bar"><b style="width:${pct(r)}%"></b></span></div>`).join('')
+                    + `<div class="k-foot"><span>Endurance <b>${st.end}</b></span><span>Énergie <b>${a.energy ?? 0}/100</b></span><span>IA <b>${modeName(st)}</b></span></div>`;
+                  // Anticipation poussee sur le PC (serveur local) : objectif 2 etoiles, puis 3 (en Tour : victoire puis PV gardes). Remplace le conseil s'il est meilleur.
+                  if (Date.now() - localPC.t > 30000) localPing();
+                  if (localPC.ok) {
+                    const mySig = sig, cl = cands(st, a), { rng, ...rest } = st;
+                    (box.querySelector('.k-desc') || box.firstElementChild)?.insertAdjacentHTML('afterend', '<div id="kitsuPC" class="k-pc"><div class="t">Calcul du PC<span>en cours...</span></div></div>');
+                    localAsk('/conseil', { dom: domFile(), st: JSON.stringify(rest), key: a.key, cands: cl.map(c => ({ kind: c.kind, tgt: c.target?.key })), W: this.W, budget: 700 }, 5000).then(r => {
+                      const el = document.getElementById('kitsuPC');
+                      if (last !== mySig) return;
+                      const av = window.__kitsuAvis?.sig === mySig ? window.__kitsuAvis : null;
+                      if (!r || r.err || !r.res?.length) { if (av) av.pc = { etat: 'erreur' }; if (r?.err === 'version') { localPC.ok = false; localPC.msg = 'moteur du PC pas a jour : relance serveur.bat'; } if (el) el.innerHTML = '<div class="t" style="color:#9199a6">Calcul du PC<span>' + (r?.err === 'version' ? 'moteur pas à jour (relance serveur.bat)' : 'pas de réponse') + '</span></div>'; return; }
+                      // Le PC ne remplace le conseil que s'il trouve STRICTEMENT mieux : a egalite (combat gagne a 3 etoiles quel que
+                      // soit le coup, ou perdu quoi qu'on fasse), son classement garderait le premier coup de la liste, le repos.
+                      const pcB0 = r.res.find(x => x.kind === b0.kind && (x.tgt ?? null) === (b0.target?.key ?? null));
+                      const b = pcB0 && r.res[0].v - pcB0.v < 0.03 ? pcB0 : r.res[0], c1 = cl.find(c => c.kind === b.kind && (c.target?.key ?? null) === (b.tgt ?? null)); if (!c1) return;
+                      const changed = c1.kind !== b0.kind || (c1.target?.key ?? null) !== (b0.target?.key ?? null);
+                      if (av) av.pc = { etat: changed ? 'change' : 'confirme', kind: c1.kind, tgt: c1.target?.key ?? null, label: mv(a, c1.kind).name, cible: c1.target?.name || null, s2: b.s2, s3: b.s3, win: b.win, hp: b.hp ?? null, tour: !!T.tower, sims: r.sims, ms: r.ms };
+                      cur = { me: a.key, kind: c1.kind, tgt: c1.target?.key, all: c1.kind !== 'rest' && c1.kind !== 'basic' && !c1.target && B.kitRole(a, c1.kind).aoe > 0, label: mv(a, c1.kind).name };
+                      if (el) el.outerHTML = `<div id="kitsuPC" class="k-pc${changed ? ' chg' : ''}"><div class="t">Calcul du PC · ${changed ? 'change le conseil' : 'confirme'}<span>${r.sims} suites · ${r.ms} ms</span></div><b>${nm(c1)}</b> · ${T.tower && b.hp != null ? `victoire <b class="k-gold">${Math.round(b.win * 100)} %</b> · PV gardés ${Math.round(100 * b.hp / Math.max(0.01, b.win))} %` : `2+ étoiles <b class="k-gold">${Math.round(b.s2 * 100)} %</b> · 3 étoiles <b class="k-gold">${Math.round(b.s3 * 100)} %</b>`}${r.res[1] ? `<br><span class="k-mute">ensuite : ${nm(cl.find(c => c.kind === r.res[1].kind && (c.target?.key ?? null) === (r.res[1].tgt ?? null)) || { kind: r.res[1].kind })} (${Math.round(r.res[1].s2 * 100)} %)</span>` : ''}</div>`;
+                      // 5.19 : le coup affiche en grand suit le conseil du PC quand il le change (comme les contours).
+                      if (changed) { const mvEl = box.querySelector('.k-move'); if (mvEl) mvEl.innerHTML = `${mv(a, c1.kind).name}${c1.target ? ` <i>→ ${c1.target.name}</i>` : ''}`; }
+                    });
+                  }
+                } catch (e) { box.textContent = 'Conseiller : ' + e.message; health.err('conseiller : ' + e.message); } });
               } catch (e) { box.textContent = 'Conseiller : ' + e.message; health.err('conseiller : ' + e.message); }
             }, 150);
           },
