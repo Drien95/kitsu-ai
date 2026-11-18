@@ -4,7 +4,9 @@ Cloudflare Worker (offre **gratuite** seulement) : tout est dans D1 (index et lo
 
 Adresse actuelle : `https://kitsu-partage.kitsu-partage-whag.workers.dev` (base D1 `kitsu-partage`).
 
-Pour mettre à jour le serveur après une modification de `partage/` : `cd partage` puis `npx wrangler@4 deploy` (et `npx wrangler@4 d1 execute kitsu-partage --remote --file migration-N.sql` pour chaque migration pas encore passée : `migration-1.sql` en 5.22.2).
+Depuis 5.24.0, le plus simple : launcher, Réglages, cadre du PC validateur, « Mettre à jour le serveur » (fait les étapes ci-dessous). Monter `VERSION_SERVEUR` dans `moteur/lib/partage-format.mjs` à chaque changement de `partage/src`.
+
+À la main, après une modification de `partage/` : `cd partage` puis `npx wrangler@4 deploy` (et `npx wrangler@4 d1 execute kitsu-partage --remote --file migration-N.sql` pour chaque migration pas encore passée : `migration-1.sql` en 5.22.2).
 
 Le serveur ne décompresse jamais un lot (offre gratuite : 10 ms de calcul par requête). Le PC qui envoie décrit le lot dans l'en-tête `X-Kitsu-Meta` ; le PC contrôleur vérifie tout le lot par rapport à cette description et compte lui-même les écarts.
 

@@ -4,6 +4,11 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.24.0
+
+- **Bouton « Mettre à jour le serveur »** (Réglages, cadre du PC validateur, avec confirmation) : `moteur/partage-deployer.mjs` prend le code du serveur (dossier `partage/` du dépôt en mode développeur, sinon celui de la version installée téléchargé depuis GitHub dans un dossier temporaire), passe les migrations D1 qui manquent (retenues dans `data/partage.json`), déploie avec wrangler déjà connecté, vérifie le serveur en ligne puis efface le dossier temporaire. Réservé au PC qui a le jeton admin.
+- **Version du serveur** : `VERSION_SERVEUR` (`lib/partage-format.mjs`, à monter à chaque changement de `partage/src`) est annoncée par `/v1/etat`. Le cadre validateur dit si le serveur en ligne est à jour ; le bouton n'est mis en avant que s'il est plus ancien que l'appli. Ce n'est donc pas une tâche régulière : seulement quand une version change le serveur.
+
 ## 5.23.0
 
 Écran de la base commune dans le launcher (maquette validée le 18/11).
