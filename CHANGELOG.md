@@ -4,6 +4,17 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.29.0
+
+Le modèle vivant : un nouvel onglet (Analyses, « Le modèle ») pour voir ce que ton IA apprend, calcul après calcul.
+
+- **La conquête** : une case par combat Cauchemar Normal, Difficile et Extrême, couleur selon la chance de 3★ du meilleur trio trouvé (or = sûr, orange = souvent, rouge = parfois, gris = jamais). À côté, la Tour (étage du meilleur trio déjà au 99, trait du meilleur possible), l'Arène (si le script privé est installé) et le Raid. Un curseur passe d'un instantané à l'autre, **Rejouer** les enchaîne en 3 secondes.
+- **Le cerveau** : les cartes des meilleurs trios (Campagne, Tour, Raid, Arène en privé) sont des étoiles, reliées quand l'IA les joue ensemble ; la taille dit combien elle s'en sert. Clic sur une carte : avec qui elle joue et depuis quand.
+- **Le journal de bord** : courbe du score modèle parfait et liste de ce qui a changé d'un calcul à l'autre (combats gagnés à 3★, étages, %, nouvelle IA).
+- **L'ADN de l'IA** : les 76 réglages (4 situations × 19 critères) de chaque version gardée dans `data/poids-historique`, ceux qui ont changé entourés.
+- **Tableau de bord** : une mini version (cerveau sans texte, score, courbe) qui mène à l'onglet.
+- **Léger** : rien n'est simulé. Un instantané (~1 Ko, `data/modele-historique.json`, 400 au plus) est pris à la fin de chaque calcul et à l'ouverture de l'onglet, seulement si un résultat a changé ; il reprend le score du plan d'XP et les résultats déjà écrits (`lib/modele.mjs`). Dessin SVG fait une fois, aucune animation continue. L'historique commence à cette version : la courbe se trace à partir du prochain calcul.
+
 ## 5.28.0
 
 Campagne : avec le script privé, le trio choisi par la recherche exacte passe devant (règle « public par défaut, privé quand il a une vraie réponse »).

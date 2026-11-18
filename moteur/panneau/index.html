@@ -314,6 +314,26 @@
   .px-modes .mode .gauge { height: 6px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; margin-top: 8px; } .px-modes .mode .gauge i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc), var(--gold)); }
   .px-verdict { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; } .px-verdict .big { font: 400 34px/1 var(--head); font-style: italic; text-transform: uppercase; }
   @media (max-width: 900px) { .px-gm { grid-template-columns: 1fr 1fr; } .px-modes .mode .w { display: none; } }
+  /* --- le modele vivant (5.28) : SVG dessine une fois, rien ne bouge sans clic sur Rejouer --- */
+  .md-cpt { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); gap: 4px; margin-bottom: 18px; flex-wrap: wrap; }
+  .md-cpt a { padding: 8px 14px; border-radius: 9px; font-weight: 800; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; color: #bdb7ad; cursor: pointer; }
+  .md-cpt a.on { background: linear-gradient(135deg, var(--acc), var(--acc2)); color: #fff; }
+  .md-vz { background: radial-gradient(900px 420px at 50% 40%, rgba(255,122,61,.06), transparent 70%), #090a0f; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .md-vz svg { display: block; width: 100%; height: auto; }
+  .md-ctl { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+  .md-ctl input[type=range] { flex: 1; min-width: 180px; accent-color: var(--acc); }
+  .md-ctl .lab { font: 400 22px var(--head); font-style: italic; text-transform: uppercase; min-width: 200px; }
+  .md-leg { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--mute); margin-top: 10px; }
+  .md-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .md-side { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+  .md-ev > div { padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .md-ev b { display: block; } .md-ev span { color: var(--mute); } .md-ev .pv b { color: #8cc4ff; }
+  .md-adn { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; align-items: center; font-size: 12px; color: var(--mute); margin-top: 8px; }
+  .md-adn .g { display: flex; gap: 1px; height: 22px; } .md-adn .g i { flex: 1; border-radius: 2px; } .md-adn .g i.ch { outline: 1px solid #fff; outline-offset: 1px; }
+  .md-mini { display: flex; gap: 18px; align-items: center; cursor: pointer; } .md-mini svg { flex: 0 0 auto; }
+  .md-mini .v { font: 400 44px/1 var(--head); font-style: italic; } .md-mini .v small { font-size: 20px; color: var(--mute); }
+  @media (max-width: 1100px) { .md-side { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .md-adn { grid-template-columns: 70px 1fr; } .md-mini > svg:first-child { display: none; } }
 </style>
 </head>
 <body>
@@ -333,6 +353,7 @@
     <a href="#event" data-p="event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span>Événements et guilde</span></a>
     <div class="grp">Analyses</div>
     <a href="#calculs" data-p="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Calculs</span></a>
+    <a href="#modele" data-p="modele"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="17" r="2.5"/><path d="M8 7.5l2.8 7.6M16.4 7.4l-3.2 7.8M8 7h8"/></svg><span>Le modèle</span></a>
     <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Cartes et conseils</span></a>
     <div class="grp">Outils</div>
     <a href="#regles" data-p="regles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M8 7h8M8 11h6"/></svg>Règles et effets</a>
@@ -354,6 +375,8 @@
     <h1>Tableau de bord</h1>
     <p class="lead">Où tu en es dans chaque mode, et ce qu'il reste à faire. Rien ne se lance tout seul.</p>
     <div class="grid g3" id="dbModes"></div>
+    <div class="sp"></div>
+    <div class="card md-mini" id="dbModele" onclick="go('modele')" style="display:none"></div>
     <div class="sp"></div>
     <div class="grid g2">
       <div class="card"><h2>À faire</h2><div id="dbTodo"></div></div>
@@ -526,6 +549,39 @@
   </section>
 
   <!-- ===================== CAMPAGNE ===================== -->
+  <!-- ===================== LE MODELE VIVANT ===================== -->
+  <section class="page" id="p-modele">
+    <div class="eyebrow">Analyses · Le modèle</div>
+    <h1>Le modèle vivant</h1>
+    <p class="lead">Ce que ton IA a appris, calcul après calcul. Un instantané est gardé à la fin de chaque calcul (quelques Ko), rien n'est recalculé ici et rien ne bouge tant que tu ne cliques pas sur Rejouer.</p>
+    <div class="md-cpt" id="mdTabs"><a data-c="conquete" class="on">La conquête</a><a data-c="cerveau">Le cerveau</a></div>
+    <div id="mdConquete">
+      <h2>La conquête <span class="r" id="mdScore"></span></h2>
+      <div class="md-vz"><svg id="mdSvg1" viewBox="0 0 1200 500"></svg></div>
+      <div class="md-ctl"><button id="mdPlay1" onclick="mdJouer(1)">▶ Rejouer l'apprentissage</button><input type="range" id="mdR1" min="0" max="0" value="0" oninput="mdSet1(+this.value)"><span class="lab" id="mdL1"></span></div>
+      <div class="md-leg"><span><i style="background:#f7c548"></i>3★ sûr</span><span><i style="background:#ff7a3d"></i>3★ souvent</span><span><i style="background:#ff4b3e"></i>3★ parfois</span><span><i style="background:#2a2d3a"></i>jamais 3★</span><span>Une case = un combat Cauchemar, avec le meilleur trio trouvé (niveau 99)</span></div>
+    </div>
+    <div id="mdCerveau" style="display:none">
+      <h2>Le cerveau <span class="r" id="mdInfo2"></span></h2>
+      <div class="md-side">
+        <div>
+          <div class="md-vz"><svg id="mdSvg2" viewBox="0 0 900 560"></svg></div>
+          <div class="md-ctl"><button onclick="mdJouer(2)">▶ Rejouer l'apprentissage</button><input type="range" id="mdR2" min="0" max="0" value="0" oninput="mdSet2(+this.value)"><span class="lab" id="mdL2"></span></div>
+          <div class="md-leg"><span><i style="background:#ff4b3e"></i>Campagne</span><span><i style="background:#f7c548"></i>Tour</span><span><i style="background:#2fd27a"></i>Raid</span><span><i style="background:#4fa8ff"></i>Arène · privé</span><span>Taille = combien l'IA s'en sert · trait = cartes jouées ensemble</span></div>
+        </div>
+        <div class="card" id="mdFiche" style="padding:16px 18px"></div>
+      </div>
+    </div>
+    <div class="sp"></div>
+    <div class="card">
+      <h2>Le journal de bord <span class="r" id="mdDepuis"></span></h2>
+      <div class="md-side"><div class="md-vz"><svg id="mdSvg3" viewBox="0 0 900 340"></svg></div><div class="md-ev" id="mdEv"></div></div>
+      <div class="sp"></div>
+      <h2 style="font-size:20px">L'ADN de l'IA <span class="r">un trait = un réglage appris · contour blanc = ce qui a changé</span></h2>
+      <div class="md-adn" id="mdAdn"></div>
+    </div>
+  </section>
+
   <section class="page" id="p-campagne">
     <div class="eyebrow">Modes de jeu</div>
     <h1>Campagne</h1>
@@ -822,7 +878,7 @@ async function refresh() {
   // resultats
   hp('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
-  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'raid') rdRender(); if (pa === 'sauvegarde') colRender(); if (pa === 'resultats') planCharger();
+  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'raid') rdRender(); if (pa === 'sauvegarde') colRender(); if (pa === 'resultats') planCharger(); mdMaj();
 }
 let consTab = 'collectifs';
 function renderCons() {
@@ -1489,7 +1545,7 @@ addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.
 campCharger();
 
 // ---------- refonte 5.13 : navigation, fond, mise a jour, tableau de bord, Tour, evenements, collection, fiche, recherche ----------
-const PAGES = { regles: ['Outils', 'Règles et effets'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
+const PAGES = { regles: ['Outils', 'Règles et effets'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], modele: ['Analyses', 'Le modèle'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
 const NAV_DE = { nouveautes: 'journal' };
 const pageAct = () => (location.hash || '#accueil').slice(1);
 function route() {
@@ -1501,7 +1557,7 @@ function route() {
   const t = PAGES[p] || ['', p]; $('crumb').innerHTML = (t[0] ? esc(t[0]) + ' · ' : '') + `<b>${esc(t[1])}</b>`;
   document.body.classList.remove('menu'); vedette(); pageVue(p);
 }
-function pageVue(p) { if (p === 'tour') twRender(); if (p === 'raid') rdRender(); if (p === 'event') evRender(); if (p === 'sauvegarde') { if (!COL.j && !COL.charge) colCharger(); else colRender(); } }
+function pageVue(p) { if (p === 'modele') mdRender(); if (p === 'accueil' && !MD.j) mdCharger(); if (p === 'tour') twRender(); if (p === 'raid') rdRender(); if (p === 'event') evRender(); if (p === 'sauvegarde') { if (!COL.j && !COL.charge) colCharger(); else colRender(); } }
 const menu = () => document.body.classList.toggle('menu');
 function fermer() { document.body.classList.remove('menu'); $('drawer').classList.remove('on'); $('kbar').classList.remove('on'); $('veil').classList.remove('on'); }
 const voile = () => $('veil').classList.add('on');
@@ -1792,6 +1848,194 @@ document.querySelectorAll('i[data-ic]').forEach(i => { i.outerHTML = ic(i.datase
 document.body.classList.toggle('calme', !FXON); $('r_fx').checked = FXON;
 setInterval(() => { if (!E) return; const j = E.job; if (j?.nom === "Tour de l'infini" && j.fin && TW.fin !== j.fin) { const premier = TW.fin === undefined; TW.fin = j.fin; if (!premier || !TW.j) twCharger(); } if (j?.nom === "Import de la sauvegarde") colCharger(); }, 1500);
 twCharger(); rdCharger(); colCharger();
+
+// ---------- le modele vivant (5.28) : conquete, cerveau, journal de bord ----------
+// Donnees : /api/modele (instantanes gardes a la fin de chaque calcul + reglages de chaque version de l'IA).
+// Tout est dessine une fois en SVG ; le seul mouvement est le rejeu (3 s) lance par un clic.
+const MD = { j: null, charge: false, cle: '', vue: 'conquete', g2: null, i1: 0, i2: 0 };
+const MDNS = 'http://www.w3.org/2000/svg';
+const mdEl = (t, a, p) => { const e = document.createElementNS(MDNS, t); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const mdTxt = (p, x, y, t, o = {}) => { const e = mdEl('text', { x, y, fill: o.c || '#8f96a6', 'font-family': o.h ? 'Anton, Impact, sans-serif' : 'Manrope, Segoe UI, sans-serif', 'font-size': o.s || 12, 'font-weight': o.h ? 400 : 700, 'font-style': o.h ? 'italic' : 'normal', 'text-anchor': o.a || 'start' }, p); e.textContent = t; return e; };
+const MDCOL = ['#2a2d3a', '#ff4b3e', '#ff7a3d', '#f7c548'], MDMODE = { c: '#ff4b3e', t: '#f7c548', r: '#2fd27a', a: '#4fa8ff' };
+const MDDIF = [['normal', 'Normal'], ['difficile', 'Difficile'], ['extreme', 'Extrême']];
+const mdDate = t => new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' · ');
+const md3 = (s, d) => (s?.c?.[d] || '').split('').filter(x => x === '3').length;
+async function mdCharger() {
+  if (MD.charge) return; MD.charge = true;
+  try { MD.j = await api('/api/modele'); } catch { MD.j = { historique: [], adn: [] }; }
+  MD.charge = false; MD.g2 = null; MD.i1 = MD.i2 = Math.max(0, MD.j.historique.length - 1);
+  mdMini(); if (pageAct() === 'modele') mdRender();
+}
+// Nouveaux resultats (fin d'un calcul) : on recharge a la prochaine vue.
+function mdMaj() { const k = (E?.resultats || []).map(f => f.f + f.t).join() + (E?.poids?.t || '') + (CARTES ? 'c' : ''); if (k === MD.cle) return; MD.cle = k; MD.j = null; if (pageAct() === 'modele' || pageAct() === 'accueil') mdCharger(); }
+function mdRender() {
+  if (!MD.j) return mdCharger();
+  const H = MD.j.historique;
+  document.querySelectorAll('#mdTabs a').forEach(a => { a.classList.toggle('on', a.dataset.c === MD.vue); a.onclick = () => { MD.vue = a.dataset.c; mdRender(); }; });
+  $('mdConquete').style.display = MD.vue === 'conquete' ? '' : 'none'; $('mdCerveau').style.display = MD.vue === 'cerveau' ? '' : 'none';
+  if (!H.length) { $('mdSvg1').innerHTML = ''; mdTxt($('mdSvg1'), 600, 250, 'Pas encore de résultats : lance un calcul Campagne, Tour ou Raid.', { a: 'middle', s: 16 }); $('mdEv').innerHTML = ''; return; }
+  for (const k of [1, 2]) { const r = $('mdR' + k); r.max = H.length - 1; r.disabled = H.length < 2; }
+  mdDessin1(); mdSet1(MD.i1);
+  if (MD.vue === 'cerveau') { if (!MD.g2) mdDessin2(); mdSet2(MD.i2); }
+  mdJournal(); mdAdn();
+}
+// --- 1. la conquete ---
+function mdDessin1() {
+  const sv = $('mdSvg1'), H = MD.j.historique; sv.innerHTML = '';
+  const last = H[H.length - 1], diffs = MDDIF.filter(([d]) => H.some(s => s.c?.[d]));
+  const cols = 16, cw = 34, ch = 30; let y = 70; MD.cells = [];
+  mdTxt(sv, 30, 44, '/ CAMPAGNE CAUCHEMAR', { h: 1, s: 20, c: '#f4ede3' });
+  for (const [d, nom] of diffs) {
+    const n = Math.max(...H.map(s => (s.c?.[d] || '').length)); MD.cells.push({ d, lab: mdTxt(sv, 30, y + 12, nom.toUpperCase()), r: [] });
+    y += 20;
+    for (let i = 0; i < n; i++) MD.cells[MD.cells.length - 1].r.push(mdEl('rect', { x: 30 + (i % cols) * cw, y: y + Math.floor(i / cols) * ch, width: 28, height: 24, rx: 5, fill: MDCOL[0] }, sv));
+    y += Math.ceil(n / cols) * ch + 18;
+  }
+  if (!diffs.length) mdTxt(sv, 30, 90, 'Lance le calcul Campagne 3★ pour remplir cette carte.', { s: 14 });
+  MD.campLab = mdTxt(sv, 30, Math.max(y + 10, 120), '', { c: '#c9c3b9', s: 13 });
+  // Tour : etage du meilleur trio deja au 99, et trait du meilleur trio possible.
+  const tmax = Math.max(1, ...H.map(s => s.tour?.max || 0)) * 1.1, tx = 640, tb = 460, th = 380;
+  MD.ty = v => tb - v / tmax * th;
+  if (H.some(s => s.tour)) {
+    mdTxt(sv, 620, 44, '/ TOUR', { h: 1, s: 20, c: '#f4ede3' });
+    for (let f = 0; f < 20; f++) mdEl('rect', { x: tx, y: tb - (f + 1) * th / 20 + 2, width: 70, height: th / 20 - 4, rx: 3, fill: '#191b24' }, sv);
+    const g = mdEl('linearGradient', { id: 'mdGT', x1: 0, y1: 1, x2: 0, y2: 0 }, mdEl('defs', {}, sv)); mdEl('stop', { offset: 0, 'stop-color': '#ff4b3e' }, g); mdEl('stop', { offset: 1, 'stop-color': '#f7c548' }, g);
+    MD.tFill = mdEl('rect', { x: tx, y: tb, width: 70, height: 0, rx: 3, fill: 'url(#mdGT)' }, sv);
+    MD.tMax = mdEl('line', { x1: tx - 6, x2: tx + 76, stroke: last.tour?.prive ? '#4fa8ff' : '#c9c3b9', 'stroke-width': 2, 'stroke-dasharray': '5 4' }, sv);
+    MD.tMaxL = mdTxt(sv, tx + 84, 0, '', { c: last.tour?.prive ? '#8cc4ff' : '#8f96a6' });
+    MD.tLab = mdTxt(sv, tx + 84, 0, '', { h: 1, s: 26, c: '#f4ede3' });
+  } else MD.tFill = null;
+  // Arene (prive) et Raid : % du parfait.
+  MD.arc = []; MD.aLab = MD.rBar = null;
+  if (H.some(s => s.m?.arene != null)) {
+    mdTxt(sv, 860, 44, '/ ARÈNE', { h: 1, s: 20, c: '#f4ede3' }); mdTxt(sv, 960, 44, 'PRIVÉ', { c: '#8cc4ff' });
+    const cx = 990, cy = 200, R = 100, n = 24;
+    for (let i = 0; i < n; i++) {
+      const a0 = i / n * 2 * Math.PI - Math.PI / 2, a1 = (i + .82) / n * 2 * Math.PI - Math.PI / 2, P = (a, r) => `${cx + Math.cos(a) * r} ${cy + Math.sin(a) * r}`;
+      MD.arc.push(mdEl('path', { d: `M${P(a0, R)} A${R} ${R} 0 0 1 ${P(a1, R)} L${P(a1, R - 26)} A${R - 26} ${R - 26} 0 0 0 ${P(a0, R - 26)} Z`, fill: MDCOL[0] }, sv));
+    }
+    MD.aLab = mdTxt(sv, cx, cy + 13, '', { h: 1, s: 38, a: 'middle', c: '#f4ede3' }); mdTxt(sv, cx, cy + 128, 'du parfait (victoires contre les fantômes)', { a: 'middle' });
+  }
+  if (H.some(s => s.m?.raid != null)) {
+    mdTxt(sv, 860, 400, '/ RAID', { h: 1, s: 20, c: '#f4ede3' });
+    MD.rBar = mdEl('rect', { x: 860, y: 416, width: 0, height: 22, rx: 6, fill: '#2fd27a' }, sv); mdEl('rect', { x: 860, y: 416, width: 300, height: 22, rx: 6, fill: 'none', stroke: '#33374a' }, sv);
+    MD.rLab = mdTxt(sv, 1160, 460, '', { a: 'end', c: '#c9c3b9' });
+  }
+  sv.setAttribute('viewBox', `0 0 1200 ${Math.max(500, y + 40)}`);
+}
+function mdSet1(i) {
+  const H = MD.j?.historique; if (!H?.length) return; i = Math.max(0, Math.min(H.length - 1, Math.round(i))); MD.i1 = i; const s = H[i];
+  $('mdR1').value = i; $('mdL1').textContent = i === H.length - 1 ? mdDate(s.t) + ' · actuel' : mdDate(s.t);
+  for (const c of MD.cells || []) { const str = s.c?.[c.d] || ''; c.r.forEach((r, k) => r.setAttribute('fill', MDCOL[+str[k] || 0])); }
+  MD.campLab.textContent = MD.cells?.length ? '3★ sûrs : ' + MD.cells.map(c => `${MDDIF.find(x => x[0] === c.d)[1]} ${md3(s, c.d)}/${(s.c?.[c.d] || '').length}`).join(' · ') : '';
+  if (MD.tFill) { const v = s.tour?.now || 0, y = MD.ty(v), ym = MD.ty(s.tour?.max || 0); MD.tFill.setAttribute('y', y); MD.tFill.setAttribute('height', Math.max(0, 460 - y)); MD.tLab.setAttribute('y', y + 10); MD.tLab.textContent = s.tour ? fmt(v) + ' étages' : '-'; MD.tMax.setAttribute('y1', ym); MD.tMax.setAttribute('y2', ym); MD.tMaxL.setAttribute('y', ym - 6); MD.tMaxL.textContent = s.tour ? fmt(s.tour.max) + ' possible' : ''; }
+  if (MD.aLab) { const a = s.m?.arene; MD.arc.forEach((p, k) => p.setAttribute('fill', a != null && k / MD.arc.length < a / 100 ? '#4fa8ff' : MDCOL[0])); MD.aLab.textContent = a != null ? fmt(a) + ' %' : '-'; }
+  if (MD.rBar) { const r = s.m?.raid ?? 0; MD.rBar.setAttribute('width', 3 * Math.min(100, r)); MD.rLab.textContent = s.m?.raid != null ? fmt(r) + ' % du meilleur trio possible' : '-'; }
+  $('mdScore').innerHTML = s.score != null ? `score modèle parfait : <b style="color:var(--txt)">${fmt(s.score)}</b> / 100` : '';
+}
+// --- 2. le cerveau : cartes = etoiles, liens = cartes jouees ensemble dans les meilleurs trios ---
+function mdGraphe() {
+  const H = MD.j.historique, N = new Map(), L = new Map();
+  H.forEach((s, i) => { for (const [m, a, b, c, w] of s.tr || []) {
+    for (const id of [a, b, c]) { let n = N.get(id); if (!n) N.set(id, n = { id, ne: i, w: {}, m: {} }); n.w[i] = (n.w[i] || 0) + w; n.m[m] = (n.m[m] || 0) + (i === H.length - 1 ? w : 0); }
+    for (const [x, y] of [[a, b], [a, c], [b, c]]) { const k = Math.min(x, y) + '-' + Math.max(x, y); let l = L.get(k); if (!l) L.set(k, l = { a: Math.min(x, y), b: Math.max(x, y), ne: i, w: {} }); l.w[i] = (l.w[i] || 0) + w; }
+  } });
+  const nodes = [...N.values()].sort((p, q) => (q.w[H.length - 1] || 0) - (p.w[H.length - 1] || 0)).slice(0, 80), ix = new Map(nodes.map((n, k) => [n.id, k]));
+  const links = [...L.values()].filter(l => ix.has(l.a) && ix.has(l.b));
+  // Placement : quelques iterations de ressorts, une seule fois (graine fixe, toujours le meme dessin).
+  let sd = 7; const rnd = () => (sd = sd * 16807 % 2147483647) / 2147483647;
+  nodes.forEach((n, k) => { const a = rnd() * 6.283, r = 60 + 200 * (k / nodes.length); n.x = 450 + Math.cos(a) * r * 1.4; n.y = 280 + Math.sin(a) * r; });
+  const wmax = Math.max(1, ...links.map(l => Math.max(...Object.values(l.w))));
+  for (let it = 0; it < 220; it++) {
+    const f = 1 - it / 220;
+    for (let p = 0; p < nodes.length; p++) for (let q = p + 1; q < nodes.length; q++) { const A = nodes[p], B = nodes[q]; let dx = A.x - B.x, dy = A.y - B.y, d2 = dx * dx + dy * dy + .01; if (d2 > 40000) continue; const F = 900 / d2 * f; A.x += dx * F; A.y += dy * F; B.x -= dx * F; B.y -= dy * F; }
+    for (const l of links) { const A = nodes[ix.get(l.a)], B = nodes[ix.get(l.b)], dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1, F = (d - 70) / d * .04 * f * (.4 + Math.max(...Object.values(l.w)) / wmax); A.x += dx * F; A.y += dy * F; B.x -= dx * F; B.y -= dy * F; }
+    for (const n of nodes) { n.x += (450 - n.x) * .01 * f; n.y += (280 - n.y) * .01 * f; n.x = Math.max(30, Math.min(870, n.x)); n.y = Math.max(30, Math.min(530, n.y)); }
+  }
+  return { nodes, links, ix, wmax, nmax: Math.max(1, ...nodes.map(n => Math.max(...Object.values(n.w)))) };
+}
+function mdDessin2() {
+  const sv = $('mdSvg2'); sv.innerHTML = ''; const G = MD.g2 = mdGraphe();
+  if (!G.nodes.length) { mdTxt(sv, 450, 280, 'Pas encore de trios calculés.', { a: 'middle', s: 16 }); $('mdFiche').innerHTML = ''; return; }
+  const gl = mdEl('g', {}, sv), gn = mdEl('g', {}, sv);
+  const col = n => MDMODE[Object.entries(n.m).sort((a, b) => b[1] - a[1])[0]?.[0]] || '#8f96a6';
+  for (const l of G.links) { const A = G.nodes[G.ix.get(l.a)], B = G.nodes[G.ix.get(l.b)]; l.e = mdEl('line', { x1: A.x, y1: A.y, x2: B.x, y2: B.y, stroke: col(A), 'stroke-linecap': 'round' }, gl); }
+  G.nodes.forEach((n, k) => {
+    n.e = mdEl('circle', { cx: n.x, cy: n.y, fill: col(n), style: 'cursor:pointer' }, gn); n.e.onclick = () => mdFiche(n.id);
+    if (k < 14) n.t = mdTxt(gn, n.x, n.y - 14, CARTES ? court(carte(n.id).n || n.id) : String(n.id), { a: 'middle', c: '#f4ede3' });
+  });
+  mdFiche(G.nodes[0].id);
+}
+function mdSet2(i) {
+  const H = MD.j?.historique, G = MD.g2; if (!H?.length || !G) return; i = Math.max(0, Math.min(H.length - 1, Math.round(i))); MD.i2 = i;
+  $('mdR2').value = i; $('mdL2').textContent = 'Instantané ' + (i + 1) + ' / ' + H.length;
+  let nl = 0;
+  for (const l of G.links || []) { const w = l.w[i] || 0, vu = l.ne <= i; if (w) nl++; l.e.setAttribute('stroke-width', w ? .6 + 4 * w / G.wmax : vu ? .5 : 0); l.e.setAttribute('stroke-opacity', w ? .25 + .5 * w / G.wmax : vu ? .12 : 0); }
+  for (const n of G.nodes) { const w = n.w[i] || 0, vu = n.ne <= i; n.e.setAttribute('r', vu ? 2.5 + 13 * Math.sqrt(w / G.nmax) : 2); n.e.setAttribute('fill-opacity', w ? 1 : vu ? .35 : .12); if (n.t) n.t.setAttribute('opacity', w ? 1 : .25); }
+  $('mdInfo2').textContent = `${nl} liens · ${G.nodes.filter(n => n.w[i]).length} cartes utilisées`;
+}
+function mdFiche(id) {
+  const G = MD.g2, H = MD.j.historique, n = G.nodes.find(x => x.id === id); if (!n) return; const z = H.length - 1;
+  const amis = G.links.filter(l => (l.a === id || l.b === id) && l.w[z]).map(l => ({ id: l.a === id ? l.b : l.a, w: l.w[z] })).sort((a, b) => b.w - a.w).slice(0, 3);
+  const MN = { c: 'Campagne', t: 'Tour', r: 'Raid', a: 'Arène' }, modes = Object.entries(n.m).filter(([, v]) => v > 0).map(([m]) => MN[m] || m);
+  const c = carte(id);
+  $('mdFiche').innerHTML = `<div style="display:flex;gap:12px;align-items:center">${CARTES ? pf(id) : ''}<div><div class="eyebrow" style="font-size:11px">${esc(modes.join(' · ') || 'plus utilisée')}</div><div style="font:400 26px var(--head);font-style:italic;text-transform:uppercase">${esc(c.n || id)}</div></div></div>
+    <div class="md-ev" style="margin-top:10px">${amis.map(a => `<div><b>Avec ${esc(carte(a.id).n || a.id)}</b><span>poids ${fmt(a.w)} dans les meilleurs trios</span></div>`).join('')}
+    <div><b>Apparue le ${esc(mdDate(H[n.ne].t))}</b><span>${n.ne ? 'instantané ' + (n.ne + 1) : 'dès le premier instantané'}</span></div></div>`;
+}
+// --- 3. journal de bord : courbe du score et ce qui a change ---
+function mdJournal() {
+  const H = MD.j.historique, sv = $('mdSvg3'); sv.innerHTML = '';
+  $('mdDepuis').textContent = 'depuis le ' + jourMois(H[0].t) + ' · ' + H.length + ' instantané' + (H.length > 1 ? 's' : '');
+  const P = H.filter(s => s.score != null);
+  const lo = Math.max(0, Math.floor((Math.min(...P.map(s => s.score), 100) - 5) / 10) * 10), X = k => 60 + (P.length < 2 ? 400 : k * 810 / (P.length - 1)), Y = v => 300 - (v - lo) / (100 - lo) * 270;
+  for (let v = lo; v <= 100; v += 10) { mdEl('line', { x1: 50, x2: 880, y1: Y(v), y2: Y(v), stroke: v === 100 ? '#f7c548' : '#1d2030', 'stroke-dasharray': v === 100 ? '6 5' : '' }, sv); mdTxt(sv, 42, Y(v) + 4, v, { a: 'end', s: 11 }); }
+  mdTxt(sv, 875, Y(100) - 8, 'MODÈLE PARFAIT', { h: 1, s: 15, a: 'end', c: '#f7c548' });
+  if (P.length) {
+    const d = P.map((s, k) => (k ? 'L' : 'M') + X(k) + ' ' + Y(s.score)).join(' ');
+    if (P.length > 1) { mdEl('path', { d: d + ` L${X(P.length - 1)} 300 L${X(0)} 300 Z`, fill: 'rgba(255,75,62,.10)' }, sv); mdEl('path', { d, fill: 'none', stroke: '#ff4b3e', 'stroke-width': 3, 'stroke-linejoin': 'round' }, sv); }
+    const pas = Math.max(1, Math.ceil(P.length / 8));
+    P.forEach((s, k) => { const fin = k === P.length - 1; if (P.length <= 40 || fin) mdEl('circle', { cx: X(k), cy: Y(s.score), r: fin ? 6 : 4, fill: '#ff7a3d', stroke: '#090a0f', 'stroke-width': 2 }, sv); if (k % pas === 0 || fin) { mdTxt(sv, X(k), Y(s.score) - 12, fmt(s.score), { h: 1, s: 16, a: 'middle', c: '#f4ede3' }); mdTxt(sv, X(k), 326, jourMois(s.t), { a: 'middle', s: 11 }); } });
+  }
+  if (H.length < 2) mdTxt(sv, 470, 200, 'La courbe se trace à partir du prochain calcul.', { a: 'middle', s: 14 });
+  // Ce qui a change d'un instantane a l'autre (les 8 derniers changements).
+  const ev = [];
+  for (let k = 1; k < H.length; k++) {
+    const a = H[k - 1], b = H[k], L = [];
+    for (const [d, nom] of MDDIF) { const x = md3(b, d) - md3(a, d); if (x && a.c?.[d]) L.push(`${nom} ${x > 0 ? '+' : ''}${x} combat${Math.abs(x) > 1 ? 's' : ''} à 3★`); }
+    if (a.tour && b.tour && Math.abs(b.tour.now - a.tour.now) >= 1) L.push(`Tour ${b.tour.now > a.tour.now ? '+' : ''}${fmt(b.tour.now - a.tour.now)} étages`);
+    if (a.m?.raid != null && b.m?.raid != null && Math.abs(b.m.raid - a.m.raid) >= 1) L.push(`Raid ${b.m.raid > a.m.raid ? '+' : ''}${fmt(b.m.raid - a.m.raid)} %`);
+    const pv = a.m?.arene != null && b.m?.arene != null && Math.abs(b.m.arene - a.m.arene) >= 1 ? `Arène ${b.m.arene > a.m.arene ? '+' : ''}${fmt(b.m.arene - a.m.arene)} %` : '';
+    const ia = a.ia && b.ia && a.ia !== b.ia;
+    if (L.length || pv || ia) ev.push({ t: b.t, titre: ia ? 'Nouvelle IA' : (b.score ?? 0) >= (a.score ?? 0) ? 'Progrès' : 'Recul', l: [...L, pv].filter(Boolean), pv: !!pv && !L.length, ds: b.score != null && a.score != null ? b.score - a.score : 0 });
+  }
+  $('mdEv').innerHTML = ev.reverse().slice(0, 8).map(e => `<div class="${e.pv ? 'pv' : ''}"><b>${jourMois(e.t)} · ${e.titre}${e.ds ? ` (${e.ds > 0 ? '+' : ''}${fmt(e.ds)} pts)` : ''}</b><span>${esc(e.l.join(', ') || 'réglages changés, mêmes résultats')}</span></div>`).join('') || '<div class="muted">Les changements s\'afficheront ici après le prochain calcul.</div>';
+}
+// L'ADN : les 76 reglages de chaque version de l'IA (4 situations x 19 criteres), couleur = valeur.
+function mdAdn() {
+  const A = MD.j.adn || []; if (!A.length) { $('mdAdn').innerHTML = '<span></span><span>Pas encore d\'IA entraînée sur ce PC.</span>'; return; }
+  const all = A.flatMap(x => x.g), lo = Math.min(...all), hi = Math.max(...all), sp = hi - lo || 1;
+  $('mdAdn').innerHTML = A.map((x, k) => `<span>${jourMois(x.t)}${x.actuelle ? ' · actuelle' : ''}</span><div class="g">${x.g.map((v, j) => { const z = (v - lo) / sp, ch = k && Math.abs(v - A[k - 1].g[j]) > .02; return `<i${ch ? ' class="ch"' : ''} style="background:hsl(${8 + z * 38} 95% ${24 + z * 38}%)" title="${['Normal', 'Boss', 'Cauchemar', 'Tour'][Math.floor(j / 19)]} · critère ${j % 19 + 1} : ${v}"></i>`; }).join('')}</div>`).join('');
+}
+// Rejeu : 3 secondes du premier au dernier instantane, puis plus rien.
+function mdJouer(k) {
+  const H = MD.j?.historique; if (!H || H.length < 2) return; if (k === 2 && !MD.g2) mdDessin2();
+  const set = k === 1 ? mdSet1 : mdSet2, n = H.length - 1; let t0 = null;
+  const pas = ts => { t0 ??= ts; const x = Math.min(1, (ts - t0) / 3000); set(x * n); if (x < 1 && pageAct() === 'modele') requestAnimationFrame(pas); };
+  requestAnimationFrame(pas);
+}
+// Tableau de bord : mini cerveau (sans texte) et score, clic vers la page.
+function mdMini() {
+  const H = MD.j?.historique || [], el = $('dbModele'); if (!el) return; if (!H.length) { el.style.display = 'none'; return; }
+  const G = mdGraphe(), z = H.length - 1, s = H[z], P = H.filter(x => x.score != null).slice(-20);
+  const sx = x => x * 240 / 900, sy = y => y * 150 / 560;
+  const lignes = G.links.filter(l => l.w[z]).map(l => { const A = G.nodes[G.ix.get(l.a)], B = G.nodes[G.ix.get(l.b)]; return `<line x1="${sx(A.x)}" y1="${sy(A.y)}" x2="${sx(B.x)}" y2="${sy(B.y)}" stroke="#ff7a3d" stroke-opacity="${.15 + .5 * l.w[z] / G.wmax}" stroke-width="${.5 + 2 * l.w[z] / G.wmax}"/>`; }).join('');
+  const pts = G.nodes.filter(n => n.w[z]).map(n => `<circle cx="${sx(n.x)}" cy="${sy(n.y)}" r="${1.5 + 6 * Math.sqrt(n.w[z] / G.nmax)}" fill="${MDMODE[Object.entries(n.m).sort((a, b) => b[1] - a[1])[0]?.[0]] || '#8f96a6'}"/>`).join('');
+  const lo = Math.min(...P.map(x => x.score)), hi = Math.max(...P.map(x => x.score)), sp = hi - lo || 1;
+  const courbe = P.length > 1 ? `<svg width="160" height="44" viewBox="0 0 160 44"><path d="${P.map((x, k) => (k ? 'L' : 'M') + (k * 156 / (P.length - 1) + 2) + ' ' + (40 - (x.score - lo) / sp * 36)).join(' ')}" fill="none" stroke="#ff4b3e" stroke-width="2"/></svg>` : '';
+  el.style.display = '';
+  el.innerHTML = `<svg width="240" height="150" viewBox="0 0 240 150" aria-hidden="true">${lignes}${pts}</svg><div style="flex:1;min-width:0"><div class="eyebrow">Le modèle vivant</div><div class="v">${s.score != null ? fmt(s.score) : '-'}<small> / 100</small></div><div class="muted" style="font-size:13px">score modèle parfait · ${H.length} instantané${H.length > 1 ? 's' : ''} depuis le ${jourMois(H[0].t)}</div></div>${courbe}`;
+}
 
 route();
 refresh(); setInterval(refreshDoux, 1500); chargerCartes();
