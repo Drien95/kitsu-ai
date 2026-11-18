@@ -473,7 +473,12 @@
         // Echecs reels : combats joues ces dernieres 24 h sans faire 3 etoiles (la simulation peut se tromper,
         // les vrais resultats priment). Un combat deja etoile qui a rate les 3 etoiles n'est plus propose pendant 24 h.
         const realMiss = id => (lsGet(LS.log, []) || []).filter(g => g.f === id && g.done && g.etoiles !== 3 && Date.now() - (g.t || 0) < 86400000).length;
-        const worthNow = (r, S) => { const st = S.pve?.stars?.[r.id] || 0; return r.victoire >= 0.9 && st < 3 && (st === 0 || (r.troisEtoiles >= 0.9 && realMiss(r.id) === 0)); };
+        // 5.33.3 : monde d'evenement ferme (Halloween : le jeu le retire de la page Aventure a HALLOWEEN_UNTIL, 1er/11 17 h,
+        // mais le garde dans ALL_WORLDS et fightOpen ne regarde pas cette date). Ses combats ne sont plus proposes.
+        const worldClosed = (w, now = Date.now()) => !!w && w.id === 'halloween' && Number.isFinite(G?.HALLOWEEN_UNTIL) && now >= G.HALLOWEEN_UNTIL;
+        const liveWorlds = (now = Date.now()) => G.ALL_WORLDS.filter(w => !worldClosed(w, now));
+        const fightClosed = id => worldClosed({ id: String(id).split('-')[0] });
+        const worthNow = (r, S) => { const st = S.pve?.stars?.[r.id] || 0; return !fightClosed(r.id) && r.victoire >= 0.9 && st < 3 && (st === 0 || (r.troisEtoiles >= 0.9 && realMiss(r.id) === 0)); };
         // Progression d'une quete : enregistree, ou calculee par le jeu (quetes d'histoire : « termine l'arc… »).
         const questProg = (d, q, S) => { const p = q.prog?.[d.id]; if (p != null) return p; if (typeof d.val === 'function') { try { return +d.val(S) || 0; } catch {} } return 0; };
         // Recompenses a recuperer : connexion du jour, quetes terminees, paliers du pass.
@@ -609,7 +614,7 @@
             const rprev = lsGet('kitsu_ai_rosterSig', null);
             if (!rprev) lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() });
             else if (rprev.sig !== rsig && Date.now() - rprev.t > 12 * 3600000) setTimeout(() => { if (!this._train || this._train.done) { toast('<b class="k-tt">Ton equipe a evolue</b><br>Reentrainement de l\'IA en arriere-plan (pause pendant les combats).', 8000); this.retrain({ quiet: true }).then(() => lsSet('kitsu_ai_rosterSig', { sig: rsig, t: Date.now() })).catch(() => {}); } }, 60000);
-            if (lsGet('kitsu_ai_scriptver', null) !== this.__v) { for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_events', 'kitsu_ai_farm', 'kitsu_ai_road', 'kitsu_ai_snooze']) localStorage.removeItem(k); lsSet('kitsu_ai_scriptver', this.__v); setTimeout(() => this.plan().catch(() => {}), 2000); }
+            if (lsGet('kitsu_ai_scriptver', null) !== this.__v) { for (const k of ['kitsu_ai_plan', 'kitsu_ai_teams', 'kitsu_ai_events', 'kitsu_ai_farm', 'kitsu_ai_road', 'kitsu_ai_snooze', 'kitsu_ai_walls']) localStorage.removeItem(k); lsSet('kitsu_ai_scriptver', this.__v); setTimeout(() => this.plan().catch(() => {}), 2000); }
             setTimeout(() => this.events().catch(() => {}), 9000);
             setTimeout(() => this.selfCheck().catch(() => {}), 15000);
             const lvSnap = () => { const S0 = save(), h = lsGet('kitsu_ai_lvhist', []); if (!h.length || Date.now() - h[h.length - 1].t > 6 * 3600000) { h.push({ t: Date.now(), lv: Object.fromEntries(Object.keys(S0.owned || {}).filter(id => ['E', 'L', 'M'].includes(window.CHAR_BY_ID?.[id]?.r)).map(id => [id, S0.lv?.[id]?.l || 1])) }); lsSet('kitsu_ai_lvhist', h.filter(x => Date.now() - x.t < 3 * 86400000).slice(-12)); } };
@@ -653,7 +658,7 @@
             await loadModules();
             const S = save(), now = Date.now(), stars = S.pve?.stars || {}, pol = smartPol(this.W);
             const playable = [];
-            for (const w of G.ALL_WORLDS) for (const f of w.fights) {
+            for (const w of liveWorlds(now)) for (const f of w.fights) {
               if ((stars[f.id] || 0) >= 3) continue;
               let rel = true; try { rel = G.fightOpen(f, now); } catch {} if (!rel) continue;
               let prev = null; try { prev = G.prevFight(f); } catch {}
@@ -667,7 +672,7 @@
             const base3 = (G.MODES || [{ suf: '', mult: 1, n: 'Normal' }, { suf: '@h', mult: 2, n: 'Difficile' }, { suf: '@x', mult: 3, n: 'Extreme' }]);
             const rwNm = G.NM?.rw || 2;
             const MODES = [...base3, ...base3.map(m => ({ suf: (m.suf || '@') + 'n', mult: m.mult * rwNm, n: 'Cauchemar ' + (m.n || '') }))];
-            for (const w of G.ALL_WORLDS) {
+            for (const w of liveWorlds(now)) {
               const arcs = {}; for (const f of w.fights) (arcs[f.arc] ??= []).push(f);
               for (const fs of Object.values(arcs)) {
                 for (let m = 1; m < MODES.length; m++) {
@@ -734,12 +739,12 @@
             const lvOf = id => S.lv?.[id]?.l || 1;
             const xpTo = (id, k) => { let x = 0; for (let l = lvOf(id); l < Math.min(99, lvOf(id) + k); l++) x += xpNeed(l); return x; };
             const farm = [];
-            for (const w of G.ALL_WORLDS) for (const f of w.fights) if ((stars[f.id] || 0) > 0) farm.push(f);
+            for (const w of liveWorlds(now)) for (const f of w.fights) if ((stars[f.id] || 0) > 0) farm.push(f);
             farm.sort((a, b) => G.fightXp(b) / G.fightCost(b) - G.fightXp(a) / G.fightCost(a));
             const topTeams = [...new Set(rows.map(r => r.equipe.join(',')))].map(x => x.split(',').map(Number)).concat(tri).slice(0, 3);
             let farmFight; for (const f of farm) if ((await ev(f, topTeams[0])).w >= 1) { farmFight = f; break; }
             const ev4 = async (f, t, SS) => (await evL(f, [t], seeds.length, SS || S))[0].w;
-            if (!reuseWalls) for (const w of G.ALL_WORLDS) {
+            if (!reuseWalls) for (const w of liveWorlds(now)) {
               let wall = null, idx = 0;
               for (const f of w.fights) {
                 idx++;
