@@ -1002,7 +1002,7 @@ function ptReg() {
     const v = !c ? 'Pas encore comparée à ton IA : la comparaison se lance toute seule après chaque entraînement.'
       : !c.aJour ? 'Ton IA ou l’IA commune a changé depuis la dernière comparaison : relance « Comparer ».'
       : c.verdict === 'identique' ? 'Ton IA est identique : rien à publier.'
-      : c.verdict === 'meilleure' ? `Ton IA est nettement meilleure : ${nbFr(c.mienne3)} % de 3★ contre ${nbFr(c.commune3)} % (+${nbFr(c.ecart)} pts, ${fmt(c.combats)} combats). Tu peux la publier.`
+      : c.verdict === 'meilleure' ? `Ton IA est nettement meilleure : ${nbFr(c.mienne3)} % de 3★ contre ${nbFr(c.commune3)} % (+${nbFr(c.ecart)} pts, ${fmt(c.combats)} combats). En attendant, ta Campagne tourne avec ton IA, sans partage. Publie-la pour partager de nouveau.`
       : c.verdict === 'moins bonne' ? `Ton IA est moins bonne (${nbFr(c.mienne3)} % contre ${nbFr(c.commune3)} %) : garde l’IA commune.`
       : `Pas d’écart net (${c.ecart > 0 ? '+' : ''}${nbFr(c.ecart)} ± ${nbFr(c.marge)} pts sur ${fmt(c.combats)} combats) : garde l’IA commune.`;
     $('pt_iaTxt').textContent = `En service : ${src}. ${v}`; $('pt_pub').classList.toggle('ghost', !ok); $('pt_pub').dataset.ok = ok ? '1' : ''; }

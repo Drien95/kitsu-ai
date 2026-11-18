@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.31.0
+
+Base commune : ton IA passe devant l'IA commune pour la Campagne quand elle est nettement meilleure.
+
+- Avec le partage allumé, le calcul Campagne tournait toujours avec l'IA commune, même quand ton IA était meilleure. Maintenant, si la dernière comparaison (`comparer-ia.mjs`, lancée après chaque entraînement sur le PC validateur) dit « nettement meilleure » pour ces deux IA-là (mêmes empreintes), le calcul prend ton IA et ne partage rien (ni réception ni envoi : ses résultats ne se recoupent pas avec la base).
+- Dans tous les autres cas (pareille, moins bonne, pas de comparaison, ton IA ou l'IA commune changée depuis), l'IA commune reste en service et le partage marche comme avant.
+- Le partage reprend dès que tu publies ton IA comme IA commune (Réglages, cadre validateur). Le journal du calcul et la ligne IA commune des Réglages le disent.
+
 ## 5.30.1
 
 Campagne : le meilleur trio de chaque combat de Campagne est de nouveau cherché parmi **tous** les trios.
