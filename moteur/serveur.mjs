@@ -166,6 +166,7 @@ const ACTIONS = {
   equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--generations', String(o.generations || 25)] },
   tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
   cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes', '--budget-specialistes', String(o.specialistes == null ? 60 : Math.max(0, Math.min(1440, Math.round(+o.specialistes) || 0)))] },
+  diagnostic3: { nom: 'Campagne : pourquoi la 3e etoile saute', cmd: ['diagnostic3.mjs'] },
   raid: { nom: 'Raid : meilleur trio', cmd: ['raid.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel', '--tirages', String(Math.max(2, Math.min(40, +o.tirages || 8)))] },
   comparerIA: { nom: "Comparer ton IA a l'IA commune", cmd: ['comparer-ia.mjs'], admin: true },
   deployerPartage: { nom: 'Mettre a jour le serveur de la base commune', cmd: ['partage-deployer.mjs'], admin: true },

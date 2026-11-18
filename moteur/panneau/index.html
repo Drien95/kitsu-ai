@@ -1074,6 +1074,22 @@ addEventListener('keydown', e => { if (e.key === 'Escape') $('modal').style.disp
 // ---------- campagne : meilleur trio par combat (cauchemar3.json, etages ; lib/etages.mjs) ----------
 const ET = { d: null, monde: '', filtre: 'tous', page: 0 };
 function etSet(k, v) { ET[k] = v; if (k !== 'page') ET.page = 0; campRender(); }
+// Pourquoi la 3e etoile saute (5.26, lib/diagnostic.mjs) : cause dominante sur les combats sous le seuil.
+const DIAG_N = { cycle: 'trop lent : fini après le cycle 8', ko: 'un allié K.O.', les2: 'K.O. et trop lent', defaite: 'défaite' };
+const DIAG_C = { cycle: '#60a5fa', ko: 'var(--warn)', les2: '#a78bfa', defaite: 'var(--bad, #f87171)' };
+let DG = new Map();
+function campDiag(e, nomD) {
+  const g = e.diagnostic; DG = new Map((g?.combats || []).map(x => [x[0] + '|' + x[1], x]));
+  const btn = `<button class="ghost" onclick="lancer('diagnostic3')">${g ? 'Refaire' : 'Analyser'} (≈ 1 min)</button>`;
+  let h = `<div class="sp"></div><h3 class="cat">Pourquoi la 3★ saute <span class="r" style="float:right">${btn}</span></h3>`;
+  if (!g) return h + `<div class="muted" style="font-size:12.5px">Pas encore analysé pour ce résultat. Le diagnostic rejoue les combats sous ${e.seuil} % avec leurs meilleurs trios et dit ce qui fait perdre la 3e étoile : finir après le cycle 8, ou perdre un allié. Calcul léger, un seul fil. Le calcul Campagne le fait tout seul à la fin.</div>`;
+  const r = (g.resume || [])[ET.d] || {}, tile = (k, v, s, col) => `<div class="tile"><div class="k" style="color:${col}">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  if (!r.combats) return h + `<div class="muted" style="font-size:12.5px">Aucun combat sous ${e.seuil} % en ${esc(nomD(ET.d))}.</div>`;
+  h += `<div class="grid g4">${tile('Trop lent', r.cycle, 'victoire sans K.O. mais après le cycle 8', DIAG_C.cycle)}${tile('Un K.O.', r.ko, 'fini à temps, mais un allié tombe', DIAG_C.ko)}${tile('Les deux', r.les2, 'K.O. et après le cycle 8', DIAG_C.les2)}${tile('Défaite', r.defaite, 'le meilleur trio perd le plus souvent', DIAG_C.defaite)}</div>`;
+  const vict = (g.victimes || []).slice(0, 4).map(([id, n]) => `${esc(carte(id).n)} (${n})`).join(', ');
+  h += `<div class="muted" style="font-size:12.5px;margin-top:8px">${r.combats} combats sous ${e.seuil} % en ${esc(nomD(ET.d))}, ${g.maxTrios} trios × ${g.tirages} tirages chacun.${r.pv9Med != null ? ` Quand c'est trop lent, il reste en médiane <b>${Math.round(100 * r.pv9Med)} %</b> des PV ennemis au début du cycle 9.` : ''}${vict ? ` Cartes le plus souvent K.O. en premier (toutes difficultés) : ${vict}.` : ''} La cause de chaque combat est aussi dans le tableau ci-dessous.</div>`;
+  return h;
+}
 function campEtages(j) {
   const e = j.etages; if (!e?.combats?.length) return '';
   const C = e.combats, info = e.infos || {}, nomD = di => (DIFFS.find(x => x[0] === di) || [, j.difficultes?.[di]])[1], colD = di => (DIFFS.find(x => x[0] === di) || [])[2] || 'var(--acc)';
@@ -1087,6 +1103,7 @@ function campEtages(j) {
     <div class="seg" style="margin-bottom:12px">${diffs.map(d => `<a class="${d === ET.d ? 'on' : ''}" onclick="etSet('d',${d})">${esc(nomD(d))}</a>`).join('')}</div>
     <div class="grid g5">${tile('3★ à ' + sl + ' % ou plus', `${rD.troisEtoilesSur ?? '-'} / ${rD.combats ?? '-'}`, 'combats avec un trio sûr', 'ok')}${tile('Avec le script seul', `${rD.script ?? '-'}`, 'trios de tes 10 cartes les plus fortes')}${tile('Gagnés par un spécialiste', `${rD.specialistes ?? 0}`, 'trio hors des meilleurs du classement')}${tile('Sans 3★ trouvé', `${rD.impossibles ?? '-'}`, 'aucun trio, aucun tirage', rD.impossibles ? 'warn' : '')}${tile('Recherche restante', sp.restants ? `${sp.restants} combats` : 'finie', sp.restants ? (sp.minutesRestantes != null ? `≈ ${sp.minutesRestantes >= 90 ? Math.round(sp.minutesRestantes / 60) + ' h' : sp.minutesRestantes + ' min'} sur tous les trios` : '') : `${sp.cherches || 0} combats cherchés`, sp.restants ? 'warn' : 'ok')}</div>`;
   if (sp.restants) h += `<div class="muted" style="font-size:12.5px;margin:10px 0 0">${sp.restants} combats sous ${sl} % n'ont pas encore été cherchés sur tous les trios (${sp.cetteFois || 0} cette fois, budget ${sp.budget} min). Relance la Campagne avec un budget pour les spécialistes : le journal garde ce qui est fait, la recherche reprend où elle s'est arrêtée.</div>`;
+  h += campDiag(e, nomD);
   // plan minimal
   const plan = e.plan || [], nPlan = C.filter(c => c[1] === ET.d && c[4] >= 0);
   h += `<div class="sp"></div><h3 class="cat">Le plan : ${plan.length} trio${plan.length > 1 ? 's' : ''} pour tout couvrir</h3><table class="c3t"><tr><th>#</th><th>Trio</th><th>Combats couverts (${esc(nomD(ET.d))})</th><th>Toutes difficultés</th></tr>${plan.map((p, k) => `<tr${k ? '' : ' class="c3top"'}><td>${k + 1}</td><td>${equipeHTML(trio(p.trio), true)}</td><td>${nPlan.filter(c => c[4] === p.trio).length}</td><td>${p.combats}</td></tr>`).join('')}</table>`;
@@ -1102,7 +1119,8 @@ function campEtages(j) {
     <table class="c3t"><tr><th>Combat</th><th>Trio du plan</th><th>3★</th><th>Meilleur trio (si autre)</th><th>3★</th><th>Script</th></tr>${L.slice(ET.page * PAGE, ET.page * PAGE + PAGE).map(c => {
       const inf = info[c[8]] || [], titre = `${esc(inf[2] || c[8])}${inf[3] ? ' <span class="pill" style="color:var(--acc)">boss</span>' : ''}`;
       const autre = c[2] >= 0 && c[2] !== c[4];
-      return `<tr><td><b>${titre}</b><div class="muted c3s">${esc(inf[0] || '')} · combat ${inf[1] != null ? inf[1] + 1 : '?'}</div></td><td>${c[4] >= 0 ? equipeHTML(trio(c[4]), true) : '<span class="muted">aucun trio à 3★</span>'}</td><td>${c[4] >= 0 ? pc(c[5]) : '-'}</td><td>${autre ? equipeHTML(trio(c[2]), true) + (c[6] ? ' <span class="pill" style="color:#a78bfa">spécialiste</span>' : '') : '<span class="muted">le même</span>'}</td><td>${autre ? pc(c[3]) : ''}</td><td>${pc(c[7])}${c[3] - c[7] >= 10 ? ` <span class="muted c3s">(+${c[3] - c[7]})</span>` : ''}</td></tr>`;
+      const dg = DG.get(c[0] + '|' + c[1]), cause = dg ? `<div class="c3s" style="color:${DIAG_C[dg[2]] || 'var(--mute)'}">${esc(DIAG_N[dg[2]] || '')}</div>` : '';
+      return `<tr><td><b>${titre}</b><div class="muted c3s">${esc(inf[0] || '')} · combat ${inf[1] != null ? inf[1] + 1 : '?'}</div></td><td>${c[4] >= 0 ? equipeHTML(trio(c[4]), true) : '<span class="muted">aucun trio à 3★</span>'}</td><td>${c[4] >= 0 ? pc(c[5]) : '-'}${cause}</td><td>${autre ? equipeHTML(trio(c[2]), true) + (c[6] ? ' <span class="pill" style="color:#a78bfa">spécialiste</span>' : '') : '<span class="muted">le même</span>'}</td><td>${autre ? pc(c[3]) : ''}</td><td>${pc(c[7])}${c[3] - c[7] >= 10 ? ` <span class="muted c3s">(+${c[3] - c[7]})</span>` : ''}</td></tr>`;
     }).join('')}</table>${pages > 1 ? `<div class="row" style="gap:8px;margin-top:8px">${Array.from({ length: pages }, (_, p) => `<button class="${p === ET.page ? '' : 'ghost'}" onclick="etSet('page',${p})">${p + 1}</button>`).join('')}</div>` : ''}
     <div class="muted" style="font-size:12px;margin-top:8px">Colonne Script : meilleur des trios que le script Tampermonkey essaie seul sur l'écran d'équipe (tes 10 cartes les plus fortes : ${esc((e.scriptCartes || []).join(', '))}). Le script reçoit maintenant aussi le trio du plan et le meilleur trio de ce combat, et les rejoue à tes niveaux actuels.</div></div>`;
   return h;
