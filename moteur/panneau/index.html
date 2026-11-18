@@ -334,6 +334,62 @@
   .md-mini .v { font: 400 44px/1 var(--head); font-style: italic; } .md-mini .v small { font-size: 20px; color: var(--mute); }
   @media (max-width: 1100px) { .md-side { grid-template-columns: 1fr; } }
   @media (max-width: 700px) { .md-adn { grid-template-columns: 70px 1fr; } .md-mini > svg:first-child { display: none; } }
+  /* ---------- Guide interactif rejouable avec Kiko (5.39) : calque, projecteur, boite de dialogue, page Guides ---------- */
+  .kg-help { width: 34px; height: 34px; padding: 0; border-radius: 10px; background: var(--panel); border: 1px solid var(--line2); box-shadow: none; font: 800 15px var(--body); letter-spacing: 0; color: #fff; position: relative; flex: none; }
+  .kg-help:hover { border-color: var(--acc2); }
+  .kg-help i { position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--acc); border: 2px solid var(--bg); display: none; } .kg-help.nv i { display: block; }
+  #kg { position: fixed; inset: 0; z-index: 90; display: none; } #kg.on { display: block; }
+  #kg .kg-shade { position: fixed; inset: 0; background: rgba(3,4,7,.72); } #kg.has .kg-shade { background: transparent; }
+  #kg .kg-spot { position: fixed; border-radius: 12px; border: 2px solid var(--acc2); box-shadow: 0 0 0 4px rgba(7,8,12,.9), 0 0 0 9999px rgba(3,4,7,.72); transition: left .28s ease-out, top .28s ease-out, width .28s ease-out, height .28s ease-out; pointer-events: none; }
+  #kg.nospot .kg-spot { display: none; }
+  #kg .kg-zone { position: fixed; cursor: pointer; display: none; }
+  #kg .kg-tag { position: fixed; background: var(--acc2); color: #07080c; font: 800 11px var(--body); letter-spacing: 1px; text-transform: uppercase; padding: 5px 10px; border-radius: 7px; white-space: nowrap; pointer-events: none; transition: left .28s ease-out, top .28s ease-out; }
+  #kg .kg-tag::after { content: ""; position: absolute; left: 16px; width: 10px; height: 10px; background: inherit; transform: rotate(45deg); }
+  #kg .kg-tag.dn::after { bottom: -4px; } #kg .kg-tag.up::after { top: -4px; } #kg .kg-tag.go { background: #fff; }
+  #kg .kg-box { position: fixed; left: calc(248px + (100vw - 248px) / 2); transform: translateX(-50%); bottom: 22px; width: min(760px, calc(100vw - 300px)); background: #0f1118; border: 1px solid var(--line2); border-radius: 18px; box-shadow: 0 30px 90px rgba(0,0,0,.75); padding: 18px 20px 14px 168px; min-height: 150px; }
+  #kg .kg-box.hi { bottom: auto; top: 76px; } #kg .kg-box.mi { bottom: auto; top: 50%; transform: translate(-50%, -50%); }
+  #kg .kg-por { position: absolute; left: 12px; bottom: 12px; width: 146px; height: 166px; pointer-events: none; } #kg .kg-por svg { width: 100%; height: 100%; filter: drop-shadow(0 12px 18px rgba(0,0,0,.6)); }
+  #kg .kg-who { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  #kg .kg-who b { font: 400 20px var(--head); font-style: italic; text-transform: uppercase; letter-spacing: .5px; color: var(--acc2); }
+  #kg .kg-who span { font-size: 11px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #kg .kg-who button { margin-left: auto; background: transparent; border: 1px solid var(--line2); box-shadow: none; padding: 4px 9px; font-size: 11px; color: var(--mute); }
+  #kg .kg-txt { font-size: 15px; line-height: 1.55; color: var(--txt); min-height: 48px; cursor: pointer; }
+  #kg .kg-txt em { font-style: normal; color: var(--acc2); font-weight: 800; } #kg .kg-txt .pv { color: #c4b5fd; font-weight: 800; } #kg .kg-txt .bl { color: #4fa8ff; font-weight: 800; }
+  #kg .kg-txt .cur { display: inline-block; width: 7px; height: 15px; background: var(--acc2); vertical-align: -2px; margin-left: 2px; }
+  #kg .kg-fig { margin-top: 10px; }
+  #kg .kg-ft { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  #kg .kg-dots { display: flex; gap: 4px; flex: 1; min-width: 0; } #kg .kg-dots i { flex: 1; height: 4px; border-radius: 4px; background: var(--line2); max-width: 34px; } #kg .kg-dots i.d { background: var(--acc); } #kg .kg-dots i.c { background: var(--acc2); }
+  #kg .kg-cnt { font-size: 11.5px; font-weight: 800; color: var(--mute); white-space: nowrap; }
+  #kg .kg-ft button { padding: 9px 14px; font-size: 11.5px; }
+  #kg .kg-wait { font-size: 12px; font-weight: 800; color: #fff; display: none; align-items: center; gap: 6px; white-space: nowrap; } #kg .kg-wait::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .kg-jeu { position: relative; border-radius: 12px; overflow: hidden; background: radial-gradient(400px 160px at 30% 20%, #1b2238, #0b0d14); border: 1px solid var(--line); height: 170px; }
+  .kg-jeu .c { position: absolute; width: 46px; height: 62px; border-radius: 7px; background: linear-gradient(160deg, #334155, #0f172a); border: 1px solid #475569; }
+  .kg-jeu .r { position: absolute; border: 2px solid #ff7a2f; border-radius: 9px; box-shadow: 0 0 0 3px rgba(0,0,0,.6); } .kg-jeu .r.p { border-color: #4fa8ff; }
+  .kg-jeu .l { position: absolute; font: 800 9px var(--body); letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: #07080c; background: #ff7a2f; } .kg-jeu .l.p { background: #4fa8ff; }
+  .kg-jeu .pan { position: absolute; right: 10px; top: 10px; width: 170px; background: rgba(12,14,19,.96); border-left: 3px solid #ff7a2f; border-radius: 7px; padding: 7px 10px; font-size: 10.5px; color: #cbd5e1; }
+  .kg-jeu .pan b { display: block; font: italic 700 16px/1.1 Bahnschrift, "Arial Narrow", sans-serif; color: #fff; text-transform: uppercase; }
+  .kg-cc { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; font-weight: 700; } .kg-cc span { display: inline-flex; align-items: center; gap: 6px; } .kg-cc i { width: 11px; height: 11px; border-radius: 3px; }
+  .kg-wel { position: fixed; inset: 0; z-index: 95; background: rgba(3,4,7,.78); display: none; align-items: center; justify-content: center; padding: 16px; } .kg-wel.on { display: flex; }
+  .kg-wel .w { width: min(620px, 100%); background: #0f1118; border: 1px solid var(--line2); border-radius: 20px; padding: 26px; display: flex; gap: 22px; align-items: center; box-shadow: 0 30px 90px rgba(0,0,0,.75); }
+  .kg-wel .f { width: 170px; flex: none; } .kg-wel .f svg { width: 100%; height: auto; }
+  .kg-wel h3 { font: 400 30px/1.05 var(--head); font-style: italic; text-transform: uppercase; margin: 0 0 8px; } .kg-wel h3 em { color: var(--acc2); font-style: inherit; }
+  .kg-wel p { color: #d9d3c9; margin: 0 0 6px; font-size: 14px; } .kg-wel .m { color: var(--mute); font-size: 12.5px; } .kg-wel .row { margin-top: 16px; }
+  .kg-hero { display: flex; gap: 24px; align-items: center; } .kg-hero .f { flex: none; width: 160px; } .kg-hero .f svg { width: 100%; height: auto; }
+  .kg-prog { height: 8px; border-radius: 99px; background: var(--panel2); overflow: hidden; margin: 12px 0 6px; } .kg-prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc), var(--gold)); }
+  .kg-ch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .kg-c { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: border-color .15s; } .kg-c:hover { border-color: var(--acc2); } .kg-c.p { border-color: rgba(196,181,253,.35); }
+  .kg-c .n { font: 400 13px var(--head); color: var(--mute); letter-spacing: 1px; } .kg-c .t { font: 400 20px/1.1 var(--head); font-style: italic; text-transform: uppercase; } .kg-c .s { color: var(--mute); font-size: 12.5px; }
+  .kg-c .ft { display: flex; gap: 8px; align-items: center; margin-top: auto; padding-top: 6px; font-size: 11.5px; font-weight: 800; color: var(--mute); } .kg-c .ft .ok { color: var(--ok); } .kg-c .ft .nw { color: var(--gold); }
+  @media (max-width: 1100px) { .kg-ch { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px) {
+    .kg-ch { grid-template-columns: 1fr; } .kg-hero { flex-direction: column; align-items: flex-start; } .kg-hero .f { width: 110px; }
+    #kg .kg-box { left: 8px; right: 8px; width: auto; transform: none; bottom: 10px; padding: 14px 14px 12px; min-height: 0; }
+    #kg .kg-box.hi { top: 66px; } #kg .kg-box.mi { top: auto; bottom: 10px; transform: none; }
+    #kg .kg-por { left: auto; right: 10px; bottom: auto; top: -86px; width: 86px; height: 98px; }
+    #kg .kg-who span, #kg .kg-cnt { display: none; } #kg .kg-txt { font-size: 14px; }
+    .kg-wel .w { flex-direction: column; text-align: center; padding: 20px; } .kg-wel .f { width: 120px; } .kg-wel .row { justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { #kg .kg-spot, #kg .kg-tag { transition: none; } }
 </style>
 </head>
 <body>
@@ -359,13 +415,14 @@
     <a href="#regles" data-p="regles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M8 7h8M8 11h6"/></svg>Règles et effets</a>
     <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span><span class="b" id="nbScript"></span></a>
     <a href="#sauvegarde" data-p="sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v6h10V4M8 15h8"/></svg><span>Sauvegarde</span></a>
+    <a href="#guides" data-p="guides"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Guides</span></a>
     <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal et nouveautés</span><span class="b o" id="nbJour" style="display:none"></span></a>
     <a href="#reglages" data-p="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>Réglages</span></a>
   </nav>
   <div class="job" id="sideJob" onclick="go('journal')"><div class="t" id="sjT">Aucune tâche</div><div class="prog" id="sjP"><i></i></div><div class="s" id="sjS">Prêt.</div></div>
 </aside>
 <div class="mainw">
-<header class="top"><button class="burger" onclick="menu()" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="crumb" id="crumb"></div><div class="topr"><button class="kbtn" onclick="kOuvrir()" title="Rechercher un onglet ou une carte">⌕ <span>Rechercher</span> <kbd>Ctrl K</kbd></button><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><span class="chip bell" id="bell" onclick="go('journal')" title="Alertes"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><i id="bellN" style="display:none"></i></span><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div></header>
+<header class="top"><button class="burger" onclick="menu()" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="crumb" id="crumb"></div><div class="topr"><button class="kbtn" onclick="kOuvrir()" title="Rechercher un onglet ou une carte">⌕ <span>Rechercher</span> <kbd>Ctrl K</kbd></button><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><button class="kg-help" id="kgHelp" onclick="kgAide()" title="Guides : la visite guidée de Kiko">?<i></i></button><span class="chip bell" id="bell" onclick="go('journal')" title="Alertes"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><i id="bellN" style="display:none"></i></span><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div></header>
 <main>
   <div class="mbmaj" id="mbMaj" onclick="majAction(event)"><span id="mbMajT">Mise à jour disponible</span><button>Voir</button></div>
   <!-- ===================== TABLEAU DE BORD ===================== -->
@@ -691,6 +748,28 @@
   </section>
 
   <!-- ===================== REGLAGES ===================== -->
+  <!-- ===================== GUIDES (5.39) ===================== -->
+  <section class="page" id="p-guides">
+    <div class="eyebrow">Outils</div>
+    <h1>Guides</h1>
+    <p class="lead">Kiko te fait visiter le logiciel. Rejoue la visite entière ou un seul chapitre, quand tu veux.</p>
+    <div class="card hot kg-hero"><div class="f" id="kgHeroFox"></div><div style="flex:1;min-width:0">
+      <h2>Visite complète <span class="r" id="kgDuree"></span></h2>
+      <div style="color:#d9d3c9">De la sauvegarde aux conseils dans le jeu. Les étapes « À toi » attendent que tu cliques toi-même.</div>
+      <div class="kg-prog"><i id="kgBar" style="width:0"></i></div><div class="muted" style="font-size:12px;font-weight:700" id="kgEtat"></div>
+      <div class="row" style="margin-top:14px"><button onclick="kgStart()" id="kgGo">Commencer la visite</button><button class="ghost" id="kgNewsB" onclick="kgStart('news')">Nouveautés</button><button class="ghost" onclick="kgRaz()">Tout remettre à zéro</button></div>
+    </div></div>
+    <div class="sp"></div>
+    <h2>Un chapitre à la fois</h2>
+    <div class="kg-ch" id="kgList"></div>
+    <div class="sp"></div>
+    <div class="card"><h2>Quand proposer le guide</h2>
+      <div class="set"><div class="x"><b>Au premier lancement</b><span>Une carte d'accueil, jamais imposée.</span></div><label class="sw"><input type="checkbox" id="kg_o_acc" onchange="kgOpt('acc',this.checked)"><span></span></label></div>
+      <div class="set"><div class="x"><b>Après une mise à jour avec des nouveautés</b><span>Un point rouge sur « ? » et un mini guide de quelques étapes.</span></div><label class="sw"><input type="checkbox" id="kg_o_news" onchange="kgOpt('news',this.checked)"><span></span></label></div>
+      <div class="set"><div class="x"><b>Texte instantané</b><span>Sans effet machine à écrire.</span></div><label class="sw"><input type="checkbox" id="kg_o_inst" onchange="kgOpt('inst',this.checked)"><span></span></label></div>
+    </div>
+  </section>
+
   <section class="page" id="p-reglages">
     <div class="eyebrow">Ton application</div>
     <h1>Réglages</h1>
@@ -702,6 +781,7 @@
         <div class="set"><div class="x"><b>Temps de réflexion du conseil en combat</b><span>Plus long = plus de simulations par coup (et un conseil plus sûr).</span></div><select id="r_ms"><option value="400">0,4 s</option><option value="700">0,7 s</option><option value="1200">1,2 s</option><option value="2000">2 s</option></select></div>
         <div class="set"><div class="x"><b>Effets visuels</b><span>Portrait en fond et braises qui montent. Coupés tout seuls quand la fenêtre est cachée.</span></div><label class="sw"><input type="checkbox" id="r_fx" onchange="fxReglage(this.checked)"><span></span></label></div>
         <div class="set"><div class="x"><b>Fils gardés libres pendant les calculs</b><span>Pour jouer sans ralentissement pendant une analyse.</span></div><select id="r_fils"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+        <div class="set"><div class="x"><b>Visite guidée</b><span>Kiko te refait le tour du logiciel, en entier ou par chapitre.</span></div><button class="ghost" onclick="kgStart()">Rejouer</button><button class="ghost" onclick="go('guides')">Chapitres</button></div>
       </div>
       <div class="card">
         <h2>Alertes <span class="r"><button class="ghost" onclick="api('/api/alertes-test',{method:'POST'}).then(()=>toast('Alerte de test envoyée'))">Tester</button></span></h2>
@@ -768,6 +848,20 @@
 <div class="kbar" id="kbar"><input id="kq" placeholder="Aller à un onglet ou une carte…" autocomplete="off"><div id="kres"></div><div class="ft">Ctrl+K partout · Entrée pour ouvrir · Échap pour fermer</div></div>
 <div id="modal" onclick="if(event.target===this)this.style.display='none'"><div class="box" id="mbox"></div></div>
 <div id="toast"></div>
+<!-- ===================== GUIDE (5.39) : carte d'accueil et calque de Kiko ===================== -->
+<div class="kg-wel" id="kgWel"><div class="w"><div class="f" id="kgWelFox"></div><div>
+  <h3>Salut, moi c'est <em>Kiko</em></h3>
+  <p id="kgWelT">Je suis le renard de KitsuAI. Je te fais visiter le logiciel en 3 minutes : la sauvegarde, les calculs, les conseils dans le jeu.</p>
+  <p class="m">Tu pourras me rappeler quand tu veux avec le bouton <b>?</b> en haut.</p>
+  <div class="row"><button onclick="kgWelFin();kgStart()">C'est parti</button><button class="ghost" onclick="kgWelFin()">Plus tard</button></div>
+</div></div></div>
+<div id="kg"><div class="kg-shade"></div><div class="kg-spot" id="kgSpot"></div><div class="kg-zone" id="kgZone"></div><div class="kg-tag dn" id="kgTag"></div>
+  <div class="kg-box" id="kgBox"><div class="kg-por" id="kgPor"></div>
+    <div class="kg-who"><b>Kiko</b><span id="kgCh"></span><button onclick="kgFin(false)">Quitter</button></div>
+    <div class="kg-txt" id="kgTxt" onclick="kgTape()"></div><div class="kg-fig" id="kgFig"></div>
+    <div class="kg-ft"><div class="kg-dots" id="kgDots"></div><span class="kg-cnt" id="kgCnt"></span><button class="ghost" id="kgPrev" onclick="kgPas(-1)">Retour</button><span class="kg-wait" id="kgWait">À toi</span><button id="kgNext" onclick="kgPas(1)">Suivant</button></div>
+  </div>
+</div>
 <script>
 const TOKEN = '__TOKEN__', SCRIPT_URL = 'https://github.com/Drien95/kitsu-ai/releases/latest/download/kitsu_ai.user.js';
 const api = (p, o = {}) => fetch(p, { ...o, headers: { 'X-Kitsu-Token': TOKEN, 'Content-Type': 'application/json', ...(o.headers || {}) } }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.err || r.status); return j; });
@@ -1545,7 +1639,7 @@ addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.
 campCharger();
 
 // ---------- refonte 5.13 : navigation, fond, mise a jour, tableau de bord, Tour, evenements, collection, fiche, recherche ----------
-const PAGES = { regles: ['Outils', 'Règles et effets'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], modele: ['Analyses', 'Le modèle'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
+const PAGES = { regles: ['Outils', 'Règles et effets'], guides: ['Outils', 'Guides'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], modele: ['Analyses', 'Le modèle'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
 const NAV_DE = { nouveautes: 'journal' };
 const pageAct = () => (location.hash || '#accueil').slice(1);
 function route() {
@@ -2043,6 +2137,202 @@ function mdMini() {
 
 route();
 refresh(); setInterval(refreshDoux, 1500); chargerCartes();
+
+// ---------- Guide interactif rejouable (5.39) : Kiko, le renard de KitsuAI ----------
+// Calque par-dessus le panneau : projecteur sur l'element dont parle Kiko, etiquette, boite de dialogue.
+// Etapes « A toi » : on avance quand tu ouvres toi-meme l'onglet montre. Rien ne se lance, rien n'est clique a ta place.
+// Etat dans localStorage (kitsuGuide) : chapitres vus, version des nouveautes vues, options. Aucune animation hors du calque ouvert.
+const KG_VER = '5.40.0';
+function kgFox(ex, id) {
+  id = id || 'kf' + Math.random().toString(36).slice(2, 7);
+  const D = '#07080c', C = '#f4ede3', oeil = (x) => `<ellipse cx="${x}" cy="107" rx="7.5" ry="8.5" fill="${D}"/><circle cx="${x + 2.5}" cy="104" r="2.4" fill="#fff"/>`;
+  const yeux = {
+    joie: `<path d="M64 110 Q76 96 88 110 M112 110 Q124 96 136 110" fill="none" stroke="${D}" stroke-width="6" stroke-linecap="round"/>`,
+    malin: oeil(76) + `<path d="M112 109 Q124 100 136 106" fill="none" stroke="${D}" stroke-width="6" stroke-linecap="round"/>`,
+    serieux: `<path d="M64 104 L88 108 L68 115 Z M136 104 L112 108 L132 115 Z" fill="${D}"/><path d="M60 94 L88 100 M140 94 L112 100" stroke="${D}" stroke-width="5" stroke-linecap="round"/>`,
+    surpris: `<circle cx="76" cy="106" r="8" fill="${D}"/><circle cx="124" cy="106" r="8" fill="${D}"/><circle cx="79" cy="103" r="2.6" fill="#fff"/><circle cx="127" cy="103" r="2.6" fill="#fff"/>`
+  }[ex] || oeil(76) + oeil(124);
+  const bouche = {
+    joie: `<path d="M88 152 L112 152 L100 164 Z" fill="#b8202f"/>`,
+    surpris: `<ellipse cx="100" cy="157" rx="5" ry="6" fill="#b8202f"/>`,
+    malin: `<path d="M92 154 Q102 160 110 152" fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round"/>`,
+    serieux: `<path d="M93 156 L107 156" stroke="${D}" stroke-width="3" stroke-linecap="round"/>`
+  }[ex] || `<path d="M92 153 Q96 158 100 154 Q104 158 108 153" fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 200 228" xmlns="http://www.w3.org/2000/svg" aria-label="Kiko"><defs><linearGradient id="${id}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8c3c"/><stop offset="1" stop-color="#e8283c"/></linearGradient><linearGradient id="${id}j" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1e2a"/><stop offset="1" stop-color="#0b0c12"/></linearGradient></defs>`
+    + `<path d="M150 228 Q196 196 186 150 Q182 132 170 128 Q180 168 140 200 Z" fill="url(#${id}f)"/><path d="M178 150 Q186 168 176 186 L168 178 Z" fill="${C}"/>`
+    + `<path d="M26 228 L44 182 L100 170 L156 182 L174 228 Z" fill="url(#${id}j)"/><path d="M44 182 L100 170 L156 182 L148 190 L100 180 L52 190 Z" fill="#2a2e3d"/>`
+    + `<path d="M66 172 L100 186 L134 172 L138 186 L100 202 L62 186 Z" fill="#ff4b3e"/><path d="M118 192 L134 222 L120 220 L110 196 Z" fill="#d93a2f"/><path d="M88 206 L100 196 L112 206 L100 216 Z" fill="#f7c548"/>`
+    + `<path d="M36 14 L82 58 L56 92 Z M164 14 L118 58 L144 92 Z" fill="url(#${id}f)"/><path d="M44 30 L72 58 L58 78 Z M156 30 L128 58 L142 78 Z" fill="#7a1420"/>`
+    + `<path d="M40 82 L100 66 L160 82 L146 132 L100 176 L54 132 Z" fill="url(#${id}f)"/><path d="M62 128 L100 140 L138 128 L120 152 L100 176 L80 152 Z" fill="${C}"/>`
+    + `<path d="M54 132 L40 120 L48 112 L62 128 Z M146 132 L160 120 L152 112 L138 128 Z" fill="${C}"/><path d="M94 74 L100 68 L106 74 L100 82 Z" fill="#ffd2a8" opacity=".9"/>`
+    + `${yeux}<path d="M92 142 L108 142 L100 150 Z" fill="${D}"/>${bouche}</svg>`;
+}
+const KG_JEU = `<div class="kg-jeu"><div class="c" style="left:22px;top:74px"></div><div class="c" style="left:76px;top:74px"></div><div class="c" style="left:130px;top:74px"></div>
+<div class="r" style="left:72px;top:70px;width:54px;height:70px"></div><div class="l" style="left:72px;top:145px">Cible</div>
+<div class="c" style="left:40px;top:12px;width:36px;height:48px"></div><div class="r p" style="left:36px;top:8px;width:44px;height:56px"></div><div class="l p" style="left:84px;top:12px">Exact</div>
+<div class="pan">Joue maintenant<b>Sort 2 sur le boss</b>3★ 94 %</div></div>
+<div class="kg-cc"><span><i style="background:#ff7a2f"></i>Script public</span><span><i style="background:#4fa8ff"></i>Privé, exact</span><span><i style="background:#fff"></i>Guide</span></div>`;
+// s : cibles (la premiere visible), c : encadrer la carte qui contient la cible, w : onglet a ouvrir pour avancer, m : texte sur telephone, f : figure
+const KG = [
+  { id: 'bienvenue', n: 'Bienvenue', d: "Ce que fait KitsuAI, et ce qu'il ne fera jamais.", e: [
+    { x: 'joie', p: 'accueil', t: "Salut ! Je suis <em>Kiko</em>. KitsuAI simule des milliers de combats sur ton PC pour te dire <em>quoi jouer</em>." },
+    { x: 'serieux', p: 'accueil', t: "Une règle avant tout : il ne joue <em>jamais</em> à ta place. Il calcule, il montre, <em>c'est toi qui cliques</em>." },
+    { x: 'neutre', p: 'accueil', s: ['#nav', '.burger'], tag: 'Le menu', t: "Le menu range tout : les <em>modes de jeu</em>, les <em>analyses</em> et les <em>outils</em>.", m: "Le menu est ici. En bas, les raccourcis vers les pages que tu ouvres le plus." },
+    { x: 'neutre', p: 'accueil', s: ['#dbModes'], tag: 'Où tu en es', t: "Où tu en es dans chaque mode, en un coup d'œil. Un clic ouvre le mode." },
+    { x: 'malin', p: 'accueil', s: ['#dbTodo'], c: 1, tag: 'À faire', t: "Ici, ce qui mérite ton attention <em>maintenant</em>. Quand c'est vide, tout est à jour." }] },
+  { id: 'sauvegarde', n: 'Ta sauvegarde', d: 'Envoyer tes cartes au logiciel.', e: [
+    { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="sauvegarde"]'], ms: ['.burger'], w: 'sauvegarde', tag: 'Clique ici', t: "Tout part de tes cartes. Clique sur <em>Sauvegarde</em>.", m: "Tout part de tes cartes. Ouvre le menu puis <em>Sauvegarde</em>." },
+    { x: 'joie', p: 'sauvegarde', s: ['#drop'], c: 1, tag: 'Glisse le fichier', t: "Dans le jeu : dock KitsuAI, onglet <em>Santé</em>, <em>Exporter pour le moteur local</em>. Puis glisse <em>sauvegarde.json</em> ici. Aucun jeton de connexion n'est exporté." }] },
+  { id: 'maj', n: "Mettre à jour l'IA", d: 'Le bouton qui relance tout, quand tu le décides.', e: [
+    { x: 'neutre', p: 'accueil', s: ['#btnTout'], c: 1, tag: "Mettre à jour l'IA", t: "Ce bouton enchaîne tout : moteur du jeu, entraînement, analyses, conseils. <em>Un clic, tout suit.</em>" },
+    { x: 'serieux', p: 'accueil', s: ['#bandeaux .banner.calc', '#steps', '#btnTout'], tag: 'Calcul conseillé', t: "Rien ne se lance tout seul. Quand tes cartes changent, un bandeau <em>Calcul conseillé</em> apparaît en haut, et tu choisis le moment." },
+    { x: 'neutre', p: 'accueil', s: ['#sideJob', '#lastline'], tag: 'En cours', t: "Le calcul en cours s'affiche ici. Tu peux l'<em>arrêter</em> quand tu veux, la reprise repart du journal." }] },
+  { id: 'campagne', n: 'Campagne', d: 'Le meilleur trio pour chaque combat, en 3★.', e: [
+    { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="campagne"]', '#tabbar a[data-t="campagne"]'], w: 'campagne', tag: 'Clique ici', t: "Passons à la <em>Campagne</em>. Clique dessus." },
+    { x: 'joie', p: 'campagne', s: ['#c3body > *', '#c3tabs'], tag: 'Meilleur trio', t: "Pour chaque combat, le trio qui fait le plus de <em>3 étoiles</em>, en Campagne et en Cauchemar <span style=\"color:#2fd27a\">N</span>, <span style=\"color:#f5a524\">D</span> et <span style=\"color:#ff4b3e\">E</span>." },
+    { x: 'serieux', p: 'campagne', s: ['#p-campagne .card.hot'], tag: 'Lancer', t: "Ce calcul est long : c'est <em>toi</em> qui le lances. Les combats déjà joués sont gardés et ne sont pas refaits." }] },
+  { id: 'tour', n: "Tour de l'infini", d: "Jusqu'où ton trio monte, et où il bloque.", e: [
+    { x: 'neutre', p: 'tour', s: ['#twBody > *', '#p-tour .card.hot'], tag: 'Ton meilleur trio', t: "La Tour : jusqu'à quel étage ton meilleur trio monte, en moyenne et en record." },
+    { x: 'surpris', p: 'tour', s: ['#twBody'], tag: 'Les murs', t: "Et surtout <em>où il bloque</em> : l'étage, les ennemis, et la part des montées qui s'y arrêtent." }] },
+  { id: 'arene', n: 'Arène', d: 'La partie privée, qui reste sur ton PC.', prive: 1, e: [
+    { x: 'malin', p: 'accueil', s: ['#nav a[data-p^="arene"]'], tag: 'Privé', t: "Tout ce qui porte le badge <span class=\"pv\">privé</span> reste sur ton PC. Jamais publié, jamais partagé." }] },
+  { id: 'script', n: 'Le script dans le jeu', d: 'Les contours et le panneau sur kitsu.games.', e: [
+    { x: 'neutre', p: 'script', s: ['#p-script .grid.g2'], tag: 'Installer', t: "Le script affiche les conseils <em>dans le jeu</em>. Il s'installe avec Tampermonkey, en quelques clics." },
+    { x: 'joie', p: 'script', f: KG_JEU, t: "En combat : contour <em>orange</em> = conseil public, <span class=\"bl\">bleu</span> = calcul exact privé, blanc = le guide. Le panneau dit le coup en gros." },
+    { x: 'serieux', p: 'script', s: ['#scrTiles', '#p-script .grid.g2'], tag: 'État du script', t: "Ici, l'état du script. Il <em>montre</em>, il ne clique pas, et il ne touche jamais à l'anti-robot du jeu." }] },
+  { id: 'modele', n: 'Le modèle', d: 'Voir ton IA progresser vers le modèle parfait.', e: [
+    { x: 'joie', p: 'modele', s: ['#mdConquete'], tag: 'La conquête', t: "Ici tu vois ton IA <em>progresser</em>, calcul après calcul, vers le modèle parfait." }] },
+  { id: 'fin', n: 'Rejouer le guide', d: 'Retrouver Kiko quand tu veux.', e: [
+    { x: 'joie', p: 'guides', s: ['#kgHelp'], tag: 'Me rappeler', t: "C'est tout ! Je suis derrière ce <em>?</em>. Tu peux rejouer toute la visite ou <em>un seul chapitre</em>, quand tu veux." },
+    { x: 'malin', p: 'guides', s: ['#kgList'], tag: 'Chapitres', t: "Les chapitres vus ont une coche. Après une mise à jour, je te montre <em>seulement ce qui a changé</em>." }] }
+];
+// Nouveautes par version : le point rouge sur « ? » s'allume tant que celles de la version installee n'ont pas ete vues.
+const KG_NEWS = { '5.40.0': [
+  { x: 'surpris', p: 'accueil', t: "Nouvelle version ! Une seule nouveauté, mais elle a des oreilles." },
+  { x: 'joie', p: 'accueil', s: ['#kgHelp'], tag: 'Nouveau', t: "Ce <em>?</em> ouvre la visite guidée, à rejouer en entier ou par chapitre." },
+  { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="guides"]'], tag: 'Nouveau', t: "Tu la retrouves aussi dans <em>Outils, Guides</em>, avec le choix de quand je me montre." }] };
+
+let KGS = (() => { try { return JSON.parse(localStorage.getItem('kitsuGuide') || 'null'); } catch { return null; } })();
+const kgNeuf = !KGS; KGS = Object.assign({ vu: {}, news: '', acc: true, optNews: true, inst: false, ouvert: false }, KGS || {});
+const kgSave = () => { try { localStorage.setItem('kitsuGuide', JSON.stringify(KGS)); } catch {} };
+let KT = null, kgTy = null, kgFull = '', kgIv = 0;
+const kgMob = () => innerWidth <= 900;
+
+function kgStart(kind, chId) {
+  kgWelFin(); fermer();
+  let L = [];
+  if (kind === 'news') { (KG_NEWS[KG_VER] || []).forEach(s => L.push({ ...s, ch: 'Nouveautés ' + KG_VER.replace(/\.0$/, ''), chId: 'news' })); KGS.news = KG_VER; kgSave(); kgPoint(); }
+  else KG.forEach(c => { if (!chId || c.id === chId) c.e.forEach(s => L.push({ ...s, ch: c.n, chId: c.id })); });
+  if (!L.length) return;
+  KT = { L, i: -1, kind };
+  $('kg').classList.add('on'); $('kgDots').innerHTML = L.map(() => '<i></i>').join('');
+  clearInterval(kgIv); kgIv = setInterval(kgPlace, 900); // le panneau se redessine : le projecteur suit (seulement guide ouvert)
+  kgPas(1);
+}
+function kgPas(d) {
+  if (!KT) return;
+  const av = KT.L[KT.i]?.chId; KT.i += d;
+  if (av && d > 0 && KT.L[KT.i]?.chId !== av && av !== 'news') { KGS.vu[av] = Date.now(); kgSave(); }
+  if (KT.i >= KT.L.length) return kgFin(true);
+  if (KT.i < 0) KT.i = 0;
+  const s = KT.L[KT.i]; KT.w = null;
+  if (s.p && pageAct() !== s.p) go(s.p);
+  KT.w = s.w || null; KT.alt = null;
+  $('kgPor').innerHTML = kgFox(s.x, 'kp' + KT.i);
+  const chs = [...new Set(KT.L.map(x => x.chId))];
+  $('kgCh').textContent = KT.kind === 'news' ? s.ch : `Chapitre ${chs.indexOf(s.chId) + 1}/${chs.length} · ${s.ch}`;
+  $('kgCnt').textContent = `${KT.i + 1} / ${KT.L.length}`;
+  [...$('kgDots').children].forEach((e, k) => e.className = k < KT.i ? 'd' : k === KT.i ? 'c' : '');
+  $('kgPrev').style.visibility = KT.i ? 'visible' : 'hidden';
+  $('kgNext').textContent = KT.i === KT.L.length - 1 ? 'Terminer' : s.w ? 'Passer' : 'Suivant';
+  $('kgNext').className = s.w ? 'ghost' : ''; $('kgWait').style.display = s.w ? 'flex' : 'none';
+  $('kgFig').innerHTML = s.f || ''; $('kgFig').style.display = s.f ? '' : 'none';
+  kgEcrire(kgMob() && s.m ? s.m : s.t);
+  kgPlace(); setTimeout(kgPlace, 160); setTimeout(kgPlace, 600);
+}
+function kgCible(s) {
+  const L = (kgMob() && s.ms && !document.body.classList.contains('menu') ? s.ms : null) || KT.alt || s.s || [];
+  for (const q of L) { let e = document.querySelector(q); if (!e) continue; if (s.c) e = e.closest('.card') || e; const r = e.getBoundingClientRect(); if (r.width > 4 && r.height > 4 && r.right > 0 && r.left < innerWidth) return e; }
+  return null;
+}
+function kgPlace() {
+  if (!KT) return;
+  const s = KT.L[KT.i], el = kgCible(s), g = $('kg'), box = $('kgBox'), sp = $('kgSpot'), tg = $('kgTag'), z = $('kgZone');
+  box.classList.remove('hi', 'mi');
+  if (!el) { g.classList.add('nospot'); g.classList.remove('has'); tg.style.display = 'none'; z.style.display = 'none'; box.classList.add('mi'); return; }
+  let r = el.getBoundingClientRect();
+  if (r.top < 64 || r.bottom > innerHeight - 30) { if (r.height < innerHeight - 120) { el.scrollIntoView({ block: 'center' }); r = el.getBoundingClientRect(); } }
+  g.classList.remove('nospot'); g.classList.add('has');
+  const pad = 6, top = Math.max(r.top, 2), bas = Math.min(r.bottom, innerHeight - 2);
+  Object.assign(sp.style, { left: r.left - pad + 'px', top: top - pad + 'px', width: r.width + pad * 2 + 'px', height: bas - top + pad * 2 + 'px' });
+  const bh = box.offsetHeight + 40;
+  if (bas + pad > innerHeight - bh && top > 76 + bh) box.classList.add('hi');
+  tg.style.display = s.tag ? 'block' : 'none'; tg.textContent = s.tag || '';
+  const haut = top > 110; tg.className = 'kg-tag ' + (haut ? 'dn' : 'up') + (s.w ? ' go' : '');
+  tg.style.left = Math.max(8, Math.min(innerWidth - tg.offsetWidth - 8, r.left)) + 'px';
+  tg.style.top = (haut ? top - pad - 34 : bas + pad + 10) + 'px';
+  if (s.w) {
+    Object.assign(z.style, { display: 'block', left: r.left + 'px', top: top + 'px', width: r.width + 'px', height: bas - top + 'px' });
+    z.onclick = () => { if (el.classList.contains('burger')) { document.body.classList.add('menu'); KT.alt = s.s; setTimeout(kgPlace, 350); } else go(s.w); };
+  } else z.style.display = 'none';
+}
+function kgEcrire(h) {
+  clearInterval(kgTy); kgTy = null; kgFull = h;
+  if (KGS.inst || matchMedia('(prefers-reduced-motion: reduce)').matches) { $('kgTxt').innerHTML = h; return; }
+  const n0 = h.replace(/<[^>]+>/g, '').length; let n = 0;
+  kgTy = setInterval(() => { n += 2; if (n >= n0) return kgTape(); $('kgTxt').innerHTML = kgCoupe(h, n) + '<span class="cur"></span>'; }, 16);
+}
+function kgCoupe(h, n) { // HTML coupe apres n caracteres visibles, balises refermees
+  let o = '', c = 0; const ouv = [];
+  for (const m of h.matchAll(/(<\/?([a-z]+)[^>]*>)|([^<]+)/gi)) {
+    if (m[1]) { o += m[1]; if (m[1][1] === '/') ouv.pop(); else ouv.push(m[2]); continue; }
+    if (c + m[3].length >= n) { o += m[3].slice(0, n - c); break; } o += m[3]; c += m[3].length;
+  }
+  return o + ouv.reverse().map(t => `</${t}>`).join('');
+}
+function kgTape() { clearInterval(kgTy); kgTy = null; $('kgTxt').innerHTML = kgFull; }
+function kgFin(fini) {
+  const der = KT && KT.L[Math.min(KT.i, KT.L.length - 1)]; if (fini && der && der.chId !== 'news') KGS.vu[der.chId] = Date.now();
+  kgSave(); KT = null; clearInterval(kgTy); clearInterval(kgIv); $('kg').classList.remove('on'); document.body.classList.remove('menu');
+  if (pageAct() === 'guides') kgRender(); else if (fini) go('guides');
+  if (fini) scrollTo(0, 0);
+}
+addEventListener('hashchange', () => { if (KT?.w && pageAct() === KT.w) setTimeout(() => kgPas(1), 150); if (pageAct() === 'guides') kgRender(); });
+addEventListener('resize', () => KT && kgPlace());
+addEventListener('keydown', e => {
+  if (!KT) return; e.stopImmediatePropagation();
+  if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); kgTy ? kgTape() : kgPas(1); }
+  else if (e.key === 'ArrowLeft') kgPas(-1); else if (e.key === 'Escape') kgFin(false);
+}, true);
+
+// ---------- page Guides ----------
+const kgQuand = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
+function kgRender() {
+  const n = KG.filter(c => KGS.vu[c.id]).length, et = KG.reduce((a, c) => a + c.e.length, 0);
+  $('kgBar').style.width = (100 * n / KG.length) + '%';
+  $('kgDuree').textContent = `${KG.length} chapitres · ${et} étapes · 3 min`;
+  $('kgEtat').textContent = n ? `${n} chapitre${n > 1 ? 's' : ''} vu${n > 1 ? 's' : ''} sur ${KG.length}` : 'Pas encore commencée';
+  $('kgGo').textContent = !n ? 'Commencer la visite' : n === KG.length ? 'Rejouer la visite' : 'Reprendre la visite';
+  $('kgGo').onclick = () => { const r = KG.find(c => !KGS.vu[c.id]); n && n < KG.length && r ? kgReprendre(r.id) : kgStart(); };
+  $('kgNewsB').style.display = KG_NEWS[KG_VER] ? '' : 'none'; $('kgNewsB').textContent = 'Nouveautés ' + KG_VER.replace(/\.0$/, '');
+  $('kgList').innerHTML = KG.map((c, i) => `<div class="kg-c${c.prive ? ' p' : ''}" onclick="kgStart('', '${c.id}')"><div class="n">${String(i + 1).padStart(2, '0')}${c.prive ? ' · <span style="color:#c4b5fd">privé</span>' : ''}</div><div class="t">${esc(c.n)}</div><div class="s">${esc(c.d)}</div><div class="ft">${c.e.length} étape${c.e.length > 1 ? 's' : ''} · ${KGS.vu[c.id] ? `<span class="ok">✓ vu ${kgQuand(KGS.vu[c.id])}</span>` : 'à voir'}<span style="margin-left:auto">▶</span></div></div>`).join('');
+  $('kgHeroFox').innerHTML = kgFox(n === KG.length ? 'joie' : 'neutre', 'kh');
+  $('kg_o_acc').checked = KGS.acc; $('kg_o_news').checked = KGS.optNews; $('kg_o_inst').checked = KGS.inst;
+}
+function kgReprendre(id) { // reprend la visite complete au premier chapitre pas encore vu
+  kgStart(); const k = KT.L.findIndex(s => s.chId === id); if (k > 0) { KT.i = k - 1; kgPas(1); }
+}
+function kgRaz() { KGS.vu = {}; kgSave(); kgRender(); toast('Guide remis à zéro'); }
+function kgOpt(k, v) { if (k === 'acc') KGS.acc = v; if (k === 'news') KGS.optNews = v; if (k === 'inst') KGS.inst = v; kgSave(); kgPoint(); }
+function kgPoint() { $('kgHelp').classList.toggle('nv', !!(KGS.optNews && KG_NEWS[KG_VER] && KGS.news !== KG_VER)); }
+function kgAide() { if (KGS.optNews && KG_NEWS[KG_VER] && KGS.news !== KG_VER && !kgNeuf) kgStart('news'); else go('guides'); }
+function kgWelFin() { $('kgWel').classList.remove('on'); KGS.ouvert = true; kgSave(); }
+// Premier lancement : carte d'accueil (jamais la visite d'office). Les nouveautes d'une version neuve se voient a l'accueil comme vues.
+kgPoint();
+if (kgNeuf || (KGS.acc && !KGS.ouvert)) {
+  if (kgNeuf) { KGS.news = KG_VER; kgSave(); kgPoint(); }
+  if (KGS.acc) setTimeout(() => { if (KT) return; $('kgWelFox').innerHTML = kgFox('joie', 'kw'); $('kgWel').classList.add('on'); }, 700);
+}
 </script>
 </body>
 </html>
