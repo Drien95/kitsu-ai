@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.39.0
+
+Launcher : une visite guidée qu'on peut rejouer, racontée par Kiko, le renard de KitsuAI.
+
+- Kiko : personnage original dessiné en SVG dans le panneau, tiré de l'icône KitsuAI (5 expressions). Aucune image téléchargée.
+- La visite : 9 chapitres, 22 étapes (bienvenue, sauvegarde, Mettre à jour l'IA, Campagne, Tour, Arène privée, script dans le jeu, le modèle, rejouer). Un projecteur éclaire l'élément dont Kiko parle, avec une étiquette ; sa boîte de dialogue reste en bas (ou en haut si elle cacherait l'élément). Les étapes « À toi » attendent que tu ouvres l'onglet toi-même. Clavier : flèches, Entrée, Échap.
+- Rejouer : bouton « ? » dans la barre du haut et page Outils > Guides (visite entière, reprise au premier chapitre pas vu, ou un chapitre seul ; chapitres vus cochés), aussi dans Réglages > Application.
+- Premier lancement : une carte d'accueil propose la visite, jamais lancée d'office. Après une mise à jour qui a des nouveautés, un point rouge sur « ? » ouvre un mini guide de la version (5.39 : le guide lui-même).
+- Options sur la page Guides : carte d'accueil, nouveautés, texte instantané (sans machine à écrire, aussi coupé si le système demande moins d'animations). État gardé dans le navigateur (`kitsuGuide`). Le projecteur ne suit le panneau que pendant que le guide est ouvert.
+
 ## 5.38.0
 
 Script : la règle privé/public est respectée sur l'écran d'équipe.
