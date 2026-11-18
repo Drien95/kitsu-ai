@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.30.0
+
+IA par trio : des réglages propres aux trios que tu joues vraiment en Cauchemar.
+
+- **Trios du plan** (`entrainer.mjs --trios plan`, utilisé par « Entraînement par équipe » et « Mettre à jour l'IA ») : les trios du plan du calcul Campagne (`cauchemar3.json`), chacun entraîné sur **ses** combats Cauchemar (ceux que le plan lui donne et ceux dont il est le meilleur trio), aux niveaux du calcul ; complétés par d'autres combats Cauchemar Extrême s'il y en a moins de 40. Un combat sur deux du trio sert à l'entraînement, l'autre au contrôle. Sans calcul Campagne : les meilleures équipes de la dernière analyse, comme avant.
+- **Gain confirmé avant d'être gardé** : les nouveaux réglages d'un trio sont rejoués contre les réglages généraux sur ses combats de contrôle avec 6 tirages jamais utilisés (mêmes combats, mêmes graines) ; gardés seulement si z ≥ 2. Avant : +0,5 point sur le contrôle suffisait, ce qui laissait passer du bruit.
+- Essai (VM, plan du 17/11, 2 générations) : Cell / Mei Terumî / Kanki 1,3 % puis 8,8 % de 3★ sur 240 combats jamais joués (z = 4,4), gardé.
+
 ## 5.29.0
 
 Le modèle vivant : un nouvel onglet (Analyses, « Le modèle ») pour voir ce que ton IA apprend, calcul après calcul.
