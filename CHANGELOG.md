@@ -4,12 +4,19 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.30.2
+## 5.31.1
 
 Onglet « Le modèle » : plus d'attente à l'ouverture, et « Rejouer » explique quand il ne peut rien rejouer.
 
 - **Ouverture immédiate.** `/api/modele` recalculait tout le plan d'XP avant de répondre, même quand rien n'avait changé : 4,2 à 5,1 s mesurées sur un PC avec 75 cartes SSR+ (cauchemar3.json de 4,6 Mo), et le serveur ne répondait à rien d'autre pendant ce temps. Il rend maintenant l'historique tout de suite. Chaque instantané garde l'empreinte (date et taille) des fichiers de `resultats/` et de `poids.json` : tant qu'elle ne change pas, le plan n'est pas recalculé du tout, ni à l'ouverture ni à la fin d'une tâche qui n'écrit pas de résultat (par exemple « Mettre à jour le serveur »). Quand un résultat a changé, l'instantané est pris juste après la réponse et l'onglet se recharge seul quelques secondes plus tard.
 - **Rejouer** : avec un seul instantané, le bouton est grisé et un texte dit que le rejeu marchera après le prochain calcul (avant, le clic ne faisait rien).
+## 5.31.0
+
+Base commune : ton IA passe devant l'IA commune pour la Campagne quand elle est nettement meilleure.
+
+- Avec le partage allumé, le calcul Campagne tournait toujours avec l'IA commune, même quand ton IA était meilleure. Maintenant, si la dernière comparaison (`comparer-ia.mjs`, lancée après chaque entraînement sur le PC validateur) dit « nettement meilleure » pour ces deux IA-là (mêmes empreintes), le calcul prend ton IA et ne partage rien (ni réception ni envoi : ses résultats ne se recoupent pas avec la base).
+- Dans tous les autres cas (pareille, moins bonne, pas de comparaison, ton IA ou l'IA commune changée depuis), l'IA commune reste en service et le partage marche comme avant.
+- Le partage reprend dès que tu publies ton IA comme IA commune (Réglages, cadre validateur). Le journal du calcul et la ligne IA commune des Réglages le disent.
 
 ## 5.30.1
 

@@ -10,7 +10,7 @@
 //   node cauchemar3.mjs [--niveaux 99|actuel] [--difficultes toutes|cauchemar] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
 //   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--seuil 60] [--sans-etages] [--sans-diagnostic]
 //   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { makeSim } from './lib/sim.mjs';
@@ -19,7 +19,7 @@ import * as PARTAGE from './lib/partage.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal } from './lib/journal.mjs';
 import { cleTrioDe } from './lib/partage-format.mjs';
-import { construireWC } from './lib/ia-commune.mjs';
+import { construireWC, iaPersoMeilleure } from './lib/ia-commune.mjs';
 import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
 import { diagnostiquer } from './lib/diagnostic.mjs';
@@ -41,7 +41,10 @@ const PART = PARTAGE.reglagesPartage();
 // IA commune : celle publiee sur le serveur (cache si pas d'internet), sinon celle livree avec l'appli.
 const PART_ON = !arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier);
 const IAC = PART_ON ? await PARTAGE.iaCommune(PART) : null, WCX = IAC ? construireWC(IAC.p) : WC;
-const PARTAGE_OK = PART_ON && !!WCX && (PAQ === 16 && !arg('max-combats') && !arg('max-trios') || !!arg('partage-test'));
+// Ton IA nettement meilleure que l'IA commune (derniere comparaison, memes IA) : la Campagne tourne avec la tienne et
+// ce calcul ne partage rien (ses resultats ne se recoupent pas avec la base). Le partage reprend quand tu la publies.
+const MIENNE = PART_ON && !!WCX && iaPersoMeilleure((() => { try { return JSON.parse(readFileSync(D('resultats', 'comparaison-ia.json'), 'utf8')); } catch { return null; } })(), WA_PC, WCX);
+const PARTAGE_OK = PART_ON && !!WCX && !MIENNE && (PAQ === 16 && !arg('max-combats') && !arg('max-trios') || !!arg('partage-test'));
 const WA = PARTAGE_OK ? WCX : WA_PC;
 const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r)).sort((a, b) => a - b);
 if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la sauvegarde exportee.'); process.exit(1); }
@@ -164,7 +167,7 @@ if (PARTAGE_OK) {
       onLigne: x => { if (paquets[x.di]?.[x.pi]?.cle !== x.clePaquet) return; const k = cle(x.di, x.pi, x.graine, x.ck); if (!J.get(k)) { J.set(k, x.n + ',' + x.s3); recus++; } } });
     J.flush(); log(`partage : ${recus} resultats ajoutes au journal depuis la base commune`);
   } catch (e) { PARTAGE.noter('erreur', { quoi: 'base injoignable au debut du calcul' }); log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
-} else if (PART_ON) log(`partage : coupe pour ce calcul (${!WCX ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
+} else if (PART_ON) log(`partage : coupe pour ce calcul (${MIENNE ? 'ton IA est nettement meilleure que l IA commune : calcul avec la tienne, publie-la (Reglages) pour partager de nouveau' : !WCX ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
 // 5.27 : la Campagne (Normal, Difficile, Extreme) n'elimine personne : pendant la course, seuls les Cauchemar sont joues ;
 // les finalistes jouent ensuite la Campagne avec les memes graines (memes resultats pour eux, moitie moins de combats pour les autres).
 let alive = [...Array(T).keys()]; const entonnoir = [];

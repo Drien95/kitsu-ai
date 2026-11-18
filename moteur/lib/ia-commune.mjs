@@ -24,3 +24,6 @@ export function construireWC(p) {
   return W;
 }
 export const cleIA = W => W ? h53(JSON.stringify(W)) : null;
+// Ton IA passe devant l'IA commune pour la Campagne seulement si la derniere comparaison (comparer-ia.mjs, apres
+// chaque entrainement) l'a jugee nettement meilleure, et si c'etait bien ces deux IA-la (empreintes identiques).
+export const iaPersoMeilleure = (cmp, mienne, commune) => !!(cmp && mienne && commune && cmp.verdict === 'meilleure' && cmp.mienne === cleIA(mienne) && cmp.commune === cleIA(commune) && cleIA(mienne) !== cleIA(commune));
