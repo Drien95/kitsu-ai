@@ -79,6 +79,8 @@ await test('envoi : sans cle, pas du gzip, sans description, description invalid
   assert.equal((await envoyer(B, lotA, { ...P.metaDe(lotA), lignes: 70000 })).s, 400);
   assert.equal((await envoyer(B, lotA, { ...P.metaDe(lotA), cartes: 'a..b' })).s, 400);
   assert.equal((await appel('POST', '/v1/lots', { cle: B, corps: Buffer.concat([gzipSync('x'), randomBytes(2e6)]), gz: true, meta: P.metaDe(lotA) })).s, 400);
+  assert.equal((await appel('GET', '/v1/moi', { cle: B })).j.connu, false, 'un envoi refuse ne cree pas d ID');
+  assert.equal((await appel('GET', '/v1/etat')).j.joueurs, 1, 'seuls les IDs qui ont envoye comptent');
 });
 
 await test('manifeste et telechargement : lots en attente visibles avec leurs cartes', async () => {
