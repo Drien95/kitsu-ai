@@ -4,6 +4,10 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.24.2
+
+- **« Mettre à jour le serveur » réparé** : lancé depuis le launcher, wrangler n'a pas de terminal et refuse la connexion faite dans le navigateur (`npx wrangler login`) ; il demandait `CLOUDFLARE_API_TOKEN` et la mise à jour s'arrêtait à la migration 1. Le cadre du PC validateur a maintenant une ligne « Jeton Cloudflare » (marche à suivre et lien) : le jeton est gardé dans `data/partage.json` (clé `cloudflare`), jamais affiché ni envoyé ailleurs qu'à Cloudflare, et passé à wrangler. Sans jeton, le bouton explique quoi faire au lieu d'échouer ; une erreur d'autorisation dit quelle permission manque.
+
 ## 5.24.1
 
 - **Quand ça envoie, quand ça récupère** : le bloc Base commune de Campagne l'explique (seulement pendant un calcul Campagne que tu lances : récupération au début, envoi et contrôles à la fin) et montre les derniers échanges avec la base (récupéré, envoyé, en attente et pourquoi, contrôles, regroupements), tenus dans `data/partage-journal.json`.

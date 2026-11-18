@@ -1,6 +1,8 @@
 // Met a jour le serveur de la base commune (Cloudflare) : migrations D1 pas encore passees, deploiement, nettoyage.
 // Reserve au PC validateur (jeton admin dans data/partage.json) et lance depuis le launcher (Reglages, cadre validateur).
-// Utilise wrangler deja connecte sur ce PC (npx wrangler@4 login, une fois). N'ajoute jamais de moyen de paiement :
+// wrangler s'authentifie avec le jeton d'API Cloudflare enregistre sur ce PC (Reglages, cadre validateur ; cle `cloudflare`
+// de data/partage.json, jamais ailleurs) : lance depuis le launcher, wrangler n'a pas de terminal et ne peut pas
+// utiliser la connexion du navigateur (npx wrangler login). N'ajoute jamais de moyen de paiement :
 // l'offre gratuite refuse au-dela des quotas, elle ne facture rien.
 // Code du serveur : le dossier partage/ du depot si on est en mode developpeur, sinon celui de la version installee,
 // telecharge depuis GitHub dans un dossier temporaire efface a la fin.
@@ -15,7 +17,10 @@ import { VERSION_SERVEUR } from './lib/partage-format.mjs';
 const log = m => console.log(m), stop = m => { console.log('ARRET : ' + m); process.exit(1); };
 if (!identite().admin) stop('reserve au PC validateur (pas de jeton admin dans data/partage.json)');
 const WIN = process.platform === 'win32';
-const npx = (args, cwd) => spawnSync(WIN ? 'npx.cmd' : 'npx', ['--yes', 'wrangler@4', ...args], { cwd, encoding: 'utf8', shell: WIN, env: { ...process.env, CI: '1' }, timeout: 300000 });
+const CF = JSON.parse(readFileSync(D('data', 'partage.json'), 'utf8')).cloudflare || process.env.CLOUDFLARE_API_TOKEN || '';
+const npx = (args, cwd) => spawnSync(WIN ? 'npx.cmd' : 'npx', ['--yes', 'wrangler@4', ...args], { cwd, encoding: 'utf8', shell: WIN, env: { ...process.env, ...(CF ? { CLOUDFLARE_API_TOKEN: CF } : {}) }, timeout: 300000 });
+const AIDE_JETON = 'wrangler n a pas pu se connecter a Cloudflare. Ajoute un jeton d API dans Reglages, cadre validateur, ligne « Jeton Cloudflare » (la marche a suivre y est), puis relance.';
+if (!CF) stop(AIDE_JETON);
 const sortie = r => `${r.stdout || ''}${r.stderr || ''}`.split(/\r?\n/).filter(l => l.trim()).slice(-25).join('\n');
 
 // ---------- 1. code du serveur ----------
@@ -44,7 +49,7 @@ for (const n of migs) {
   log(`migration ${n} ...`);
   const r = npx(['d1', 'execute', 'kitsu-partage', '--remote', '--file', `migration-${n}.sql`], dossier), txt = sortie(r);
   // Deja passee a la main (avant ce bouton) : la base repond que la colonne existe deja.
-  if (r.status !== 0 && !/duplicate column|already exists/i.test(txt)) { log(txt); log(`migration ${n} : echec, rien n'est deploye`); fin(1); }
+  if (r.status !== 0 && !/duplicate column|already exists/i.test(txt)) { log(txt); log(`migration ${n} : echec, rien n'est deploye`); if (/API_TOKEN|Authentication|not authorized|10000/i.test(txt)) log(AIDE_JETON + ' Verifie aussi que le jeton a bien le droit « D1 : Edit ».'); fin(1); }
   log(r.status === 0 ? `migration ${n} : faite` : `migration ${n} : deja faite`);
   faites.add(n); writeFileSync(fId, JSON.stringify({ ...JSON.parse(readFileSync(fId, 'utf8')), migrations: [...faites].sort((a, b) => a - b) }, null, 1));
 }
@@ -52,7 +57,7 @@ for (const n of migs) {
 // ---------- 3. deploiement ----------
 log('deploiement ...');
 const d = npx(['deploy'], dossier); log(sortie(d));
-if (d.status !== 0) { log('deploiement : echec (wrangler connecte ? sinon : npx wrangler@4 login)'); fin(1); }
+if (d.status !== 0) { log('deploiement : echec' + (/API_TOKEN|Authentication|not authorized|10000/i.test(sortie(d)) ? '. ' + AIDE_JETON + ' Verifie aussi le droit « Workers Scripts : Edit ».' : '')); fin(1); }
 
 // ---------- 4. verification ----------
 try {
