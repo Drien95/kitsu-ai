@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.33.2**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.33.3**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.33.3 | Script : le guide ne t'envoie plus vers le monde Halloween, fermé depuis le 1er novembre (le jeu le garde dans ses données mais ne l'affiche plus) |
 | 5.33.2 | Panneau : la collection (page Sauvegarde) se recharge quand le script met la sauvegarde à jour |
 | 5.33.1 | Script : avec le privé 0.24.1+, le cadre public reste caché pendant tout le combat, tours adverses compris |
 | 5.33.0 | Calculs plus rapides à résultats identiques : les collectifs d'un trio sont calculés une fois au lieu d'à chaque combat (test VM : 1,25 fois sur les combats durs coupés, environ 1,55 fois sur un petit calcul Campagne ; `cauchemar3.json` identique) |

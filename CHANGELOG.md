@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.33.3
+
+Script : le guide ne t'envoie plus vers le monde Halloween, fermé depuis le 1er novembre.
+
+- **Constat** (18/11) : le guide disait « fais defiler jusqu'au monde Halloween pour « Le portail de la nuit des citrouilles » », mais la page Aventure n'a plus ce monde. Lu dans le code du jeu : l'Aventure Halloween n'est affichée que jusqu'à `HALLOWEEN_UNTIL` (1er/11/2026 17 h), mais le monde reste dans `ALL_WORLDS` et `fightOpen` ne regarde pas cette date (`halloween-1` encore « ouvert » pour lui le 18/11). Le plan du script le comptait donc comme jouable, et, faute de bouton à entourer, le guide affichait seulement le texte.
+- **Correction** : le plan (combats, modes, combat de farm, murs à venir) ignore le monde Halloween une fois `HALLOWEEN_UNTIL` passé, et le guide écarte ses combats d'un ancien plan. Avant la date, rien ne change. Test avec le moteur du jeu du PC : 12 mondes au 31/10, 11 le 18/11.
+- Le moteur (calculs Campagne) l'excluait déjà.
+
 ## 5.33.2
 
 Panneau : « Ta collection » suit la sauvegarde envoyée automatiquement par le script.
