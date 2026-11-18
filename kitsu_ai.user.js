@@ -224,6 +224,13 @@
           for (const j of jobs) { let w2 = 0, s3 = 0, sc = 0; for (const sd of j.seeds) { const st = playOut(G.setupBattle(G.findFight(j.fid), j.team, sd).st, pol); sc += score(st); if (B.outcome(st) === 'win') { w2++; if (B.allies(st).every(u => u.alive) && st.cycle <= 8) s3++; } } out.push({ w: w2, s3, s: sc, n: j.seeds.length }); await idle(); }
           return out;
         };
+        // 5.35 : victoires et score totaux de chaque trio sur une liste de combats, dans le worker. Memes equipes (teamOf),
+        // memes graines et meme ordre de somme que runWin / runScore sur le fil du jeu : memes resultats.
+        const simTrios = async (list, fights, seeds, S, opt, W) => {
+          const jobs = []; for (const ids of list) { const team = teamOf(ids, S, opt); for (const f of fights) jobs.push({ fid: f, team, seeds }); }
+          const out = await simBatch(jobs, W), n = fights.length;
+          return list.map((_, i) => { let w = 0, sc = 0; for (let k = 0; k < n; k++) { const o = out[i * n + k]; w += o.w; sc += o.s; } return { w, s: sc }; });
+        };
         // Journal d'etat pour l'onglet Sante
         const health = { errors: [], err(m) { this.errors.unshift({ t: Date.now(), m: String(m).slice(0, 160) }); this.errors.length = Math.min(this.errors.length, 10); } };
 
@@ -512,15 +519,17 @@
         const buildBench = async (teams, W) => {
           const pol = smartPol(W), norm = {}, boss = [];
           const ref = teams[0];
+          // 5.35 : combats joues dans le worker (un lot par monde), plus sur le fil du jeu.
           for (const w of G.ALL_WORLDS) {
-            for (const f of w.fights) {
-              if (f.boss) { let s = 0; for (const sd of [1, 2]) s += runScore(f.id, ref, pol, sd); s /= 2; if (s > -0.6 && s < 2.9) boss.push(f.id); }
-              else { let ok = 0; for (const sd of [1, 2]) if (runWin(f.id, ref, pol, sd)) ok++; if (ok < 2) norm[f.id] = 1; }
-            }
-            await idle();
+            const ids = w.fights.map(f => f.id), r = await simBatch(ids.map(fid => ({ fid, team: teamOf(ref), seeds: [1, 2] })), W);
+            w.fights.forEach((f, i) => {
+              if (f.boss) { const s = r[i].s / 2; if (s > -0.6 && s < 2.9) boss.push(f.id); }
+              else if (r[i].w < 2) norm[f.id] = 1;
+            });
           }
-          const normList = [];
-          for (const f of Object.keys(norm)) { let w = 0; for (const ids of teams) for (const sd of [1, 2]) if (runWin(f, ids, pol, sd)) w++; if (w > 0 && w < teams.length * 2) normList.push(f); }
+          const normList = [], nk = Object.keys(norm);
+          const rn = nk.length ? await simBatch(nk.flatMap(fid => teams.map(ids => ({ fid, team: teamOf(ids), seeds: [1, 2] }))), W) : [];
+          nk.forEach((f, i) => { let w = 0; for (let k = 0; k < teams.length; k++) w += rn[i * teams.length + k].w; if (w > 0 && w < teams.length * 2) normList.push(f); });
           const split = a => ({ tr: a.filter((_, i) => i % 4 !== 0), ho: a.filter((_, i) => i % 4 === 0) });
           return (benchCache = { norm: split(normList), boss: split(boss), teams });
         };
@@ -529,7 +538,7 @@
           const S = save(), pol = smartPol(W), sample = [];
           for (const w of G.ALL_WORLDS) w.fights.forEach((f, i) => { if (i % 6 === 0 || f.boss) sample.push(f.id); });
           const ranked = [];
-          for (const t of trios(pool(6, S))) { let s = 0; for (const f of sample) s += runScore(f, t, pol, 1, S); ranked.push({ t, s }); await idle(); }
+          for (const t of trios(pool(6, S))) ranked.push({ t, s: (await simTrios([t], sample, [1], S, undefined, W))[0].s }); // 5.35 : dans le worker
           return ranked.sort((a, b) => b.s - a.s).slice(0, 3).map(x => x.t);
         };
 
@@ -2051,8 +2060,8 @@
             const bench = benchCache || await buildBench(await defaultTeams(this.W), this.W);
             const fights = bench.norm.tr.concat(bench.norm.ho).filter((_, i) => i % 2 === 0).concat(bench.boss.tr.concat(bench.boss.ho).filter((_, i) => i % 2 === 0));
             const pol = smartPol(this.W), opt = { newLv };
-            const wins = ids => { let w = 0; for (const f of fights) if (runWin(f, ids, pol, 1, S, opt)) w++; return w; };
-            const base = trios(pool(6, S)).map(t => ({ t, w: wins(t) })).sort((a, b) => b.w - a.w).slice(0, 2);
+            const wins = async ids => (await simTrios([ids], fights, [1], S, opt, this.W))[0].w; // 5.35 : dans le worker
+            const base = []; for (const t of trios(pool(6, S))) base.push({ t, w: await wins(t) }); base.sort((a, b) => b.w - a.w); base.length = Math.min(2, base.length);
             const gain = {};
             const out = [];
             for (const b of banners) {
@@ -2065,7 +2074,7 @@
                   if (S.owned?.[c.id]) { gs.push({ n: c.n, g: 0, owned: true }); continue; }
                   if (gain[c.id] == null) {
                     let best = 0;
-                    for (const x of base) for (let j = 0; j < 3; j++) { const t = x.t.slice(); t[j] = c.id; best = Math.max(best, wins(t)); }
+                    for (const x of base) for (let j = 0; j < 3; j++) { const t = x.t.slice(); t[j] = c.id; best = Math.max(best, await wins(t)); }
                     gain[c.id] = best - base[0].w;
                     await idle();
                   }
@@ -2157,11 +2166,11 @@
             const S = save(), pol = smartPol(this.W);
             const bench = benchCache || await buildBench(await defaultTeams(this.W), this.W);
             const fights = bench.norm.tr.concat(bench.norm.ho, bench.boss.tr, bench.boss.ho).filter((_, i) => i % 2 === 0);
-            const wins = (ids, bump) => { let w = 0; for (const f of fights) for (const sd of [1, 2]) if (runWin(f, ids, pol, sd, S, { bump })) w++; return w; };
-            const p = pool(n, S), base = trios(p).map(t => ({ t, w: wins(t) })).sort((a, b) => b.w - a.w), top = base.slice(0, 6), out = {};
+            const wins = async (ids, bump) => (await simTrios([ids], fights, [1, 2], S, { bump }, this.W))[0].w; // 5.35 : dans le worker
+            const p = pool(n, S), base = []; for (const t of trios(p)) base.push({ t, w: await wins(t) }); base.sort((a, b) => b.w - a.w); const top = base.slice(0, 6), out = {};
             for (const c of p) {
               const tr = top.filter(x => x.t.includes(c)).slice(0, 2);
-              if (tr.length) out[`${short(c)} (niv ${S.lv?.[c]?.l || 1})`] = { gainPour5Niveaux: Math.max(...tr.map(x => wins(x.t, c) - x.w)) };
+              if (tr.length) { const g = []; for (const x of tr) g.push(await wins(x.t, c) - x.w); out[`${short(c)} (niv ${S.lv?.[c]?.l || 1})`] = { gainPour5Niveaux: Math.max(...g) }; }
               await idle();
             }
             console.table(out); return out;
