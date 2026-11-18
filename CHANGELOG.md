@@ -12,6 +12,7 @@ Moins de lag hors combat (carte, fin de combat, choix de l'équipe) : les simula
 - **Ce qui change** : le plan du moment (meilleur trio par combat, murs à venir, combat de farm), la vérification de l'équipe sur l'écran d'équipe (12 tirages) et les 32 tirages des 8 meilleurs trios de l'écran d'équipe passent par le worker (`simBatch`) déjà utilisé pour l'entraînement et la boutique. Mêmes graines, mêmes équipes, même code de simulation : mêmes résultats. Sans worker, repli sur le fil principal comme avant.
 - **2e passe** (mesure après la 1re passe, 12,9 min : fin de combat 2,0 à 1,4 s bloquées par minute, combat 2,0 à 1,1 s, mais page des bannières 44 s) : la valeur des bannières (`pulls`), le banc de combats de référence (`buildBench`), tes 3 meilleurs trios (`defaultTeams`) et `xpPlan` passent aussi dans le worker (`simTrios`), avec les mêmes graines, les mêmes équipes et le même ordre de somme.
 - Restent sur le fil du jeu : le conseil en combat (`evalLive`, ~60 ms par tour), la Tour simulée une fois par jour et l'équipe du boss de guilde (une fois par boss).
+- Mesure : `window.__kitsuPerf` compte le temps passé sur le fil du jeu après chaque pause, par fonction (`idle:Object.plan`...), et celui du conseil en combat (`evalLive`). Lu par la mesure du lag du script privé (0.24.2+), lecture seule.
 - Aucun cœur ni fil bridé.
 
 ## 5.33.1

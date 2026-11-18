@@ -61,9 +61,19 @@
         const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
         const sleep = ms => new Promise(r => setTimeout(r, ms));
         // Les calculs de fond cedent la main au jeu, et se mettent en pause tant qu'un combat est en cours.
+        // 5.34 : temps passe sur le fil du jeu entre deux pauses, par fonction appelante (window.__kitsuPerf, lu par la mesure
+        // du lag du script prive). Lecture seule, quelques microsecondes par pause.
+        const PERF = window.__kitsuPerf = window.__kitsuPerf || {};
+        const perfAdd = (qui, d) => { const b = PERF[qui] ??= { ms: 0, n: 0, max: 0 }; b.ms = Math.round(b.ms + d); b.n++; if (d > b.max) b.max = Math.round(d); };
+        let idleT = 0, idleQui = '', idleSeq = 0;
+        // Fin du bloc : a la prochaine pause, ou des que la tache en cours rend la main (message envoye a soi-meme).
+        const idleFin = new MessageChannel(); idleFin.port1.onmessage = e => { if (idleT && e.data === idleSeq) { perfAdd(idleQui, performance.now() - idleT); idleT = 0; } };
+        const idleGo = (qui, r) => { idleT = performance.now(); idleQui = qui; idleFin.port2.postMessage(++idleSeq); r(); };
         const idle = async () => {
+          if (idleT) { perfAdd(idleQui, performance.now() - idleT); idleT = 0; }
+          const qui = 'idle:' + ((new Error().stack || '').split('\n')[2] || '').trim().replace(/^at (async )?/, '').split(' ')[0];
           for (let i = 0; i < 600; i++) { let busy = false; try { const T = APP && liveBattle(); busy = !!(T && !T.over); } catch {} if (!busy) break; await new Promise(r => setTimeout(r, 1000)); }
-          return new Promise(r => (window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 500 }) : setTimeout(r, 30)));
+          return new Promise(r => (window.requestIdleCallback ? requestIdleCallback(() => idleGo(qui, r), { timeout: 500 }) : setTimeout(() => idleGo(qui, r), 30)));
         };
 
         let G = null, APP = null, DOMM = null;
@@ -1782,7 +1792,7 @@
                 const sig = a.key + '|' + (T.actions?.length || 0) + '|' + st.elapsed;
                 if (sig === last) return; last = sig;
                 if (T.tower) st.__tower = 1;
-                const res = evalLive(st, a.key, smartPol(this.W));
+                const tEv = performance.now(), res = evalLive(st, a.key, smartPol(this.W)); perfAdd('evalLive', performance.now() - tEv);
                 logDecision(T, res);
                 const b0 = res[0].c, m0 = mv(a, b0.kind);
                 cur = { me: a.key, kind: b0.kind, tgt: b0.target?.key, all: b0.kind !== 'rest' && b0.kind !== 'basic' && !b0.target && B.kitRole(a, b0.kind).aoe > 0, label: m0.name };
