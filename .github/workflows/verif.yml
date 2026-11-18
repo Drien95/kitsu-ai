@@ -15,9 +15,13 @@ jobs:
         run: node --check kitsu_ai.user.js
       - name: Syntaxe du moteur local et de l'application
         run: |
-          for f in moteur/*.mjs moteur/lib/*.mjs app/main.js; do node --check "$f" || exit 1; done
+          for f in moteur/*.mjs moteur/lib/*.mjs partage/*.mjs partage/src/*.js app/main.js; do node --check "$f" || exit 1; done
           test -f moteur/panneau/index.html
           node -e "JSON.parse(require('fs').readFileSync('app/package.json','utf8'))"
+      - name: Serveur de la base commune (sans Cloudflare)
+        run: node --no-warnings partage/tests.mjs
+        env:
+          KITSU_DATA: ${{ runner.temp }}/kitsu-partage
       - name: Version coherente (en-tete, README, CHANGELOG)
         run: |
           V=$(grep -m1 '@version' kitsu_ai.user.js | awk '{print $3}')
