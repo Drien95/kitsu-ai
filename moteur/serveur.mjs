@@ -16,6 +16,7 @@ import { makePool, baisserPriorite } from './lib/pool.mjs';
 import { dir as D, DATA, CODE } from './lib/chemins.mjs';
 import { listerPoids, restaurerPoids } from './lib/historique.mjs';
 import { planTour, planNaif, finir as finirRaid, sieges as siegesRaid } from './lib/raid.mjs';
+import { plan as planXp } from './lib/plan.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
@@ -40,6 +41,14 @@ const readJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch {
 const jCache = new Map();
 const readJc = f => { let st; try { st = statSync(f); } catch { jCache.delete(f); return null; } const c = jCache.get(f), k = st.mtimeMs + ':' + st.size; if (c && c.k === k) return c.v; const v = readJ(f); jCache.set(f, { k, v }); return v; };
 let scriptVu = null, jeu = null;
+// ---------- plan d'XP et de banniere (5.21) : tous les modes, a partir des resultats deja calcules, sans simulation ----------
+// Le script prive (extension) peut ajouter sa part : Tour exacte, Arene, cartes a guetter (EXT.planPrive). Sans lui : public seul.
+const planCalcule = async G => {
+  const S = readJc(D('data', 'sauvegarde.json')); if (!S?.owned) return { err: 'aucune sauvegarde : ouvre le jeu avec le script, ou importe-la' };
+  let prive = null; if (EXT?.planPrive) { try { prive = await EXT.planPrive({ D, readJ: readJc, S }); } catch (e) { say('plan prive : ' + e.message); } }
+  const R = f => readJc(D('resultats', f));
+  return planXp({ G, S, campagne: R('cauchemar3.json'), tour: R('tour.json'), raid: R('raid.json'), conseils: R('conseils-ia.json'), jeu, prive });
+};
 // ---------- campagne : ce que coutera le calcul des 3 etoiles (affiche avant le lancement) ----------
 // Memes regles que cauchemar3.mjs : cartes SSR/UR/LR possedees, combats de la campagne (sans halloween) par difficulte.
 let COMBATS_DIFF = null;
@@ -264,6 +273,8 @@ http.createServer(async (req, res) => {
       const r = await avecPool(pool => pool.runAll(q.equipes.map(team => ({ team, fights: [q.fid], seeds })), q.W, {}, 4));
       return send(res, 200, { ms: Date.now() - t0, res: r }, 'application/json', CORS);
     }
+    // Carte qui recoit les parchemins d'XP, pour le script (le moteur du jeu n'est pas charge pour ca : noms lus dans la page).
+    if (u.pathname === '/plan' && req.method === 'GET') { const p = await planCalcule(ENG?.G || null); return send(res, 200, p.err ? p : { t: p.t, score: p.score, cible: p.cible && { id: p.cible.id, niveau: p.cible.niveau, xp: p.cible.xp, raison: p.cible.raison } }, 'application/json', CORS); }
     if (u.pathname === '/raid' && req.method === 'POST') return send(res, 200, await raidConseil(JSON.parse(await body(req))), 'application/json', CORS);
     if (u.pathname === '/conseil' && req.method === 'POST') {
       const q = JSON.parse(await body(req));
@@ -288,6 +299,7 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [] }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
+      if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
       if (u.pathname === '/api/raids') return send(res, 200, readJ(D('data', 'raids.json')) || []);
       if (u.pathname === '/api/fiche') { if (FICHE.v !== VER) FICHE = { v: VER, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: VER, ...FICHE.j }); }
       if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }

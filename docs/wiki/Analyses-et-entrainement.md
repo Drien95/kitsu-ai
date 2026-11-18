@@ -67,6 +67,6 @@ Calculés sur 120 combats Cauchemar Extrême (plusieurs ennemis et boss). Score 
 | Rubrique | Ce que tu y trouves |
 |---|---|
 | **Collectifs** | Le jeu n'active que 6 collectifs par carte. Pour chaque carte de tes meilleures équipes qui en a plus, les 6 à cocher, ceux à décocher et le gain. Vérifié aussi quand on change plusieurs cartes à la fois. |
-| **Plan d'XP** | Pour chaque carte pas encore niveau 99 : son meilleur trio et ses chances à plusieurs niveaux, avec l'XP nécessaire. « Pas prioritaire » si même au niveau 99 elle ne bat pas ta meilleure équipe. |
+| **Plan d'XP (ancien, remplacé en 5.21 par le bloc « Plan d'XP et bannière » en tête de Cartes et conseils, qui pèse tous les modes)** | Pour chaque carte pas encore niveau 99 : son meilleur trio et ses chances à plusieurs niveaux, avec l'XP nécessaire. « Pas prioritaire » si même au niveau 99 elle ne bat pas ta meilleure équipe. |
 | **Tirage** | Chaque LR et UR des bannières ouvertes, supposée niveau 99, dans son meilleur trio avec tes cartes. Gain par rapport à ta meilleure équipe. Une carte déjà à toi est comptée avec une étoile de plus. |
 | **Duos** | Les paires dont le trio moyen dépasse la valeur de leurs deux cartes prises séparément (synergie), avec leur meilleur troisième. |

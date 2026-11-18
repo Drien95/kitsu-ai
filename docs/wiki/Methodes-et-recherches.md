@@ -19,7 +19,8 @@ Rappel des règles du projet : KitsuAI lit et affiche seulement. Aucun clic auto
 | Campagne : meilleur trio par combat | `cauchemar3.mjs`, `lib/etages.mjs` | Les meilleurs trios de la course et ceux du script jouent chaque combat seul ; les combats sans trio sûr sont cherchés sur tous les trios (budget de temps, reprise par le journal) ; plan minimal de trios pour tout couvrir | En place (5.16.0) |
 | Mêmes tirages pour tous (nombres aléatoires communs) | `cauchemar3.mjs`, `tout.mjs` | Tous les trios jouent les mêmes combats avec les mêmes graines : l'écart mesuré vient du trio, pas de la chance | Divise fortement le nombre de combats nécessaires pour départager |
 | Collectifs | `conseils.mjs`, `cauchemar3.mjs` | Les 6 collectifs à cocher quand une carte en a plus : crible rapide, puis confirmation | Changement conseillé seulement si le gain dépasse 2 erreurs types |
-| Conseils de cartes | `conseils.mjs` | Plan d'XP, valeur des cartes des bannières, duos, marché | Mesurés avec le moteur sur tes cartes |
+| Conseils de cartes | `conseils.mjs` | Collectifs, valeur des cartes des bannières, duos, marché | Mesurés avec le moteur sur tes cartes |
+| Plan d'XP et de bannière (5.21) | `lib/plan.mjs`, `/api/plan`, `/plan` | Score « modèle parfait » (Campagne 1, Tour 1, Arène 1, Raid 1/2, en % de ce que la collection peut faire au 99) ; montées classées en points pour 100 000 XP, de façon gloutonne (la suivante comptée une fois la précédente faite) | Aucun combat simulé : lu dans les résultats existants |
 | Calcul sur tous les cœurs | `lib/pool.mjs`, `lib/worker.mjs` | Les combats sont répartis sur les fils du processeur | Vérifié identique au calcul sur un seul fil |
 | Raid : simulation et stratégie de groupe | `lib/raid.mjs`, `raid.mjs` | Raid complet joué avec le code du jeu, de 1 à 3 joueurs ; Ruptures planifiées pour le groupe, Garde sur la carte visée, 2 Ruptures gardées pour la phase 3 de Diavolo ; trios classés contre 3 niveaux de coéquipiers tirés au hasard, à 3 et à 2 joueurs | Trio recopié aux 3 places : 0 sur 20 en frappant seulement, 30 sur 30 avec la stratégie. Coéquipiers L/M niveau 99 : 93 % ; E/L : 60 % ; E niveau 70 : 7 % |
 | Détection de patch | `telecharger.mjs`, `lib/resume.mjs` | Repérer ce qui change dans le jeu (cartes, kits, combats) | Une version comparée à elle-même est vide (test) |
@@ -49,7 +50,6 @@ Limite connue : la règle à 19 critères joue bien mais pas parfaitement. Un tr
 | Bandits (UCB, LUCB) pour choisir quels trios rejouer | La course avec élimination suffit pour l'instant ; gain de temps possible plus tard |
 | Réseau de neurones (valeur et coups, PyTorch sur carte graphique) pour la campagne | La règle à 19 critères plus la simulation suffisent ; à reprendre si la recherche coup par coup plafonne |
 | Collectifs optimisés pour tous les trios | Fait seulement pour les 5 meilleurs (le calcul est long) |
-| Plan d'XP qui tient compte du coût | Le plan actuel dit quelle carte monter, pas encore à quel prix |
 
 ## 4. Axes futurs
 

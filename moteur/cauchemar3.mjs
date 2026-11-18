@@ -179,7 +179,7 @@ if (!arg('sans-etages')) {
   const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...scriptSet, ...(cur != null ? [cur] : [])])];
   const sigColl = h53(IDS.map(id => cleCarte(id)).join(','));
   etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
-    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60) });
+    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), dejaAu99: id => (SAVE.lv?.[id]?.l || 1) >= 99 });
   etages.scriptCartes = [...dix].map(nom);
   // Nom, monde et place de chaque combat de base, pour l'affichage par etage.
   etages.infos = {}; const vus = new Set(etages.combats.map(c => c[8])); for (const w of G.ALL_WORLDS) for (const f of w.fights) if (vus.has(f.id)) etages.infos[f.id] = [w.id, f.idx ?? w.fights.indexOf(f), f.t || f.id, f.boss ? 1 : 0];

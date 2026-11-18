@@ -299,6 +299,16 @@
     .seg { display: flex; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; } .row label { flex-wrap: wrap; max-width: 100%; } select { max-width: 100%; }
     .pf.xl { width: 84px; height: 112px; } h2 { flex-wrap: wrap; } h2 .r { margin-left: 0; width: 100%; flex-wrap: wrap; }
   }
+  /* ---- plan d'XP et de banniere (5.21) ---- */
+  .px-lv { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; margin: 10px 0 6px; max-width: 520px; } .px-lv i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc2), var(--gold)); }
+  .px-gm { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; max-width: 760px; }
+  .px-gm div { background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 9px 12px; } .px-gm div b { display: block; font: 400 22px/1.1 var(--head); }
+  .px-gm div span { color: var(--mute); font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; } .px-gm div.up b { color: var(--ok); } .px-gm div.z b { color: var(--mute); }
+  .px-src { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; border: 1px solid rgba(79,168,255,.45); color: #8cc4ff; margin-left: 6px; vertical-align: 2px; font-style: normal; }
+  .px-modes .mode .w { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--mute); }
+  .px-modes .mode .gauge { height: 6px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; margin-top: 8px; } .px-modes .mode .gauge i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc), var(--gold)); }
+  .px-verdict { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; } .px-verdict .big { font: 400 34px/1 var(--head); font-style: italic; text-transform: uppercase; }
+  @media (max-width: 900px) { .px-gm { grid-template-columns: 1fr 1fr; } .px-modes .mode .w { display: none; } }
 </style>
 </head>
 <body>
@@ -492,7 +502,9 @@
   <section class="page" id="p-resultats">
     <div class="eyebrow">Analyses</div>
     <h1>Cartes et conseils</h1>
-    <div class="chips2"><a onclick="document.getElementById('tabsNiv').scrollIntoView({behavior:'smooth'})">Meilleurs trios</a><a onclick="document.getElementById('tabsCons').scrollIntoView({behavior:'smooth'})">Collectifs, XP, tirage, duos, marché</a><a onclick="document.getElementById('files').scrollIntoView({behavior:'smooth'})">Fichiers</a></div>
+    <div class="chips2"><a onclick="document.getElementById('planxp').scrollIntoView({behavior:'smooth'})">Plan d'XP et bannière</a><a onclick="document.getElementById('tabsNiv').scrollIntoView({behavior:'smooth'})">Meilleurs trios</a><a onclick="document.getElementById('tabsCons').scrollIntoView({behavior:'smooth'})">Collectifs, duos, marché</a><a onclick="document.getElementById('files').scrollIntoView({behavior:'smooth'})">Fichiers</a></div>
+    <div id="planxp"><div class="card"><div class="muted">Plan d'XP et bannière : chargement...</div></div></div>
+    <div class="sp"></div>
     <p class="lead" id="resinfo">Les 10 meilleurs trios par catégorie.</p>
     <div class="sub" id="tabsNiv"></div>
     <div class="sub" id="tabsCat"></div>
@@ -768,12 +780,12 @@ async function refresh() {
   // resultats
   hp('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
-  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'raid') rdRender(); if (pa === 'sauvegarde') colRender();
+  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'raid') rdRender(); if (pa === 'sauvegarde') colRender(); if (pa === 'resultats') planCharger();
 }
 let consTab = 'collectifs';
 function renderCons() {
   const C = E?.conseils; if (!C) return;
-  const T = { collectifs: 'Collectifs', xp: "Plan d'XP", tirage: 'Tirage', duos: 'Duos', marche: 'Marché' }, ks = Object.keys(T).filter(k => C[k]); if (!ks.includes(consTab)) consTab = ks[0]; if (!consTab) return;
+  const T = { collectifs: 'Collectifs', duos: 'Duos', marche: 'Marché' } /* XP et tirage : dans le plan d'XP et de banniere (5.21) */, ks = Object.keys(T).filter(k => C[k]); if (!ks.includes(consTab)) consTab = ks[0]; if (!consTab) return;
   setH('tabsCons', ks.map(k => `<a class="${k === consTab ? 'on' : ''}" onclick="consTab='${k}';renderCons()">${ic(k)}${T[k]}</a>`).join(''));
   const pc = (a, b) => `${a} %${b != null ? ` <span class="muted">→</span> <b style="color:${b > a ? 'var(--ok,#22c55e)' : 'inherit'}">${b} %</b>` : ''}`; let h = `<h2>${ic(consTab)}${T[consTab]} <span class="r">${quand(C.date)} · ${C.combats} combats Cauchemar Extrême</span></h2>`;
   if (consTab === 'collectifs') {
@@ -1061,6 +1073,50 @@ function rgRender() {
   }
   el.innerHTML = h;
 }
+// ---------- plan d'XP et de banniere (5.21) : /api/plan, tous les modes, sans simulation ----------
+const PX = { j: null, t: 0 };
+async function planCharger(force) { if (!force && Date.now() - PX.t < 60000) return; PX.t = Date.now(); try { PX.j = await api('/api/plan'); } catch (e) { PX.j = { err: e.message }; } planRender(); }
+const nbFr = x => String(x).replace('.', ','), xpFr = x => Math.round(x).toLocaleString('fr-FR');
+const PXMODE = { campagne: 'Lance « Campagne » dans Calculs', tour: 'Lance « Tour de l’infini » dans Calculs', raid: 'Lance le calcul dans Raids' };
+function planRender() {
+  const j = PX.j; if (!j) return;
+  if (j.err) return setH('planxp', `<div class="card"><h2>Plan d'XP et bannière</h2><div class="muted">${esc(j.err)}</div></div>`);
+  const M = Object.fromEntries(j.modes.map(m => [m.cle, m])), ord = ['campagne', 'tour', 'arene', 'raid'];
+  const ph = ids => (ids || []).slice(0, 3).map(id => carte(id).img).filter(Boolean).map(u => `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`).join('');
+  const val = m => m.cle === 'campagne' ? `${nbFr(m.pct)} %` : m.unite === '%' ? `${nbFr(m.now)} %` : `${nbFr(Math.round(m.now))} <small>/ ${nbFr(Math.round(m.max))}</small>`;
+  const sub = m => m.cle === 'campagne' ? `combats Cauchemar sûrs à 3★ avec tes cartes déjà au 99${m.approx ? ' (approximatif)' : ''}` : m.cle === 'tour' ? `étage moyen ; ${nbFr(Math.round(m.max))} = ton meilleur trio possible, tout au 99` : m.cle === 'raid' ? 'victoires, meilleur trio déjà au 99' : `victoires ; ${nbFr(m.max)} % possible avec ta collection`;
+  const modeH = k => { const m = M[k], nom = { campagne: 'Campagne', tour: 'Tour', arene: 'Arène', raid: 'Raid' }[k];
+    if (!m) return k === 'arene' ? '' : `<div class="mode soon"><span class="tag">${nom}</span><div class="t">Pas encore calculé</div><div class="s">${PXMODE[k]}</div></div>`;
+    return `<div class="mode"><div class="ph">${ph(m.trio)}</div><span class="tag"${m.source !== 'public' ? ' style="color:#8cc4ff"' : ''}>${nom}${m.source === 'exact' ? ' · exact' : m.source === 'prive' ? ' · privé' : ''}</span><span class="w">poids ${m.poids === 0.5 ? '½' : nbFr(m.poids)}</span>
+      <div class="t">${esc(m.nom)}</div><div class="v">${val(m)}</div><div class="s">${sub(m)}</div>${m.detail ? `<div class="pills">${m.detail.map(d => `<span class="pill ${d.d[0]}">${d.d[0].toUpperCase()} ${d.sur}/${d.total}</span>`).join('')}</div>` : `<div class="gauge"><i style="width:${Math.min(100, m.pct)}%"></i></div>`}</div>`; };
+  const gTxt = (k, g) => k === 'campagne' && g.parDiff ? g.parDiff.map(d => `<span class="pill ${d.d[0]}">${d.d[0].toUpperCase()} +${d.plus}</span>`).join(' ') : `+${nbFr(g.v)} ${esc(g.unite)}`;
+  const nomM = k => ({ campagne: 'Campagne', tour: 'Tour', arene: 'Arène', raid: 'Raid' })[k] || k;
+  let h = `<div class="card"><h2>Vers le modèle parfait <span class="r">ton score : ${nbFr(j.score)} / 100</span></h2><div class="grid g4 px-modes">${ord.map(modeH).join('')}</div>
+    <p class="muted" style="font-size:12px;margin:12px 0 0">Score = moyenne des modes (Campagne, Tour et Arène pèsent pareil, le Raid moitié), chacun en % de ce que ta collection peut faire au niveau 99. Calculé à partir de tes derniers résultats, sans nouveau calcul.${M.campagne?.approx ? ' Chiffres Campagne approximatifs : relance le calcul Campagne, il garde maintenant tous les trios sûrs de chaque combat.' : ''}</p></div>`;
+  const c1 = j.cartes[0];
+  if (c1) {
+    const id = j.cible.id, autres = c1.ids.filter(x => x !== id), xpFait = Math.max(0, 1 - c1.xp / (c1.ids.length * 617434));
+    const trio = Object.values(c1.gains).find(g => g.trio)?.trio;
+    h += `<div class="sp"></div><div class="card hot"><h2>Prochaine carte à monter <span class="r">+${nbFr(c1.points)} points · ${nbFr(c1.parCent)} pour 100 000 XP</span></h2>
+      <div class="hero" style="padding:4px 0 0">${c1.ids.map(x => pf(x, 'xl')).join('')}<div class="txt"><div class="k">Monte jusqu'au niveau 99</div><div class="bigv">${esc(c1.noms.join(' + '))}</div>
+      <div class="s">Niveau ${c1.niveaux.join(' et ')} · encore <b style="color:var(--txt)">${xpFr(c1.xp)} XP</b>, soit environ ${Math.ceil(c1.xp / 10000)} grands parchemins.${autres.length ? ` Elles ne servent qu'ensemble : le script donne d'abord les parchemins à ${esc(carte(id).n)}.` : ''}</div>
+      <div class="px-lv"><i style="width:${Math.round(100 * xpFait)}%"></i></div>
+      <div class="px-gm">${ord.filter(k => M[k]).map(k => { const g = c1.gains[k]; return `<div class="${g ? 'up' : 'z'}"><span>${nomM(k)}${g && g.source !== 'public' ? `<em class="px-src">${g.source === 'exact' ? 'exact' : 'privé'}</em>` : ''}</span><b>${g ? (k === 'campagne' ? `+${g.v} combat${g.v > 1 ? 's' : ''}` : `+${nbFr(g.v)} ${esc(g.unite)}`) : '+0'}</b></div>`; }).join('')}</div>
+      ${trio ? `<div class="muted" style="font-size:12px;margin-top:10px">Trio visé : ${esc(trio.map(x => carte(x).n).join(' / '))}.${M.tour?.trio && c1.gains.tour ? ` En attendant, la Tour garde ${esc(M.tour.trio.map(x => carte(x).n).join(' / '))} (${nbFr(Math.round(M.tour.now))}).` : ''}</div>` : ''}</div></div></div>`;
+    h += `<div class="sp"></div><div class="card"><h2>Classement <span class="r">points gagnés pour 100 000 XP</span></h2><table><tr><th>#</th><th>À monter au 99</th><th>Ce que ça débloque</th><th class="n">XP</th><th class="n">Points</th><th class="n">/ 100 000 XP</th></tr>`
+      + j.cartes.map((c, i) => `<tr><td>${i + 1}</td><td>${equipeHTML(c.ids, 1)}<div class="muted" style="font-size:11px">niv. ${c.niveaux.join(', ')}</div></td><td>${Object.entries(c.gains).map(([k, g]) => `${nomM(k)} ${gTxt(k, g)}`).join(' · ')}</td><td class="n">${xpFr(c.xp)}</td><td class="n">+${nbFr(c.points)}</td><td class="n${i ? '' : ' okc'}">${nbFr(c.parCent)}</td></tr>`).join('')
+      + `</table><p class="muted" style="font-size:12px;margin:10px 0 0">Une carte qui ne sert qu'avec une autre est proposée en groupe, avec l'XP de toutes.</p></div>`;
+  } else h += `<div class="sp"></div><div class="card"><h2>Prochaine carte à monter</h2><div class="muted">${j.modes.length ? 'Aucune carte à monter ne fait progresser un mode : tes trios utiles sont déjà au niveau 99.' : 'Lance d’abord un calcul (Campagne, Tour ou Raid).'}</div></div>`;
+  const bans = j.bannieres || [], gt = j.guetter || [];
+  const banH = b => `<div class="card"><h2>Bannière ${esc(b.serie)} <span class="r">${b.pity ? 'pity ' + esc(b.pity) + ' · ' : ''}${b.fin ? 'jusqu’au ' + new Date(b.fin).toLocaleDateString('fr-FR') : ''}</span></h2>
+    <div class="px-verdict"><div class="big ${b.verdict === 'tirer' ? 'okc' : b.verdict === 'garder' ? 'badc' : 'muted'}">${b.verdict === 'tirer' ? 'Ça vaut tes gemmes' : b.verdict === 'garder' ? 'Garde tes gemmes' : 'Pas encore calculée'}</div>
+    <div class="muted" style="flex:1;min-width:220px">${b.verdict === 'tirer' ? `Utile : ${esc(b.utiles.join(', '))}.${b.xpDerriere ? ` Prévois ${xpFr(b.xpDerriere)} XP pour l'amener au 99.` : ''}` : b.verdict === 'garder' ? 'Aucune carte de cette bannière n’améliore un de tes modes.' : 'Lance « Conseils de cartes » (Tirage) dans Calculs.'}</div></div>
+    ${b.cartes.length ? `<table style="margin-top:12px"><tr><th>Carte</th><th class="n">Campagne</th><th class="n">Tour</th><th class="n">Arène</th></tr>${b.cartes.slice(0, b.verdict === 'tirer' ? 6 : 3).map(c => `<tr><td>${carteHTML(c.id)}</td>${['campagne', 'tour', 'arene'].map(k => `<td class="n">${c[k] == null ? '<span class="muted">-</span>' : c[k] > 0 ? `<span class="okc">+${nbFr(c[k])}</span>` : '0'}</td>`).join('')}</tr>`).join('')}</table>` : ''}</div>`;
+  const gtH = gt.length ? `<div class="card"><h2>À guetter <span class="r">ce qui ferait le plus avancer</span></h2>${gt.map(g => `<div class="chg">${g.ids ? `<div class="tm">${g.ids.map(x => pf(x)).join('')}</div>` : ''}<div style="flex:1"><b>${esc(g.titre)}</b><br><span class="muted">${esc(g.texte || '')}</span></div>${g.points != null ? `<span class="up">+${nbFr(g.points)}</span>` : ''}</div>`).join('')}</div>` : '';
+  h += `<div class="sp"></div><div class="grid g2">${bans.length ? bans.map(banH).join('') : `<div class="card"><h2>Bannières ouvertes</h2><div class="muted">Ouvre le jeu avec le script : il envoie les bannières ouvertes au PC.</div></div>`}${gtH}</div>`;
+  setH('planxp', h);
+}
+addEventListener('hashchange', () => { if (location.hash === '#resultats') planCharger(true); });
 addEventListener('hashchange', () => { if (location.hash === '#regles' && !RG.j) rgCharger(); });
 if (location.hash === '#regles') rgCharger();
 
