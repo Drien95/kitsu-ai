@@ -17,6 +17,7 @@ import { dir as D, DATA, CODE } from './lib/chemins.mjs';
 import { listerPoids, restaurerPoids } from './lib/historique.mjs';
 import { planTour, planNaif, finir as finirRaid, sieges as siegesRaid } from './lib/raid.mjs';
 import { plan as planXp } from './lib/plan.mjs';
+import * as MODELE from './lib/modele.mjs';
 import * as PARTAGE from './lib/partage.mjs';
 import { VERSION_SERVEUR } from './lib/partage-format.mjs';
 import { construireWC, cleIA } from './lib/ia-commune.mjs';
@@ -52,6 +53,11 @@ const planCalcule = async G => {
   const R = f => readJc(D('resultats', f));
   return planXp({ G, S, campagne: R('cauchemar3.json'), tour: R('tour.json'), raid: R('raid.json'), conseils: R('conseils-ia.json'), jeu, prive });
 };
+// Le modele vivant (5.28) : instantane apres chaque calcul et a l'ouverture de la page, ajoute seulement si quelque chose a change.
+async function noterModele() {
+  const plan = await planCalcule(ENG?.G || null), R = f => readJc(D('resultats', f));
+  return MODELE.noter(MODELE.instantane({ plan: plan.err ? null : plan, campagne: R('cauchemar3.json'), tour: R('tour.json'), raid: R('raid.json'), poids: readJc(D('data', 'poids.json')), t: MODELE.dateResultats() }));
+}
 // ---------- campagne : ce que coutera le calcul des 3 etoiles (affiche avant le lancement) ----------
 // Memes regles que cauchemar3.mjs : cartes SSR/UR/LR possedees, combats de la campagne (sans halloween) par difficulte.
 let COMBATS_DIFF = null;
@@ -184,7 +190,7 @@ function lancerChaine(action, o) {
   const C = CHAINES[action], etapes = C.etapes.map(([a, d]) => [a, { ...d, ...(o[a] || {}) }]);
   const chaine = { nom: C.nom, etapes: etapes.map(([a]) => ACTIONS[a].nom), i: 0, debut: Date.now(), lignes: [], arretee: false };
   const suivante = () => {
-    if (chaine.arretee || chaine.i >= etapes.length) { chaine.fin = Date.now(); job = { ...job, nom: C.nom, fin: chaine.fin, code: chaine.arretee ? 1 : 0, chaine }; say(`${C.nom} : ${chaine.arretee ? 'arretee' : 'terminee'} (${Math.round((chaine.fin - chaine.debut) / 1000)} s)`); return; }
+    if (chaine.arretee || chaine.i >= etapes.length) { chaine.fin = Date.now(); job = { ...job, nom: C.nom, fin: chaine.fin, code: chaine.arretee ? 1 : 0, chaine }; noterModele().catch(() => {}); say(`${C.nom} : ${chaine.arretee ? 'arretee' : 'terminee'} (${Math.round((chaine.fin - chaine.debut) / 1000)} s)`); return; }
     const [a, d] = etapes[chaine.i];
     lancerEtape(a, d, code => { if (code !== 0) chaine.arretee = true; chaine.i++; suivante(); }, chaine);
   };
@@ -203,7 +209,7 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
   job = { id: Date.now(), action, nom: chaine ? `${chaine.nom} (${chaine.i + 1}/${chaine.etapes.length} : ${A.nom})` : A.nom, args: args.join(' '), debut: chaine ? chaine.debut : Date.now(), lignes: chaine ? [...prev, `=== ${A.nom} ===`] : [], fin: null, code: null, proc: p, chaine };
   const add = d => { for (const l of String(d).split(/\r?\n/)) if (l.trim()) { job.lignes.push(l); if (job.lignes.length > 2000) job.lignes.shift(); } };
   p.stdout.on('data', add); p.stderr.on('data', add);
-  p.on('close', async code => { if (apres && !(chaine && chaine.arretee)) { history.unshift({ nom: A.nom, debut: Date.now(), fin: Date.now(), code }); return apres(code); } job.fin = Date.now(); job.code = code; history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); alerter('calcul', 'job-' + job.id, code === 0 ? `${job.nom} : termine` : `${job.nom} : arrete`, `En ${Math.round((job.fin - job.debut) / 60000)} min.`); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
+  p.on('close', async code => { if (apres && !(chaine && chaine.arretee)) { history.unshift({ nom: A.nom, debut: Date.now(), fin: Date.now(), code }); return apres(code); } job.fin = Date.now(); job.code = code; noterModele().catch(() => {}); history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); alerter('calcul', 'job-' + job.id, code === 0 ? `${job.nom} : termine` : `${job.nom} : arrete`, `En ${Math.round((job.fin - job.debut) / 60000)} min.`); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
     if (action === 'telecharger') { try { const v = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); if (v !== VER) { say(`nouveau moteur ${v} : redemarre le panneau (KitsuAI.bat) pour l'utiliser dans le conseil en combat`); } } catch {} } });
   say(`${A.nom} : lance (${args.join(' ')})`);
   return job.id;
@@ -313,6 +319,7 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
       if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
+      if (u.pathname === '/api/modele') { try { await noterModele(); } catch (e) { say('modele : ' + e.message); } return send(res, 200, { historique: MODELE.historique(), adn: MODELE.adn() }); }
       // Base commune (partage des calculs Campagne) : etat de mon ID, supprimer mes envois, changer d'ID. Les interrupteurs passent par /api/reglages.
       if (u.pathname === '/api/partage') { const reg = PARTAGE.reglagesPartage(), id = PARTAGE.identite(); let base = null, etat = null; try { [base, etat] = await Promise.all([PARTAGE.moi(reg), PARTAGE.etatBase(reg)]); } catch (e) { base = { err: e.message }; } return send(res, 200, { reglages: { utiliser: reg.utiliser, envoyer: reg.envoyer, verifier: reg.verifier, controler: reg.controler }, id: id.id.slice(0, 8), admin: !!id.admin, base, etat, enFile: PARTAGE.enFile(), serveurAttendu: VERSION_SERVEUR, cfJeton: !!(id.admin && readJ(D('data', 'partage.json'))?.cloudflare), journal: PARTAGE.journalPartage().slice(0, 12), ...(id.admin ? await infoIA() : {}) }); }
       if (u.pathname === '/api/partage/supprimer' && req.method === 'POST') { try { return send(res, 200, await PARTAGE.supprimerMesEnvois(PARTAGE.reglagesPartage())); } catch (e) { return send(res, 502, { err: e.message }); } }

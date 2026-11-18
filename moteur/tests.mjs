@@ -51,6 +51,13 @@ const r1 = resumer(G, B, version); t('patch : une version comparee a elle-meme e
   const tour = P.modes.find(m => m.cle === 'tour'), cp = P.modes.find(m => m.cle === 'campagne');
   t("plan d'XP : modes lus", tour?.now === 100 && tour?.max === 150 && cp?.now === 3 && cp?.max === 4, JSON.stringify(P.modes));
   t("plan d'XP : Tour en tete, puis la carte qui reste (sans recompter la 1re)", P.cible?.id === 4 && P.cartes[1]?.ids.join() === '5' && P.cartes[1].gains.campagne?.v === 1 && !P.cartes[1].gains.tour, JSON.stringify(P.cartes.map(c => [c.ids, c.points]))); }
+// Le modele vivant : instantane lu dans le plan et les resultats, sans simulation.
+{ const { plan } = await import('./lib/plan.mjs'), M = await import('./lib/modele.mjs');
+  const camp = { niveaux: '99', etages: { seuil: 0.6, resume: [{ difficulte: 'normal' }], trios: [[1, 2, 3], [1, 4, 5]], colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e'], combats: [['a', 0, 0, 90], ['b', 0, 1, 40], ['c', 0, 1, 10], ['d', 0, 0, 0]] } };
+  const tour = { niveaux: '99', classement: [{ ids: [1, 2, 3], etageMoyen: 100 }] };
+  const S0 = { owned: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, lv: { 1: { l: 99 }, 2: { l: 99 }, 3: { l: 99 } } };
+  const s = M.instantane({ plan: plan({ G, S: S0, campagne: camp, tour }), campagne: camp, tour, t: 1 });
+  t('modele : un chiffre par combat, trios comptes', s.c.normal === '3210' && s.tour?.now === 100 && s.tr.some(x => x[0] === 'c' && x[4] === 2) && s.tr.some(x => x[0] === 't'), JSON.stringify(s)); }
 // Serveur : demarre sur un autre port, verifie les protections.
 const PORT = 47199, srv = spawn(process.execPath, ['serveur.mjs'], { env: { ...process.env, KITSU_PORT: String(PORT) } });
 let up = false; for (let i = 0; i < 60 && !up; i++) { await new Promise(r => setTimeout(r, 250)); try { up = (await fetch(`http://127.0.0.1:${PORT}/ping`)).ok; } catch {} }
@@ -59,6 +66,7 @@ if (up) {
   t('panneau protege par jeton', (await fetch(`http://127.0.0.1:${PORT}/api/etat`)).status === 403);
   t('conseil de raid reserve au script', (await fetch(`http://127.0.0.1:${PORT}/raid`, { method: 'POST', body: '{}' })).status === 403);
   t("plan d'XP lisible par le script", (await fetch(`http://127.0.0.1:${PORT}/plan`)).status === 200);
+  t('modele reserve au panneau', (await fetch(`http://127.0.0.1:${PORT}/api/modele`)).status === 403);
   t('sauvegarde reservee au script', (await fetch(`http://127.0.0.1:${PORT}/sauvegarde`, { method: 'POST', body: '{}' })).status === 403);
 }
 srv.kill();
