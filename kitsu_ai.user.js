@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.40.0
+// @version      5.40.1
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.40.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.40.1') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.40.0',
+          __v: '5.40.1',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1467,7 +1467,10 @@
                 const arcIdx = id => { const base = G.findFight(id.split('@')[0]); const w = G.ALL_WORLDS.find(x => x.id === worldOf(id)); if (!base || !w) return -1; const arcs = [...new Set(w.fights.map(f => f.arc))]; return arcs.indexOf(base.arc); };
                 const modeOf = id => { const suf = id.split('@')[1] || ''; return { nm: suf.endsWith('n'), lvl: suf[0] === 'h' ? 1 : suf[0] === 'x' ? 2 : 0 }; };
                 const visNode = id => [...document.querySelectorAll(`button.node[data-fight="${id}"]`)].find(vis);
-                const visMode = id => { const a = arcIdx(id), m = modeOf(id); const btn = [...document.querySelectorAll(`[data-arc-mode="${a}|${m.lvl}"]`)].find(vis); const nmb = m.nm ? [...document.querySelectorAll(`[data-arc-nm="${a}"]`)].find(vis) : null; return { btn, nmb, m }; };
+                // 5.40.1 : le bouton Cauchemar de l'arc est lu aussi pour un combat hors Cauchemar (pour le retirer s'il est allume).
+                const visMode = id => { const a = arcIdx(id), m = modeOf(id); const btn = [...document.querySelectorAll(`[data-arc-mode="${a}|${m.lvl}"]`)].find(vis); const nmb = [...document.querySelectorAll(`[data-arc-nm="${a}"]`)].find(vis) || null; return { btn, nmb, m }; };
+                const MODE_NOM = ['Normal', 'Difficile', 'Extreme'];
+                const modeTxt = id => { const m = modeOf(id); return (m.nm ? 'Cauchemar ' : '') + MODE_NOM[m.lvl]; };
                 const shownNodes = [...document.querySelectorAll('button.node[data-fight]')].filter(vis).map(e => e.dataset.fight);
                 const curWorld = shownNodes.length ? worldOf(shownNodes[0]) : null;
                 const wname = id => (G.ALL_WORLDS.find(x => x.id === worldOf(id))?.name) || worldOf(id);
@@ -1476,14 +1479,22 @@
                   for (const r of here) {
                     const n = visNode(r.id);
                     if (n) return mark(n, r.farm ? `rejoue « ${r.nom} » pour l'XP : +${r.xp} XP a chaque carte, ${r.cout} energie (equipe : ${r.equipe.map(short).join(', ')})` : `lance « ${r.nom} » (${r.etoiles}/3 etoiles, 3 etoiles ${Math.round(r.troisEtoiles * 100)} %)`, 'node' + r.id);
-                    if (r.id.includes('@')) {
-                      const { btn, nmb, m } = visMode(r.id);
-                      if (m.nm && nmb && (nmb.classList.contains('locked') || nmb.getAttribute('aria-disabled') === 'true')) { continue; }
-                      if (m.nm && nmb && !nmb.classList.contains('on')) return mark(nmb, `passe cet arc en Cauchemar pour « ${r.nom} »`, 'nm' + r.id);
-                      if (btn && !btn.classList.contains('on') && !btn.classList.contains('locked')) return mark(btn, `passe cet arc en ${['Normal', 'Difficile', 'Extreme'][m.lvl]} pour « ${r.nom} »`, 'mode' + r.id);
-                    }
+                    // 5.40.1 : aussi pour un combat en Normal (sans « @ ») : un combat de farm deja fait peut etre en Normal alors que
+                    // l'arc est affiche en Difficile ou en Cauchemar ; avant, le guide ne proposait jamais de repasser l'arc en Normal
+                    // et redisait en boucle « fais defiler la carte ».
+                    const { btn, nmb, m } = visMode(r.id);
+                    if (m.nm && nmb && (nmb.classList.contains('locked') || nmb.getAttribute('aria-disabled') === 'true')) { continue; }
+                    const pour = r.farm ? `rejouer « ${r.nom} » (XP)` : `« ${r.nom} »`;
+                    if (m.nm && nmb && !nmb.classList.contains('on')) return mark(nmb, `passe cet arc en Cauchemar pour ${pour}`, 'nm' + r.id);
+                    if (!m.nm && nmb && nmb.classList.contains('on')) return mark(nmb, `retire le Cauchemar de cet arc pour ${pour} (${modeTxt(r.id)})`, 'nmoff' + r.id);
+                    if (btn && !btn.classList.contains('on') && !btn.classList.contains('locked')) return mark(btn, `passe cet arc en ${MODE_NOM[m.lvl]} pour ${pour}`, 'mode' + r.id);
                   }
-                  if (here.length) { const r = here[0], base = G.findFight(r.id.split('@')[0]); return mark(null, `fais defiler la carte jusqu'a l'arc « ${base?.arc || '?'} » pour « ${r.nom} »`, 'scroll' + r.id); }
+                  if (here.length) {
+                    const r = here[0], base = G.findFight(r.id.split('@')[0]);
+                    // Combat de farm : deja a 3 etoiles, on le rejoue pour l'XP. Le dire, sinon on croit que le guide n'a pas vu la victoire.
+                    const quoi = r.farm ? `rejouer « ${r.nom} » pour l'XP (deja a 3 etoiles, +${r.xp} XP par carte, mode ${modeTxt(r.id)})` : `« ${r.nom} » (mode ${modeTxt(r.id)})`;
+                    return mark(null, `fais defiler la carte jusqu'a l'arc « ${base?.arc || '?'} » pour ${quoi}`, 'scroll' + r.id);
+                  }
                   const back = [...document.querySelectorAll('[data-back-worlds]')].find(vis);
                   return mark(back || null, `plus rien a faire ici : retourne aux mondes pour « ${next.nom} » (${wname(next.id)})`, 'back');
                 }

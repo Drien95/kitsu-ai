@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.40.1
+
+Script : le guide ne répète plus en boucle « fais defiler la carte jusqu'a l'arc … » pour un combat déjà fait.
+
+- **Constat** (18/11) : le guide répétait « fais defiler la carte jusqu'a l'arc « Le doigt de Sukuna » pour « Le Roi des fléaux » » alors que ce combat était fait. Lu dans le code du guide : quand il n'y a plus de 3 étoiles faciles, il propose un combat de farm, c'est-à-dire un combat déjà à 3 étoiles qu'on rejoue pour l'XP (5.37 à 5.39). Ce message ne le disait pas. Et le guide ne proposait de changer le mode de l'arc que pour les combats Difficile, Extrême ou Cauchemar : pour un combat en Normal, si l'arc était affiché dans un autre mode, l'étape n'était jamais trouvée et le même texte revenait.
+- **Correction** : le message dit « rejouer … pour l'XP (déjà à 3 étoiles, mode …) » pour un combat de farm et donne toujours le mode. Le guide propose aussi de repasser l'arc en Normal, ou d'en retirer le Cauchemar, quand le combat conseillé n'est pas dans le mode affiché.
+
 ## 5.40.0
 
 Launcher : une visite guidée qu'on peut rejouer, racontée par Kiko, le renard de KitsuAI.
