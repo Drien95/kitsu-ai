@@ -604,6 +604,7 @@
       <div id="c3baseB" class="muted">Chargement…</div>
     </div>
     <div class="sp"></div>
+    <div id="c3Ext"></div><!-- place pour une extension locale (window.campApres, 5.28) -->
     <div id="c3tabs"></div>
     <div id="c3body"></div>
   </section>
@@ -1536,6 +1537,7 @@ function campRender() {
   h += `<div class="card"><h2>Collectifs conseillés <span class="r">quand une carte en a plus de 6</span></h2>${col.length ? col.map(c => `<div class="c3c"><div class="muted c3s">${esc(c.equipe.join(' / '))}</div>${c.cartes.map(x => `<div><b>${esc(x.carte)}</b> · ${x.possibles} possibles · ${fmt(x.avant)} % vers ${fmt(x.apres)} % ${x.utile ? '<span class="okc">à changer</span>' : '<span class="muted">garder les actuels</span>'}${x.utile ? `<div class="muted c3s">${x.conseil.map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`).join('') : '<div class="muted">Aucune carte des 5 meilleurs trios n’a plus de 6 collectifs possibles : les choix du jeu suffisent.</div>'}</div></div><div class="sp"></div>`;
   h += `<div class="card"><h2>Méthode</h2><div class="muted">Tous les trios de tes cartes SSR, UR et LR (${(j.trios || 0).toLocaleString('fr-FR')}) jouent les ${nC.toLocaleString('fr-FR')} combats avec l'IA de KitsuAI. Course par manches : un trio est retiré seulement quand il est nettement derrière en Cauchemar (z ${'>'} 3). ${nDiff() > 3 ? "La Campagne est jouée par les mêmes trios mais ne retire personne (beaucoup y font 100 %) : son classement est celui des finalistes du Cauchemar. " : ''}Les finalistes rejouent tout avec d'autres tirages. Un combat est arrêté dès que les 3 étoiles sont perdues : même résultat, 1,8 fois plus vite. Le journal garde chaque paquet de combats : il n'est refait que si le jeu, une carte, ses niveaux, ses étoiles, ses collectifs ou l'IA changent.<br>Moteur ${esc(j.version)} · signature ${esc(j.signatureCombat)} · ${quand(j.date)}</div></div>`;
   setH('c3body', h);
+  if (typeof window.campApres === 'function') try { window.campApres(j); } catch {}
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
 setInterval(() => { if (E && !document.hidden) { campEtat(); twEtat(); rdEtat(); } }, 1500);

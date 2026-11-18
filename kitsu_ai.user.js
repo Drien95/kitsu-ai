@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.28.0
+// @version      5.29.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.28.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.29.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -574,7 +574,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.28.0',
+          __v: '5.29.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1820,13 +1820,18 @@
             const list = trios([...new Set([...pool(10, S), ...tr0])]);
             // Trios du calcul Campagne du PC (meilleur trio de ce combat parmi TOUS tes trios, et trio du plan) : ajoutes a la liste,
             // puis classes comme les autres a tes niveaux actuels.
-            const calc = new Set();
-            if (localPC.ok) { const c = await localAsk('/equipes', { conseil: 1, fid }, 4000).catch(() => null); for (const x of c?.trios || []) { const ids = x.map(Number).sort((a, b) => a - b); if (ids.length === 3 && ids.every(id => S.owned?.[id])) { const k = ids.join('-'); calc.add(k); if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === k)) list.push(ids); } } }
+            const calc = new Set(); let exact = null;
+            if (localPC.ok) { const c = await localAsk('/equipes', { conseil: 1, fid }, 4000).catch(() => null);
+              // 5.28 : avec le script prive, trio du calcul Campagne exact (% de 3 etoiles en suivant le conseil exact en combat).
+              // Calcul fait au niveau 99 : seulement si les 3 cartes y sont deja.
+              const ex = c?.exact, exIds = (ex?.trio || []).map(Number).sort((a, b) => a - b);
+              if (exIds.length === 3 && exIds.every(id => S.owned?.[id] && (ex.niveaux !== '99' || (S.lv?.[id]?.l || 1) >= 99)) && ex.troisEtoiles > 0) { exact = { k: exIds.join('-'), p: ex.troisEtoiles / 100 }; if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === exact.k)) list.push(exIds); }
+              for (const x of c?.trios || []) { const ids = x.map(Number).sort((a, b) => a - b); if (ids.length === 3 && ids.every(id => S.owned?.[id])) { const k = ids.join('-'); calc.add(k); if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === k)) list.push(ids); } } }
             // Calcul sur le PC (serveur local) : 24 tirages par trio au lieu de 8, sinon calcul dans le navigateur.
             let res = null;
             if (localPC.ok) { const r = await localAsk('/equipes', { dom: domFile(), fid, equipes: list.map(t => teamOf(t, S)), W: this.W, seeds: 24 }, 15000); if (r?.res?.length === list.length) res = list.map((t, i) => ({ t, w: r.res[i].win / r.res[i].n, s: r.res[i].s2 / r.res[i].n, s3: r.res[i].s3 / r.res[i].n, pc: 1 })); }
             if (!res) { const out = await simBatch(list.map(t => ({ fid, team: teamOf(t, S), seeds })), this.W); res = list.map((t, i) => ({ t, w: out[i].w / out[i].n, s: out[i].s / out[i].n, s3: out[i].s3 / out[i].n })); }
-            for (const r of res) if (calc.has(r.t.slice().sort((a, b) => a - b).join('-'))) r.calc = 1;
+            for (const r of res) { const k = r.t.slice().sort((a, b) => a - b).join('-'); if (calc.has(k)) r.calc = 1; if (exact && k === exact.k) r.exact = exact.p; }
             res.sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
             const c2 = lsGet('kitsu_ai_teams', {}); c2[key] = { t: Date.now(), res };
             const keys = Object.keys(c2).sort((a, b) => c2[b].t - c2[a].t).slice(0, 25);
@@ -1995,7 +2000,7 @@
                 // Les 8 premiers sont rejoues 32 fois avant d'etre affiches : 8 simulations ne suffisent pas a dire
                 // qu'une equipe fait 3 etoiles a coup sur.
                 const seeds32 = Array.from({ length: 32 }, (_, i) => i + 1), evalL = ids => { let w = 0, s = 0, s3 = 0; for (const sd of seeds32) { const st = playOut(mk(W.f.id, ids, sd, S), pol); s += score(st); if (B.outcome(st) === 'win') { w++; if (B.allies(st).every(u => u.alive) && st.cycle <= 8) s3++; } } return { w: w / 32, s: s / 32, s3: s3 / 32 }; };
-                const head = res.splice(0, 8).map(r => ({ t: r.t, calc: r.calc, ...evalL(r.t) })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
+                const head = res.splice(0, 8).map(r => ({ t: r.t, calc: r.calc, exact: r.exact, ...evalL(r.t) })).sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
                 res.unshift(...head);
                 const xw = xpWeights(), near = r => r.s3 >= Math.max(0.95, res[0].s3 - 0.02) && r.w >= res[0].w - 0.02;
                 const top = res.slice(0, 8).filter(near).sort((a, b) => xpScore(b.t, xw) - xpScore(a.t, xw) || b.s3 - a.s3 || b.s - a.s);
@@ -2006,14 +2011,16 @@
                 const trainees = res[0].t.filter(id => xw[id]);
                 const xpBetter = keep && xpScore(res[0].t, xw) > xpScore(team, xw);
                 // Un seul verdict en tete : l'equipe a jouer, et pourquoi.
-                const pick = keep && !xpBetter ? { t: team, ...cur } : res[0];
+                // 5.28 : le calcul exact du script prive passe devant quand il fait mieux que la simulation publique (regle prive/public).
+                const exR = res.find(r => r.exact != null && r.exact >= 0.5 && r.exact > r.s3 + 0.1 && r.exact > (keep ? cur.s3 : res[0].s3));
+                const pick = exR || (keep && !xpBetter ? { t: team, ...cur } : res[0]);
                 window.__kitsuPick = { fid: W.f.id, t: pick.t.slice(), s3: pick.s3, at: Date.now() };
                 const pickXp = pick.t.filter(id => xw[id]);
-                const why = keep && !xpBetter ? (pickXp.length ? `deja la bonne : 3 etoiles ${Math.round(cur.s3 * 100)} % et fait monter ${pickXp.map(short).join(', ')}` : `3 etoiles ${Math.round(cur.s3 * 100)} %, aussi bien que la meilleure`)
+                const why = exR ? `calcul exact (script prive) : 3 etoiles ${Math.round(exR.exact * 100)} % en suivant le conseil exact en combat` : keep && !xpBetter ? (pickXp.length ? `deja la bonne : 3 etoiles ${Math.round(cur.s3 * 100)} % et fait monter ${pickXp.map(short).join(', ')}` : `3 etoiles ${Math.round(cur.s3 * 100)} %, aussi bien que la meilleure`)
                   : xpBetter || (pickXp.length && pick.s3 >= 0.95) ? `3 etoiles ${Math.round(pick.s3 * 100)} % et fait monter ${pickXp.map(short).join(', ')}` : `la plus sure : 3 etoiles ${Math.round(pick.s3 * 100)} %`;
                 const same = (a, b) => a.length === b.length && a.every(id => b.includes(id));
-                const rows = res.slice(0, 5); if (cur && !rows.some(r => same(r.t, team))) rows.push({ t: team, ...cur, mine: true });
-                const tag = r => { const x = r.t.filter(id => xw[id]); return (x.length ? ` <span style="color:#ff7a2f;font-size:11px">XP : ${x.map(short).join(', ')}</span>` : '') + (r.calc ? ' <span style="color:#ffc24a;font-size:11px">calcul Campagne</span>' : ''); };
+                const rows = res.slice(0, 5); if (exR && !rows.includes(exR)) rows.unshift(exR); if (cur && !rows.some(r => same(r.t, team))) rows.push({ t: team, ...cur, mine: true });
+                const tag = r => { const x = r.t.filter(id => xw[id]); return (x.length ? ` <span style="color:#ff7a2f;font-size:11px">XP : ${x.map(short).join(', ')}</span>` : '') + (r.calc ? ' <span style="color:#ffc24a;font-size:11px">calcul Campagne</span>' : '') + (r.exact != null ? ` <span style="color:#7cc4ff;font-size:11px">exact ${Math.round(r.exact * 100)} %</span>` : ''); };
                 tb.innerHTML = `<div class="k-ttl">Equipe pour « ${W.f.t} »${W.f.boss ? ' (boss)' : ''}</div>`
                   + `<div style="margin-bottom:6px;padding:5px 7px;border:1px solid ${pickXp.length ? '#ff7a2f' : '#2fd27a'};border-radius:6px"><b style="color:${pickXp.length ? '#ff7a2f' : '#2fd27a'}">A jouer : ${pick.t.map(short).join(', ')}</b>${same(pick.t, team) ? ' (ton equipe)' : ''}<br><span style="font-size:11px;opacity:.85">${why}</span></div>`
                   + rows.map((r, k) => `<div style="opacity:${same(r.t, pick.t) ? 1 : .75}">${same(r.t, pick.t) ? '<b>&gt; ' : ''}${r.mine ? 'Ton equipe' : k + 1 + '.'} ${r.t.map(short).join(', ')}${same(r.t, pick.t) ? '</b>' : ''} <span style="color:${r.s3 >= 0.95 ? '#ffc24a' : '#ff5f6d'}">3 etoiles ${Math.round(r.s3 * 100)} %</span>${tag(r)}</div>`).join('')
