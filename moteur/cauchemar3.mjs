@@ -14,9 +14,11 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { makeSim } from './lib/sim.mjs';
-import { arg, log, SAVE, WA, shuffle } from './lib/commun.mjs';
+import { arg, log, SAVE, WA as WA_PC, WC, shuffle } from './lib/commun.mjs';
+import * as PARTAGE from './lib/partage.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal } from './lib/journal.mjs';
+import { cleTrioDe } from './lib/partage-format.mjs';
 import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
 
@@ -30,6 +32,11 @@ const OBJS = [{ k: 'Normal', d: [0], e: 1 }, { k: 'Difficile', d: [1], e: 1 }, {
   ...(TOUTES ? [{ k: 'CampNormal', d: [3] }, { k: 'CampDifficile', d: [4] }, { k: 'CampExtreme', d: [5] }, { k: 'Les6', d: [0, 1, 2, 3, 4, 5] }] : [])], OBJ = OBJS.map(o => o.k), IMOY = 3;
 const LV = id => NIV === '99' ? 99 : (SAVE.lv?.[id]?.l || 1), ET = id => SAVE.stars?.[id] || 0, LK = id => SAVE.lk?.[id] || null;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
+// Partage des calculs (Reglages > Partage, coupe par defaut) : seulement avec les reglages standard du calcul,
+// et toujours avec l'IA commune (poids-communs.json), sinon les resultats ne se recoupent pas d'un PC a l'autre.
+const PART = PARTAGE.reglagesPartage();
+const PARTAGE_OK = !arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier) && !!WC && (PAQ === 16 && !arg('max-combats') && !arg('max-trios') || !!arg('partage-test'));
+const WA = PARTAGE_OK ? WC : WA_PC;
 const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r)).sort((a, b) => a - b);
 if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la sauvegarde exportee.'); process.exit(1); }
 
@@ -54,6 +61,25 @@ const NCOMB = paquets.map(p => p.reduce((s, x) => s + x.f.length, 0)), TOURS = M
 const J = ouvrirJournal(D('cache', `cauchemar3-${sigG}-${wKey}.jsonl`));
 const cle = (di, pi, seed, ck) => h53(`${sigG}|${wKey}|${paquets[di][pi].cle}|${seed}|${ck}`);
 
+// ---------- base commune : recuperer, envoyer, controler ----------
+const carteLot = (c) => [c.id, c.lv, c.stars, c.lk || [], sigCarte(c.id)];
+let aEnvoyer = [], envoyes = 0, recus = 0;
+const versionPartage = { sigG, wKey, moteur: String(version) };
+function versFile(tout = false) {
+  if (!PARTAGE_OK || !PART.envoyer) { aEnvoyer = []; return; }
+  while (aEnvoyer.length >= 20000 || (tout && aEnvoyer.length)) { const part = aEnvoyer.splice(0, 20000); PARTAGE.mettreEnFile(PARTAGE.construireLot(versionPartage, part)); envoyes += part.length; }
+}
+// Rejoue des lignes du lot d'un autre joueur (controle). null si ce PC ne peut pas : carte ou combats differents (autre version).
+async function rejouerLignes(lot, lignes) {
+  const jobs = [];
+  for (const [ti, pj, g] of lignes) {
+    const tr = lot.t[ti], [di, pi, cp] = lot.p[pj];
+    if (paquets[di]?.[pi]?.cle !== cp || !tr.every(c => CH[c[0]] && sigCarte(c[0]) === c[4])) return null;
+    jobs.push({ team: tr.map(([id, lv, stars, lk]) => ({ id, lv, stars, ...(lk.length ? { lk } : {}) })), fights: paquets[di][pi].f, seeds: [g] });
+  }
+  return (await pool.runAll(jobs, WA, { stop3: true }, 8)).map(x => [x.n, x.s3]);
+}
+
 // ---------- calcul d'un lot (journal d'abord, combats manquants en parallele) ----------
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined, version);
 let simules = 0, repris = 0;
@@ -63,8 +89,9 @@ async function jouer(items) { // items : { di, pi, seed, team, ck } -> [n, s3]
   for (let a = 0; a < todo.length; a += 24000) {
     const part = todo.slice(a, a + 24000);
     const r = await pool.runAll(part.map(([i]) => ({ team: items[i].team, fights: paquets[items[i].di][items[i].pi].f, seeds: [items[i].seed] })), WA, { stop3: true }, 40);
-    r.forEach((x, j) => { out[part[j][0]] = [x.n, x.s3]; J.set(part[j][1], x.n + ',' + x.s3); simules += x.n; });
-    J.flush();
+    r.forEach((x, j) => { out[part[j][0]] = [x.n, x.s3]; J.set(part[j][1], x.n + ',' + x.s3); simules += x.n;
+      const it = items[part[j][0]]; if (PARTAGE_OK && PART.envoyer && it.seed <= 3) { const cartes = it.team.map(carteLot); if (cleTrioDe(cartes) === it.ck) aEnvoyer.push({ cartes, di: it.di, pi: it.pi, clePaquet: paquets[it.di][it.pi].cle, graine: it.seed, n: x.n, s3: x.s3 }); } });
+    J.flush(); versFile();
   }
   return out;
 }
@@ -99,6 +126,16 @@ async function tour(alive, pi, seed) {
 
 const eveil = garderEveille(), T0 = Date.now(); let dernierLog = Date.now();
 log(`moteur ${version} (signature combat ${sigG}), ${IDS.length} cartes, ${T} trios, niveaux ${NIV === '99' ? '99' : 'actuels'}, combats ${NCOMB.join(' / ')} (${DIFF.map(d => d[0]).join(' / ')}), ${pool.n} fils, journal ${J.taille()} paquets${eveil.ok ? ', PC garde eveille' : ''}`);
+if (PARTAGE_OK) {
+  log(`partage : IA commune${JSON.stringify(WC) === JSON.stringify(WA_PC) ? ' (la tienne)' : ' (differente de la tienne pour ce calcul)'}, ${PART.utiliser ? 'base utilisee' : 'base non utilisee'}, ${PART.envoyer ? 'envoi actif' : 'pas d envoi'}`);
+  try { const n = await PARTAGE.viderFile(PART, log); if (n) log(`partage : ${n} lots en attente envoyes`); } catch (e) { log('partage : envoi impossible (' + e.message + ')'); }
+  if (PART.utiliser) try {
+    const mien = new Map(IDS.map(id => [id, cleCarte(id)]));
+    const lignes = await PARTAGE.telecharger(PART, versionPartage, { cleCarteLocale: id => mien.get(id) || null, log });
+    for (const x of lignes) { if (paquets[x.di]?.[x.pi]?.cle !== x.clePaquet) continue; const k = cle(x.di, x.pi, x.graine, x.ck); if (!J.get(k)) { J.set(k, x.n + ',' + x.s3); recus++; } }
+    J.flush(); log(`partage : ${recus} resultats ajoutes au journal depuis la base commune`);
+  } catch (e) { log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
+} else if (!arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier)) log(`partage : coupe pour ce calcul (${!WC ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
 let alive = [...Array(T).keys()]; const entonnoir = [];
 for (let pi = 0; pi < TOURS; pi++) {
   await tour(alive, pi, 1);
@@ -190,6 +227,13 @@ const out = { version, signatureCombat: sigG, date: new Date().toISOString(), ni
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
   vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, mondes: MONDES, repartition,
   meilleurs: Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), equipeActuelle, maintenant, cartesCles, collectifs, etages };
+// Base commune : envoi de ce qui reste, puis quelques controles du travail des autres.
+if (PARTAGE_OK) {
+  versFile(true);
+  if (PART.envoyer) try { const n = await PARTAGE.viderFile(PART, log); log(`partage : ${envoyes} resultats mis en file, ${n} lots envoyes`); } catch (e) { log('partage : envoi reporte (' + e.message + ')'); }
+  if (PART.verifier) try { await PARTAGE.controler(PART, versionPartage, rejouerLignes, { max: PARTAGE.identite().admin ? 40 : 2, log }); } catch (e) { log('partage : controles reportes (' + e.message + ')'); }
+}
+out.partage = PARTAGE_OK ? { recus, envoyes, ia: 'commune' } : null;
 mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
 for (const [o, l] of Object.entries(out.meilleurs)) { log(`== 3 etoiles, ${o} ==`); l.slice(0, 5).forEach((x, i) => log(`  ${i + 1}. ${x.equipe.join(' / ')} : ${x.troisEtoiles} % (+/- ${x.marge}) | ${x.parDifficulte.map(d => `${d.difficulte} ${d.troisEtoiles} / 2* ${d.deuxEtoiles}`).join(', ')}`)); }
 for (const c of collectifs) for (const l of c.cartes) log(`collectifs ${c.equipe.join(' / ')}, ${l.carte} : 3 etoiles ${l.avant} -> ${l.apres} %${l.utile ? ' : ' + l.conseil.join(', ') : ' (pas mieux que les tiens)'}`);

@@ -2,7 +2,7 @@
 
 | Question | Réponse |
 |---|---|
-| Qu'est-ce qui sort de mon PC ? | Rien. Le serveur écoute uniquement sur `127.0.0.1` (ta machine). |
+| Qu'est-ce qui sort de mon PC ? | Rien par défaut. Le serveur écoute uniquement sur `127.0.0.1` (ta machine). Seule exception, si tu l'allumes : le [[partage des calculs|Partage-des-calculs]] envoie tes résultats Campagne et un ID tiré au hasard. |
 | Le panneau télécharge-t-il quelque chose ? | Les portraits des cartes, depuis les mêmes adresses que le jeu (AniList et kitsu.games), sans envoyer de donnée ni d'adresse d'origine. Ils ne sont ni copiés dans le dépôt ni dans l'installateur. Le moteur du jeu et les mises à jour viennent de kitsu.games et GitHub. |
 | Que reçoit le serveur ? | L'état du combat en cours, envoyé par le script, et les actions lancées depuis le panneau. |
 | Un autre site peut-il piloter KitsuAI ? | Non. Les actions du panneau exigent un jeton généré à chaque démarrage, présent uniquement dans la page du panneau, et les autres origines sont refusées. |

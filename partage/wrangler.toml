@@ -1,0 +1,23 @@
+# Serveur de la base commune (partage des calculs Campagne). Cloudflare Workers, offre GRATUITE uniquement :
+# au-dela des quotas du jour, les requetes echouent (rien n'est facture). Ne jamais passer sur l'offre payante.
+name = "kitsu-partage"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kitsu-partage"
+database_id = "A_REMPLIR_APRES_wrangler_d1_create"
+
+[[r2_buckets]]
+binding = "LOTS"
+bucket_name = "kitsu-partage-lots"
+
+[vars]
+# true : seul le PC d'Adrien (jeton admin) peut faire passer un lot a "verifie". Les autres controles comptent mais ne suffisent pas.
+VERIF_ADMIN_SEULE = "true"
+LOTS_PAR_JOUR_NOUVEAU = "6"
+LOTS_PAR_JOUR = "80"
+LOTS_PAR_JOUR_TOTAL = "4000"
+# Le jeton admin est un secret : `npx wrangler secret put ADMIN_JETON` (jamais dans le depot ni dans le script).

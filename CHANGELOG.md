@@ -4,6 +4,18 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.22.0
+
+Base commune : partager les calculs Campagne entre joueurs, sans jamais croire personne sur parole. Coupée par défaut.
+
+- **Principe** : le combat est déterministe à graine égale. Un résultat partagé (trio, étoiles, collectifs, paquet de combats, graine, nombre de 3 étoiles) peut donc être rejoué à l'identique par un autre PC. Ton calcul Campagne récupère les résultats déjà vérifiés pour TES cartes et ne simule que le reste.
+- **IA commune** (`moteur/poids-communs.json`) : les calculs partagés jouent tous avec la même IA, sinon rien ne se recoupe. Ton IA perso reste la tienne pour tous tes conseils ; quand le partage est allumé, seul le calcul Campagne utilise l'IA commune.
+- **Contrôles** : chaque lot envoyé est contrôlé sur 24 lignes tirées par le serveur après l'envoi. Au début, seul le PC validateur (jeton admin) peut faire passer un lot à « vérifié » ; un écart et TOUT le travail de l'ID est retiré. Un contrôleur qui conteste à tort est écarté. Les graines sont fixes (1 à 3) : impossible de ne garder que les tirages favorables.
+- **Client** (`moteur/lib/partage.mjs`, `lib/partage-format.mjs`) : ID tiré au hasard sur le PC (`data/partage.json`, jamais lié au compte KITSU), file d'envoi sur le disque si pas d'internet, lots lus champ par champ (rien n'est exécuté), contrôles des autres à la fin de ton calcul (2 lots, quelques secondes). Rien n'est envoyé hors d'un calcul que tu lances.
+- **Serveur** (`partage/`) : Cloudflare Worker + D1 + R2, offre gratuite uniquement (au-delà des quotas, la base refuse, rien n'est facturé). Quotas par ID et par jour, aucune adresse IP ni pseudo stockés, « Supprimer mes envois ». Tests sans Cloudflare : `node partage/tests.mjs` (11 tests), serveur d'essai `node partage/serveur-local.mjs`.
+- **API du launcher** : `/api/partage` (état de mon ID), `/api/partage/supprimer`, `/api/partage/changer-id`. Les interrupteurs (`partage.utiliser`, `envoyer`, `verifier`) sont dans `reglages.json`. L'écran (Réglages et bloc « Base commune » de Campagne) viendra une fois la maquette validée.
+- Le partage ne s'active qu'avec les réglages standard du calcul (paquets de 16, sans `--max-trios` ni `--max-combats`) ; `--sans-partage` le coupe pour un calcul.
+
 ## 5.21.0
 
 Plan d'XP et de bannière unique : une seule liste pour toute ton XP et tes gemmes, qui pèse tous les modes selon l'objectif « modèle parfait » (3 étoiles partout en Campagne Cauchemar N/D/E, étage max en Tour, Arène à 100 %).

@@ -17,6 +17,7 @@ import { dir as D, DATA, CODE } from './lib/chemins.mjs';
 import { listerPoids, restaurerPoids } from './lib/historique.mjs';
 import { planTour, planNaif, finir as finirRaid, sieges as siegesRaid } from './lib/raid.mjs';
 import { plan as planXp } from './lib/plan.mjs';
+import * as PARTAGE from './lib/partage.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
@@ -73,7 +74,7 @@ function previsionTour() {
     dernier: d?.methode === 'course' ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.triosEssayes } : null };
 }
 // ---------- reglages (onglet Reglages du panneau) ----------
-const REG_DEF = { conseilMs: 700, filsReserves: 2, objectif: 's2', alertes: { energie: true, guilde: true, evenements: true, bannieres: true, patch: true, calcul: true, calculConseille: true } };
+const REG_DEF = { conseilMs: 700, filsReserves: 2, objectif: 's2', partage: { utiliser: false, envoyer: false, verifier: false }, alertes: { energie: true, guilde: true, evenements: true, bannieres: true, patch: true, calcul: true, calculConseille: true } };
 const reglages = () => { const r = readJ(D('data', 'reglages.json')) || {}; return { ...REG_DEF, ...r, alertes: { ...REG_DEF.alertes, ...(r.alertes || {}) } }; };
 // ---------- alertes : file lue par l'application (notifications Windows) et par le panneau ----------
 const alertes = []; const vues = new Set(readJ(D('data', 'alertes-vues.json')) || []);
@@ -300,6 +301,10 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
       if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
+      // Base commune (partage des calculs Campagne) : etat de mon ID, supprimer mes envois, changer d'ID. Les interrupteurs passent par /api/reglages.
+      if (u.pathname === '/api/partage') { const reg = PARTAGE.reglagesPartage(), id = PARTAGE.identite(); let base = null; try { base = await PARTAGE.moi(reg); } catch (e) { base = { err: e.message }; } return send(res, 200, { reglages: reg, id: id.id.slice(0, 8), admin: !!id.admin, base }); }
+      if (u.pathname === '/api/partage/supprimer' && req.method === 'POST') { try { return send(res, 200, await PARTAGE.supprimerMesEnvois(PARTAGE.reglagesPartage())); } catch (e) { return send(res, 502, { err: e.message }); } }
+      if (u.pathname === '/api/partage/changer-id' && req.method === 'POST') return send(res, 200, { id: PARTAGE.changerIdentite().id.slice(0, 8) });
       if (u.pathname === '/api/raids') return send(res, 200, readJ(D('data', 'raids.json')) || []);
       if (u.pathname === '/api/fiche') { if (FICHE.v !== VER) FICHE = { v: VER, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: VER, ...FICHE.j }); }
       if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
