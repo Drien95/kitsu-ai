@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.31.1**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.32.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.32.0 | Script : avec le script privé (0.23+), un seul cadre de conseil en Tour et Campagne ; l'avis du public et du calcul du PC y tient en une ligne |
 | 5.31.1 | Onglet « Le modèle » : s'ouvre tout de suite (l'instantané n'est recalculé que si un résultat a changé, après la réponse) ; « Rejouer » dit quand il n'y a qu'un instantané |
 | 5.31.0 | Base commune : sur le PC validateur, la Campagne tourne avec ton IA (sans partage) quand la dernière comparaison la dit nettement meilleure que l'IA commune |
 | 5.30.1 | Campagne : chaque combat de Campagne qui n'est pas à 100 % de 3★ est cherché sur tous les trios, pas seulement sur les finalistes du Cauchemar |

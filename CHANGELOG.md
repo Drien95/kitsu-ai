@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.32.0
+
+Script : un seul cadre de conseil quand le script privé a le coup exact (Tour, Campagne).
+
+- Le script public publie son avis pour le tour en cours dans `window.__kitsuAvis` : son coup (`pub`) et le résultat du calcul du PC (`pc` : en attente, confirme, change, avec les % ; erreur). Lecture seule, rien n'est envoyé.
+- Si le script privé annonce qu'il affiche cet avis (`html[data-kar-avis]`, privé 0.23+), le cadre public disparaît entièrement pendant le conseil exact au lieu de rester replié en une ligne. Un clic sur les lignes d'avis du privé le réaffiche.
+- Sans script privé, ou avec un privé plus ancien : rien ne change. Quand le privé n'a pas de réponse pour un tour, le cadre public revient comme avant.
+
 ## 5.31.1
 
 Onglet « Le modèle » : plus d'attente à l'ouverture, et « Rejouer » explique quand il ne peut rien rejouer.
