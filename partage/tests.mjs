@@ -209,6 +209,16 @@ await test('IA commune : rien au depart, publiee par l admin seulement, lue et v
   try { assert.equal((await P.iaCommune(REG)).source, 'cache'); } finally { globalThis.fetch = f; }
 });
 
+await test('Campagne : ton IA seulement si la derniere comparaison la dit nettement meilleure', async () => {
+  const { iaPersoMeilleure, cleIA } = await import('../moteur/lib/ia-commune.mjs');
+  const m = { nm: [1] }, c = { nm: [2] }, cmp = v => ({ verdict: v, mienne: cleIA(m), commune: cleIA(c) });
+  assert.equal(iaPersoMeilleure(cmp('meilleure'), m, c), true);
+  for (const v of ['pareille', 'moins bonne', 'identique']) assert.equal(iaPersoMeilleure(cmp(v), m, c), false, v);
+  assert.equal(iaPersoMeilleure(null, m, c), false, 'pas de comparaison');
+  assert.equal(iaPersoMeilleure(cmp('meilleure'), { nm: [3] }, c), false, 'ton IA a change depuis');
+  assert.equal(iaPersoMeilleure(cmp('meilleure'), m, { nm: [4] }), false, 'IA commune changee (publiee) depuis');
+});
+
 await test('comparaison des controles', async () => {
   const lot = { l: [[0, 0, 1, 16, 4], [0, 0, 2, 16, 5]] };
   assert.equal(ecarts(lot, [0, 1], [[16, 4], [16, 5]]), 0); assert.equal(ecarts(lot, [0, 1], [[16, 4], [16, 6]]), 1); assert.equal(ecarts(lot, [0, 1], [[16, 4]]), 2); assert.equal(ecarts(lot, [0, 1], 'x'), 2);
