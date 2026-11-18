@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.38.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.39.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.39.0 | Script : le farm n'exige plus 3 étoiles (combats déjà faits) mais 95 % de victoires ; une carte basse peut enfin y monter (XP pleine en vie, moitié K.O.) |
 | 5.38.0 | Script : écran d'équipe, le trio du calcul exact privé passe devant dès qu'il est jouable (3 cartes au niveau), le public n'est qu'un repli |
 | 5.37.0 | Script : le farm fait monter plusieurs cartes à la fois (suite du plan d'XP global, prochains murs), sur le combat qui donne le plus d'XP utile tout en restant à 3 étoiles |
 | 5.36.0 | Script : avec le privé 0.25+, un seul cadre en combat ; le conseil du privé s'installe dans le cadre KitsuAI, le public reste dessous en une ligne d'avis |
