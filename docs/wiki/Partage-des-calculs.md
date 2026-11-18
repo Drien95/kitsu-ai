@@ -7,11 +7,15 @@ Coupé par défaut. Quand tu l'allumes, ton calcul Campagne récupère les résu
 | Mécanisme | Effet |
 |---|---|
 | Combat déterministe | Un résultat (trio, étoiles, collectifs, combats, graine) rejoué sur un autre PC donne exactement le même nombre de 3 étoiles. |
-| Contrôle après l'envoi | Le serveur tire 24 lignes au hasard dans chaque lot et les fait rejouer. L'envoyeur ne sait pas lesquelles à l'avance. |
+| Contrôle après l'envoi | Le serveur tire 24 lignes au hasard dans chaque lot et les fait rejouer. L'envoyeur ne sait pas lesquelles à l'avance. Le PC contrôleur vérifie aussi que tout le lot correspond à ce qu'annonçait l'envoyeur (nombre de résultats, cartes). |
 | PC validateur | Au début, seul le PC du mainteneur peut faire passer un lot à « vérifié ». |
 | Sanction | Un seul écart : tous les lots de cet ID sont retirés, et l'ID ne peut plus rien envoyer. |
 | Graines fixes | Les tirages sont toujours 1, 2 et 3 : impossible de ne garder que ceux qui arrangent. |
 | Version | Chaque résultat porte l'empreinte du moteur du jeu et de l'IA : rien ne se mélange entre versions. |
+
+## Ce que ton PC télécharge
+
+La liste des lots donne les cartes de chaque lot : ton PC ne télécharge que ceux où tu as au moins 3 cartes, puis ne garde que les trios faits de tes cartes (mêmes étoiles, collectifs et niveau). Les lots vérifiés sont regroupés en gros paquets pour limiter les téléchargements.
 
 ## IA commune
 

@@ -8,7 +8,7 @@
 //   l: [ [trio, paquet, graine, combats, troisEtoiles], ... ] }         resultats (indices dans t et p)
 
 export const FORMAT = 1;
-export const LIMITES = { trios: 20000, paquets: 2000, lignes: 60000, octets: 8e6, graineMax: 3, paq: 16, collectifs: 6 };
+export const LIMITES = { trios: 60000, paquets: 2000, lignes: 400000, octets: 40e6, graineMax: 3, paq: 16, collectifs: 6 };
 const RE_SIG = /^[0-9a-z]{1,14}$/, RE_TXT = /^[^\u0000-\u001f]{1,64}$/;
 const ent = (x, a, b) => Number.isInteger(x) && x >= a && x <= b;
 
@@ -59,4 +59,28 @@ export function ecarts(lot, indices, resultats) {
   let e = 0;
   indices.forEach((i, j) => { const l = lot.l[i], r = resultats[j]; if (!l || !Array.isArray(r) || r[0] !== l[3] || r[1] !== l[4]) e++; });
   return e;
+}
+
+// Cartes presentes dans un lot (ids tries, ecarts en base 36 separes par des points) : la liste des lots les donne,
+// pour qu'un PC ne telecharge que les lots dont il possede au moins un trio possible.
+export function cartesDuLot(lot) {
+  const ids = [...new Set(lot.t.flatMap(tr => tr.map(c => c[0])))].sort((a, b) => a - b);
+  let p = 0; return ids.map(id => { const d = id - p; p = id; return d.toString(36); }).join('.');
+}
+export function decoderCartes(s) {
+  if (typeof s !== 'string' || !s) return [];
+  let p = 0; return s.split('.').map(x => (p += parseInt(x, 36)));
+}
+
+// Fusionne des lots de la meme version en un seul (paquet), sans doublon d'essai.
+export function fusionner(lots) {
+  const o = { f: FORMAT, sigG: lots[0].sigG, wKey: lots[0].wKey, moteur: lots[0].moteur, paq: LIMITES.paq, t: [], p: [], l: [] };
+  const ti = new Map(), pj = new Map(), vu = new Set();
+  for (const lot of lots) {
+    if (lot.sigG !== o.sigG || lot.wKey !== o.wKey) throw new Error('versions differentes');
+    const mt = lot.t.map(tr => { const k = cleTrioDe(tr); let a = ti.get(k); if (a === undefined) { a = o.t.length; ti.set(k, a); o.t.push(tr); } return a; });
+    const mp = lot.p.map(p => { const k = p[0] + '|' + p[1] + '|' + p[2]; let b = pj.get(k); if (b === undefined) { b = o.p.length; pj.set(k, b); o.p.push(p); } return b; });
+    for (const [ti0, pj0, g, n, s3] of lot.l) { const a = mt[ti0], b = mp[pj0], k = a + ',' + b + ',' + g; if (vu.has(k)) continue; vu.add(k); o.l.push([a, b, g, n, s3]); }
+  }
+  return o;
 }

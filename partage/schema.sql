@@ -1,9 +1,10 @@
+-- Statuts d'un lot : attente, conteste, verifie, rejete (ID ecarte), regroupe (remplace par un paquet).
 -- Base commune : index des lots, lots compresses (table blocs), joueurs, controles. Tout dans D1 : aucun moyen de paiement requis.
 -- Aucune adresse IP, aucun pseudo : un joueur = empreinte de sa cle secrete, tiree au hasard sur son PC.
 CREATE TABLE IF NOT EXISTS joueurs (id TEXT PRIMARY KEY, cred INTEGER NOT NULL DEFAULT 0, banni INTEGER NOT NULL DEFAULT 0, cree INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS lots (
   id TEXT PRIMARY KEY, joueur TEXT NOT NULL, sigG TEXT NOT NULL, wKey TEXT NOT NULL, moteur TEXT NOT NULL,
-  lignes INTEGER NOT NULL, octets INTEGER NOT NULL, statut TEXT NOT NULL DEFAULT 'attente', verifs INTEGER NOT NULL DEFAULT 0, recu INTEGER NOT NULL);
+  lignes INTEGER NOT NULL, octets INTEGER NOT NULL, cartes TEXT NOT NULL DEFAULT '', statut TEXT NOT NULL DEFAULT 'attente', verifs INTEGER NOT NULL DEFAULT 0, recu INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS lots_version ON lots (sigG, wKey, statut);
 CREATE INDEX IF NOT EXISTS lots_joueur ON lots (joueur);
 CREATE INDEX IF NOT EXISTS lots_recu ON lots (recu);

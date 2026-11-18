@@ -4,7 +4,9 @@ Cloudflare Worker (offre **gratuite** seulement) : tout est dans D1 (index et lo
 
 Adresse actuelle : `https://kitsu-partage.kitsu-partage-whag.workers.dev` (base D1 `kitsu-partage`).
 
-Pour mettre à jour le serveur après une modification de `partage/` : `cd partage` puis `npx wrangler@4 deploy` (et `npx wrangler@4 d1 execute kitsu-partage --remote --file schema.sql` si le schéma change).
+Pour mettre à jour le serveur après une modification de `partage/` : `cd partage` puis `npx wrangler@4 deploy` (et `npx wrangler@4 d1 execute kitsu-partage --remote --file migration-N.sql` pour chaque migration pas encore passée : `migration-1.sql` en 5.22.2).
+
+Le serveur ne décompresse jamais un lot (offre gratuite : 10 ms de calcul par requête). Le PC qui envoie décrit le lot dans l'en-tête `X-Kitsu-Meta` ; le PC contrôleur vérifie tout le lot par rapport à cette description et compte lui-même les écarts.
 
 ## Mise en ligne (une fois)
 
@@ -22,11 +24,11 @@ Pour mettre à jour le serveur après une modification de `partage/` : `cd parta
 
 ## Place
 
-Un lot de 20 000 résultats fait environ 90 Ko compressé, un calcul complet environ 25 lots. Une base D1 gratuite (500 Mo) tient donc environ 5 000 lots, soit 200 calculs complets. Les lots d'un ID écarté sont effacés. Au-delà, une 2e base D1 gratuite (10 par compte).
+Un lot de 20 000 résultats fait environ 90 Ko compressé, un calcul complet environ 25 lots. Une base D1 gratuite (500 Mo) tient donc environ 5 000 lots, soit 200 calculs complets. Les lots d'un ID écarté sont effacés. Le PC validateur regroupe les lots vérifiés d'un même ID en paquets d'environ 300 000 résultats (fusion sans doublon, moins de 1,8 Mo compressé). Au-delà, une 2e base D1 gratuite (10 par compte).
 
 ## Essai sans Cloudflare
 
-`node partage/tests.mjs` (11 tests) et `node partage/serveur-local.mjs 47200` (base en mémoire), puis `KITSU_PARTAGE_URL=http://127.0.0.1:47200` pour le moteur, et `--partage-test` pour autoriser un petit calcul (`--max-trios`) à partager.
+`node partage/tests.mjs` (15 tests, serveur et client) et `node partage/serveur-local.mjs 47200` (base en mémoire), puis `KITSU_PARTAGE_URL=http://127.0.0.1:47200` pour le moteur, et `--partage-test` pour autoriser un petit calcul (`--max-trios`) à partager.
 
 ## Quotas (dans `wrangler.toml`)
 
