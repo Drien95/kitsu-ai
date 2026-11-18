@@ -43,8 +43,7 @@ export function makeSim(G, B) {
     return best;
   };
   const hasBoss = st => B.enemies(st).some(e => e.boss);
-  // 5.37 : W.auto = le joueur utilise le bouton Auto du jeu : on simule le choix du jeu (autoChoice), comme en partie.
-  const smartPol = W => { if (W.auto && B.autoChoice) return (st, u) => B.autoChoice(st, u); const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm), pe = {}; const nmOf = st => { if (!W.equipes) return pm; const k = st.__tk ??= B.allies(st).map(x => x.id).sort((a, b) => a - b).join('-'); const e = W.equipes[k]; return e?.nm?.length === W.boss.length ? (pe[k] ??= policy(e.nm)) : pm; }; return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? nmOf(st) : hasBoss(st) ? pb : pn)(st, u); };
+  const smartPol = W => { const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm), pe = {}; const nmOf = st => { if (!W.equipes) return pm; const k = st.__tk ??= B.allies(st).map(x => x.id).sort((a, b) => a - b).join('-'); const e = W.equipes[k]; return e?.nm?.length === W.boss.length ? (pe[k] ??= policy(e.nm)) : pm; }; return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? nmOf(st) : hasBoss(st) ? pb : pn)(st, u); };
   // Une carte peut-elle ramener un allie K.O. ? (operation « ranimer » ou passif qui remonte le temps)
   const reviveMemo = new Map();
   const canRevive = id => { if (!reviveMemo.has(id)) reviveMemo.set(id, REVIVE_RE.test(JSON.stringify(B.KITS?.[id] || {}))); return reviveMemo.get(id); };

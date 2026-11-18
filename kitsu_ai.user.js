@@ -172,9 +172,7 @@
         const hasBoss = st => B.enemies(st).some(e => e.boss);
         // Strategie specialisee : poids "boss" s'il y a un boss, sinon poids "normal".
         // Reglages Cauchemar propres a une equipe (entraines sur le PC) : utilises quand c'est exactement cette equipe.
-        // 5.37 : W.auto = tu joues avec le bouton Auto du jeu. On simule alors le choix du jeu (autoChoice), pas l'IA du script.
-        // Mesure du 18/11 (Shanks 92, Pain et Tobi 99, Cauchemar) : Hades 100 % de victoires avec l'IA du script, 0 % en Auto.
-        const smartPol = W => { if (W.auto && B.autoChoice) return (st, u) => B.autoChoice(st, u); const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm), pe = {}; const nmOf = st => { if (!W.equipes) return pm; const k = st.__tk ??= B.allies(st).map(x => x.id).sort((a, b) => a - b).join('-'); const e = W.equipes[k]; return e?.nm?.length === W.boss.length ? (pe[k] ??= policy(e.nm)) : pm; }; return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? nmOf(st) : hasBoss(st) ? pb : pn)(st, u); };
+        const smartPol = W => { const pn = policy(W.norm), pb = policy(W.boss), pm = policy(W.nm || W.boss), pt = policy(W.tower || W.norm), pe = {}; const nmOf = st => { if (!W.equipes) return pm; const k = st.__tk ??= B.allies(st).map(x => x.id).sort((a, b) => a - b).join('-'); const e = W.equipes[k]; return e?.nm?.length === W.boss.length ? (pe[k] ??= policy(e.nm)) : pm; }; return (st, u) => (st.__tower ? pt : st.ai === 'nm' ? nmOf(st) : hasBoss(st) ? pb : pn)(st, u); };
         const modeName = st => st.__tower ? 'tour' : st.ai === 'nm' ? 'cauchemar' : hasBoss(st) ? 'boss' : 'normale';
         const playOut = (st, pol) => { for (let i = 0; i < 200; i++) { const u = step(st); if (!u) break; doAct(st, u, pol(st, u)); } return st; };
         const runScore = (f, ids, pol, seed, S, opt) => score(playOut(mk(f, ids, seed, S, opt), pol));
@@ -469,15 +467,13 @@
           let s; try { s = G.statsAt(c, lv, st); } catch { s = { atk: c.atk, def: c.def }; }
           return { id, v: (s.atk + s.def) * (c.hpK || 1.1) * ({ M: 1.25, L: 1.15, E: 1.1 }[c.r] || 1) };
         }).sort((a, b) => b.v - a.v).slice(0, n).map(x => x.id);
-        // Poids de simulation : ceux de l'IA du script, ou le choix du jeu si tu joues en Auto (reglage du jeu, sauvegarde pve.auto).
-        const simW = (W, S = save()) => S?.pve?.auto ? { ...W, auto: 1 } : W;
         // Interet d'un trio pour la progression : il contient des cartes du plan d'entrainement.
-        // 5.37 : toutes les cartes du plan d'XP du PC (pas seulement la 1re) et celles des prochains murs comptent ; une carte au 99 ne
-        // gagne plus d'XP, elle ne compte jamais. Le farm prend alors le trio qui fait monter le plus de cartes a la fois en restant a 3 etoiles.
+        // 5.37 : toutes les cartes du plan d'XP du PC (pas seulement la 1re : plan global Campagne, Tour, Raid, Arene) et celles des prochains murs
+        // comptent ; une carte au 99 ne gagne plus d'XP, elle ne compte jamais. Le farm prend le trio qui en fait monter le plus a 3 etoiles.
         const xpWeights = () => {
           const tr = lsGet('kitsu_ai_training', null), w = {}, px = planXp(), S9 = save(), monte = id => S9.owned?.[id] && (S9.lv?.[id]?.l || 1) < 99;
           for (const r of lsGet('kitsu_ai_plan', null)?.avenir || []) if (r.niveauxEnPlus) for (const id of r.equipe || []) if (monte(id)) w[id] = Math.max(w[id] || 0, 4);
-          (lsGet('kitsu_ai_planxp', null)?.suite || []).forEach((ids, i) => { for (const id of ids) if (monte(id)) w[id] = Math.max(w[id] || 0, Math.max(2, 4 - i * 0.5)); });
+          (lsGet('kitsu_ai_planxp', null)?.suite || []).forEach((ids, i) => { for (const id of ids) if (monte(id)) w[id] = Math.max(w[id] || 0, Math.max(2, 5 - i * 0.5)); });
           if (px) w[px.id] = 5;
           if (tr?.objectif?.retard?.length) { const S0 = save(); for (const c of tr.objectif.retard) { const lv0 = S0.lv?.[c.id]?.l || 1; if (lv0 < tr.objectif.niveau - 2) w[c.id] = 4 + 3 * (tr.objectif.niveau - lv0) / tr.objectif.niveau; } }
           if (tr?.cartes?.length) { tr.cartes.slice(0, 3).forEach((c, i) => { if (!w[c.id]) w[c.id] = 3 - i; }); return w; }
@@ -690,7 +686,7 @@
           // Plan : combats jouables pas encore a 3 etoiles, chances de 3 etoiles avec le meilleur trio, gemmes, energie, tirage.
           async plan() {
             await loadModules();
-            const S = save(), now = Date.now(), stars = S.pve?.stars || {}, Wsim = simW(this.W, S), pol = smartPol(Wsim);
+            const S = save(), now = Date.now(), stars = S.pve?.stars || {}, pol = smartPol(this.W);
             const playable = [];
             for (const w of liveWorlds(now)) for (const f of w.fights) {
               if ((stars[f.id] || 0) >= 3) continue;
@@ -724,7 +720,7 @@
             const tri = trios([...new Set([...pool(6, S), ...tr0])]), seeds = [1, 2, 3, 4];
             // 5.34 : simulations dans le worker (simBatch) et non plus sur le fil du jeu : memes graines, memes equipes, memes resultats.
             // Mesure du 18/11 : ce plan, relance apres chaque combat et sur la carte, bloquait la page ~10 s par minute de jeu.
-            const evL = async (f, list, n = 4, SS = S) => { const seeds = Array.from({ length: n }, (_, i) => i + 1); const out = await simBatch(list.map(ids => ({ fid: f.id, team: teamOf(ids, SS), seeds })), Wsim); return out.map(o => ({ w: o.w / o.n, s3: o.s3 / o.n })); };
+            const evL = async (f, list, n = 4, SS = S) => { const seeds = Array.from({ length: n }, (_, i) => i + 1); const out = await simBatch(list.map(ids => ({ fid: f.id, team: teamOf(ids, SS), seeds })), this.W); return out.map(o => ({ w: o.w / o.n, s3: o.s3 / o.n })); };
             const ev = async (f, ids, n = 4) => (await evL(f, [ids], n))[0];
             const rows = [];
             for (const f of playable) {
@@ -765,7 +761,7 @@
             const blockers = rows.filter(r => r.victoire < 0.7);
             // Prevision : premier "mur" de chaque monde (premier combat non fait que tes 3 meilleurs trios gagnent
             // a moins de 75 %), niveaux en plus necessaires, XP par carte et combats de farm correspondants.
-            const wallKey = (S.pve?.auto ? 'auto|' : '') + pool(6, S).map(id => id + ':' + Math.floor((S.lv?.[id]?.l || 1) / 3)).join(',') + '|' + Math.floor(Object.keys(stars).length / 10);
+            const wallKey = pool(6, S).map(id => id + ':' + Math.floor((S.lv?.[id]?.l || 1) / 3)).join(',') + '|' + Math.floor(Object.keys(stars).length / 10);
             const wallCache = lsGet('kitsu_ai_walls', null);
             const reuseWalls = wallCache && wallCache.key === wallKey && Date.now() - wallCache.t < 12 * 3600000;
             const avenir = reuseWalls ? wallCache.avenir : [];
@@ -1888,10 +1884,10 @@
 
           // Ecran "Choisis tes cartes" : 120 trios de tes 10 meilleures cartes, simules contre ce combat.
           // Classement des trios pour un combat : en cache (par combat et niveaux de tes cartes), calcule par petits morceaux.
-          _teamKey(fid, S, base) { return fid + '|' + (S.pve?.auto ? 'auto|' : '') + (base ? base.join('.') + '|' : '') + (lsGet('kitsu_ai_training', null)?.objectif?.equipe || []).join('.') + '|' + pool(10, S).map(id => id + ':' + Math.floor((S.lv?.[id]?.l || 1) / 3) + ':' + (S.stars?.[id] || 0)).join(','); },
+          _teamKey(fid, S, base) { return fid + '|' + (base ? base.join('.') + '|' : '') + (lsGet('kitsu_ai_training', null)?.objectif?.equipe || []).join('.') + '|' + pool(10, S).map(id => id + ':' + Math.floor((S.lv?.[id]?.l || 1) / 3) + ':' + (S.stars?.[id] || 0)).join(','); },
           // base (5.37, farm) : cartes dont on essaie tous les trios, a la place de tes 10 plus fortes.
           async _rankTeams(fid, S = save(), base = null) {
-            const key = this._teamKey(fid, S, base), cache = lsGet('kitsu_ai_teams', {}), Wsim = simW(this.W, S);
+            const key = this._teamKey(fid, S, base), cache = lsGet('kitsu_ai_teams', {});
             if (cache[key]) return cache[key].res;
             const pol = smartPol(this.W), seeds = [1, 2, 3, 4, 5, 6, 7, 8];
             const trc = lsGet('kitsu_ai_training', null), tr0 = [...(trc?.objectif?.equipe || []), ...(trc?.cartes || []).slice(0, 2).map(c => c.id)].filter(id => S.owned?.[id]);
@@ -1908,8 +1904,8 @@
               for (const x of c?.trios || []) { const ids = x.map(Number).sort((a, b) => a - b); if (ids.length === 3 && ids.every(id => S.owned?.[id])) { const k = ids.join('-'); calc.add(k); if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === k)) list.push(ids); } } }
             // Calcul sur le PC (serveur local) : 24 tirages par trio au lieu de 8, sinon calcul dans le navigateur.
             let res = null;
-            if (localPC.ok) { const r = await localAsk('/equipes', { dom: domFile(), fid, equipes: list.map(t => teamOf(t, S)), W: Wsim, seeds: 24 }, 15000); if (r?.res?.length === list.length && (!Wsim.auto || r.auto)) res = list.map((t, i) => ({ t, w: r.res[i].win / r.res[i].n, s: r.res[i].s2 / r.res[i].n, s3: r.res[i].s3 / r.res[i].n, pc: 1 })); }
-            if (!res) { const out = await simBatch(list.map(t => ({ fid, team: teamOf(t, S), seeds })), Wsim); res = list.map((t, i) => ({ t, w: out[i].w / out[i].n, s: out[i].s / out[i].n, s3: out[i].s3 / out[i].n })); }
+            if (localPC.ok) { const r = await localAsk('/equipes', { dom: domFile(), fid, equipes: list.map(t => teamOf(t, S)), W: this.W, seeds: 24 }, 15000); if (r?.res?.length === list.length) res = list.map((t, i) => ({ t, w: r.res[i].win / r.res[i].n, s: r.res[i].s2 / r.res[i].n, s3: r.res[i].s3 / r.res[i].n, pc: 1 })); }
+            if (!res) { const out = await simBatch(list.map(t => ({ fid, team: teamOf(t, S), seeds })), this.W); res = list.map((t, i) => ({ t, w: out[i].w / out[i].n, s: out[i].s / out[i].n, s3: out[i].s3 / out[i].n })); }
             for (const r of res) { const k = r.t.slice().sort((a, b) => a - b).join('-'); if (calc.has(k)) r.calc = 1; if (exact && k === exact.k) r.exact = exact.p; }
             res.sort((a, b) => b.s3 - a.s3 || b.w - a.w || b.s - a.s);
             const c2 = lsGet('kitsu_ai_teams', {}); c2[key] = { t: Date.now(), res };
@@ -1926,15 +1922,22 @@
             try {
               const S = save(), xw = xpWeights(), MODE = { h: 'Difficile', x: 'Extreme', n: 'Cauchemar', hn: 'Cauchemar Difficile', xn: 'Cauchemar Extreme' };
               const rows = Object.keys(S.pve?.stars || {}).filter(id => S.pve.stars[id] >= 3 && !id.startsWith('ev-')).map(id => { const f = G.findFight(id); if (!f) return null; let xp = 0, c = 1; try { xp = G.fightXp(f); c = G.fightCost(f) || 1; } catch {} return { id, f, xp, c }; })
-                .filter(Boolean).sort((a, b) => b.xp / b.c - a.xp / a.c).slice(0, 6);
+                .filter(Boolean).sort((a, b) => b.xp / b.c - a.xp / a.c);
+              // 5.37 : les 2 combats les plus rentables de chaque difficulte (Normal ... Cauchemar Extreme), pas seulement les plus durs :
+              // une carte basse ne tient pas en Cauchemar, mais monte en Normal ou Difficile. 10 combats au plus.
+              const parMode = {}; for (const r of rows) { const k = r.id.split('@')[1] || ''; if ((parMode[k] ??= []).length < 2) parMode[k].push(r); }
+              const essais = Object.values(parMode).flat().sort((a, b) => b.xp / b.c - a.xp / a.c).slice(0, 10);
               // Trios essayes : tes 6 cartes les plus fortes et les 5 cartes a faire monter les plus utiles (plan d'XP, prochains murs).
               const aMonter = Object.entries(xw).filter(([id, v]) => v > 0 && S.owned?.[id] && (S.lv?.[id]?.l || 1) < 99).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => +id);
               const base = [...new Set([...pool(6, S), ...aMonter])].sort((a, b) => a - b);
-              let row = null;
-              for (const r of rows) {
+              // Combat retenu : celui qui donne le plus d'XP utile par energie (XP du combat x cartes a monter du trio, ponderees),
+              // avec un trio qui gagne 95 % et fait 3 etoiles 90 % du temps.
+              let row = null, meilleur = -1;
+              for (const r of essais) {
                 const res = await this._rankTeams(r.id, S, base);
                 const ok = res.filter(x => x.w >= 0.95 && x.s3 >= 0.9).sort((a, b) => xpScore(b.t, xw) - xpScore(a.t, xw) || b.s3 - a.s3)[0];
-                if (ok) { const suf = r.id.split('@')[1]; row = { id: r.id, nom: r.f.t + (suf ? ` (${MODE[suf] || suf})` : ''), equipe: ok.t, troisEtoiles: ok.s3, victoire: ok.w, etoiles: 3, xp: r.xp, cout: r.c, gemmesEsperees: 0, farm: true }; break; }
+                const v = ok ? (xpScore(ok.t, xw) || 0.01) * r.xp / r.c : -1;
+                if (v > meilleur) { meilleur = v; const suf = r.id.split('@')[1]; row = { id: r.id, nom: r.f.t + (suf ? ` (${MODE[suf] || suf})` : ''), equipe: ok.t, troisEtoiles: ok.s3, victoire: ok.w, etoiles: 3, xp: r.xp, cout: r.c, gemmesEsperees: 0, farm: true }; }
                 await idle();
               }
               lsSet('kitsu_ai_farm', { t: Date.now(), row });
