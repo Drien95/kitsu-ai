@@ -169,7 +169,8 @@ const ACTIONS = {
   plafond: { nom: 'Mesure du plafond', cmd: ['plafond.mjs'], opts: o => ['--n', String(o.n || 10), '--k', String(o.k || 6), '--r', String(o.r || 20)] },
   bench: { nom: 'Mesure de vitesse', cmd: ['bench.mjs'] },
   imitation: { nom: "IA par imitation", cmd: ['distiller.mjs'], opts: o => ['--types', o.types || 'nm,boss', '--combats', String(o.combats || 160)] },
-  equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--generations', String(o.generations || 25)] },
+  // 5.29 : les trios du plan du calcul Campagne s'il existe (--trios plan), sinon les n meilleures equipes de la derniere analyse.
+  equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--trios', 'plan', '--generations', String(o.generations || 25)] },
   tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
   cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes', '--budget-specialistes', String(o.specialistes == null ? 60 : Math.max(0, Math.min(1440, Math.round(+o.specialistes) || 0)))] },
   diagnostic3: { nom: 'Campagne : pourquoi la 3e etoile saute', cmd: ['diagnostic3.mjs'] },

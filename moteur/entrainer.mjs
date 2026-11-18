@@ -2,7 +2,7 @@
 // Objectif (17/11/2026, demande d'Adrien) : les 3 etoiles (0 K.O., 8 cycles au plus) sur des combats disputes ;
 // --objectif 2etoiles reprend l'ancien score (2 etoiles ou plus + moitie des 3 etoiles). Resultat : data/poids.json,
 // que le script KitsuAI recupere tout seul quand le serveur local tourne.
-//   node entrainer.mjs [--types nm,boss,norm] [--generations 40] [--fils 10] [--objectif 3etoiles|2etoiles]
+//   node entrainer.mjs [--types nm,boss,norm] [--generations 40] [--fils 10] [--objectif 3etoiles|2etoiles] [--par-equipe 3] [--trios plan]
 import { archiverPoids } from './lib/historique.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -37,10 +37,17 @@ const rn = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v 
 const gains = {};
 log(`moteur ${version}, ${pool.n} fils, ${GENS} generations max`);
 // Entrainement d'un jeu de reglages (CEM) pour des equipes donnees, sur leurs combats disputes.
-async function entrainer(kind, teams, fightsAll, gens, etiquette) {
-  const cand = shuffle(fightsAll).slice(0, 600);
+async function entrainer(kind, teams, fightsAll, gens, etiquette, nPremiers = 0) {
+  // nPremiers : les premiers combats de la liste (ceux du trio) passent avant les autres, deja melanges.
+  const cand = [...fightsAll.slice(0, nPremiers), ...shuffle(fightsAll.slice(nPremiers))].slice(0, 600);
   const probe = await pool.runAll(cand.map(f => ({ team: teams[0], fights: [f], seeds: [1, 2] })), W, {}, 20);
-  const hard = cand.filter((f, i) => probe[i].s3 < 2).slice(0, 120); const tr = hard.slice(0, 80), ho = hard.slice(80);
+  let tr, ho;
+  if (!nPremiers) { const hard = cand.filter((f, i) => probe[i].s3 < 2).slice(0, 120); tr = hard.slice(0, 80); ho = hard.slice(80); }
+  else { // combats du trio : un sur deux en entrainement, l'autre en controle (le gain se mesure aussi sur ses combats)
+    const own = cand.filter((f, i) => i < nPremiers && probe[i].s3 < 2), aut = cand.filter((f, i) => i >= nPremiers && probe[i].s3 < 2);
+    const oT = own.filter((_, k) => k % 2 === 0), oH = own.filter((_, k) => k % 2 === 1), nA = Math.max(0, 80 - oT.length);
+    tr = [...oT, ...aut.slice(0, nA)].slice(0, 80); ho = [...oH, ...aut.slice(nA)].slice(0, 40);
+  }
   if (tr.length < 10) { log(etiquette, ': trop peu de combats disputes, rien a apprendre'); return null; }
   const fit = async (w, fl, seeds) => { const Wt = { ...W, [kind]: w }; const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), Wt, TROIS ? { stop3: true } : { stop2: true }, 16); const n = r.reduce((a, x) => a + x.n, 0); return r.reduce((a, x) => a + (TROIS ? x.s3 : x.s2 + 0.5 * x.s3), 0) / n; };
   let mu = W[kind].slice(), sd = Array(mu.length).fill(0.35), best = mu.slice(), bestHo = await fit(best, ho.length >= 10 ? ho : tr, [901, 902, 903]), stale = 0;
@@ -57,7 +64,15 @@ async function entrainer(kind, teams, fightsAll, gens, etiquette) {
     stale = imp ? 0 : stale + 1;
     log(`${etiquette} generation ${g + 1} : meilleur ${(100 * pop[0].f).toFixed(1)} (entrainement), controle ${(100 * bestHo).toFixed(1)}${imp ? ' (amelioration)' : ''}`);
   }
-  return { w: best.map(x => +x.toFixed(4)), depart: +(100 * start).toFixed(1), fin: +(100 * bestHo).toFixed(1) };
+  return { w: best.map(x => +x.toFixed(4)), depart: +(100 * start).toFixed(1), fin: +(100 * bestHo).toFixed(1), ho: ho.length >= 10 ? ho : tr };
+}
+// Reglages d'une equipe contre les reglages generaux, sur ses combats de controle avec 6 tirages jamais utilises (apparies).
+async function verifier(team, fl, w) {
+  const seeds = [7001, 7002, 7003, 7004, 7005, 7006], jobs = fl.flatMap(f => seeds.map(sd => ({ team, fights: [f], seeds: [sd] })));
+  const [a, b] = await Promise.all([W, { ...W, nm: w, equipes: undefined }].map(Wx => pool.runAll(jobs, Wx, { stop3: true }, 16)));
+  const d = a.map((x, i) => b[i].s3 - x.s3), n = d.length, m = d.reduce((p, q) => p + q, 0) / n, se = Math.sqrt(d.reduce((p, q) => p + (q - m) ** 2, 0) / Math.max(1, n - 1) / n), z = se ? m / se : 0;
+  const pc = r => +(100 * r.reduce((p, x) => p + x.s3, 0) / n).toFixed(1);
+  return { n, avant: pc(a), apres: pc(b), z: +z.toFixed(1), garde: z >= 2 };
 }
 // Tour de l'infini : reglages appris sur l'etage atteint (montees completes, PV reportes), pas sur les etoiles.
 // Gardes seulement s'ils battent les reglages actuels sur des montees jamais vues (z >= 2).
@@ -103,13 +118,30 @@ for (const kind of String(arg('types', 'nm,boss,norm')).split(',').filter(Boolea
 }
 // Entrainement par equipe : des reglages Cauchemar propres a chacune de tes meilleures equipes,
 // gardes seulement s'ils battent les reglages generaux sur ses combats de controle.
-const NE = +arg('par-equipe', 0);
-if (NE > 0) {
+// 5.29 (--trios plan) : les trios du plan du calcul Campagne (cauchemar3.json, etages.plan), chacun sur SES combats Cauchemar
+// (ceux que le plan lui donne et ceux dont il est le meilleur trio), aux niveaux du calcul ; completes par les autres combats
+// Cauchemar Extreme s'il y en a trop peu de disputes. Sans plan : les meilleures equipes de la derniere analyse, comme avant.
+const NE = +arg('par-equipe', 0), PLAN = arg('trios') === 'plan';
+function triosPlan() {
+  const c3 = (() => { try { return JSON.parse(readFileSync(D('resultats', 'cauchemar3.json'), 'utf8')); } catch { return null; } })(), e = c3?.etages;
+  if (!e?.plan?.length) return null;
+  const lvC = id => c3.niveaux === '99' ? 99 : lv(id), mk = t => t.map(id => ({ id, lv: lvC(id), stars: st(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}) }));
+  return e.plan.map(p => ({ ids: e.trios[p.trio], team: mk(e.trios[p.trio]), fights: e.combats.filter(c => c[1] < 3 && (c[4] === p.trio || c[2] === p.trio)).map(c => c[0]) })).filter(x => x.ids?.length === 3);
+}
+if (NE > 0 || PLAN) {
   const old = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')) : {}, equipes = old.equipes || {};
-  for (const t of teamsFor(['cauchemar_multi', 'cauchemar_boss', 'cauchemar']).slice(0, NE)) {
-    const key = t.slice().sort((a, b) => a - b).join('-'), nom = t.map(id => (CH[id]?.n || id)).join(' / ');
-    const r = await entrainer('nm', [mkT(t)], TYPES.nm.fights, Math.round(GENS * 0.6), 'equipe ' + nom);
-    if (r && r.fin > r.depart + 0.5) { equipes[key] = { nom, nm: r.w, depart: r.depart, fin: r.fin, t: Date.now() }; log(`equipe ${nom} : ${r.depart} -> ${r.fin}, reglages propres gardes`); }
+  const tp = PLAN ? triosPlan() : null; if (PLAN && !tp) log('trios du plan : pas de calcul Campagne avec un plan, meilleures equipes de la derniere analyse a la place');
+  const liste = tp || teamsFor(['cauchemar_multi', 'cauchemar_boss', 'cauchemar']).slice(0, NE || 3).map(ids => ({ ids, team: mkT(ids), fights: [] }));
+  if (tp) log(`trios du plan : ${tp.length} trios, ${tp.map(x => x.fights.length).join(' / ')} combats Cauchemar chacun`);
+  for (const x of liste) {
+    const t = x.ids, key = t.slice().sort((a, b) => a - b).join('-'), nom = t.map(id => (CH[id]?.n || id)).join(' / ');
+    const propres = shuffle(x.fights, 3), fl = propres.length >= 40 ? propres : [...propres, ...shuffle(TYPES.nm.fights.filter(f => !propres.includes(f)), 5)];
+    const r = await entrainer('nm', [x.team], fl, Math.round(GENS * 0.6), 'equipe ' + nom, propres.length);
+    // 5.29 : verification sur des tirages jamais vus (memes combats, memes graines pour les deux reglages) : gardes si z >= 2.
+    const v = r && r.fin > r.depart + 0.5 ? await verifier(x.team, r.ho, r.w) : null;
+    if (v) log(`equipe ${nom} : verification sur ${v.n} combats jamais joues : ${v.avant} -> ${v.apres} % de 3 etoiles (z = ${v.z})`);
+    if (v?.garde) { equipes[key] = { nom, nm: r.w, depart: r.depart, fin: r.fin, verif: v, t: Date.now() }; log(`equipe ${nom} : ${r.depart} -> ${r.fin}, reglages propres gardes`); }
+    else if (v) log(`equipe ${nom} : gain pas confirme sur les tirages jamais vus, reglages generaux gardes`);
     else if (r) log(`equipe ${nom} : pas de gain net (${r.depart} -> ${r.fin}), reglages generaux gardes`);
   }
   sauver({ equipes });
