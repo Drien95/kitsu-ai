@@ -4,6 +4,18 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.33.0
+
+Calculs plus rapides, résultats identiques : les collectifs d'un trio ne sont plus recalculés à chaque combat.
+
+- **Ce qui coûtait** (profil CPU mesuré) : à chaque combat, le jeu recherche les collectifs actifs du trio en parcourant toute la liste des collectifs. C'est 21 % du temps d'un combat sur l'ancien moteur, plus sur le moteur actuel. Or ce résultat ne dépend que des 3 cartes et des collectifs choisis, pas du combat.
+- **Ce qui change** (`lib/charger.mjs`) : le moteur du jeu est chargé depuis une copie locale (`assets/*.memo.js`, à côté du fichier téléchargé, jamais dans le dépôt) où cette fonction garde ses résultats déjà calculés. Même entrée, même résultat, lu sans être modifié. Rien d'autre du jeu n'est touché.
+- **Garde-fous** : si la fonction n'est plus reconnue après un patch du jeu, ou si la copie ne se charge pas, le moteur normal est utilisé. `KITSU_SANS_MEMO=1` force le moteur normal. Trois tests dans `tests.mjs` : la copie est active ; 40 trios au hasard × des combats de tous les mondes, joués en entier et coupés, donnent exactement les mêmes étoiles, K.O. et cycles qu'avec le moteur normal ; repli si la fonction est absente.
+- **Mesures** (VM, 2 cœurs, moteur B4t5msj4, sans puis avec, essais alternés) :
+  - 1 000 trios × 6 combats Cauchemar durs, coupés dès que la 3★ est perdue (comme les spécialistes), 3 essais : médiane 3,89 s puis 3,12 s (1,25 fois). Les 6 000 étoiles sont identiques caractère par caractère.
+  - Calcul Campagne de test (90 trios, 192 combats, diagnostic compris), 2 essais : 36 et 39 s, puis 23 et 25 s (environ 1,55 fois). `cauchemar3.json` identique hors dates et durées.
+  - Le gain réel sur un calcul complet reste à mesurer sur ton PC : compare sa durée à celle du dernier calcul.
+
 ## 5.32.0
 
 Script : un seul cadre de conseil quand le script privé a le coup exact (Tour, Campagne).
