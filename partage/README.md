@@ -4,7 +4,7 @@ Cloudflare Worker (offre **gratuite** seulement) : tout est dans D1 (index et lo
 
 Adresse actuelle : `https://kitsu-partage.kitsu-partage-whag.workers.dev` (base D1 `kitsu-partage`).
 
-Depuis 5.24.0, le plus simple : launcher, Réglages, cadre du PC validateur, « Mettre à jour le serveur » (fait les étapes ci-dessous). Monter `VERSION_SERVEUR` dans `moteur/lib/partage-format.mjs` à chaque changement de `partage/src`.
+Depuis 5.24.0, le plus simple : launcher, Réglages, cadre du PC validateur, « Mettre à jour le serveur » (fait les étapes ci-dessous). Il faut une fois un jeton d'API Cloudflare (modèle « Edit Cloudflare Workers » plus la permission Compte, D1, Edit), collé dans la ligne « Jeton Cloudflare » du même cadre. Monter `VERSION_SERVEUR` dans `moteur/lib/partage-format.mjs` à chaque changement de `partage/src`.
 
 À la main, après une modification de `partage/` : `cd partage` puis `npx wrangler@4 deploy` (et `npx wrangler@4 d1 execute kitsu-partage --remote --file migration-N.sql` pour chaque migration pas encore passée : `migration-1.sql` en 5.22.2).
 
