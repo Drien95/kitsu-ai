@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.22.1**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.22.2**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.22.2 | Base commune plus légère : le serveur ne décompresse plus rien (le PC contrôleur vérifie tout le lot), la liste des lots donne leurs cartes et ton PC ne télécharge que ceux où tu as des cartes, les lots vérifiés sont regroupés en gros paquets, les résultats vont directement dans le journal |
 | 5.20.0 | Raid « Le Destin Effacé » (Diavolo), de 1 à 3 joueurs : calcul du meilleur trio contre 3 niveaux de coéquipiers à 3 et à 2 joueurs, onglet Raids du launcher (podium, rôles, causes de défaite, boss, derniers raids), conseil du script dans le salon et à chaque tour (Rupture, Garde, attaque, chances de victoire), sans aucun clic |
 | 5.19.1 | Tour de l'infini : avec le script privé, le choix de la compo suit le trio de son calcul exact (le reste des conseils ne change pas) |
 | 5.19.0 | Nouvelle direction artistique du script en jeu : couleur par source (orange script, bleu privé, blanc guide), coup conseillé en grand, contours nets sans halo, dock et plan redessinés, panneau replié quand le script privé donne un coup exact. Aucun flou ni animation continue. ; launcher : tableau de bord refait (3 cartes de mode avec portraits, liste « À faire »), « Tout lancer » renommé « Mettre à jour l'IA » |

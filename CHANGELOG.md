@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.22.2
+
+Base commune plus légère, pour rester dans l'offre gratuite de Cloudflare (10 ms de calcul par requête) et télécharger moins.
+
+- **Le serveur ne décompresse plus rien** : le PC qui envoie décrit son lot dans l'en-tête `X-Kitsu-Meta` (version, nombre de lignes, cartes présentes). Le PC contrôleur vérifie tout le lot (format, version, nombre de lignes, cartes) en plus des 24 lignes rejouées, et compte lui-même les écarts. Un lot qui ne correspond pas à sa description compte comme un lot truqué : l'ID est écarté. Un envoi prend environ 5 ms côté serveur au lieu de 46.
+- **Liste des lots avec leurs cartes** : ton PC ne télécharge que les lots où tu as au moins 3 cartes.
+- **Regroupement** : à la fin de ses calculs, le PC validateur fusionne les lots vérifiés d'un même ID en paquets d'environ 300 000 résultats (`GET /v1/admin/a-regrouper`, `POST /v1/admin/paquets`). Moins de fichiers à télécharger, liste plus courte.
+- **Lecture directe** : les résultats reçus vont directement dans le journal au fil de la lecture (plus de grande liste en mémoire) ; les lots en cache qui ne sont plus dans la liste (regroupés, écartés, ancienne version) sont effacés.
+- Mise à jour d'une base existante : `migration-1.sql` (colonne `cartes`). Tests du serveur et du client : 15 (`node partage/tests.mjs`).
+
 ## 5.22.1
 
 - **Base commune sans carte bancaire** : les lots compressés sont rangés dans D1 (table `blocs`) au lieu de R2. R2 exige d'ajouter un moyen de paiement et facture au-delà de son quota gratuit ; D1 gratuit refuse simplement au-delà, sans rien facturer. Un lot envoyé fait au plus 1,9 Mo compressé (limite d'une ligne D1) ; en pratique, 20 000 résultats font environ 90 Ko. Les lots d'un ID écarté sont effacés pour libérer la place. Guide de mise en ligne raccourci (plus d'étape R2).

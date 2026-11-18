@@ -131,8 +131,8 @@ if (PARTAGE_OK) {
   try { const n = await PARTAGE.viderFile(PART, log); if (n) log(`partage : ${n} lots en attente envoyes`); } catch (e) { log('partage : envoi impossible (' + e.message + ')'); }
   if (PART.utiliser) try {
     const mien = new Map(IDS.map(id => [id, cleCarte(id)]));
-    const lignes = await PARTAGE.telecharger(PART, versionPartage, { cleCarteLocale: id => mien.get(id) || null, log });
-    for (const x of lignes) { if (paquets[x.di]?.[x.pi]?.cle !== x.clePaquet) continue; const k = cle(x.di, x.pi, x.graine, x.ck); if (!J.get(k)) { J.set(k, x.n + ',' + x.s3); recus++; } }
+    await PARTAGE.telecharger(PART, versionPartage, { cleCarteLocale: id => mien.get(id) || null, log,
+      onLigne: x => { if (paquets[x.di]?.[x.pi]?.cle !== x.clePaquet) return; const k = cle(x.di, x.pi, x.graine, x.ck); if (!J.get(k)) { J.set(k, x.n + ',' + x.s3); recus++; } } });
     J.flush(); log(`partage : ${recus} resultats ajoutes au journal depuis la base commune`);
   } catch (e) { log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
 } else if (!arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier)) log(`partage : coupe pour ce calcul (${!WC ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
@@ -232,6 +232,7 @@ if (PARTAGE_OK) {
   versFile(true);
   if (PART.envoyer) try { const n = await PARTAGE.viderFile(PART, log); log(`partage : ${envoyes} resultats mis en file, ${n} lots envoyes`); } catch (e) { log('partage : envoi reporte (' + e.message + ')'); }
   if (PART.verifier) try { await PARTAGE.controler(PART, versionPartage, rejouerLignes, { max: PARTAGE.identite().admin ? 40 : 2, log }); } catch (e) { log('partage : controles reportes (' + e.message + ')'); }
+  if (PARTAGE.identite().admin) try { await PARTAGE.regrouper(PART, { log }); } catch (e) { log('partage : regroupement reporte (' + e.message + ')'); }
 }
 out.partage = PARTAGE_OK ? { recus, envoyes, ia: 'commune' } : null;
 mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
