@@ -666,6 +666,7 @@
         </div>
         <div class="pt-adm" id="pt_adm" style="display:none">
           <div class="k">Visible seulement sur ton PC · validateur de confiance</div>
+          <div class="set" style="flex-wrap:wrap"><div class="x"><b>IA commune</b><span id="pt_iaTxt">…</span></div><button class="ghost" onclick="ptComparer()">Comparer</button><button class="ghost" id="pt_pub" onclick="ptPublier()">Publier comme IA commune</button></div>
           <div class="set"><div class="x"><b>Serveur de la base</b><span id="pt_srv">…</span></div><button class="ghost" id="pt_dep" onclick="ptDeployer()">Mettre à jour le serveur</button></div>
           <div class="set"><div class="x"><b>Contrôler la base</b><span id="pt_admTxt">À la fin de tes calculs, ton PC rejoue un échantillon des nouveaux lots (jusqu'à 40), peut écarter un ID, et regroupe les lots vérifiés.</span></div><label class="sw"><input type="checkbox" id="pt_c" data-pt="controler"><span></span></label></div>
         </div>
@@ -935,6 +936,15 @@ function ptReg() {
   if (j.admin) { const en = j.etat?.serveur ?? (j.etat ? 1 : null), a = j.serveurAttendu, vieux = en != null && en < a;
     $('pt_srv').textContent = en == null ? 'Injoignable pour l’instant.' : vieux ? `En ligne : version ${en}. Ton appli apporte la version ${a} : mets-le à jour.` : `En ligne : version ${en}, à jour. Rien à faire tant que le code du serveur ne change pas.`;
     $('pt_dep').classList.toggle('ghost', !vieux); }
+  if (j.admin) { const c = j.comparaison, ia = j.ia || {}, ok = c?.aJour && c.verdict === 'meilleure';
+    const src = ia.source === 'appli' ? 'celle livrée avec l’appli' : `publiée ${ia.t ? quand(ia.t) : ''}${ia.source === 'cache' ? ' (copie locale, serveur injoignable)' : ''}`;
+    const v = !c ? 'Pas encore comparée à ton IA : la comparaison se lance toute seule après chaque entraînement.'
+      : !c.aJour ? 'Ton IA ou l’IA commune a changé depuis la dernière comparaison : relance « Comparer ».'
+      : c.verdict === 'identique' ? 'Ton IA est identique : rien à publier.'
+      : c.verdict === 'meilleure' ? `Ton IA est nettement meilleure : ${nbFr(c.mienne3)} % de 3★ contre ${nbFr(c.commune3)} % (+${nbFr(c.ecart)} pts, ${fmt(c.combats)} combats). Tu peux la publier.`
+      : c.verdict === 'moins bonne' ? `Ton IA est moins bonne (${nbFr(c.mienne3)} % contre ${nbFr(c.commune3)} %) : garde l’IA commune.`
+      : `Pas d’écart net (${c.ecart > 0 ? '+' : ''}${nbFr(c.ecart)} ± ${nbFr(c.marge)} pts sur ${fmt(c.combats)} combats) : garde l’IA commune.`;
+    $('pt_iaTxt').textContent = `En service : ${src}. ${v}`; $('pt_pub').classList.toggle('ghost', !ok); $('pt_pub').dataset.ok = ok ? '1' : ''; }
   $('pt_etat').textContent = j.base?.err ? 'base injoignable' : j.base?.ecarte ? 'ID écarté' : (R.utiliser || R.envoyer) ? 'allumée' : 'coupée';
 }
 async function ptSauver(k, v) {
@@ -947,6 +957,12 @@ async function ptSauver(k, v) {
 }
 async function ptChangerId() { if (!confirm('Changer d’ID ? Tes envois passés restent liés à l’ancien ID (supprime-les d’abord si tu veux qu’ils disparaissent).')) return; const r = await api('/api/partage/changer-id', { method: 'POST' }); toast('Nouvel ID : k-' + r.id); ptCharger(); }
 async function ptSupprimer() { if (!confirm('Supprimer de la base commune tout ce que tu as envoyé avec cet ID ?')) return; try { const r = await api('/api/partage/supprimer', { method: 'POST' }); toast(`${r.supprime || 0} lot(s) supprimé(s)`); } catch (e) { alert('Base injoignable : ' + e.message); } ptCharger(); }
+async function ptComparer() { try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action: 'comparerIA' }) }); toast('Comparaison lancée : suis-la dans Calculs'); } catch (e) { alert(e.message); } }
+async function ptPublier() {
+  const ok = $('pt_pub').dataset.ok === '1';
+  if (!confirm((ok ? '' : 'La dernière comparaison ne montre pas que ton IA est nettement meilleure. ') + 'Publier ton IA comme IA commune ? Tous les calculs partagés l’utiliseront dès leur prochain lancement. Les résultats déjà partagés avec l’ancienne IA ne serviront plus : la base repart de zéro pour la nouvelle.')) return;
+  try { await api('/api/partage/publier-ia', { method: 'POST' }); toast('Nouvelle IA commune publiée'); ptCharger(); } catch (e) { alert(e.message); }
+}
 async function ptDeployer() {
   if (!confirm('Mettre à jour le serveur de la base commune ? Ton PC passe les migrations de la base qui manquent, déploie la nouvelle version (wrangler, déjà connecté) puis efface le dossier temporaire. Environ une minute.')) return;
   try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action: 'deployerPartage' }) }); toast('Mise à jour du serveur lancée : suis-la dans Calculs'); } catch (e) { alert(e.message); }

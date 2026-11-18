@@ -11,6 +11,8 @@ import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { W_DEFAUT } from './lib/sim.mjs';
 import { dir as D } from './lib/chemins.mjs';
+import { identite } from './lib/partage.mjs';
+import { spawnSync } from 'node:child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : process.argv[i + 1]; };
 const T0 = Date.now(), log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
@@ -112,4 +114,7 @@ if (NE > 0) {
   }
   sauver({ equipes });
 }
-log('termine, poids enregistres dans data/poids.json'); await pool.close(); process.exit(0);
+log('termine, poids enregistres dans data/poids.json'); await pool.close();
+// PC validateur : ta nouvelle IA est comparee a l'IA commune (Reglages, cadre validateur : « Publier comme IA commune »).
+if (identite().admin && !arg('sans-comparaison')) { log('comparaison avec l IA commune ...'); spawnSync(process.execPath, [path.join(here, 'comparer-ia.mjs'), ...(arg('fils') ? ['--fils', arg('fils')] : [])], { stdio: 'inherit', env: process.env }); }
+process.exit(0);

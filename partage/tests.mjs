@@ -193,6 +193,22 @@ await test('etat public : version du serveur annoncee', async () => {
   const e = (await appel('GET', '/v1/etat')).j; assert.equal(e.serveur, VERSION_SERVEUR); assert.ok(Number.isInteger(e.joueurs));
 });
 
+await test('IA commune : rien au depart, publiee par l admin seulement, lue et verifiee par le client', async () => {
+  const { iaValide, construireWC, cleIA } = await import('../moteur/lib/ia-commune.mjs');
+  const { readFileSync } = await import('node:fs');
+  assert.equal((await appel('GET', '/v1/ia')).s, 404); comme(A); assert.equal(await P.iaCommune(REG), null, 'sans IA publiee : celle de l appli');
+  const pc = JSON.parse(readFileSync(new URL('../moteur/poids-communs.json', import.meta.url))), p = { ...pc, W: { ...pc.W, nm: pc.W.nm.map(x => x + 0.01) } };
+  assert.equal((await appel('POST', '/v1/admin/ia', { cle: A, corps: p })).s, 403);
+  comme(A, ADM); await P.publierIA(REG, p);
+  comme(B); const r = await P.iaCommune(REG); assert.equal(r.source, 'serveur');
+  assert.equal(cleIA(construireWC(r.p)), cleIA(construireWC(iaValide(p))), 'meme empreinte que l IA publiee');
+  assert.notEqual(cleIA(construireWC(r.p)), cleIA(construireWC(iaValide(pc))));
+  assert.equal(iaValide({ W: { nm: [1, 2] } }), null); assert.equal(iaValide({ W: { nm: pc.W.nm.map(() => 'x') } }), null); assert.equal(iaValide({ W: { ...pc.W, boss: pc.W.boss.map(() => 1e9) } }), null);
+  // Serveur injoignable : la copie locale sert.
+  const f = globalThis.fetch; globalThis.fetch = async () => { throw new Error('hors ligne'); };
+  try { assert.equal((await P.iaCommune(REG)).source, 'cache'); } finally { globalThis.fetch = f; }
+});
+
 await test('comparaison des controles', async () => {
   const lot = { l: [[0, 0, 1, 16, 4], [0, 0, 2, 16, 5]] };
   assert.equal(ecarts(lot, [0, 1], [[16, 4], [16, 5]]), 0); assert.equal(ecarts(lot, [0, 1], [[16, 4], [16, 6]]), 1); assert.equal(ecarts(lot, [0, 1], [[16, 4]]), 2); assert.equal(ecarts(lot, [0, 1], 'x'), 2);
