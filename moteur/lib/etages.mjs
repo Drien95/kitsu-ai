@@ -63,15 +63,21 @@ export async function parCombat(o) {
   const meilleur = F.map((_, fi) => { let b = -1, bp = 0; for (let ci = 0; ci < NC; ci++) if (n[ci * NF + fi] >= plein && P(ci, fi) > bp) { bp = P(ci, fi); b = ci; } return { t: b >= 0 ? cands[b] : -1, p: bp, n: b >= 0 ? n[b * NF + fi] : 0, spec: false }; });
 
   // 3) specialistes sur les combats sous le seuil
-  const durs = F.map((x, fi) => fi).filter(fi => meilleur[fi].p < seuil).sort((a, b) => ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || (meilleur[b].p > 0) - (meilleur[a].p > 0) || a - b); // dans une difficulte : d'abord les combats deja gagnes parfois
+  // 5.27 : la Campagne N/D/E n'est plus jouee par tous les trios pendant la course. Pour que son meilleur trio reste cherche
+  // combat par combat parmi TOUS les trios, chaque combat de Campagne qui n'est pas a 100 % chez les candidats passe aussi
+  // par les specialistes (hors budget : c'est le calcul que la course faisait avant, en plus court).
+  const camp = fi => DIFF[F[fi].di][0].startsWith('camp'), seuilCamp = o.seuilCamp ?? 1;
+  const durs = F.map((x, fi) => fi).filter(fi => meilleur[fi].p < (camp(fi) ? Math.max(seuil, seuilCamp) : seuil)).sort((a, b) => ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || (meilleur[b].p > 0) - (meilleur[a].p > 0) || a - b); // dans une difficulte : d'abord les combats deja gagnes parfois
+  const sousSeuil = durs.filter(fi => meilleur[fi].p < seuil).length, campPlus = durs.length - sousSeuil;
   const T = trios.length, seedsS = Array.from({ length: conf }, (_, i) => 4 + i), specs = new Map();
   const cleS = fi => h53(`S|${sigG}|${wKey}|${sigCombat(F[fi].f)}|${sigColl}|${conf}`);
   for (const fi of durs) { const v = J.get(cleS(fi)); if (v) { specs.set(fi, JSON.parse(v)); repris++; } }
-  const reste = durs.filter(fi => !specs.has(fi)), debutS = Date.now(), msCombat = [];
-  log(`par combat : ${durs.length} combats sous ${Math.round(seuil * 100)} % de 3 etoiles, ${specs.size} deja cherches (journal), ${reste.length} a chercher sur tous les ${T} trios, budget ${Math.round(budget / 60e3)} min`);
+  const reste = durs.filter(fi => !specs.has(fi)), msCombat = []; let debutS = Date.now(), campFini = false;
+  log(`par combat : ${sousSeuil} combats sous ${Math.round(seuil * 100)} % de 3 etoiles${campPlus ? ` et ${campPlus} combats de Campagne sous 100 %` : ''}, ${specs.size} deja cherches (journal), ${reste.length} a chercher sur tous les ${T} trios, budget ${Math.round(budget / 60e3)} min`);
   let k = 0;
   for (const fi of reste) {
-    if (Date.now() - debutS >= budget) break;
+    if (!camp(fi) && !campFini) { campFini = true; debutS = Date.now(); } // le budget compte a partir du Cauchemar
+    if (!camp(fi) && Date.now() - debutS >= budget) break;
     const f = F[fi].f, cle = cleS(fi); k++;
     const t0 = Date.now(), ok1 = [];
     for (let a = 0; a < T; a += 50000) { const ts = []; for (let t = a; t < Math.min(T, a + 50000); t++) { const v = connu1(t, fi); if (v === 2) ok1.push(t); else if (!v) ts.push(t); }
@@ -123,7 +129,7 @@ export async function parCombat(o) {
   const duree = Math.round((Date.now() - T0) / 1000);
   log(`par combat termine en ${duree} s : ${trouves} combats ameliores par un specialiste, plan de ${plan.length} trios ; ${resume.map(r => `${r.difficulte} ${r.troisEtoilesSur}/${r.combats} (script ${r.script})`).join(', ')}`);
   return { date: new Date().toISOString(), duree, candidats: NC, tirages: plein, seuil: r1(seuil), simules, repris,
-    specialistes: { sousSeuil: durs.length, cherches: specs.size, cetteFois: msCombat.length, restants, minutesParCombat: msMoy ? +(msMoy / 60e3).toFixed(2) : null, minutesRestantes: msMoy ? Math.round(restants * msMoy / 60e3) : null, budget: Math.round(budget / 60e3), ameliores: trouves },
+    specialistes: { sousSeuil, campagneSous100: campPlus, cherches: specs.size, cetteFois: msCombat.length, restants, minutesParCombat: msMoy ? +(msMoy / 60e3).toFixed(2) : null, minutesRestantes: msMoy ? Math.round(restants * msMoy / 60e3) : null, budget: Math.round(budget / 60e3), ameliores: trouves },
     colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase', 'autres'],
     trios: table, plan: plan.map(x => ({ trio: ti.get(x.t), combats: x.combats })), resume, combats };
 }
