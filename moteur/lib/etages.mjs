@@ -105,12 +105,22 @@ export async function parCombat(o) {
   const table = [], ti = new Map(), refT = t => { if (t < 0) return -1; if (!ti.has(t)) { ti.set(t, table.length); table.push(trios[t]); } return ti.get(t); };
   plan.forEach(x => refT(x.t));
   const r1 = x => Math.round(100 * x);
-  const combats = F.map((x, fi) => { const m = meilleur[fi], fd = x.f.split('@')[0]; return [x.f, x.di, refT(m.t), r1(m.p), refT(planDe[fi]), planDe[fi] >= 0 ? r1(pDe(planDe[fi], fi)) : 0, m.spec ? 1 : 0, r1(pScript[fi]), fd]; });
+  // Autres trios surs de chaque combat (5.21, pour le plan d'XP) : les 6 meilleurs au-dessus du seuil, plus le meilleur dont les
+  // 3 cartes sont deja au niveau 99 (o.dejaAu99). Le plan sait ainsi ce qu'une carte montee au 99 debloque vraiment.
+  const autres = F.map((_, fi) => {
+    const m = new Map(), add = (t, p) => { if (t != null && t >= 0 && p >= seuil && !(m.get(t) >= p)) m.set(t, p); };
+    for (let ci = 0; ci < NC; ci++) if (n[ci * NF + fi] >= plein) add(cands[ci], P(ci, fi));
+    for (const x of specs.get(fi) || []) add(indexTrio.get(x.ids.join('-')), x.s / x.n);
+    const L = [...m].sort((a, b) => b[1] - a[1] || a[0] - b[0]), top = L.slice(0, 6), d = o.dejaAu99 && L.find(([t]) => trios[t].every(o.dejaAu99));
+    if (d && !top.includes(d)) top.push(d);
+    return top.map(([t, p]) => [refT(t), r1(p)]);
+  });
+  const combats = F.map((x, fi) => { const m = meilleur[fi], fd = x.f.split('@')[0]; return [x.f, x.di, refT(m.t), r1(m.p), refT(planDe[fi]), planDe[fi] >= 0 ? r1(pDe(planDe[fi], fi)) : 0, m.spec ? 1 : 0, r1(pScript[fi]), fd, autres[fi]]; });
   const resume = DIFF.map(([d], di) => { const L = combats.filter(c => c[1] === di); return { difficulte: d, combats: L.length, troisEtoilesSur: L.filter(c => c[3] >= Math.round(seuil * 100)).length, script: L.filter(c => c[7] >= Math.round(seuil * 100)).length, specialistes: L.filter(c => c[6]).length, impossibles: L.filter(c => c[3] === 0).length }; });
   const duree = Math.round((Date.now() - T0) / 1000);
   log(`par combat termine en ${duree} s : ${trouves} combats ameliores par un specialiste, plan de ${plan.length} trios ; ${resume.map(r => `${r.difficulte} ${r.troisEtoilesSur}/${r.combats} (script ${r.script})`).join(', ')}`);
   return { date: new Date().toISOString(), duree, candidats: NC, tirages: plein, seuil: r1(seuil), simules, repris,
     specialistes: { sousSeuil: durs.length, cherches: specs.size, cetteFois: msCombat.length, restants, minutesParCombat: msMoy ? +(msMoy / 60e3).toFixed(2) : null, minutesRestantes: msMoy ? Math.round(restants * msMoy / 60e3) : null, budget: Math.round(budget / 60e3), ameliores: trouves },
-    colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase'],
+    colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase', 'autres'],
     trios: table, plan: plan.map(x => ({ trio: ti.get(x.t), combats: x.combats })), resume, combats };
 }

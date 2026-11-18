@@ -38,6 +38,15 @@ const graines = [1, 2, 3, 4], coord = graines.map(g => RA.jouer(G, rr, g)), naif
 const sc = L => L.reduce((a, r) => a + (r.gagne ? 3 : r.stage), 0);
 t('Raid : coordination meilleure que frapper seulement', sc(coord) > sc(naif), sc(coord) + ' contre ' + sc(naif));
 const r1 = resumer(G, B, version); t('patch : une version comparee a elle-meme est vide', comparer(r1, r1).vide);
+// Plan d'XP et de banniere : la carte la plus rentable passe devant, la suivante est comptee une fois la 1re faite.
+{ const { plan } = await import('./lib/plan.mjs');
+  const S0 = { owned: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, lv: { 1: { l: 99 }, 2: { l: 99 }, 3: { l: 99 }, 4: { l: 30 }, 5: { l: 1 } } };
+  const camp = { niveaux: '99', etages: { seuil: 60, resume: [{ difficulte: 'normal' }], trios: [[1, 2, 3], [1, 4, 5]], colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase', 'autres'],
+    combats: [['a', 0, 0, 90, 0, 90, 0, 0, 'a', [[0, 90]]], ['c', 0, 0, 90, 0, 90, 0, 0, 'c', [[0, 90]]], ['d', 0, 0, 90, 0, 90, 0, 0, 'd', [[0, 90]]], ['b', 0, 1, 80, 1, 80, 0, 0, 'b', [[1, 80]]]] } };
+  const P = plan({ G, S: S0, campagne: camp, tour: { niveaux: '99', classement: [{ ids: [1, 2, 3], etageMoyen: 100 }, { ids: [1, 2, 4], etageMoyen: 150 }] } });
+  const tour = P.modes.find(m => m.cle === 'tour'), cp = P.modes.find(m => m.cle === 'campagne');
+  t("plan d'XP : modes lus", tour?.now === 100 && tour?.max === 150 && cp?.now === 3 && cp?.max === 4, JSON.stringify(P.modes));
+  t("plan d'XP : Tour en tete, puis la carte qui reste (sans recompter la 1re)", P.cible?.id === 4 && P.cartes[1]?.ids.join() === '5' && P.cartes[1].gains.campagne?.v === 1 && !P.cartes[1].gains.tour, JSON.stringify(P.cartes.map(c => [c.ids, c.points]))); }
 // Serveur : demarre sur un autre port, verifie les protections.
 const PORT = 47199, srv = spawn(process.execPath, ['serveur.mjs'], { env: { ...process.env, KITSU_PORT: String(PORT) } });
 let up = false; for (let i = 0; i < 60 && !up; i++) { await new Promise(r => setTimeout(r, 250)); try { up = (await fetch(`http://127.0.0.1:${PORT}/ping`)).ok; } catch {} }
@@ -45,6 +54,7 @@ t('serveur demarre', up);
 if (up) {
   t('panneau protege par jeton', (await fetch(`http://127.0.0.1:${PORT}/api/etat`)).status === 403);
   t('conseil de raid reserve au script', (await fetch(`http://127.0.0.1:${PORT}/raid`, { method: 'POST', body: '{}' })).status === 403);
+  t("plan d'XP lisible par le script", (await fetch(`http://127.0.0.1:${PORT}/plan`)).status === 200);
   t('sauvegarde reservee au script', (await fetch(`http://127.0.0.1:${PORT}/sauvegarde`, { method: 'POST', body: '{}' })).status === 403);
 }
 srv.kill();

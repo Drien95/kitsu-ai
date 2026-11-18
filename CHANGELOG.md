@@ -4,6 +4,18 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.21.0
+
+Plan d'XP et de bannière unique : une seule liste pour toute ton XP et tes gemmes, qui pèse tous les modes selon l'objectif « modèle parfait » (3 étoiles partout en Campagne Cauchemar N/D/E, étage max en Tour, Arène à 100 %).
+
+- **Score « modèle parfait » sur 100** : moyenne des modes, chacun en % de ce que ta collection peut faire au niveau 99. Campagne : combats Cauchemar N/D/E sûrs à 3 étoiles avec des trios déjà tout au 99 ; Tour et Raid : meilleur trio déjà au 99 contre le meilleur possible. Campagne, Tour (et Arène) pèsent 1, le Raid 1/2. Avec le script privé, sa part (Tour exacte, Arène) remplace ou complète la part publique ; sinon, le public seul.
+- **Classement des montées** (`moteur/lib/plan.mjs`) : chaque carte (ou groupe de 2 ou 3 cartes qui ne servent qu'ensemble) à mettre au 99, notée en points gagnés pour 100 000 XP. Classement glouton : la suivante est comptée en supposant la précédente faite (un groupe ne recompte pas le gain d'une carte déjà proposée). Aucun combat simulé : tout vient des résultats déjà calculés, en quelques millisecondes. Avant, le plan d'XP ne regardait que des combats Cauchemar : une carte qui ne sert qu'en Tour (Shanks : +29 étages au 99) n'était jamais proposée.
+- **Bannières ouvertes** notées de la même façon (verdict « Ça vaut tes gemmes » ou « Garde tes gemmes », pity, XP à prévoir derrière une carte neuve) et cartes « à guetter » (le script privé y met les doublons utiles en Arène).
+- **Launcher** : bloc « Plan d'XP et bannière » en tête de Cartes et conseils (4 modes, prochaine carte à monter, classement, bannières). Les anciens onglets Plan d'XP et Tirage des conseils de cartes y sont remplacés. API `/api/plan`.
+- **Script** : relit le plan du PC toutes les 10 minutes (`/plan`, lecture seule, ajouté au pont) ; les parchemins d'XP vont à la carte n°1 du plan, avec sa raison, et les équipes « pour l'XP » de la Campagne la font porter. Sans le launcher, le plan de la page reste comme avant. Il envoie aussi la pity de chaque bannière ouverte.
+- **Calcul Campagne** (`lib/etages.mjs`) : chaque combat garde maintenant ses 6 meilleurs trios sûrs et le meilleur dont les cartes sont déjà au 99 (colonne `autres`). Le plan sait ainsi ce qu'une carte montée débloque vraiment. Avec un ancien résultat, les chiffres Campagne du plan sont approximatifs : relance le calcul Campagne.
+- Tests : 2 de plus pour le plan, 1 pour `/plan`.
+
 ## 5.20.0
 
 Raid « Le Destin Effacé » (Diavolo) : calcul du meilleur trio dans le launcher et conseil à chaque tour dans le script. De 1 à 3 joueurs.

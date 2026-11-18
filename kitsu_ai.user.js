@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.20.0
+// @version      5.21.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.20.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.21.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -262,8 +262,10 @@
             const now = Date.now(); let en = null; try { en = { v: G.energy(S, now).v, max: G.enMax(S, now) }; } catch {}
             const gd = lsGet('kitsu_ai_guild', null), evr = lsGet('kitsu_ai_events', null)?.combats || [];
             const evs = openEvents(now).map(e => ({ titre: e.banner?.series || e.title, fin: e.banner?.until || null, reste: evr.filter(r => r.evId === e.id && !r.fait && !S.ev?.clear?.[r.id] && r.kind !== 'farm').length }));
-            const bans = (G.BANNERS || []).filter(b => b.until && b.until > now && (b.opens || b.from || 0) <= now).map(b => ({ serie: b.series, fin: b.until }));
+            const bans = (G.BANNERS || []).filter(b => b.until && b.until > now && (b.opens || b.from || 0) <= now).map(b => ({ serie: b.series, fin: b.until, pity: `${S.pity?.[b.series] || 0}/${(() => { try { return G.pityMax ? G.pityMax(b) : 50; } catch { return 50; } })()}` }));
             await localAsk('/jeu', { energie: en, guilde: gd ? { boss: gd.boss?.left || 0, raid: gd.pain?.left || 0 } : null, evenements: evs, bannieres: bans }, 3000);
+            // Plan d'XP du PC (5.21) : tous les modes (Campagne, Tour, Raid, Arene en prive). Relu toutes les 10 min.
+            if (Date.now() - (lsGet('kitsu_ai_planxp', null)?.t || 0) > 10 * 60000) { const p = await localAsk('/plan', null, 4000); if (p && !p.err) lsSet('kitsu_ai_planxp', { t: Date.now(), cible: p.cible || null }); }
           } catch (e) { health.err('synchro PC : ' + e.message); }
         };
         setTimeout(() => { localPing().then(localSync); setInterval(() => localPing().then(localSync), 60000); }, 5000);
@@ -424,7 +426,8 @@
         }).sort((a, b) => b.v - a.v).slice(0, n).map(x => x.id);
         // Interet d'un trio pour la progression : il contient des cartes du plan d'entrainement.
         const xpWeights = () => {
-          const tr = lsGet('kitsu_ai_training', null), w = {};
+          const tr = lsGet('kitsu_ai_training', null), w = {}, px = planXp();
+          if (px) w[px.id] = 5;
           if (tr?.objectif?.retard?.length) { const S0 = save(); for (const c of tr.objectif.retard) { const lv0 = S0.lv?.[c.id]?.l || 1; if (lv0 < tr.objectif.niveau - 2) w[c.id] = 4 + 3 * (tr.objectif.niveau - lv0) / tr.objectif.niveau; } }
           if (tr?.cartes?.length) { tr.cartes.slice(0, 3).forEach((c, i) => { if (!w[c.id]) w[c.id] = 3 - i; }); return w; }
           if (Object.keys(w).length) return w;
@@ -559,7 +562,10 @@
         // Comptoir des Zeni : l'energie (5 pour 600, 3 fois par jour) vaut bien plus que les parchemins.
         const COMPTOIR = [{ id: 'energy', prix: 600, txt: '+5 energie' }, { id: 'sc_l', prix: 3500, txt: 'grand parchemin (10 000 XP)' }, { id: 'ticket', prix: 4000, txt: '1 invocation Shonen' }, { id: 'sc_m', prix: 1000, txt: 'parchemin (2 500 XP)' }];
         // Carte qui recoit les parchemins : la plus en retard de l'equipe cible, sinon la carte a entrainer.
+        // Plan d'XP du PC (launcher ouvert) : il pese tous les modes. Sans lui, plan de la page (Campagne).
+        const planXp = (S = save()) => { const p = lsGet('kitsu_ai_planxp', null), c = p?.cible; return c && Date.now() - p.t < 86400000 && S.owned?.[c.id] && (S.lv?.[c.id]?.l || 1) < 99 ? c : null; };
         const scrollTarget = (S = save()) => {
+          const px = planXp(S); if (px) return px.id;
           const tr = lsGet('kitsu_ai_training', null) || {}, lv = id => S.lv?.[id]?.l || 1;
           const ids = (tr.objectif?.retard || []).map(c => c.id).concat((tr.cartes || []).map(c => c.id)).filter(id => S.owned?.[id] && lv(id) < 99);
           if (ids.length) return ids[0];
@@ -568,7 +574,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.20.0',
+          __v: '5.21.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1473,7 +1479,7 @@
             const nx = this._evNext(S, en);
             if (nx) { const h = nx.fin ? (nx.fin - now) / 3600000 : 99; out.push({ id: 'ev:' + nx.id, prio: 4, fight: nx, cout: nx.cout, txt: `Evenement ${nx.titre} : ${nx.kind === 'boss' ? 'boss' : 'entrainement'} ${nx.diff}, premiere victoire +${nx.gemmes} gemmes (victoire ${Math.round(nx.victoire * 100)} %, fin dans ${h < 24 ? Math.round(h) + ' h' : Math.round(h / 24) + ' j'})` }); }
             const sc = evScrolls(S);
-            if (sc.n) out.push({ id: 'scrolls', prio: 6, txt: `${sc.n} parchemin${sc.n > 1 ? 's' : ''} d'XP (${sc.xp} XP) : donne-les a ${scrollTarget(S) ? short(scrollTarget(S)) : 'la carte la plus basse de ton equipe'}` });
+            if (sc.n) out.push({ id: 'scrolls', prio: 6, txt: `${sc.n} parchemin${sc.n > 1 ? 's' : ''} d'XP (${sc.xp} XP) : donne-les a ${scrollTarget(S) ? short(scrollTarget(S)) : 'la carte la plus basse de ton equipe'}${planXp(S) ? ` (plan d'XP : ${planXp(S).raison})` : ''}` });
             for (const d of sbcState(S).filter(d => d.pret)) out.push({ id: 'sbc-' + d.key, prio: 2, txt: `Defi de doublons : ${d.txt} (tu en as ${d.have})` });
             return out.sort((a, b) => a.prio - b.prio);
           },
@@ -2284,7 +2290,7 @@
   }
   // Pont vers le serveur local du PC (moteur/serveur.bat) : seulement /ping, /conseil, /poids, /equipes, /sauvegarde et /jeu, seulement vers 127.0.0.1.
   window.addEventListener('message', e => {
-    const q = e.data && e.data.kitsuLocalReq; if (!q || !(/^\/ping(\?v=[\w.%-]*)?$/.test(q.path) || ['/conseil', '/poids', '/equipes', '/sauvegarde', '/jeu', '/raid'].includes(q.path))) return;
+    const q = e.data && e.data.kitsuLocalReq; if (!q || !(/^\/ping(\?v=[\w.%-]*)?$/.test(q.path) || ['/conseil', '/poids', '/equipes', '/sauvegarde', '/jeu', '/raid', '/plan'].includes(q.path))) return;
     const reply = (ok, data) => window.postMessage({ kitsuLocalRes: q.id, ok, data }, '*');
     try {
       GM_xmlhttpRequest({ method: q.body ? 'POST' : 'GET', url: 'http://127.0.0.1:47123' + q.path, data: q.body ? JSON.stringify(q.body) : undefined, headers: { 'Content-Type': 'application/json', 'X-Kitsu-Script': '1' }, timeout: q.timeout || 3000,
