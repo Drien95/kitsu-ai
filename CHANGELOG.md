@@ -13,6 +13,14 @@ Script : un seul cadre en combat avec le script privé (0.25+), comme si les deu
 - Quand le privé n'a pas de réponse (calcul exact impossible), sa note reste en tête du cadre et le conseil public reprend juste dessous.
 - Avant (5.32 à 5.34), le cadre public était caché ou replié pendant que le privé gardait son propre cadre ailleurs : deux cadres dès qu'un des deux réapparaissait.
 - Sans script privé, ou avec un privé plus ancien : comportement de la 5.34.
+## 5.35.0
+
+Conseiller en combat sans à-coups : son calcul de chaque tour tourne dans le worker, plus sur le fil du jeu.
+
+- **Mesure avant** (18/11, ton navigateur, passe 2 de la 5.34, ~4,5 min de jeu) : il restait 1,13 s de page bloquée par minute en combat, dont 3,87 s au total dans le conseiller (`setInterval` du conseil). Compteur `__kitsuPerf` : `evalLive` 4 105 ms sur 59 tours, 70 ms en moyenne, **163 ms au pire** (une image figée à chaque tour).
+- **Ce qui change** : `evalLive` (8 tirages par coup puis jusqu'à 8 tours de 4 tirages sur les coups proches, budget 60 ms) est envoyé au worker de `simBatch` avec une copie de l'état du combat. Même fonction, même budget, mêmes politiques : même qualité de conseil. La page ne fait plus que copier l'état et relire le classement. Les lots du worker (plan, équipes) cèdent la main toutes les ~15 ms, donc un conseil en combat passe devant au lieu d'attendre la fin d'un lot.
+- **Repli** : si le worker n'est pas encore prêt (premier tour) ou ne répond pas en 3 s, le calcul se fait sur le fil du jeu comme avant, et le worker est lancé en fond pour le tour suivant.
+- **Mesure** : `__kitsuPerf.evalLive` compte désormais le temps passé sur le fil du jeu, et `evalLive:aller-retour` le délai total jusqu'à l'affichage du conseil. Gain à confirmer par une nouvelle mesure avec le script privé.
 
 ## 5.34.0
 
