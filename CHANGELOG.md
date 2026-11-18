@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.28.0
+
+Campagne : avec le script privé, le trio choisi par la recherche exacte passe devant (règle « public par défaut, privé quand il a une vraie réponse »).
+
+- **Écran d'équipe** : `/equipes` (demande `conseil`) renvoie aussi `exact` quand l'extension locale a un trio pour ce combat (`EXT.trioExact`). Le script l'ajoute aux trios essayés et le choisit s'il fait au moins 50 % de 3★ avec le conseil exact et nettement mieux (+10 points) que ce que la simulation publique donne. Raison affichée : « calcul exact (script privé) », pastille « exact N % ». Calcul fait au niveau 99 : proposé seulement si les 3 cartes y sont déjà. Sans extension : rien ne change.
+- **Page Campagne** : place `#c3Ext` et appel `window.campApres(j)` après chaque rendu, comme la page Tour (`#twExt`, `twApres`), pour une carte de l'extension locale.
+
 ## 5.27.0
 
 Campagne : moins de combats pour les mêmes résultats (mesuré sur un petit test : 71 s au lieu de 122 s, mêmes % de 3★ partout).

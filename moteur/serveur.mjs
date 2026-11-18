@@ -279,7 +279,9 @@ http.createServer(async (req, res) => {
       const q = JSON.parse(await body(req));
       if (q.conseil) { // trios du calcul Campagne pour ce combat (meilleur et trio du plan), lecture seule
         const c3 = readJ(D('resultats', 'cauchemar3.json')), e = c3?.etages, row = e?.combats?.find(c => c[0] === String(q.fid));
-        return send(res, 200, { trios: row ? [...new Set([row[2], row[4]])].filter(i => i >= 0).map(i => e.trios[i]) : [], niveaux: c3?.niveaux ?? null }, 'application/json', CORS);
+        // 5.28 : avec l'extension privee, trio du calcul Campagne exact pour ce combat (sinon null : public seul).
+        let exact = null; try { exact = EXT?.trioExact ? EXT.trioExact({ D, readJ, fid: String(q.fid) }) : null; } catch {}
+        return send(res, 200, { trios: row ? [...new Set([row[2], row[4]])].filter(i => i >= 0).map(i => e.trios[i]) : [], niveaux: c3?.niveaux ?? null, exact }, 'application/json', CORS);
       }
       if (q.dom && q.dom !== MAN.dom) return send(res, 409, { err: 'version' }, 'application/json', CORS);
       const t0 = Date.now(), seeds = Array.from({ length: q.seeds || 24 }, (_, i) => i + 1);

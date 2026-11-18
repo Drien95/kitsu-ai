@@ -22,7 +22,7 @@ Langue : francais. Reponses directes, tableaux plutot que paragraphes, pas de ti
 | `docs/wiki/` | Wiki publie par le workflow `wiki`. `Methodes-et-recherches.md` : methodes utilisees, en attente, futures, outils, etudes (a tenir a jour, sans rien de `CLAUDE.local.md`). |
 | `.github/workflows/` | `verif` (syntaxe, version coherente, tests moteur, refus d'une PR qui change le code sans nouvelle version), `release` (tag + Release + exe), `wiki`. |
 
-Extension locale : le serveur charge `prive/serveur.mjs` depuis `%APPDATA%\KitsuAI\prive` (application installee) ou `moteur/prive` (dev). Les calculs recoivent `KITSU_MOTEUR` (dossier du moteur).
+Extension locale : `/equipes {conseil}` ajoute `exact` via `EXT.trioExact` (5.28) ; pages Tour et Campagne : `#twExt`/`twApres`, `#c3Ext`/`campApres`. Le serveur charge `prive/serveur.mjs` depuis `%APPDATA%\KitsuAI\prive` (application installee) ou `moteur/prive` (dev). Les calculs recoivent `KITSU_MOTEUR` (dossier du moteur).
 
 ## Regles de jeu utiles (lues dans le code du jeu)
 - Etoiles : max(1, 3 - KO), limite a 2 si cycle > 8. Objectif des analyses : 2 etoiles minimum puis 3.
