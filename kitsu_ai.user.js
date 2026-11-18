@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.33.0
+// @version      5.33.1
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.33.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.33.1') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -574,7 +574,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.33.0',
+          __v: '5.33.1',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -984,7 +984,7 @@
               + '.kd-tab{position:relative;font:600 11px/1.3 system-ui,sans-serif;color:#9199a6;padding:6px 5px 5px;cursor:pointer}.kd-tab.on{color:#f2ede6}.kd-tab.on::after{content:"";position:absolute;left:5px;right:5px;bottom:-1px;height:2px;background:#ff7a2f}.kd-tab.rel::before{content:"";position:absolute;top:4px;right:1px;width:5px;height:5px;border-radius:50%;background:#2fd27a}'
               + '#kitsuDockBody{padding:9px 12px 10px 13px;max-height:62vh;overflow:auto}#kitsuDock.min #kitsuDockBody,#kitsuDock.min #kitsuDockTabs{display:none}'
               // 5.19 : conseil exact du script prive en cours -> le dock se replie sur une ligne (clic sur la ligne : tout voir).
-              + 'html[data-kar-avis] #kitsuDock.exact:not([data-voir]){display:none!important}#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
+              + 'html[data-kar-avis] #kitsuDock:not([data-voir]){display:none!important}#kitsuDock.exact:not([data-voir]) #kitsuDockBody,#kitsuDock.exact:not([data-voir]) #kitsuDockTabs,#kitsuDock.exact:not([data-voir]) #kitsuGoal{display:none}#kitsuDock.exact #kitsuDockCtx{cursor:pointer;color:#c9ced8}'
               + '#kitsuDock .kitsu-panel{position:static!important;transform:none!important;max-width:none!important;min-width:0!important;border:none!important;background:none!important;padding:0!important;box-shadow:none!important;pointer-events:auto!important}'
               + tabs.map(([k, , id]) => `#kitsuDock:not([data-tab="${k}"]) #${id}{display:none!important}`).join('');
             document.head.appendChild(css);
