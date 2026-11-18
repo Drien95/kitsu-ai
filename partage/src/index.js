@@ -47,10 +47,12 @@ function lireMeta(req, maxLignes) {
 }
 
 // Joueur = empreinte de sa cle (la cle elle-meme n'est jamais stockee).
+// creer = 'plus tard' : l'ID n'est enregistre que si l'envoi est accepte (une requete refusee ne laisse aucune trace).
 async function joueur(env, req, creer = true) {
   const cle = req.headers.get('x-kitsu-cle') || ''; if (!RE_CLE.test(cle)) return null;
   const id = (await sha('kitsu-partage|' + cle)).slice(0, 32);
   let j = await env.DB.prepare('SELECT * FROM joueurs WHERE id = ?').bind(id).first();
+  if (!j && creer === 'plus tard') return { id, cred: 0, banni: 0, nouveau: true };
   if (!j && creer) { await env.DB.prepare('INSERT OR IGNORE INTO joueurs (id, cred, banni, cree) VALUES (?, 0, 0, ?)').bind(id, Date.now()).run(); j = { id, cred: 0, banni: 0 }; }
   return j;
 }
@@ -64,7 +66,7 @@ const ecarter = (env, jid) => env.DB.batch([
 ]);
 
 async function envoyerLot(env, req) {
-  const j = await joueur(env, req); if (!j) return err(401, 'cle manquante');
+  const j = await joueur(env, req, 'plus tard'); if (!j) return err(401, 'cle manquante');
   if (j.banni) return err(403, 'ID ecarte');
   const meta = lireMeta(req, LIGNES_LOT); if (!meta) return err(400, 'lot refuse : description (X-Kitsu-Meta) absente ou invalide');
   const jour = Math.floor(Date.now() / JOUR), max = +(j.cred > 0 ? env.LOTS_PAR_JOUR : env.LOTS_PAR_JOUR_NOUVEAU);
@@ -77,6 +79,7 @@ async function envoyerLot(env, req) {
   const id = await sha(brut);
   if (await env.DB.prepare('SELECT 1 FROM lots WHERE id = ?').bind(id).first()) return json({ id, deja: true });
   await env.DB.batch([
+    env.DB.prepare('INSERT OR IGNORE INTO joueurs (id, cred, banni, cree) VALUES (?, 0, 0, ?)').bind(j.id, Date.now()),
     env.DB.prepare('INSERT OR REPLACE INTO blocs (id, data) VALUES (?, ?)').bind(id, brut),
     env.DB.prepare('INSERT INTO lots (id, joueur, sigG, wKey, moteur, lignes, octets, cartes, statut, verifs, recu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'attente\', 0, ?)').bind(id, j.id, meta.sigG, meta.wKey, meta.moteur, meta.lignes, brut.byteLength, meta.cartes, Date.now()),
     env.DB.prepare('INSERT INTO quotas (joueur, jour, lots) VALUES (?, ?, 1) ON CONFLICT (joueur, jour) DO UPDATE SET lots = lots + 1').bind(j.id, jour),
@@ -211,7 +214,7 @@ async function moi(env, req, supprimer) {
 
 async function etat(env) {
   const r = await env.DB.prepare('SELECT statut, COUNT(*) AS lots, SUM(lignes) AS lignes FROM lots WHERE statut != \'regroupe\' GROUP BY statut').all();
-  const j = await env.DB.prepare('SELECT COUNT(*) AS n FROM joueurs WHERE banni = 0').first();
+  const j = await env.DB.prepare('SELECT COUNT(DISTINCT joueur) AS n FROM lots WHERE statut IN (\'attente\', \'conteste\', \'verifie\')').first(); // IDs qui ont envoye, pas ceux qui ont juste allume le partage
   return json({ serveur: VERSION_SERVEUR, joueurs: j.n, parStatut: r.results }, 200, { 'cache-control': 'public, max-age=300' });
 }
 

@@ -134,7 +134,7 @@ if (PARTAGE_OK) {
     await PARTAGE.telecharger(PART, versionPartage, { cleCarteLocale: id => mien.get(id) || null, log,
       onLigne: x => { if (paquets[x.di]?.[x.pi]?.cle !== x.clePaquet) return; const k = cle(x.di, x.pi, x.graine, x.ck); if (!J.get(k)) { J.set(k, x.n + ',' + x.s3); recus++; } } });
     J.flush(); log(`partage : ${recus} resultats ajoutes au journal depuis la base commune`);
-  } catch (e) { log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
+  } catch (e) { PARTAGE.noter('erreur', { quoi: 'base injoignable au debut du calcul' }); log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
 } else if (!arg('sans-partage') && (PART.utiliser || PART.envoyer || PART.verifier)) log(`partage : coupe pour ce calcul (${!WC ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
 let alive = [...Array(T).keys()]; const entonnoir = [];
 for (let pi = 0; pi < TOURS; pi++) {
