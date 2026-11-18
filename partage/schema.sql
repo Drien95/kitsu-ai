@@ -1,4 +1,4 @@
--- Base commune : index des lots (les lots eux-memes sont dans R2), joueurs, controles.
+-- Base commune : index des lots, lots compresses (table blocs), joueurs, controles. Tout dans D1 : aucun moyen de paiement requis.
 -- Aucune adresse IP, aucun pseudo : un joueur = empreinte de sa cle secrete, tiree au hasard sur son PC.
 CREATE TABLE IF NOT EXISTS joueurs (id TEXT PRIMARY KEY, cred INTEGER NOT NULL DEFAULT 0, banni INTEGER NOT NULL DEFAULT 0, cree INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS lots (
@@ -11,3 +11,4 @@ CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, lot TEXT NOT NULL, ver
 -- Desaccord d'un controleur ordinaire : le lot attend l'avis du PC admin, qui tranche (celui qui avait tort est banni).
 CREATE TABLE IF NOT EXISTS desaccords (lot TEXT NOT NULL, verificateur TEXT NOT NULL, t INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS quotas (joueur TEXT NOT NULL, jour INTEGER NOT NULL, lots INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (joueur, jour));
+CREATE TABLE IF NOT EXISTS blocs (id TEXT PRIMARY KEY, data BLOB NOT NULL);

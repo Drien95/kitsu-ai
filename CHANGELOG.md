@@ -4,6 +4,11 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.22.1
+
+- **Base commune sans carte bancaire** : les lots compressés sont rangés dans D1 (table `blocs`) au lieu de R2. R2 exige d'ajouter un moyen de paiement et facture au-delà de son quota gratuit ; D1 gratuit refuse simplement au-delà, sans rien facturer. Un lot envoyé fait au plus 1,9 Mo compressé (limite d'une ligne D1) ; en pratique, 20 000 résultats font environ 90 Ko. Les lots d'un ID écarté sont effacés pour libérer la place. Guide de mise en ligne raccourci (plus d'étape R2).
+- **Serveur en ligne** : `https://kitsu-partage.kitsu-partage-whag.workers.dev` (adresse par défaut du moteur). Le partage reste coupé par défaut dans Réglages.
+
 ## 5.22.0
 
 Base commune : partager les calculs Campagne entre joueurs, sans jamais croire personne sur parole. Coupée par défaut.

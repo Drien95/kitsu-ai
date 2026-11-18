@@ -8,11 +8,7 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "kitsu-partage"
-database_id = "A_REMPLIR_APRES_wrangler_d1_create"
-
-[[r2_buckets]]
-binding = "LOTS"
-bucket_name = "kitsu-partage-lots"
+database_id = "23e0ac7b-c482-4b0d-a760-a28de21357f9"
 
 [vars]
 # true : seul le PC d'Adrien (jeton admin) peut faire passer un lot a "verifie". Les autres controles comptent mais ne suffisent pas.

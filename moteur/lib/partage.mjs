@@ -10,7 +10,7 @@ import path from 'node:path';
 import { dir as D } from './chemins.mjs';
 import { FORMAT, LIMITES, verifierLot, cleTrioDe } from './partage-format.mjs';
 
-export const URL_DEFAUT = 'https://kitsu-partage.workers.dev'; // a remplacer par l'adresse reelle apres le premier deploiement
+export const URL_DEFAUT = 'https://kitsu-partage.kitsu-partage-whag.workers.dev';
 const lireJ = f => { try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return null; } };
 
 // Reglages du partage (data/reglages.json, cle partage) et identite (data/partage.json, cle secrete tiree au hasard).
@@ -20,7 +20,7 @@ export function reglagesPartage() {
 }
 export function identite() {
   const f = D('data', 'partage.json'); let o = lireJ(f);
-  if (!o?.cle || !/^[0-9a-f]{64}$/.test(o.cle)) { o = { cle: randomBytes(32).toString('hex'), cree: Date.now() }; mkdirSync(path.dirname(f), { recursive: true }); writeFileSync(f, JSON.stringify(o, null, 1)); }
+  if (!o?.cle || !/^[0-9a-f]{64}$/.test(o.cle)) { o = { ...(o || {}), cle: randomBytes(32).toString('hex'), cree: Date.now() }; /* garde le jeton admin */ mkdirSync(path.dirname(f), { recursive: true }); writeFileSync(f, JSON.stringify(o, null, 1)); }
   // ID affiche : meme empreinte que cote serveur, raccourcie.
   return { cle: o.cle, id: createHash('sha256').update('kitsu-partage|' + o.cle).digest('hex').slice(0, 32), admin: o.admin || process.env.KITSU_ADMIN || null };
 }

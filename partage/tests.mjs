@@ -1,14 +1,16 @@
-// Tests du serveur de la base commune, sans Cloudflare : D1 imite par node:sqlite, R2 par une Map, cache par rien.
+// Tests du serveur de la base commune, sans Cloudflare : D1 imite par node:sqlite, cache par rien.
 //   node partage/tests.mjs
-import { gzipSync } from 'node:zlib';
+import { gzipSync, gunzipSync } from 'node:zlib';
 import { randomBytes } from 'node:crypto';
 import assert from 'node:assert/strict';
 import worker from './src/index.js';
 import { verifierLot, ecarts, cleTrioDe } from '../moteur/lib/partage-format.mjs';
 import { construireLot } from '../moteur/lib/partage.mjs';
 
-import { d1, r2, envTest } from './imitation.mjs';
+import { envTest } from './imitation.mjs';
 const env = envTest();
+const lireLotTest = async id => JSON.parse(gunzipSync(Buffer.from(await (await worker.fetch(new Request('https://x/v1/lots/' + id), env, { waitUntil() {} })).arrayBuffer())));
+const blocs = () => env.DB._db.prepare('SELECT COUNT(*) AS n FROM blocs').get().n;
 const ctx = { waitUntil() {} };
 const appel = async (methode, chemin, { cle, admin, corps, gz } = {}) => {
   const h = {}; if (cle) h['x-kitsu-cle'] = cle; if (admin) h['x-kitsu-admin'] = admin;
@@ -66,7 +68,7 @@ await test('manifeste et telechargement : lot en attente visible, marque comme t
 
 await test('controle honnete par un joueur ordinaire : compte, mais ne suffit pas (validateur admin seul)', async () => {
   const m = (await appel('POST', '/v1/missions', { cle: B, corps: V })).j; assert.ok(m.mission); assert.equal(m.indices.length, 24);
-  const lot = m.lot === idA ? lotA : null; const L = lot || JSON.parse((await import('node:zlib')).gunzipSync(env.LOTS.m.get('lots/' + m.lot)));
+  const lot = m.lot === idA ? lotA : null; const L = lot || await lireLotTest(m.lot);
   const res = m.indices.map(i => [L.l[i][3], L.l[i][4]]);
   const r = (await appel('POST', '/v1/missions/' + m.mission, { cle: B, corps: { resultats: res } })).j; assert.equal(r.ecarts, 0); assert.equal(r.decision, 'controle compte');
   assert.equal((await appel('POST', '/v1/missions/' + m.mission, { cle: B, corps: { resultats: res } })).s, 404, 'mission a usage unique');
@@ -80,7 +82,7 @@ await test('on ne controle jamais son propre lot ; mission d un autre refusee', 
 
 await test('controle admin juste : le lot passe a verifie, l envoyeur gagne en credit', async () => {
   const m = (await appel('POST', '/v1/missions', { admin: env.ADMIN_JETON, corps: V })).j;
-  const L = JSON.parse((await import('node:zlib')).gunzipSync(env.LOTS.m.get('lots/' + m.lot)));
+  const L = await lireLotTest(m.lot);
   const r = (await appel('POST', '/v1/missions/' + m.mission, { admin: env.ADMIN_JETON, corps: { resultats: m.indices.map(i => [L.l[i][3], L.l[i][4]]) } })).j;
   assert.equal(r.decision, 'verifie');
   const moi = (await appel('GET', '/v1/moi', { cle: A })).j; assert.equal(moi.cred, 1);
@@ -90,7 +92,7 @@ await test('faux controle d un joueur, puis l admin tranche : le menteur est eca
   const m = (await appel('POST', '/v1/missions', { cle: C, corps: V })).j;
   const r = (await appel('POST', '/v1/missions/' + m.mission, { cle: C, corps: { resultats: m.indices.map(() => [16, 0]) } })).j; assert.equal(r.decision, 'conteste, en attente du controle admin');
   const ma = (await appel('POST', '/v1/missions', { admin: env.ADMIN_JETON, corps: V })).j; assert.equal(ma.lot, m.lot, 'le lot conteste passe en premier');
-  const L = JSON.parse((await import('node:zlib')).gunzipSync(env.LOTS.m.get('lots/' + ma.lot)));
+  const L = await lireLotTest(ma.lot);
   await appel('POST', '/v1/missions/' + ma.mission, { admin: env.ADMIN_JETON, corps: { resultats: ma.indices.map(i => [L.l[i][3], L.l[i][4]]) } });
   assert.equal((await appel('GET', '/v1/moi', { cle: C })).j.ecarte, true);
   assert.equal((await appel('POST', '/v1/lots', { cle: C, corps: gzipSync(JSON.stringify(lotA)), gz: true })).s, 403);
@@ -101,17 +103,18 @@ await test('lot truque : l admin le voit, TOUT le travail de l envoyeur est reti
   const faux = construireLot(V, its), juste = JSON.parse(JSON.stringify(faux)); faux.l.forEach(l => { l[4] = l[3]; }); // 3 etoiles partout
   const id1 = (await appel('POST', '/v1/lots', { cle: D, corps: gzipSync(JSON.stringify(juste)), gz: true })).j.id;
   const r2_ = await appel('POST', '/v1/lots', { cle: D, corps: gzipSync(JSON.stringify(faux)), gz: true }); const id2 = r2_.j.id; assert.ok(id1 && id2, JSON.stringify(r2_.j));
-  let m; do { m = (await appel('POST', '/v1/missions', { admin: env.ADMIN_JETON, corps: V })).j; if (m.lot !== id2) { const L = JSON.parse((await import('node:zlib')).gunzipSync(env.LOTS.m.get('lots/' + m.lot))); await appel('POST', '/v1/missions/' + m.mission, { admin: env.ADMIN_JETON, corps: { resultats: m.indices.map(i => [L.l[i][3], L.l[i][4]]) } }); } } while (m.lot !== id2);
+  let m; do { m = (await appel('POST', '/v1/missions', { admin: env.ADMIN_JETON, corps: V })).j; if (m.lot !== id2) { const L = await lireLotTest(m.lot); await appel('POST', '/v1/missions/' + m.mission, { admin: env.ADMIN_JETON, corps: { resultats: m.indices.map(i => [L.l[i][3], L.l[i][4]]) } }); } } while (m.lot !== id2);
   const r = (await appel('POST', '/v1/missions/' + m.mission, { admin: env.ADMIN_JETON, corps: { resultats: m.indices.map(i => [juste.l[i][3], juste.l[i][4]]) } })).j;
   assert.ok(r.ecarts > 0); assert.equal(r.decision, 'envoyeur ecarte');
   const man = (await appel('GET', `/v1/manifeste?sigG=${V.sigG}&wKey=${V.wKey}`)).j.lots.map(x => x.id);
   assert.ok(!man.includes(id1) && !man.includes(id2), 'meme son lot juste est retire');
   assert.equal((await appel('GET', '/v1/lots/' + id1)).s, 404);
+  assert.equal(env.DB._db.prepare('SELECT COUNT(*) AS n FROM blocs WHERE id IN (?, ?)').get(id1, id2).n, 0, 'place liberee');
 });
 
 await test('supprimer mes envois : lots, fichiers et ID effaces', async () => {
-  const avant = env.LOTS.m.size, r = (await appel('DELETE', '/v1/moi', { cle: A })).j; assert.equal(r.supprime, 3);
-  assert.equal(env.LOTS.m.size, avant - 3); assert.equal((await appel('GET', '/v1/moi', { cle: A })).j.connu, false);
+  const avant = blocs(), r = (await appel('DELETE', '/v1/moi', { cle: A })).j; assert.equal(r.supprime, 3);
+  assert.equal(blocs(), avant - 3); assert.equal((await appel('GET', '/v1/moi', { cle: A })).j.connu, false);
 });
 
 await test('comparaison des controles', async () => {
