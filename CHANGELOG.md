@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.23.0
+
+Écran de la base commune dans le launcher (maquette validée le 18/11).
+
+- **Réglages, carte « Base commune »** : interrupteurs « Utiliser la base commune », « Partager mes calculs » (grisé tant que « Aider à vérifier » est coupé) et « Aider à vérifier », ton ID, boutons « Changer d'ID », « Supprimer mes envois » et « Lire la notice ». Carte « Ce qui part, ce qui ne part jamais ». Sur le PC validateur seulement : « Contrôler la base » (40 contrôles et regroupement des lots à la fin des calculs ; coupé, ce PC fait 2 contrôles comme les autres).
+- **Campagne, bloc « Base commune »** : résultats vérifiés et en attente, joueurs, ton apport et ton crédit, lots en attente d'envoi, résultats repris de la base au dernier calcul. Coupée, le bloc dit comment l'allumer.
+- `/api/partage` donne aussi l'état public de la base et le nombre de lots en file ; réglage `partage.controler` (par défaut allumé).
+
 ## 5.22.2
 
 Base commune plus légère, pour rester dans l'offre gratuite de Cloudflare (10 ms de calcul par requête) et télécharger moins.

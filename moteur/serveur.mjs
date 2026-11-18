@@ -74,7 +74,7 @@ function previsionTour() {
     dernier: d?.methode === 'course' ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.triosEssayes } : null };
 }
 // ---------- reglages (onglet Reglages du panneau) ----------
-const REG_DEF = { conseilMs: 700, filsReserves: 2, objectif: 's2', partage: { utiliser: false, envoyer: false, verifier: false }, alertes: { energie: true, guilde: true, evenements: true, bannieres: true, patch: true, calcul: true, calculConseille: true } };
+const REG_DEF = { conseilMs: 700, filsReserves: 2, objectif: 's2', partage: { utiliser: false, envoyer: false, verifier: false, controler: true }, alertes: { energie: true, guilde: true, evenements: true, bannieres: true, patch: true, calcul: true, calculConseille: true } };
 const reglages = () => { const r = readJ(D('data', 'reglages.json')) || {}; return { ...REG_DEF, ...r, alertes: { ...REG_DEF.alertes, ...(r.alertes || {}) } }; };
 // ---------- alertes : file lue par l'application (notifications Windows) et par le panneau ----------
 const alertes = []; const vues = new Set(readJ(D('data', 'alertes-vues.json')) || []);
@@ -302,7 +302,7 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
       if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
       // Base commune (partage des calculs Campagne) : etat de mon ID, supprimer mes envois, changer d'ID. Les interrupteurs passent par /api/reglages.
-      if (u.pathname === '/api/partage') { const reg = PARTAGE.reglagesPartage(), id = PARTAGE.identite(); let base = null; try { base = await PARTAGE.moi(reg); } catch (e) { base = { err: e.message }; } return send(res, 200, { reglages: reg, id: id.id.slice(0, 8), admin: !!id.admin, base }); }
+      if (u.pathname === '/api/partage') { const reg = PARTAGE.reglagesPartage(), id = PARTAGE.identite(); let base = null, etat = null; try { [base, etat] = await Promise.all([PARTAGE.moi(reg), PARTAGE.etatBase(reg)]); } catch (e) { base = { err: e.message }; } return send(res, 200, { reglages: { utiliser: reg.utiliser, envoyer: reg.envoyer, verifier: reg.verifier, controler: reg.controler }, id: id.id.slice(0, 8), admin: !!id.admin, base, etat, enFile: PARTAGE.enFile() }); }
       if (u.pathname === '/api/partage/supprimer' && req.method === 'POST') { try { return send(res, 200, await PARTAGE.supprimerMesEnvois(PARTAGE.reglagesPartage())); } catch (e) { return send(res, 502, { err: e.message }); } }
       if (u.pathname === '/api/partage/changer-id' && req.method === 'POST') return send(res, 200, { id: PARTAGE.changerIdentite().id.slice(0, 8) });
       if (u.pathname === '/api/raids') return send(res, 200, readJ(D('data', 'raids.json')) || []);

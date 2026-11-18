@@ -1,6 +1,6 @@
 # Partage des calculs (base commune)
 
-Coupé par défaut. Quand tu l'allumes, ton calcul Campagne récupère les résultats déjà calculés et **vérifiés** par d'autres joueurs pour tes cartes, et ne simule que ce qui manque.
+Coupé par défaut. Pour l'allumer : launcher, Réglages, carte « Base commune » (3 interrupteurs). L'état de la base et ce que ton dernier calcul y a repris sont dans Campagne, bloc « Base commune ». Quand tu l'allumes, ton calcul Campagne récupère les résultats déjà calculés et **vérifiés** par d'autres joueurs pour tes cartes, et ne simule que ce qui manque.
 
 ## Comment on évite les faux résultats
 

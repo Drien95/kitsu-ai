@@ -101,6 +101,10 @@
   .c3b { flex: 1; height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; } .c3b i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc), var(--gold)); }
   .c3c { padding: 8px 0; border-bottom: 1px solid var(--line); } .c3s { font-size: 11.5px; } a.lnk { color: var(--acc2); font-weight: 800; }
   .muted { color: var(--mute); } .okc { color: var(--ok); } .warnc { color: var(--warn); } .badc { color: var(--acc); }
+  .pt-id { font: 600 13px/1 ui-monospace, Consolas, monospace; background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 10px; }
+  .pt-adm { border: 1px dashed var(--line2); border-radius: 12px; padding: 4px 16px; margin-top: 14px; } .pt-adm .k { color: #a99cff; font-size: 11px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; padding-top: 10px; }
+  .pt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; } .pt-cols ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.6; } .pt-cols h3 { margin: 0; font-size: 14px; }
+  @media (max-width: 700px) { .pt-cols { grid-template-columns: 1fr; } }
   .note { background: rgba(255,122,61,.07); border: 1px solid rgba(255,122,61,.3); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #e9ded0; }
   ol.how { margin: 0; padding-left: 20px; color: #d9d3c9; } ol.how li { margin: 6px 0; }
   #modal { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: none; align-items: center; justify-content: center; z-index: 50; }
@@ -538,6 +542,11 @@
       <div id="c3job" class="muted" style="margin:8px 0 0"></div>
     </div>
     <div class="sp"></div>
+    <div class="card" id="c3base">
+      <h2>Base commune <span class="r"><button class="ghost" onclick="go('reglages');setTimeout(()=>$('r_partage').scrollIntoView({behavior:'smooth'}),50)">Réglages du partage</button></span></h2>
+      <div id="c3baseB" class="muted">Chargement…</div>
+    </div>
+    <div class="sp"></div>
     <div id="c3tabs"></div>
     <div id="c3body"></div>
   </section>
@@ -639,6 +648,34 @@
       <div class="card">
         <h2>Alertes <span class="r"><button class="ghost" onclick="api('/api/alertes-test',{method:'POST'}).then(()=>toast('Alerte de test envoyée'))">Tester</button></span></h2>
         <div id="r_alertes"></div>
+      </div>
+    </div>
+    <div class="sp"></div>
+    <div class="grid g2" id="r_partage">
+      <div class="card">
+        <h2>Base commune <span class="r muted" id="pt_etat" style="font-size:12px"></span></h2>
+        <p class="muted" style="margin-top:0">Coupée par défaut. Tes calculs Campagne peuvent récupérer les résultats déjà vérifiés pour tes cartes, et partager les tiens. Lire la base reste possible sans rien envoyer.</p>
+        <div class="set"><div class="x"><b>Utiliser la base commune</b><span>Avant un calcul, récupère les résultats déjà vérifiés pour tes cartes. Rien n'est envoyé.</span></div><label class="sw"><input type="checkbox" id="pt_u" data-pt="utiliser"><span></span></label></div>
+        <div class="set"><div class="x"><b>Partager mes calculs</b><span>Envoie tes résultats Campagne pendant et à la fin d'un calcul. Seulement quand tu lances un calcul toi-même. Demande « Aider à vérifier ».</span></div><label class="sw"><input type="checkbox" id="pt_e" data-pt="envoyer"><span></span></label></div>
+        <div class="set"><div class="x"><b>Aider à vérifier</b><span>À la fin de tes calculs, rejoue quelques résultats des autres (quelques secondes). Nécessaire pour partager.</span></div><label class="sw"><input type="checkbox" id="pt_v" data-pt="verifier"><span></span></label></div>
+        <div class="set" style="flex-wrap:wrap"><div class="x"><b>Ton ID</b><span>Tiré au hasard sur ce PC, sans lien avec ton compte KITSU.</span></div><span class="pt-id" id="pt_id">…</span></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button class="ghost" onclick="ptChangerId()">Changer d'ID</button>
+          <button class="ghost" style="color:var(--acc);border-color:rgba(255,75,62,.5)" onclick="ptSupprimer()">Supprimer mes envois</button>
+          <button class="ghost" onclick="ptNotice()">Lire la notice</button>
+        </div>
+        <div class="pt-adm" id="pt_adm" style="display:none">
+          <div class="k">Visible seulement sur ton PC · validateur de confiance</div>
+          <div class="set"><div class="x"><b>Contrôler la base</b><span id="pt_admTxt">À la fin de tes calculs, ton PC rejoue un échantillon des nouveaux lots (jusqu'à 40), peut écarter un ID, et regroupe les lots vérifiés.</span></div><label class="sw"><input type="checkbox" id="pt_c" data-pt="controler"><span></span></label></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Ce qui part, ce qui ne part jamais</h2>
+        <div class="pt-cols">
+          <div><h3 style="color:var(--ok)">Envoyé</h3><ul><li>ton ID au hasard</li><li>la version du moteur et de l'IA</li><li>pour chaque trio calculé : les 3 cartes, leurs étoiles, leurs collectifs, le niveau utilisé</li><li>les combats, les graines et le nombre de 3★</li></ul></div>
+          <div><h3 style="color:var(--acc)">Jamais envoyé</h3><ul><li>ton pseudo ou ton ID KITSU</li><li>ta sauvegarde ou ton inventaire complet</li><li>tes heures de jeu</li><li>rien du script privé</li></ul></div>
+        </div>
+        <div class="note" style="margin-top:14px">Ton adresse IP passe forcément par le serveur, mais elle n'est pas gardée. Les résultats d'une version du jeu dépassée sont supprimés au bout de 3 mois.</div>
       </div>
     </div>
     <div class="sp"></div>
@@ -882,7 +919,48 @@ function renderReglages() {
     $('r_dem').onchange = () => APP?.demarrage($('r_dem').checked).then(on => { $('r_dem').checked = !!on; toast(on ? 'KitsuAI démarrera avec Windows' : 'Démarrage avec Windows désactivé'); });
     if (!APP && window.Notification && Notification.permission === 'default') Notification.requestPermission();
     chargerPoids();
+    document.querySelectorAll('[data-pt]').forEach(i => i.onchange = () => ptSauver(i.dataset.pt, i.checked));
+    ptCharger();
   }
+}
+// ---------- base commune (partage des calculs Campagne, /api/partage) ----------
+const PT = { j: null };
+const NOTICE = 'https://github.com/Drien95/kitsu-ai/wiki/Partage-des-calculs';
+async function ptCharger() { try { PT.j = await api('/api/partage'); } catch (e) { PT.j = { err: e.message }; } ptReg(); ptCamp(); }
+function ptReg() {
+  const j = PT.j; if (!j || j.err || !$('pt_u')) return; const R = j.reglages;
+  $('pt_u').checked = R.utiliser; $('pt_v').checked = R.verifier; $('pt_e').checked = R.envoyer; $('pt_e').disabled = !R.verifier; $('pt_c').checked = R.controler;
+  $('pt_id').textContent = 'k-' + j.id; $('pt_adm').style.display = j.admin ? '' : 'none';
+  $('pt_etat').textContent = j.base?.err ? 'base injoignable' : j.base?.ecarte ? 'ID écarté' : (R.utiliser || R.envoyer) ? 'allumée' : 'coupée';
+}
+async function ptSauver(k, v) {
+  const R = { ...(PT.j?.reglages || {}) }; R[k] = v; if (k === 'verifier' && !v) R.envoyer = false;
+  const cur = E?.reglages?.partage || {};
+  await api('/api/reglages', { method: 'POST', body: JSON.stringify({ partage: { ...cur, utiliser: R.utiliser, envoyer: R.envoyer, verifier: R.verifier, controler: R.controler } }) });
+  if (E?.reglages) E.reglages.partage = { ...cur, ...R };
+  toast(k === 'envoyer' ? (v ? 'Tes calculs Campagne seront partagés' : 'Partage de tes calculs coupé') : k === 'utiliser' ? (v ? 'La base commune sera utilisée' : 'Base commune non utilisée') : 'Réglage enregistré');
+  ptCharger();
+}
+async function ptChangerId() { if (!confirm('Changer d’ID ? Tes envois passés restent liés à l’ancien ID (supprime-les d’abord si tu veux qu’ils disparaissent).')) return; const r = await api('/api/partage/changer-id', { method: 'POST' }); toast('Nouvel ID : k-' + r.id); ptCharger(); }
+async function ptSupprimer() { if (!confirm('Supprimer de la base commune tout ce que tu as envoyé avec cet ID ?')) return; try { const r = await api('/api/partage/supprimer', { method: 'POST' }); toast(`${r.supprime || 0} lot(s) supprimé(s)`); } catch (e) { alert('Base injoignable : ' + e.message); } ptCharger(); }
+const ptNotice = () => window.open(NOTICE, '_blank', 'noopener'); // l'application l'ouvre dans le navigateur
+function ptCamp() {
+  if (!$('c3baseB')) return; const j = PT.j;
+  if (!j) return setH('c3baseB', 'Chargement…');
+  if (j.err) return setH('c3baseB', 'Panneau injoignable.');
+  const R = j.reglages, on = R.utiliser || R.envoyer || R.verifier, d = CP.j?.partage;
+  if (!on) return setH('c3baseB', `<p class="muted" style="margin:0">Coupée. Allume-la dans Réglages pour que ton calcul saute les combats déjà résolus par d'autres joueurs avec tes cartes, et pour partager les tiens.</p>`);
+  if (j.base?.err) return setH('c3baseB', `<p class="muted" style="margin:0">Base injoignable pour l'instant (${esc(j.base.err)}). Ton calcul tournera en local seul.</p>`);
+  const st = s => (j.etat?.parStatut || []).find(x => x.statut === s) || {}, mien = s => (j.base?.lots || []).find(x => x.statut === s) || {};
+  const tile = (k, v, sub, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  const apport = (mien('verifie').lignes || 0) + (mien('attente').lignes || 0) + (mien('conteste').lignes || 0);
+  setH('c3baseB', `<div class="grid g5" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">`
+    + tile('Résultats vérifiés', fmt(st('verifie').lignes || 0), `${fmt(st('verifie').lots || 0)} lots, plus ${fmt(st('attente').lignes || 0)} en attente de contrôle`)
+    + tile('Joueurs', fmt(j.etat?.joueurs || 0), 'IDs qui partagent')
+    + tile('Ton apport', fmt(apport), j.base?.connu ? `${fmt(mien('verifie').lignes || 0)} vérifiés · crédit ${j.base.cred}` : 'rien envoyé pour l’instant', j.base?.ecarte ? 'bad' : '')
+    + tile('En attente d’envoi', fmt(j.enFile) + ' lot' + (j.enFile > 1 ? 's' : ''), 'partiront au prochain calcul', j.enFile ? 'warn' : '')
+    + tile('Dernier calcul', d ? fmt(d.recus) : '-', d ? `résultats repris de la base, ${fmt(d.envoyes)} envoyés` : 'pas encore de calcul partagé')
+    + `</div>${j.base?.ecarte ? '<div class="note" style="margin-top:12px">Ton ID a été écarté après un contrôle : tes envois ne sont plus acceptés. Tu peux toujours utiliser la base.</div>' : ''}`);
 }
 async function sauverReg() { const al = {}; document.querySelectorAll('[data-al]').forEach(i => al[i.dataset.al] = i.checked); await api('/api/reglages', { method: 'POST', body: JSON.stringify({ conseilMs: +$('r_ms').value, filsReserves: +$('r_fils').value, alertes: al }) }); toast('Réglages enregistrés'); }
 async function renderMaj() {
@@ -1285,7 +1363,7 @@ function campProgres(L) {
 }
 
 // ---------- chargement et rendu ----------
-async function campCharger() { campPrev(); CP.charge = true; try { CP.j = await api('/api/resultat?f=cauchemar3.json'); CP.err = ''; } catch (e) { CP.j = null; CP.err = String(e.message); } CP.charge = false; HC.delete('c3body'); HC.delete('c3tabs'); campRender(); }
+async function campCharger() { campPrev(); ptCharger(); CP.charge = true; try { CP.j = await api('/api/resultat?f=cauchemar3.json'); CP.err = ''; } catch (e) { CP.j = null; CP.err = String(e.message); } CP.charge = false; HC.delete('c3body'); HC.delete('c3tabs'); campRender(); ptCamp(); }
 function campEtat() {
   if (CP.j && CARTES && !CP.rc) { CP.rc = 1; campRender(); } // portraits arrives apres le premier rendu
   const run = E?.job && !E.job.fin, moi = /^Campagne : 3 etoiles/.test(E?.job?.nom || '');
