@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.37.0
+
+Script : le farm et le plan de campagne se fient à la façon dont tu joues vraiment, et le farm fait monter plusieurs cartes à la fois.
+
+- Bouton Auto du jeu : quand il est activé (sauvegarde `pve.auto`), les simulations du plan, des murs, du farm et de l'écran d'équipe utilisent le choix du jeu (`autoChoice`) et non plus l'IA du script. Mesure du 18/11 avec Shanks 92, Pain (Akatsuki) et Tobi (Akatsuki) 99 en Cauchemar Normal : Hadès 100 % de victoires avec l'IA du script et 0 % en Auto, Haku'ou Koku 83 % et 0 %, Le dernier coup 58 % de 3 étoiles et 0 %. Le farm proposait donc des combats perdus en Auto.
+- Le PC (`/equipes`) simule aussi en Auto (`W.auto`, moteur `lib/sim.mjs`) et le dit dans sa réponse ; un PC plus ancien est ignoré et le calcul se fait dans le navigateur.
+- Farm : trios essayés parmi tes 6 cartes les plus fortes et les 5 cartes à faire monter les plus utiles. Poids d'XP : n°1 du plan d'XP 5, cartes des prochains murs 4, suite du plan d'XP (`/plan` renvoie `suite`, 6 montées) 2 à 4, carte au 99 jamais. Le trio retenu reste celui qui gagne 95 % et fait 3 étoiles 90 % du temps, avec le plus de cartes à faire monter.
+
 ## 5.36.0
 
 Script : un seul cadre en combat avec le script privé (0.25+), comme si les deux scripts n'en faisaient qu'un.
