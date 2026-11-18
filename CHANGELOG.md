@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.37.0
+
+Script : le farm fait monter plusieurs cartes à la fois, dans l'ordre du plan d'XP global (Campagne, Tour, Raid, Arène), sans perdre les 3 étoiles.
+
+- Avant : une seule carte avait un poids d'XP (le n°1 du plan, Shanks), donc le farm prenait toujours Shanks avec tes 2 cartes les plus fortes, déjà au 99 (Pain et Tobi), sur le combat le plus rentable, souvent en Cauchemar.
+- Poids d'XP : la suite du plan d'XP (`/plan` renvoie `suite`, 6 premières montées du plan global, dans son ordre) de 5 à 2, cartes des prochains murs 4, n°1 du plan 5. Une carte au 99 n'a jamais de poids.
+- Farm : trios essayés parmi tes 6 cartes les plus fortes et les 5 cartes à monter les plus utiles. Combats essayés : les 2 plus rentables de chaque difficulté (10 au plus), pour qu'une carte basse puisse monter en Normal ou Difficile. Combat retenu : le plus d'XP utile par énergie (XP du combat x cartes à monter du trio), avec un trio qui gagne 95 % et fait 3 étoiles 90 % du temps.
+- Gemmes d'abord : inchangé, le farm ne passe qu'une fois les combats à gemmes faits.
+
 ## 5.36.0
 
 Script : un seul cadre en combat avec le script privé (0.25+), comme si les deux scripts n'en faisaient qu'un.

@@ -303,7 +303,8 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ms: Date.now() - t0, res: r }, 'application/json', CORS);
     }
     // Carte qui recoit les parchemins d'XP, pour le script (le moteur du jeu n'est pas charge pour ca : noms lus dans la page).
-    if (u.pathname === '/plan' && req.method === 'GET') { const p = await planCalcule(ENG?.G || null); return send(res, 200, p.err ? p : { t: p.t, score: p.score, cible: p.cible && { id: p.cible.id, niveau: p.cible.niveau, xp: p.cible.xp, raison: p.cible.raison } }, 'application/json', CORS); }
+    // suite (5.37) : 6 premieres montees du plan global (Campagne, Tour, Raid, Arene en prive), dans son ordre : poids d'XP du farm.
+    if (u.pathname === '/plan' && req.method === 'GET') { const p = await planCalcule(ENG?.G || null); return send(res, 200, p.err ? p : { t: p.t, score: p.score, cible: p.cible && { id: p.cible.id, niveau: p.cible.niveau, xp: p.cible.xp, raison: p.cible.raison }, suite: (p.cartes || []).slice(0, 6).map(c => c.ids) }, 'application/json', CORS); }
     if (u.pathname === '/raid' && req.method === 'POST') return send(res, 200, await raidConseil(JSON.parse(await body(req))), 'application/json', CORS);
     if (u.pathname === '/conseil' && req.method === 'POST') {
       const q = JSON.parse(await body(req));
