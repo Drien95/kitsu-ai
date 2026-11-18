@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.26.0
+
+Campagne : savoir pourquoi la 3e étoile saute, pour viser le bon remède (trios qui frappent plus fort, ou plus de protection).
+
+- **Diagnostic** (`moteur/lib/diagnostic.mjs`) : sur chaque combat sous le seuil, jusqu'à 3 trios (son meilleur, celui du plan, les suivants, puis le meilleur trio de la difficulté pour les combats sans aucun 3★) rejouent 8 tirages jusqu'au bout, sans arrêt anticipé. Cause notée selon la règle du jeu (aucun K.O. et cycle 8 au plus) : **trop lent** (victoire sans K.O. mais après le cycle 8), **un K.O.**, **les deux**, **défaite**. Pour les combats trop lents : part des PV ennemis encore debout au début du cycle 9. Pour les K.O. : la carte qui tombe en premier.
+- Fait tout seul à la fin du calcul Campagne (`--sans-diagnostic` pour l'éviter), avec la même IA que le calcul. Pour un résultat déjà calculé : bouton **Analyser** dans la carte « Meilleur trio par combat » (`diagnostic3.mjs`, un seul fil, 14 s mesurées sur 81 combats).
+- Onglet Campagne : bloc « Pourquoi la 3★ saute » (4 tuiles par difficulté) et la cause sous le % de chaque combat dur.
+- Premier résultat (calcul du 17/11, cartes au 99) : en Cauchemar, la 3e étoile saute surtout **au temps** (Normal 12 combats durs sur 16, Difficile 18 sur 31 et 9 de plus avec un K.O., Extrême 12 sur 29) ; il reste en médiane 16 à 29 % des PV ennemis au début du cycle 9. Presque jamais un K.O. seul.
+- Tests : 20 (cause cohérente avec le simulateur).
+
 ## 5.25.0
 
 IA commune : savoir quand la changer, et la publier d'un clic (PC validateur).

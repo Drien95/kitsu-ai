@@ -8,7 +8,7 @@
 // Journal (cache/cauchemar3-*.jsonl) : rien n'est recalcule tant que le combat, la carte, son niveau, ses etoiles,
 // ses collectifs, les combats et l'IA sont les memes ; il sert aussi de point de reprise apres une coupure.
 //   node cauchemar3.mjs [--niveaux 99|actuel] [--difficultes toutes|cauchemar] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
-//   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--seuil 60] [--sans-etages]
+//   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--seuil 60] [--sans-etages] [--sans-diagnostic]
 //   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
@@ -22,6 +22,7 @@ import { cleTrioDe } from './lib/partage-format.mjs';
 import { construireWC } from './lib/ia-commune.mjs';
 import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
+import { diagnostiquer } from './lib/diagnostic.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, SIM = makeSim(G, B);
 const NIV = String(arg('niveaux', '99')), K = +arg('garder', 30), Z = +arg('z', 3), PAQ = +arg('paquet', 16);
@@ -239,6 +240,8 @@ if (PARTAGE_OK) {
   if (PARTAGE.identite().admin && PART.controler) try { await PARTAGE.regrouper(PART, { log }); } catch (e) { log('partage : regroupement reporte (' + e.message + ')'); }
 }
 out.partage = PARTAGE_OK ? { recus, envoyes, ia: 'commune' } : null;
+// Pourquoi la 3e etoile saute sur les combats sous le seuil (lib/diagnostic.mjs, un seul fil, de l'ordre de la minute).
+if (etages && !arg('sans-diagnostic')) try { etages.diagnostic = diagnostiquer(G, B, SIM, SIM.smartPol(WA), out, ids => ids.map(id => carte(id)), { log }); if (etages.diagnostic) etages.diagnostic.ia = PARTAGE_OK ? 'commune' : 'pc'; } catch (e) { log('diagnostic reporte (' + e.message + ')'); }
 mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
 for (const [o, l] of Object.entries(out.meilleurs)) { log(`== 3 etoiles, ${o} ==`); l.slice(0, 5).forEach((x, i) => log(`  ${i + 1}. ${x.equipe.join(' / ')} : ${x.troisEtoiles} % (+/- ${x.marge}) | ${x.parDifficulte.map(d => `${d.difficulte} ${d.troisEtoiles} / 2* ${d.deuxEtoiles}`).join(', ')}`)); }
 for (const c of collectifs) for (const l of c.cartes) log(`collectifs ${c.equipe.join(' / ')}, ${l.carte} : 3 etoiles ${l.avant} -> ${l.apres} %${l.utile ? ' : ' + l.conseil.join(', ') : ' (pas mieux que les tiens)'}`);

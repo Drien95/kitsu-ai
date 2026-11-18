@@ -22,6 +22,10 @@ const rev = Object.values(G.CHAR_BY_ID).find(x => /ranimer/.test(JSON.stringify(
 const teams3 = [team, ...(rev ? [[rev.id, ids[0], ids[1]].map(id => ({ id, lv: 99, stars: 0 }))] : [])];
 const eq3 = teams3.every(tm => fights.every(f => (S.fight(f, tm, 7, pol).stars === 3) === (S.fight(f, tm, 7, pol, { stop3: true }).stars === 3)));
 t('arret des 3 etoiles perdues : memes 3 etoiles', eq3 && !!rev);
+// Diagnostic de la 3e etoile (5.26) : memes etoiles que le simulateur, cause coherente avec la regle.
+const { jouer } = await import('./lib/diagnostic.mjs');
+const dj = fights.map(f => jouer(G, B, S, pol, f, team, 7));
+t('diagnostic : memes etoiles que le simulateur, cause juste', dj.every((r, i) => r.stars === a[i].stars && (r.stars === 3) === (r.cause == null) && (r.cause !== 'cycle' || (r.win && r.ko === 0 && r.cycle > 8)) && (r.cause !== 'ko' || (r.win && r.ko > 0 && r.cycle <= 8))));
 const { h53 } = await import('./lib/journal.mjs');
 t('journal : cle stable et distincte', h53('abc') === h53('abc') && h53('abc') !== h53('abd'));
 const pool = await makePool(2), jobs = fights.slice(0, 12).map(f => ({ team, fights: [f], seeds: [7] }));
