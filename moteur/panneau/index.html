@@ -103,6 +103,7 @@
   .muted { color: var(--mute); } .okc { color: var(--ok); } .warnc { color: var(--warn); } .badc { color: var(--acc); }
   .pt-id { font: 600 13px/1 ui-monospace, Consolas, monospace; background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 10px; }
   .pt-adm { border: 1px dashed var(--line2); border-radius: 12px; padding: 4px 16px; margin-top: 14px; } .pt-adm .k { color: #a99cff; font-size: 11px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; padding-top: 10px; }
+  .pt-adm .set[style*=wrap] .x { flex: 1 1 100%; } .pt-adm input { flex: 1; min-width: 160px; background: var(--panel2); border: 1px solid var(--line2); color: var(--txt); border-radius: 8px; padding: 9px 11px; font: inherit; }
   .pt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; } .pt-cols ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.6; } .pt-cols h3 { margin: 0; font-size: 14px; }
   @media (max-width: 700px) { .pt-cols { grid-template-columns: 1fr; } }
   .note { background: rgba(255,122,61,.07); border: 1px solid rgba(255,122,61,.3); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #e9ded0; }
@@ -667,7 +668,7 @@
         <div class="pt-adm" id="pt_adm" style="display:none">
           <div class="k">Visible seulement sur ton PC · validateur de confiance</div>
           <div class="set" style="flex-wrap:wrap"><div class="x"><b>IA commune</b><span id="pt_iaTxt">…</span></div><button class="ghost" onclick="ptComparer()">Comparer</button><button class="ghost" id="pt_pub" onclick="ptPublier()">Publier comme IA commune</button></div>
-          <div class="set" style="flex-wrap:wrap"><div class="x"><b>Jeton Cloudflare</b><span id="pt_cfTxt">…</span></div><input type="password" id="pt_cf" placeholder="Colle le jeton ici" autocomplete="off" style="min-width:200px"><button class="ghost" onclick="ptJetonCf()">Enregistrer</button></div>
+          <div class="set" style="flex-wrap:wrap"><div class="x"><b>Jeton Cloudflare</b><span id="pt_cfTxt">…</span></div><input type="password" id="pt_cf" placeholder="Colle le jeton ici" autocomplete="off"><button class="ghost" onclick="ptJetonCf()">Enregistrer</button></div>
           <div class="set"><div class="x"><b>Serveur de la base</b><span id="pt_srv">…</span></div><button class="ghost" id="pt_dep" onclick="ptDeployer()">Mettre à jour le serveur</button></div>
           <div class="set"><div class="x"><b>Contrôler la base</b><span id="pt_admTxt">À la fin de tes calculs, ton PC rejoue un échantillon des nouveaux lots (jusqu'à 40), peut écarter un ID, et regroupe les lots vérifiés.</span></div><label class="sw"><input type="checkbox" id="pt_c" data-pt="controler"><span></span></label></div>
         </div>

@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.25.0
+
+IA commune : savoir quand la changer, et la publier d'un clic (PC validateur).
+
+- **Comparaison** (`moteur/comparer-ia.mjs`) : ton IA contre l'IA commune en service, mêmes équipes (tes meilleures au 99), mêmes combats Cauchemar disputés, mêmes tirages. Test séquentiel par paires : on ajoute des tirages tant que l'écart n'est pas tranché (« nettement meilleure » : z ≥ 3 et au moins +0,5 point de 3 étoiles ; « moins bonne » : z ≤ -2 ; sinon « pas d'écart net » après 8 tours). Lancée toute seule à la fin d'un entraînement sur le PC validateur (`--sans-comparaison` pour l'éviter), ou par « Comparer ». Résultat : `resultats/comparaison-ia.json`.
+- **Cadre validateur, ligne « IA commune »** : celle en service, le verdict de la dernière comparaison (marqué périmé si ton IA ou l'IA commune a changé depuis), et « Publier comme IA commune », en orange seulement si ton IA est nettement meilleure. La confirmation rappelle que les résultats partagés avec l'ancienne IA ne serviront plus.
+- **IA commune distribuée par le serveur** : `GET /v1/ia`, publiée par `POST /v1/admin/ia` (jeton admin). Les calculs partagés la prennent au lancement (copie locale si pas d'internet) ; `poids-communs.json` livré avec l'appli sert tant qu'aucune n'est publiée. Le PC qui la lit la vérifie champ par champ (`lib/ia-commune.mjs`, rien n'est exécuté) et calcule la même empreinte que le PC qui l'a publiée.
+- Serveur en version 4 (`migration-2.sql`, table `ia`) : « Mettre à jour le serveur » s'en charge. Tests du serveur et du client : 17.
+
 ## 5.24.2
 
 - **« Mettre à jour le serveur » réparé** : lancé depuis le launcher, wrangler n'a pas de terminal et refuse la connexion faite dans le navigateur (`npx wrangler login`) ; il demandait `CLOUDFLARE_API_TOKEN` et la mise à jour s'arrêtait à la migration 1. Le cadre du PC validateur a maintenant une ligne « Jeton Cloudflare » (marche à suivre et lien) : le jeton est gardé dans `data/partage.json` (clé `cloudflare`), jamais affiché ni envoyé ailleurs qu'à Cloudflare, et passé à wrangler. Sans jeton, le bouton explique quoi faire au lieu d'échouer ; une erreur d'autorisation dit quelle permission manque.
