@@ -8,10 +8,12 @@
 //   POST /v1/missions/<id>              rendre un controle { resultats: [[n, s3], ...] }
 //   GET  /v1/moi                        etat de mon ID ; DELETE /v1/moi : supprimer tous mes envois
 //   GET  /v1/etat                       chiffres publics de la base
+// Stockage : tout dans D1 (offre gratuite, sans moyen de paiement). Chaque lot compresse est une ligne de la table `blocs`
+// (D1 limite une ligne a 2 Mo : un lot envoye fait au plus 1,9 Mo compresse).
 // Admin (jeton secret ADMIN_JETON, seulement sur le PC d'Adrien) : X-Kitsu-Admin sur /v1/missions, POST /v1/admin/bannir.
 import { verifierLot, tirerIndices, ecarts, LIMITES } from '../../moteur/lib/partage-format.mjs';
 
-const JOUR = 86400e3, K_CONTROLE = 24, MISSION_MS = 6 * 3600e3, CRED_FIABLE = 3;
+const MAX_LOT = 1.9e6, JOUR = 86400e3, K_CONTROLE = 24, MISSION_MS = 6 * 3600e3, CRED_FIABLE = 3;
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, x-kitsu-cle, x-kitsu-admin', 'access-control-allow-methods': 'GET, POST, DELETE' };
 const json = (o, s = 200, h = {}) => new Response(JSON.stringify(o), { status: s, headers: { 'content-type': 'application/json', ...CORS, ...h } });
 const err = (s, m) => json({ err: m }, s);
@@ -20,6 +22,8 @@ const sha = async d => hex(await crypto.subtle.digest('SHA-256', typeof d === 's
 const alea = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
 const RE_ID = /^[0-9a-f]{64}$/, RE_CLE = /^[0-9a-f]{64}$/, RE_SIG = /^[0-9a-z]{1,14}$/;
 
+const enOctets = v => v instanceof ArrayBuffer ? v : new Uint8Array(v).buffer; // D1 rend un BLOB en ArrayBuffer ou en tableau de nombres
+async function lireBrut(env, id) { const r = await env.DB.prepare('SELECT data FROM blocs WHERE id = ?').bind(id).first(); return r ? enOctets(r.data) : null; }
 async function lireCorps(req, max) {
   const n = +req.headers.get('content-length') || 0; if (n > max) throw new Error('trop gros');
   const b = await req.arrayBuffer(); if (b.byteLength > max) throw new Error('trop gros'); return b;
@@ -51,12 +55,12 @@ async function envoyerLot(env, req) {
   const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM lots WHERE recu >= ?').bind(jour * JOUR).first();
   if (total.n >= +env.LOTS_PAR_JOUR_TOTAL) return err(429, 'quota du jour atteint pour la base');
   let brut, lot;
-  try { brut = await lireCorps(req, 2.5e6); lot = JSON.parse(await degzip(brut, LIMITES.octets)); } catch (e) { return err(400, 'lot illisible : ' + e.message); }
+  try { brut = await lireCorps(req, MAX_LOT); lot = JSON.parse(await degzip(brut, LIMITES.octets)); } catch (e) { return err(400, 'lot illisible : ' + e.message); }
   const raison = verifierLot(lot); if (raison) return err(400, 'lot refuse : ' + raison);
   const id = await sha(brut);
   if (await env.DB.prepare('SELECT 1 FROM lots WHERE id = ?').bind(id).first()) return json({ id, deja: true });
-  await env.LOTS.put('lots/' + id, brut, { httpMetadata: { contentType: 'application/gzip' } });
   await env.DB.batch([
+    env.DB.prepare('INSERT OR REPLACE INTO blocs (id, data) VALUES (?, ?)').bind(id, brut),
     env.DB.prepare('INSERT INTO lots (id, joueur, sigG, wKey, moteur, lignes, octets, statut, verifs, recu) VALUES (?, ?, ?, ?, ?, ?, ?, \'attente\', 0, ?)').bind(id, j.id, lot.sigG, lot.wKey, lot.moteur, lot.l.length, brut.byteLength, Date.now()),
     env.DB.prepare('INSERT INTO quotas (joueur, jour, lots) VALUES (?, ?, 1) ON CONFLICT (joueur, jour) DO UPDATE SET lots = lots + 1').bind(j.id, jour),
   ]);
@@ -72,17 +76,14 @@ async function manifeste(env, url, ctx) {
   ctx.waitUntil(cache.put(cle, rep.clone())); return rep;
 }
 
-async function lireLot(env, id) {
-  const o = await env.LOTS.get('lots/' + id); if (!o) return null;
-  return { brut: await o.arrayBuffer() };
-}
+async function lireLot(env, id) { const brut = await lireBrut(env, id); return brut ? { brut } : null; }
 
 async function lot(env, id) {
   if (!RE_ID.test(id)) return err(400, 'id');
   const l = await env.DB.prepare('SELECT statut FROM lots WHERE id = ?').bind(id).first();
   if (!l || l.statut === 'rejete') return err(404, 'lot inconnu ou ecarte');
-  const o = await env.LOTS.get('lots/' + id); if (!o) return err(404, 'lot absent');
-  return new Response(o.body, { headers: { 'content-type': 'application/gzip', 'cache-control': 'public, max-age=31536000, immutable', ...CORS } });
+  const brut = await lireBrut(env, id); if (!brut) return err(404, 'lot absent');
+  return new Response(brut, { headers: { 'content-type': 'application/gzip', 'cache-control': 'public, max-age=31536000, immutable', ...CORS } });
 }
 
 // Controle : un lot d'un autre joueur, des lignes tirees ici (le joueur controle ne sait pas lesquelles a l'avance).
@@ -119,6 +120,7 @@ async function rendreMission(env, req, mid) {
       await env.DB.batch([
         env.DB.prepare('UPDATE joueurs SET banni = 1 WHERE id = ?').bind(L.joueur),
         env.DB.prepare('UPDATE lots SET statut = \'rejete\' WHERE joueur = ?').bind(L.joueur),
+        env.DB.prepare('DELETE FROM blocs WHERE id IN (SELECT id FROM lots WHERE joueur = ?)').bind(L.joueur),
       ]);
       return json({ ok: true, ecarts: e, decision: 'envoyeur ecarte' });
     }
@@ -154,8 +156,8 @@ async function moi(env, req, supprimer) {
     return json({ connu: true, cred: j.cred, ecarte: !!j.banni, lots: r.results });
   }
   const ids = (await env.DB.prepare('SELECT id FROM lots WHERE joueur = ?').bind(j.id).all()).results.map(x => x.id);
-  for (let i = 0; i < ids.length; i += 500) await env.LOTS.delete(ids.slice(i, i + 500).map(x => 'lots/' + x));
   await env.DB.batch([
+    env.DB.prepare('DELETE FROM blocs WHERE id IN (SELECT id FROM lots WHERE joueur = ?)').bind(j.id),
     env.DB.prepare('DELETE FROM lots WHERE joueur = ?').bind(j.id), env.DB.prepare('DELETE FROM quotas WHERE joueur = ?').bind(j.id),
     env.DB.prepare('DELETE FROM missions WHERE verificateur = ?').bind(j.id), env.DB.prepare('DELETE FROM desaccords WHERE verificateur = ?').bind(j.id),
     // Un ID ecarte le reste (sinon supprimer puis revenir effacerait la sanction) ; sinon il disparait completement.

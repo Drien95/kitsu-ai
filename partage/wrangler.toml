@@ -10,10 +10,6 @@ binding = "DB"
 database_name = "kitsu-partage"
 database_id = "A_REMPLIR_APRES_wrangler_d1_create"
 
-[[r2_buckets]]
-binding = "LOTS"
-bucket_name = "kitsu-partage-lots"
-
 [vars]
 # true : seul le PC d'Adrien (jeton admin) peut faire passer un lot a "verifie". Les autres controles comptent mais ne suffisent pas.
 VERIF_ADMIN_SEULE = "true"
