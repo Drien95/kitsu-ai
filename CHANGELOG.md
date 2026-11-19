@@ -4,6 +4,19 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.41.0
+
+Calcul Campagne : les liens actifs à cocher, cherchés combat par combat pour les trios du plan.
+
+- **Règle du jeu** (lue dans le moteur) : un lien est actif dès que 2 de ses cartes sont dans l'équipe ; chaque carte en garde 6, ceux que tu as choisis d'abord, sinon les plus gros %. Avant, le calcul ne cherchait les liens que pour ses 5 meilleurs trios en moyenne (liste vide sur le calcul du 18/11), jamais pour le meilleur trio par combat.
+- **Recherche** (`lib/liens.mjs`) : pour chaque trio du plan où une carte a plus de 6 liens actifs, sur les combats où il est le trio du plan :
+  1. un lien ne fait qu'ajouter un % à une stat : deux choix qui donnent les mêmes totaux jouent le même combat (vérifié par un test). Un seul choix par total est joué (Pain (Akatsuki) avec Pain : 210 choix, 83 totaux) ;
+  2. un total qui a autant ou moins partout (ATK, DEF, PV, critique, énergie, à VIT égale) qu'un autre est écarté (83 puis 25). La VIT n'est pas comparée : elle change l'ordre des tours. Contrôle : 8 choix écartés jouent quand même le 1er tirage, et le résultat dit si l'un d'eux a fait mieux ;
+  3. chaque choix gardé joue les combats du trio (1 tirage, mêmes graines pour tous), puis les 4 meilleurs et ton réglage 6 tirages de plus. Un changement n'est conseillé que s'il bat ton réglage de plus de 2 écarts types.
+- Comptes sur la collection testée : 1 345 trios concernés, 85,7 millions de choix possibles, 739 571 totaux distincts, 274 628 après le tri. Essai (2 fils, 30 combats Cauchemar, Pain / Kanki / Pain (Akatsuki)) : 3 420 combats joués en 2,1 s ; contrôle 0 / 8.
+- **Onglet Campagne**, sous « Le plan » : « Liens actifs à cocher » (trio, carte, les 6 liens et leurs totaux, 3★ de ton réglage puis du conseil, combats sûrs). Le réglage est par carte dans le jeu : il vaut pour toutes ses équipes.
+- `--sans-liens` pour sauter cette étape. Tests : 4 de plus (29).
+
 ## 5.40.3
 
 Script : tes liens actifs (collectifs) partent avec la sauvegarde.
