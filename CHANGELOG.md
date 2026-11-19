@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.55.0
+
+Guide : le « + » de l'énergie est entouré comme les autres indications, sans calcul.
+
+- **Encadré blanc** : énergie vide, au moins 15 gemmes et un combat sûr à faire dans le plan, le guide entoure le « + » avec l'encadré blanc habituel (`kitsu-guide`) et dit « clique sur « + » pour recharger (15 gemmes) ». L'étiquette verte et le calcul de gemmes de la 5.52 (`refillValue`, `#kitsuRefillLab`) sont retirés : un simple repère suffit.
+- **Gardé de la 5.52** : le plan se recalcule quand tes étoiles ont changé (`cle`) et un seul calcul du plan tourne à la fois. C'est ce qui fait réapparaître le repère après tes combats.
+- Roadmap : « Recharge l'énergie (15 gemmes) : il reste N combats à faire », sans chiffre estimé.
+
 ## 5.54.0
 
 Choix d'équipe (Campagne) : le trio du calcul exact du script privé passe devant même quand le classement de ce combat était déjà en cache.
