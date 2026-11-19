@@ -4,7 +4,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.48.0
+## 5.49.0
 
 Guide : la Tour devient un choix, la Campagne passe d'abord.
 
