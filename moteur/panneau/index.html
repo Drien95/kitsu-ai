@@ -1719,7 +1719,9 @@ async function campPrev(local) {
   const tile = (k, v, sub, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
   if (!P.cartes) { CP.est = null; return setH('c3prev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>'); }
   const six = $('o_c3dif').value !== 'cauchemar', cles = six ? Object.keys(P.combats) : ['normal', 'difficile', 'extreme'];
-  const parTrio = cles.reduce((a, k) => a + (P.combats[k] || 0), 0), nd = cles.length, nCamp = parTrio - ['normal', 'difficile', 'extreme'].reduce((a, k) => a + (P.combats[k] || 0), 0);
+  // 5.51 : les combats deja a 3 etoiles dans ta partie ne sont plus rejoues (P.valides, par difficulte).
+  const V = P.valides || {}, nV = cles.reduce((a, k) => a + Math.min(P.combats[k] || 0, V[k] || 0), 0), reste = k => Math.max(0, (P.combats[k] || 0) - (V[k] || 0));
+  const parTrio = cles.reduce((a, k) => a + reste(k), 0), nd = cles.length, nCamp = parTrio - ['normal', 'difficile', 'extreme'].reduce((a, k) => a + reste(k), 0), nCau = parTrio - nCamp;
   // Vitesse : celle du dernier vrai calcul sur ce PC, sinon environ 650 combats par seconde et par fil (mesure du 17/11/2026).
   const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 650 * P.fils;
   const T = C3n(chxCartes('c3', P)), D = P.dernier;
@@ -1733,14 +1735,19 @@ async function campPrev(local) {
   const sSuite = ent ? s1 * ent.slice(0, -1).reduce((a, b) => a + b, 0) : s1 * 0.3 / 0.7, sFinale = ent ? T * ent[ent.length - 1] * (nCamp + 2 * parTrio) / vit : 0;
   const mCand = 140 * parTrio * 2 / vit, b = +$('o_c3spec').value || 0;
   const sCamp = six && D?.campSous100 && D.minParCombat && D.trios ? D.campSous100 * D.minParCombat * 60 * T / D.trios : 0;
-  const total = s1 + sSuite + sFinale + mCand + sCamp + b * 60, R = chxRender('c3', P, total), n = x => Math.round(x).toLocaleString('fr-FR');
+  // 5.51 : moins de 100 combats Cauchemar restants (avec des combats valides) : pas de course, chaque combat restant est cherche sur
+  // tous les trios. Mesure : environ 1 combat simule par trio et par combat restant (81 combats, 161 700 trios : 13,1 M combats).
+  const direct = nV > 0 && nCau < 100, sDirect = direct ? T * parTrio * 1.05 / vit + mCand : 0;
+  const total = direct ? sDirect : s1 + sSuite + sFinale + mCand + sCamp + b * 60, R = chxRender('c3', P, total), n = x => Math.round(x).toLocaleString('fr-FR');
   CP.est = { total, fin: R.fin, T, pause: R.pause };
   setH('c3prev', tile('Cartes', fmt(chxCartes('c3', P)), chxRaretes('c3', P).join(', ') || 'aucune')
     + tile('Trios à tester', n(T), 'toutes les combinaisons de 3')
     + tile('Déjà en mémoire', P.journalOctets ? (P.journalOctets / 1048576).toFixed(0) + ' Mo' : 'rien', P.journalOctets ? 'ces combats ne sont pas rejoués' : 'premier calcul sur ce PC')
-    + tile('1er tour', dCourt(s1), `à ${n(vit)} combats/s${D?.vitesse ? ', vitesse de ton dernier calcul' : ''}`)
-    + tile('Durée prévue', dCourt(total), ent ? 'estimation sur l’entonnoir de ton dernier calcul' : 'estimation : 1er tour = 70 % de la course', total > 8 * 3600 ? 'warn' : '')
+    + (nV ? tile('Validés en jeu', n(nV), `jamais rejoués, ${n(parTrio)} combats restants`, 'ok') : '')
+    + (direct ? tile('Méthode', 'Recherche directe', 'peu de combats restants : chacun cherché sur tous tes trios, sans course') : tile('1er tour', dCourt(s1), `à ${n(vit)} combats/s${D?.vitesse ? ', vitesse de ton dernier calcul' : ''}`))
+    + tile('Durée prévue', dCourt(total), direct ? `${n(parTrio)} combats × ${n(T)} trios à ${n(vit)} combats/s` : ent ? 'estimation sur l’entonnoir de ton dernier calcul' : 'estimation : 1er tour = 70 % de la course', total > 8 * 3600 ? 'warn' : '')
     + tile(R.pause ? 'Pause vers' : 'Fin vers', R.fin, R.pause ? 'reprise au prochain lancement' : 'si le PC reste allumé', R.pause ? 'warn' : 'ok'));
+  if (direct) return frise('c3', [['c3', 'Recherche directe des combats restants', sDirect, '']], total);
   frise('c3', [['c1', 'Course (1er tour)', s1], ['c2', 'Tours suivants et finale', sSuite + sFinale], ['c3', six ? 'Par combat et Campagne sous 100 %' : 'Par combat', mCand + sCamp, six ? 'inconnu avant un 1er calcul' : ''], ['c4', 'Spécialistes Cauchemar', b * 60, 'aucun']], total);
 }
 // Progression lue dans le journal de la tache : « tour 3/12 : 383306 -> 41210 trios en course, ... (7300/s) ».

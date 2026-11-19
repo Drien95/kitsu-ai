@@ -4,6 +4,22 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.51.0
+
+Campagne : un combat déjà à 3★ dans ta partie n'est plus jamais rejoué, et quand il en reste peu, le calcul va droit aux combats à finir.
+
+- **Combats validés** (`cauchemar3.mjs`) : les combats à 3★ dans ta sauvegarde (`pve.stars`, envoyé par le script depuis la 5.45) sont retirés avant tout : ni course, ni étape par combat, ni plancher. Une difficulté entièrement validée ne compte plus dans le classement. Tout validé : rien n'est calculé, le résultat précédent est gardé. `--rejouer-valides` : comme avant.
+- **Recherche directe** : sous 100 combats Cauchemar restants (`--seuil-direct`), pas de course. Après le plancher et les candidats, chaque combat restant sous 100 % est cherché sur tous les trios (spécialistes groupés de la 5.47), sans budget. Le classement global des trios est celui du dernier calcul. `--course` : course quand même.
+- **Pourquoi pas la course** : les combats restants sont les durs, où presque aucun trio ne fait 3★. Les bornes ne se séparent plus et personne n'est éliminé. Mesuré sur 81 combats restants : 161 700 trios encore en course après 3 tours (1 038 s, avant la finale), contre 1 090 s au total pour la recherche directe.
+- **Panneau** : tuile « Validés en jeu » (nombre de combats jamais rejoués, combats restants), méthode et durée prévue de la recherche directe (environ 1 combat simulé par trio et par combat restant, mesuré). `/api/campagne/prevision` renvoie `valides` par difficulté.
+- **Mesures** (VM 4 fils, moteur B4t5msj4, 100 cartes, 161 700 trios, Cauchemar, 96 combats par difficulté, journal vide). Combats validés simulés par une liste (la sauvegarde du bench n'a pas `pve.stars`), comparés au calcul complet 5.47 (1 398 s, 288 combats) :
+
+| Combats restants | Méthode | Durée | Restants à 60 % ou plus | Meilleur trio par combat |
+|---|---|---|---|---|
+| 30 | recherche directe | 334 s | 10 (calcul complet : 9) | 18 identiques, 8 meilleurs, 4 moins bons de 5 à 8 points (un tirage sur 8) |
+| 81 | recherche directe | 1 090 s | 53 (calcul complet : 53) | 66 identiques, 8 meilleurs, 7 moins bons |
+| 81 | course sur les restants | arrêtée à 1 038 s, aucun trio éliminé | | |
+
 ## 5.50.0
 
 Campagne : un trio déjà trouvé n'est plus perdu d'un calcul à l'autre, et les combats déjà à 3★ dans ta partie ne sont plus cherchés par les spécialistes.

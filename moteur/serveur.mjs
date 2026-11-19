@@ -101,7 +101,11 @@ function prevision() {
   let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^cauchemar3-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
   const d = readJ(D('resultats', 'cauchemar3.json'));
   const ids = Object.keys(sv?.owned || {}).map(Number).filter(id => RAR_NOM[G.CHAR_BY_ID[id]?.r]);
-  return { cartes, parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d, false), raretesDernier: d?.raretes || null, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
+  // 5.51 : combats deja a 3 etoiles dans ta partie (pve.stars), par difficulte : cauchemar3 ne les rejoue pas.
+  const SUFK = { normal: '@n', difficile: '@hn', extreme: '@xn', campNormal: '', campDifficile: '@h', campExtreme: '@x' }, valides = {};
+  for (const k of Object.keys(SUFK)) valides[k] = 0;
+  for (const [f, v] of Object.entries(sv?.pve?.stars || {})) if (v >= 3) { const m = /(@xn|@hn|@n|@x|@h)?$/.exec(f)[0] || '', k = Object.keys(SUFK).find(x => SUFK[x] === m); if (k) valides[k]++; }
+  return { valides, cartes, parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d, false), raretesDernier: d?.raretes || null, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
     dernier: d ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.trios, combatsSimules: d.combatsSimules, cartes: d.cartes, entonnoir: d.entonnoir || null, combats: d.combats || null,
       campSous100: d.etages?.specialistes?.campagneSous100 ?? null, minParCombat: d.etages?.specialistes?.minutesParCombat ?? null, dureeParCombat: d.etages?.duree ?? null } : null };
 }
