@@ -153,6 +153,12 @@ const connu1 = (t, fi) => {
 // ---------- calcul d'un lot (journal d'abord, combats manquants en parallele) ----------
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined, version);
 let simules = 0, repris = 0;
+// Paquet complet joue : journal, etoiles par combat, base commune.
+function enregistrer(it, k, st) {
+  const n = st.length; let s3 = 0; for (let c = 0; c < n; c++) if (st[c] === '3') s3++;
+  J.set(k, n + ',' + s3 + ',' + st); noter(it.t, it.di, it.pi, it.seed, st);
+  if (PARTAGE_OK && PART.envoyer && it.seed <= 3) { const cartes = it.team.map(carteLot); if (cleTrioDe(cartes) === it.ck) aEnvoyer.push({ cartes, di: it.di, pi: it.pi, clePaquet: paquets[it.di][it.pi].cle, graine: it.seed, n, s3 }); }
+}
 async function jouer(items) { // items : { di, pi, seed, team, ck, t? } -> [n, s3]
   const out = new Array(items.length), todo = [];
   items.forEach((x, i) => { const k = cle(x.di, x.pi, x.seed, x.ck), v = J.get(k); if (v) { const a = v.split(','); out[i] = [+a[0], +a[1]]; noter(x.t, x.di, x.pi, x.seed, a[2]); repris++; } else todo.push([i, k]); });
@@ -161,8 +167,7 @@ async function jouer(items) { // items : { di, pi, seed, team, ck, t? } -> [n, s
     // Type 'etoiles' : meme simulation, mais l'etoile de chaque combat revient aussi (n = combats, s3 = combats a 3 etoiles).
     const r = (await pool.runAll(part.map(([i]) => ({ type: 'etoiles', team: items[i].team, fights: paquets[items[i].di][items[i].pi].f, seeds: [items[i].seed] })), WA, { stop3: true }, 40))
       .map(y => ({ n: y.st.length, s3: [...y.st].filter(c => c === '3').length, st: y.st }));
-    r.forEach((x, j) => { out[part[j][0]] = [x.n, x.s3]; J.set(part[j][1], x.n + ',' + x.s3 + ',' + x.st); simules += x.n; noter(items[part[j][0]].t, items[part[j][0]].di, items[part[j][0]].pi, items[part[j][0]].seed, x.st);
-      const it = items[part[j][0]]; if (PARTAGE_OK && PART.envoyer && it.seed <= 3) { const cartes = it.team.map(carteLot); if (cleTrioDe(cartes) === it.ck) aEnvoyer.push({ cartes, di: it.di, pi: it.pi, clePaquet: paquets[it.di][it.pi].cle, graine: it.seed, n: x.n, s3: x.s3 }); } });
+    r.forEach((x, j) => { out[part[j][0]] = [x.n, x.s3]; simules += x.n; enregistrer(items[part[j][0]], part[j][1], x.st); });
     J.flush(); versFile();
     if (PAUSE && Date.now() - T0 > PAUSE * 60000) await pause();
   }
@@ -197,7 +202,77 @@ function eliminer(alive, pi) {
 }
 // 5.42.1 : lots de 60 000 paquets construits au fur et a mesure (avant : tous les paquets du tour d'un coup, soit 21 M objets
 // pour 7 M trios, plusieurs Go de memoire).
+// 5.45 : tour de course en deux moities (gros tours seulement). Tous les trios jouent la 1re moitie de leurs paquets N/D/E ;
+// les mieux places a mi-chemin jouent la 2e moitie et donnent la barre de chaque objectif (Ke meilleure borne basse, paquets
+// complets : elle ne depasse jamais la barre que le tour complet aurait). Un trio dont la borne haute a mi-chemin (memes regles,
+// moitie des combats) est sous cette barre pour tous les objectifs qui eliminent est ecarte sans jouer la 2e moitie.
+// Les autres jouent la 2e moitie : leurs paquets complets sont identiques (graine par combat), journal et base commune inchanges.
+// Moitie jouee gardee au journal (cle du paquet + '|1/2') pour la reprise. Etat dans des tableaux de nombres (pas d'objet par
+// trio : 7 M trios = 21 M moities). --sans-demi : tour complet pour tous (avant 5.45).
+const DEMI = !arg('sans-demi'), DEMI_MIN = +arg('demi-min', 3000), DEMI_BARRE = +arg('demi-barre', 2000);
+const objsTour = pi => pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0);
+let demiEcartes = 0, demiEconomie = 0;
+const nb3 = st => { let s = 0; for (let c = 0; c < st.length; c++) if (st[c] === '3') s++; return s; };
+async function tourDemi(alive, pi, dis) {
+  const ds = dis.filter(di => paquets[di][pi]), nd = ds.length, nA = alive.length, h = ds.map(di => Math.ceil(paquets[di][pi].f.length / 2));
+  const cleP = (j, d) => cle(ds[d], pi, 1, cleTrio[alive[j]]), cleH = (j, d) => h53(`${sigG}|${wKey}|${paquets[ds[d]][pi].cle}|1|${cleTrio[alive[j]]}|1/2`);
+  // par (trio j, difficulte d) : paquet complet (fN combats, fS a 3 etoiles ; fN = 0 si pas fini) et 1re moitie (hS, hM = etoiles en bits)
+  const fN = new Uint8Array(nA * nd), fS = new Uint8Array(nA * nd), hS = new Uint8Array(nA * nd), hM = new Uint32Array(nA * nd), hJ = new Uint8Array(nA * nd);
+  const item = (j, d) => ({ di: ds[d], pi, seed: 1, team: trios[alive[j]].map(id => carte(id)), ck: cleTrio[alive[j]], t: alive[j] });
+  const moitie = (j, d) => { let st = ''; const m = hM[j * nd + d]; for (let c = 0; c < h[d]; c++) st += m >> c & 1 ? '3' : '0'; return st; };
+  const poseH = (x, st) => { let m = 0; for (let c = 0; c < st.length; c++) if (st[c] === '3') m |= 1 << c; hM[x] = m; hS[x] = nb3(st); hJ[x] = 1; };
+  // a) journal (paquet complet, ou moitie deja jouee), b) 1re moitie des autres, par lots de 20 000 trios
+  for (let a = 0; a < nA;) {
+    const todo = [];
+    for (; a < nA && todo.length < 60000; a++) for (let d = 0; d < nd; d++) {
+      const x = a * nd + d, v = J.get(cleP(a, d));
+      if (v) { const z = v.split(','); fN[x] = +z[0]; fS[x] = +z[1]; noter(alive[a], ds[d], pi, 1, z[2]); repris++; continue; }
+      const m = J.get(cleH(a, d)); if (m) { poseH(x, m); repris++; } else todo.push(x);
+    }
+    const r = await pool.runAll(todo.map(x => ({ type: 'etoiles', team: trios[alive[x / nd | 0]].map(id => carte(id)), fights: paquets[ds[x % nd]][pi].f.slice(0, h[x % nd]), seeds: [1] })), WA, { stop3: true }, 40);
+    r.forEach((y, i) => { const x = todo[i]; poseH(x, y.st); J.set(cleH(x / nd | 0, x % nd), y.st); simules += y.st.length; });
+    J.flush(); if (PAUSE && Date.now() - T0 > PAUSE * 60000) await pause();
+    if (Date.now() - dernierLog > 60000) { dernierLog = Date.now(); log(`  tour ${pi + 1}, 1re moitie : ${a} / ${nA} trios, ${Math.round(simules / ((Date.now() - T0) / 1000))} combats/s`); }
+  }
+  // score d'un trio avec ce tour : paquets complets, sinon 1re moitie
+  const complet = j => { for (let d = 0; d < nd; d++) if (!fN[j * nd + d]) return false; return true; };
+  const borne = (j, o, haut) => { const t = alive[j], ps = OBJS[o].d; let p = 0, v = 0;
+    for (const dd of ps) { const d = ds.indexOf(dd), x = j * nd + d; let n = N[t * ND + dd], s = S3[t * ND + dd];
+      if (d >= 0) { if (fN[x]) { n += fN[x]; s += fS[x]; } else if (hJ[x]) { n += h[d]; s += hS[x]; } }
+      const q = n ? s / n : 0, qq = (s + 1) / (n + 2); p += q; v += qq * (1 - qq) / Math.max(1, n); }
+    p /= ps.length; const se = Math.sqrt(v) / ps.length; return haut ? p + Z * se : p - Z * se; };
+  // c) 2e moitie pour une liste de trios (index dans alive)
+  const finir = async js => {
+    const xs = []; for (const j of js) for (let d = 0; d < nd; d++) if (!fN[j * nd + d]) xs.push(j * nd + d);
+    for (let a = 0; a < xs.length; a += 60000) {
+      const part = xs.slice(a, a + 60000);
+      const r = await pool.runAll(part.map(x => ({ type: 'etoiles', team: trios[alive[x / nd | 0]].map(id => carte(id)), fights: paquets[ds[x % nd]][pi].f.slice(h[x % nd]), seeds: [1] })), WA, { stop3: true }, 40);
+      r.forEach((y, i) => { const x = part[i], j = x / nd | 0, d = x % nd, st = moitie(j, d) + y.st; simules += y.st.length; enregistrer(item(j, d), cleP(j, d), st); fN[x] = st.length; fS[x] = nb3(st); });
+      J.flush(); versFile(); if (PAUSE && Date.now() - T0 > PAUSE * 60000) await pause();
+    }
+  };
+  // d) barre : les DEMI_BARRE meilleurs a mi-chemin (borne basse, chaque objectif) finissent leurs paquets
+  const objs = objsTour(pi), meilleurs = new Uint8Array(nA), lo = new Float64Array(nA);
+  for (const o of objs) {
+    for (let j = 0; j < nA; j++) lo[j] = borne(j, o, false);
+    // les k plus grandes bornes basses, a egalite les premiers trios (sans trier 7 M objets : seuil puis parcours)
+    const k = Math.min(DEMI_BARRE, nA), seuil = lo.slice().sort()[nA - k]; let pris = 0;
+    for (let j = 0; j < nA; j++) if (lo[j] > seuil) { meilleurs[j] = 1; pris++; }
+    for (let j = 0; j < nA && pris < k; j++) if (lo[j] === seuil) { meilleurs[j] = 1; pris++; }
+  }
+  await finir(Array.from({ length: nA }, (_, j) => j).filter(j => meilleurs[j]));
+  const bars = objs.map(o => { const L = []; for (let j = 0; j < nA; j++) if (complet(j)) L.push(borne(j, o, false)); L.sort((a, b) => b - a); return L.length >= K ? L[K - 1] : -Infinity; });
+  // e) ecartes a mi-chemin, les autres finissent
+  const ecarte = new Uint8Array(nA); let ne = 0, eco = 0;
+  for (let j = 0; j < nA; j++) if (!complet(j) && objs.every((o, i) => borne(j, o, true) < bars[i])) { ecarte[j] = 1; ne++; for (let d = 0; d < nd; d++) if (!fN[j * nd + d]) eco += paquets[ds[d]][pi].f.length - h[d]; }
+  await finir(Array.from({ length: nA }, (_, j) => j).filter(j => !ecarte[j] && !complet(j)));
+  for (let j = 0; j < nA; j++) for (let d = 0; d < nd; d++) { const x = j * nd + d, k = alive[j] * ND + ds[d]; if (fN[x]) { N[k] += fN[x]; S3[k] += fS[x]; } else if (hJ[x]) { N[k] += h[d]; S3[k] += hS[x]; } }
+  demiEcartes += ne; demiEconomie += eco;
+  log(`  tour ${pi + 1} en deux moities : ${ne} trios ecartes a mi-chemin (barres ${bars.map(b => b.toFixed(3)).join(' / ')})`);
+  return alive.filter((_, j) => !ecarte[j]);
+}
 async function tour(alive, pi, seed, dis = DIS_TOUTES) {
+  if (DEMI && seed === 1 && dis === DIS_ELIM && alive.length >= DEMI_MIN) return tourDemi(alive, pi, dis);
   const ds = dis.filter(di => paquets[di][pi]), total = alive.length * ds.length;
   for (let a = 0, fait = 0; a < alive.length;) {
     const items = [], idx = [];
@@ -224,15 +299,15 @@ if (PARTAGE_OK) {
 // les finalistes jouent ensuite la Campagne avec les memes graines (memes resultats pour eux, moitie moins de combats pour les autres).
 let alive = [...Array(T).keys()]; const entonnoir = [];
 for (let pi = 0; pi < TOURS; pi++) {
-  await tour(alive, pi, 1, DIS_ELIM);
-  const avant = alive.length; alive = eliminer(alive, pi); entonnoir.push(alive.length);
+  const avant = alive.length, garde = await tour(alive, pi, 1, DIS_ELIM); if (garde) alive = garde; // 5.45 : sans les ecartes a mi-paquet
+  alive = eliminer(alive, pi); entonnoir.push(alive.length);
   const ecoule = (Date.now() - T0) / 1000, vit = simules / Math.max(1, ecoule);
   log(`tour ${pi + 1}/${TOURS} : ${avant} -> ${alive.length} trios en course, ${simules} combats simules (${Math.round(vit)}/s), ${repris} paquets repris du journal`);
 }
 if (DIS_CAMP.length) { for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, 1, DIS_CAMP); log(`Campagne : ${alive.length} finalistes, tirage 1`); }
 // Finale : 2 tirages de plus sur tous les combats pour les survivants (le hasard du combat compte).
 for (const seed of [2, 3]) for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, seed);
-log(`finale : ${alive.length} trios, ${simules} combats simules au total`);
+log(`finale : ${alive.length} trios, ${simules} combats simules au total${demiEcartes ? `, ${demiEcartes} trios ecartes a mi-paquet (${demiEconomie} combats evites)` : ''}`);
 
 // ---------- classement et detail complet des meilleurs (combat complet : 3 et 2 etoiles, victoires, par monde, boss) ----------
 const top = (o, n = 10) => alive.map(t => ({ t, ...score(t, o) })).sort((a, b) => b.p - a.p).slice(0, n);
@@ -324,7 +399,7 @@ if (!arg('sans-etages')) {
 // ---------- resultats ----------
 const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, raretes: RARETES, trios: T, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
-  vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, mondes: MONDES, repartition,
+  vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, demiPaquet: DEMI ? { ecartes: demiEcartes, combatsEvites: demiEconomie } : null, mondes: MONDES, repartition,
   meilleurs: Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), equipeActuelle, maintenant, cartesCles, collectifs, etages };
 // Base commune : envoi de ce qui reste, puis quelques controles du travail des autres.
 if (PARTAGE_OK) {
