@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.49.0
+// @version      5.49.1
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.49.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.49.1') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.49.0',
+          __v: '5.49.1',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1793,12 +1793,24 @@
             const { pull: pb } = ui();
             let pn = document.getElementById('kitsuPlan');
             if (!pn) { pn = document.createElement('div'); pn.id = 'kitsuPlan'; pn.className = 'kitsu-panel'; pn.style.cssText = 'bottom:90px;font-size:12px'; document.body.appendChild(pn); }
-            let busy = false, shownAt = 0;
+            // 5.49.1 : case « Me proposer la Tour », visible dans l'onglet Plan partout (pas seulement sur la carte de l'Aventure).
+            const twOpt = P => { const tw = KitsuAI._karTour() || P?.tour, on = lsGet('kitsu_ai_tourGuide', false) === true, best = save().tower?.best || 0, et = tw ? String(Math.round(10 * tw.etage) / 10).replace('.', ',') : '';
+                  return `<div style="margin-top:6px;border-top:1px solid #262a33;padding-top:6px">${tw ? `Tour : ${tw.equipe.map(short).join(', ')}, étage ~${et}${best ? ` (record ${best})` : ''}` : 'Tour de l\'infini'}`
+                    + `<div id="kitsuTwOpt" style="display:flex;align-items:center;gap:8px;margin-top:5px;cursor:pointer"><span style="width:30px;height:16px;border-radius:9px;background:${on ? '#ff7a2f' : '#2a2d38'};border:1px solid ${on ? '#ff7a2f' : '#3a3f50'};position:relative;flex:none"><span style="position:absolute;top:2px;left:${on ? 16 : 2}px;width:10px;height:10px;border-radius:50%;background:${on ? '#111' : '#7d8494'}"></span></span><span>Me proposer la Tour dans le guide</span></div>`
+                    + `<div style="opacity:.6;margin-top:3px">Cochée : la Tour revient seulement après la Campagne, et seulement si la prévision dépasse vraiment ton record.</div></div>`; };
+            let busy = false, shownAt = 0, horsCarte = 0;
+            const brancher = () => { const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; horsCarte = 0; }; };
             clearInterval(window.__kitsuPlanT);
             window.__kitsuPlanT = setInterval(async () => {
               if (document.hidden) return;
               const onMap = /adventure/.test(location.hash) && !liveBattle() && !prepScreen();
-              if (!onMap) { pn.style.display = 'none'; return; }
+              if (!onMap) {
+                pn.style.display = 'block'; shownAt = 0;
+                if (Date.now() - horsCarte < 5000 && pn.innerHTML) return;
+                pn.innerHTML = '<div class="k-ttl">Plan du moment</div><div style="opacity:.7">Les combats du plan s\'affichent sur la carte de l\'Aventure.</div>' + twOpt(lsGet('kitsu_ai_plan', null));
+                horsCarte = Date.now(); brancher(); return;
+              }
+              horsCarte = 0;
               pn.style.display = 'block';
               if (busy) return;
               let P = lsGet('kitsu_ai_plan', null);
@@ -1811,13 +1823,10 @@
                 + top.map((r, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${r.nom}${r.boss ? ' (boss)' : ''} · ${r.etoiles}/3</span><span class="p">${Math.round(r.troisEtoiles * 100)} %</span><span class="k-sub">${r.equipe.map(short).join(', ')}</span><span class="k-bar"><b style="width:${Math.round(r.troisEtoiles * 100)}%"></b></span></div>`).join('')
                 + (P.bloquants.length ? `<div class="k-warn" style="margin-top:5px">Bloquants : ${P.bloquants.map(r => r.nom).join(', ')}</div>` : '')
                 + (P.avenir?.length ? '<div class="k-sec"><span>Prochains murs</span><span></span></div>' + P.avenir.slice(0, 3).map(r => `<div>${r.monde} « ${r.nom} » · ${Math.round(r.victoire * 100)} % · <span class="k-warn">${r.niveauxEnPlus ? `+${r.niveauxEnPlus} niveaux, ~${r.combatsDeFarm} farms` : 'hors de portée'}</span></div>`).join('') : '')
-                + (() => { const tw = KitsuAI._karTour() || P.tour, on = lsGet('kitsu_ai_tourGuide', false) === true, best = save().tower?.best || 0, et = tw ? String(Math.round(10 * tw.etage) / 10).replace('.', ',') : '';
-                  return `<div style="margin-top:6px;border-top:1px solid #262a33;padding-top:6px">${tw ? `Tour : ${tw.equipe.map(short).join(', ')}, étage ~${et}${best ? ` (record ${best})` : ''}` : 'Tour de l\'infini'}`
-                    + `<div id="kitsuTwOpt" style="display:flex;align-items:center;gap:8px;margin-top:5px;cursor:pointer"><span style="width:30px;height:16px;border-radius:9px;background:${on ? '#ff7a2f' : '#2a2d38'};border:1px solid ${on ? '#ff7a2f' : '#3a3f50'};position:relative;flex:none"><span style="position:absolute;top:2px;left:${on ? 16 : 2}px;width:10px;height:10px;border-radius:50%;background:${on ? '#111' : '#7d8494'}"></span></span><span>Me proposer la Tour dans le guide</span></div>`
-                    + `<div style="opacity:.6;margin-top:3px">Cochée : la Tour revient seulement après la Campagne, et seulement si la prévision dépasse vraiment ton record.</div></div>`; })()
+                + twOpt(P)
                 + `<div class="k-foot"><span>Ensuite <b>${P.apresPlan} gemmes</b>, soit ${P.tirages10} tirage${P.tirages10 > 1 ? 's' : ''} x10</span><span>${P.banniere}</span></div>`;
               shownAt = Date.now();
-              const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; };
+              brancher();
             }, 1000);
           },
 

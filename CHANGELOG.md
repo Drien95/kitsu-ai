@@ -4,6 +4,10 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.49.1
+
+Onglet Plan du script : la case « Me proposer la Tour dans le guide » est visible partout, plus seulement sur la carte de l'Aventure (hors de la carte, l'onglet n'affichait que l'objectif de bannière). Les combats du plan restent affichés sur la carte de l'Aventure.
+
 ## 5.49.0
 
 Guide : la Tour devient un choix, la Campagne passe d'abord.
