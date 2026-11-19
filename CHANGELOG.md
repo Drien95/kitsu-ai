@@ -4,7 +4,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.42.1
+## 5.43.2
 
 Campagne et Tour : les très grosses collections ne plantent plus faute de mémoire.
 
@@ -13,9 +13,29 @@ Campagne et Tour : les très grosses collections ne plantent plus faute de mémo
 - **Trios** : tableau compact (3 × 16 bits par trio) au lieu de 7 M petits tableaux ; clés de journal calculées à la demande ; plus de table de 7 M clés pour retrouver un trio (rang calculé) ; candidats par combat choisis sans trier les 7 M trios ; élimination sans un objet par trio ; compteurs sur 16 bits.
 - **Tour de course** : paquets préparés par lots de 60 000 au lieu de 21 M objets d'un coup.
 - **Journal** (`lib/journal.mjs`) : le 1er tour de 7 M trios écrit 21 M lignes. Une table de Node plafonne à 16,7 M clés : 2e plantage reproduit (`Map maximum size exceeded`). Les clés sont maintenant des nombres dans une table de hachage hors du tas, et les valeurs, très répétitives, sont mises en commun ; fichier relu par morceaux de 32 Mo ; compaction par lots. Mesuré avec 21 M lignes : écrites, relues (21 s) et compactées (14 s), 0,8 Go au plus.
-- **Mesures** (VM 4 fils, Node 22, moteur B4t5msj4, 348 cartes, les 6 difficultés) : avant, plantage immédiat ; après, 0,5 Go au début du 1er tour. Course complète sur 100 cartes (161 700 trios, Cauchemar, 96 combats par difficulté) : résultats identiques à la 5.42.0 (top 10 des 4 objectifs, meilleur trio des 288 combats, plan ; les trios essayés par le script restent dans l'ordre d'avant, sinon une égalité à 100 % se départage autrement).
-- **Tour** (`tour.mjs`, `lib/tour.mjs`) : mêmes trios compacts, clés à la demande, manche jouée par lots de 20 000 trios, élimination sans un objet par trio. 348 cartes : 2,6 Go dès la 1re manche avant, 0,55 Go après. Essai 3 000 trios : `tour.json` identique (classement, entonnoir, murs, collectifs).
-- Tests : 32.
+- **Mesures** (VM 4 fils, Node 22, moteur B4t5msj4, 348 cartes, les 6 difficultés) : avant, plantage immédiat ; après, 0,5 Go au début du 1er tour. Course complète sur 100 cartes (161 700 trios, Cauchemar, 96 combats par difficulté) : résultats identiques à la 5.42.0, et à la 5.43.1 après fusion (top 10 des 4 objectifs, meilleur trio des 288 combats, plan ; les trios essayés par le script restent dans l'ordre d'avant, sinon une égalité à 100 % se départage autrement).
+- **Tour** (`tour.mjs`, `lib/tour.mjs`) : mêmes trios compacts, clés à la demande, manche jouée par lots de 20 000 trios, élimination sans un objet par trio ; le travail de la manche annoncé par la 5.43.1 est compté sans liste d'objets. 348 cartes : 2,6 Go dès la 1re manche avant, 0,55 Go après. Essai 3 000 trios : `tour.json` identique (classement, entonnoir, murs, collectifs).
+- Tests : 34.
+
+## 5.43.1
+
+Tour de l'infini : ce que le panneau annonce correspond au travail réel du calcul.
+
+- **Avant** : la durée prévue comptait une montée par trio, même quand le journal en avait déjà la plupart (une relance après une nouvelle carte annonçait la même durée qu'un premier calcul). La tuile « Déjà en mémoire » montrait la taille du journal le plus récent sans vérifier qu'il servirait encore (patch du jeu, IA changée, autres niveaux). Pendant le calcul, la barre donnait 70 % à la 1re manche et 24 % aux suivantes quel que soit le travail, et ne bougeait qu'une fois par minute.
+- **Prévision** (`/api/tour/prevision?niveaux=`) : `tour.mjs` écrit `cache/tour-etat.json` (journal utilisé, moteur, IA, clé de chaque carte par mode de niveaux). Le serveur ne compte une reprise que si le moteur et l'IA sont les mêmes, et seulement pour les trios dont les 3 cartes ont la même clé (niveau, étoiles, liens, carte). Tuiles : montées à simuler, reprises du journal (ou la raison pour laquelle rien n'est repris), durée sur les seules montées à simuler, manches suivantes comprises (entonnoir du calcul précédent).
+- **Pendant le calcul** : `tour.mjs` annonce le travail prévu, puis pour chaque manche les montées à simuler et les reprises. La barre suit les montées vraiment simulées, avec « reste ≈ » à la vitesse mesurée ; mise à jour toutes les 30 s au plus.
+
+## 5.43.0
+
+Campagne : ton trio, combat par combat.
+
+- **Nouvelle carte en haut de la page Campagne** : « Ton trio, combat par combat ». Campagne ou Cauchemar, puis un monde ; chaque combat a une ligne et chaque difficulté (Normal, Difficile, Extrême) une colonne, avec le trio qui y fait le plus souvent 3★ et son %. Par monde et difficulté, le **trio de base** (celui à égalité du meilleur sur le plus de combats) est en tête de colonne : les lignes « = trio de base » le rejouent, les lignes orange disent quand changer d'équipe. Sur le résultat du 18/11, Dragon Ball Z Cauchemar Normal : trio de base sur 93 combats sur 172. Filtres : seulement où changer, sous le seuil. Clic sur un combat : trios à égalité, suivants, trio du plan, script seul, cause du diagnostic.
+- **Objectif : tout au 99 / Avec mes niveaux actuels** : la 2e lecture ne garde que les trios dont les 3 cartes sont déjà au 99 dans ta sauvegarde. Les portraits portent le niveau actuel des cartes pas encore au 99. En lecture « au 99 », si le trio montré n'est pas prêt, la ligne dit ce que tu peux jouer tout de suite. À égalité, un trio déjà prêt passe devant.
+- **Calcul** (`lib/etages.mjs`, `cauchemar3.mjs`) : nouvelle colonne `pret` dans `etages.combats` (meilleur trio aux 3 cartes au 99 sur ce combat, quel que soit son %), ce trio est confirmé avec les autres sur chaque combat où il a fait 3★ au moins une fois, et les 40 meilleurs trios prêts du classement rejoignent les candidats (`--candidats-prets 40`, en niveaux 99 seulement). Avant, `autres` ne gardait que les trios au-dessus du seuil et la lecture « niveaux actuels » restait souvent vide : le calcul du 18/11 n'a pas cette colonne, il faut relancer la Campagne pour la remplir.
+- **Futurs mondes et combats** : `/api/campagne/prevision` donne la carte des mondes et combats du jeu par difficulté. Un monde, un combat ou une difficulté absents du dernier calcul apparaissent « à calculer » (puce « + monde », étiquette « nouveau »).
+- **Calcul privé** : `window.CAMP_EXACT = { '<combat>': { ids, p } }` puis `tcRender()` ; ce trio passe devant le public, marqué « exact ».
+- La carte « Meilleur trio par combat » devient « Plan et diagnostic par combat » (son tableau combat par combat est remplacé par la nouvelle carte).
+- Tests : 34 (2 nouveaux sur la colonne `pret`).
 
 ## 5.42.0
 

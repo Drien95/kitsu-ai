@@ -14,7 +14,10 @@ import { loadEngine } from './lib/charger.mjs';
 import { fiche } from './lib/fiche.mjs';
 import { makePool, baisserPriorite } from './lib/pool.mjs';
 import { dir as D, DATA, CODE } from './lib/chemins.mjs';
-import { listerPoids, restaurerPoids } from './lib/historique.mjs';
+import { listerPoids, restaurerPoids, reglagesAnalyse } from './lib/historique.mjs';
+import { W_DEFAUT } from './lib/sim.mjs';
+import { h53, makeSigCarte } from './lib/journal.mjs';
+import { cleCarteTour } from './lib/tour.mjs';
 import { planTour, planNaif, finir as finirRaid, sieges as siegesRaid } from './lib/raid.mjs';
 import { plan as planXp } from './lib/plan.mjs';
 import * as MODELE from './lib/modele.mjs';
@@ -73,20 +76,43 @@ function prevision() {
   if (COMBATS_DIFF?.v !== VER) {
     const camp = G.ALL_WORLDS.filter(w => w.id !== 'halloween').flatMap(w => w.fights.map(f => f.id));
     const n = suf => camp.filter(f => { try { return !!G.findFight(f + suf); } catch { return false; } }).length;
-    COMBATS_DIFF = { v: VER, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') } };
+    // 5.43 : carte des mondes et combats du jeu (meme ordre de difficultes que cauchemar3.json), pour que l'onglet Campagne
+    // montre les mondes et combats arrives depuis le dernier calcul. Masque : bit k = le combat existe dans la difficulte k.
+    const SUF = ['@n', '@hn', '@xn', '', '@h', '@x'], existe = f => { try { return !!G.findFight(f); } catch { return false; } };
+    const carte = G.ALL_WORLDS.filter(w => w.id !== 'halloween').map(w => ({ id: w.id, nom: w.name || w.title || w.id, f: w.fights.map((f, i) => [f.id, f.idx ?? i, f.t || f.id, f.boss ? 1 : 0, SUF.reduce((m, s, k) => m | (existe(f.id + s) ? 1 << k : 0), 0)]) }));
+    COMBATS_DIFF = { v: VER, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') }, carte };
   }
   let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^cauchemar3-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
   const d = readJ(D('resultats', 'cauchemar3.json'));
-  return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
+  return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
     dernier: d ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.trios, combatsSimules: d.combatsSimules, cartes: d.cartes } : null };
 }
 // Tour : meme principe (cartes SSR/UR/LR possedees, tous leurs trios), journal cache/tour-*.jsonl.
-function previsionTour() {
-  const G = ENG.G, sv = readJ(D('data', 'sauvegarde.json')), cartes = Object.keys(sv?.owned || {}).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r)).length;
-  let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^tour-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
+// 5.42.1 : montees de 1re manche deja dans le journal, comptees comme tour.mjs les reprendra. Le journal ne sert que si le moteur
+// du jeu et l'IA n'ont pas change depuis (cache/tour-etat.json, ecrit par tour.mjs) ; un trio n'est repris que si ses 3 cartes ont
+// la meme cle (niveau, etoiles, liens, stats de la carte).
+let SIGC = { v: null, f: null };
+function previsionTour(niv) {
+  const G = ENG.G, sv = readJ(D('data', 'sauvegarde.json')), ids = Object.keys(sv?.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r)), cartes = ids.length;
+  const C3 = k => k * (k - 1) * (k - 2) / 6, trios = C3(cartes), mode = niv === '99' ? '99' : 'actuel';
+  let journal = 0, reprises = 0, etat = 'vide';
+  try {
+    const e = readJ(D('cache', 'tour-etat.json')), fj = e?.fichier && D('cache', path.basename(e.fichier));
+    if (fj && existsSync(fj)) {
+      journal = statSync(fj).size;
+      const wKey = h53(JSON.stringify(reglagesAnalyse(sv, W_DEFAUT).W));
+      if (e.version !== VER) etat = 'patch'; else if (e.wKey !== wKey) etat = 'ia'; else if (!e[mode]) etat = 'autreMode';
+      else {
+        if (SIGC.v !== VER) SIGC = { v: VER, f: makeSigCarte(G, ENG.B) };
+        const vu = new Set(e[mode].cles), lv = id => mode === '99' ? 99 : sv.lv?.[id]?.l || 1;
+        const k = ids.filter(id => { const l = sv.lk?.[id]; return vu.has(cleCarteTour({ id, lv: lv(id), stars: sv.stars?.[id] || 0, ...(l ? { lk: l } : {}) }, SIGC.f)); }).length;
+        reprises = C3(k); etat = 'ok';
+      }
+    }
+  } catch {}
   const d = readJ(D('resultats', 'tour.json'));
-  return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal, record: sv?.tower?.best ?? null,
-    dernier: d?.methode === 'course' ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.triosEssayes } : null };
+  return { cartes, trios, aSimuler: trios - reprises, reprises, etatJournal: etat, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal, record: sv?.tower?.best ?? null,
+    dernier: d?.methode === 'course' ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.triosEssayes, montees: d.monteesSimulees, entonnoir: d.entonnoir } : null };
 }
 // ---------- reglages (onglet Reglages du panneau) ----------
 const REG_DEF = { conseilMs: 700, filsReserves: 2, objectif: 's2', partage: { utiliser: false, envoyer: false, verifier: false, controler: true }, alertes: { energie: true, guilde: true, evenements: true, bannieres: true, patch: true, calcul: true, calculConseille: true } };
@@ -329,7 +355,7 @@ http.createServer(async (req, res) => {
       // le panneau les affiche depuis leur adresse d'origine, comme le jeu.
       if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [] }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
-      if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour());
+      if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour(u.searchParams.get('niveaux')));
       if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
       // Repond tout de suite avec l'historique ; s'il manque un instantane, il est pris apres la reponse (le panneau redemande ensuite).
       if (u.pathname === '/api/modele') { const enCours = !MODELE.aJour(); send(res, 200, { historique: MODELE.historique(), adn: MODELE.adn(), enCours }); if (enCours) setImmediate(() => noterModele().catch(e => say('modele : ' + e.message))); return; }

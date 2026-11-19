@@ -7,9 +7,10 @@
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { arg, log, SAVE, WA, lvOf, stOf, ecrire, readJ } from './lib/commun.mjs';
 import { dir as D } from './lib/chemins.mjs';
-import { makeTour, statsEtages } from './lib/tour.mjs';
+import { makeTour, statsEtages, cleCarteTour } from './lib/tour.mjs';
 import { makeSim } from './lib/sim.mjs';
 import { shuffle } from './lib/commun.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal, nettoyerAnciens } from './lib/journal.mjs';
@@ -30,7 +31,7 @@ log(`moteur ${version}, ${IDS.length} cartes LR/UR/SSR, niveaux ${NIV}, ${pool.n
 const SIM = makeSim(G, B), sigG = signatureCombat(G, B, SIM, WA), wKey = h53(JSON.stringify(WA)), sigCarte = makeSigCarte(G, B);
 const sigT = h53(String(G.setupTower) + '#' + [1, 10, 37, 100, 150, 250, 400].map(fl => { try { return JSON.stringify(B.enemies(G.setupTower(fl, mk([IDS[0]]), 7).st).map(e => [e.id, e.lv, e.atk, e.def, e.maxHp, e.spd, e.boss ? 1 : 0])); } catch { return fl; } }).join('|'));
 const FJ = D('cache', `tour-${sigG}-${sigT}-${wKey}.jsonl`), J = ouvrirJournal(FJ), ANCIENS = nettoyerAnciens(D('cache'), 'tour-', FJ);
-const cleCarte = id => { const c = mk([id])[0]; return `${id}:${c.lv}:${c.stars}:${(c.lk || []).join('+')}:${sigCarte(id)}`; };
+const cleCarte = id => cleCarteTour(mk([id])[0], sigCarte);
 // 5.42.1 : trios ranges en tableau compact (3 x 16 bits) et cles calculees a la demande (avant : 7 M petits tableaux et 7 M chaines
 // pour 348 cartes, 2,6 Go des la 1re manche). tr[t] et l'ordre des trios sont inchanges.
 const S_ = [...IDS].sort((a, b) => a - b), NS = S_.length;
@@ -43,9 +44,21 @@ const eveil = garderEveille(), T0 = Date.now(); let dernierLog = Date.now();
 log(`${tr.length} trios, journal ${J.taille()} montees${eveil.ok ? ', PC garde eveille' : ''}`);
 const solo0 = await T.climb(IDS.map(id => mk([id])), [1, 2], 16);
 const solo = IDS.map((id, i) => ({ id, etage: (solo0[i][0] + solo0[i][1]) / 2 })).sort((a, b) => b.etage - a.etage);
-const C = await T.course({ trios: tr, cle: cles, J, garder: +arg('garder', 200), z: +arg('z', 3), manches: +arg('manches', 10), onManche: x => {
-  if (x.fin) log(`manche ${x.r}/${x.manches} : ${x.avant} -> ${x.apres} trios en course, ${x.montees} montees simulees (${Math.round(x.vitesse)}/s), ${x.repris} reprises du journal`);
-  else if (Date.now() - dernierLog > 60000) { dernierLog = Date.now(); log(`  manche ${x.r} : ${x.fait} / ${x.total} montees, ${Math.round(x.vitesse)} montees/s`); } } });
+// 5.42.1 : travail prevu = montees a simuler de la 1re manche (les reprises du journal ne coutent rien) + manches suivantes,
+// estimees sur l'entonnoir du calcul precedent (trios encore en course avant chaque manche ; tous si rien n'avait ete elimine)
+// au prorata des trios a simuler.
+const PREC = readJ(D('resultats', 'tour.json')), MANCHES = +arg('manches', 10); let PREVU = 0;
+const C = await T.course({ trios: tr, cle: cles, J, garder: +arg('garder', 200), z: +arg('z', 3), manches: MANCHES, onManche: x => {
+  if (x.debut) {
+    if (x.r === 1) { const ent = PREC?.methode === 'course' && Array.isArray(PREC.entonnoir) ? PREC.entonnoir.slice(0, MANCHES - 1) : null;
+      const tp = PREC?.triosEssayes || 0, suite = Math.round((ent ? ent.reduce((a, b) => a + (b >= tp ? tr.length : Math.min(b, tr.length)), 0) : 0.1 * tr.length * (MANCHES - 1)) * x.aFaire / Math.max(1, tr.length));
+      PREVU = x.aFaire + suite; log(`travail prevu : ${PREVU} montees a simuler (1re manche ${x.aFaire}, ${x.reprises} reprises du journal sur ${tr.length} ; manches suivantes ${ent ? 'environ' : 'estimees a'} ${suite})`); }
+    log(`manche ${x.r}/${x.manches} : ${x.aFaire} montees a simuler, ${x.reprises} reprises du journal`);
+  } else if (x.fin) log(`manche ${x.r}/${x.manches} : ${x.avant} -> ${x.apres} trios en course, ${x.montees} montees simulees (${Math.round(x.vitesse)}/s), ${x.repris} reprises du journal`);
+  else if (Date.now() - dernierLog > 30000) { dernierLog = Date.now(); log(`  manche ${x.r}/${x.manches} : ${x.fait} / ${x.total} montees (${x.montees} au total, prevu ${PREVU}), ${Math.round(x.vitesse)} montees/s`); } } });
+// Etat du journal pour la prevision du panneau (/api/tour/prevision) : quelles cartes ont toutes leurs montees de 1re manche.
+const etatJournal = () => { const f = D('cache', 'tour-etat.json'), e = readJ(f) || {}; if (e.fichier !== path.basename(FJ)) for (const k of Object.keys(e)) delete e[k]; return { f, e }; };
+if (!arg('max-trios')) try { const { f, e } = etatJournal(); e.fichier = path.basename(FJ); e.version = version; e.wKey = wKey; e[NIV] = { gen: J.generation, cles: IDS.map(cleCarte) }; writeFileSync(f, JSON.stringify(e)); } catch {}
 // Finale : les meilleurs (et ton trio actuel) font beaucoup de montees de plus, sur d'autres graines.
 const top = C.classement.slice(0, +arg('finale', 20)).map(x => x.t);
 if (actuelle.length === 3 && !top.some(t => t.slice().sort().join() === actuelle.slice().sort().join())) top.push(actuelle);
@@ -70,6 +83,8 @@ out.collectifs.forEach(l => log(`collectifs ${l.carte} : etage moyen ${l.avant} 
 if (!arg('max-trios') && !arg('garder-journal')) try {
   const c = J.compacter(+arg('journal-calculs', 2)), Mo = o => (o / 1048576).toFixed(1); out.journal = { ...c, anciens: ANCIENS };
   log(`journal : ${c.avant} -> ${c.apres} montees (${Mo(c.octetsAvant)} -> ${Mo(c.octetsApres)} Mo)${ANCIENS.length ? `, ${ANCIENS.length} ancien(s) journal(aux) supprime(s)` : ''}`);
+  // Un mode de niveaux dont les montees viennent d'un calcul trop ancien n'est plus dans le journal.
+  try { const { f, e } = etatJournal(); for (const k of ['actuel', '99']) if (e[k] && e[k].gen < c.generation - (+arg('journal-calculs', 2)) + 1) delete e[k]; writeFileSync(f, JSON.stringify(e)); } catch {}
 } catch (e) { log('journal : nettoyage reporte (' + e.message + ')'); }
 ecrire('tour.json', out);
 // Le panneau affiche la categorie « tour » de la derniere analyse : on la remplace par ce resultat plus complet.

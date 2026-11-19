@@ -2,7 +2,7 @@
 // La course classe les trios sur un score global : un trio qui serait le seul a faire 3 etoiles sur un combat precis y est
 // ecarte tot. Ici, chaque combat est regarde seul, en trois temps :
 //   1) candidats (meilleurs trios de la course + trios que le script Tampermonkey essaie + ton equipe) : chaque combat, 2 tirages ;
-//   2) confirmation : sur chaque combat, les 8 meilleurs candidats jouent `conf` tirages de plus ;
+//   2) confirmation : sur chaque combat, les 8 meilleurs candidats (et le meilleur trio deja au 99) jouent `conf` tirages de plus ;
 //   3) specialistes : sur les combats encore sous le seuil, TOUS les trios jouent le combat seul (1 tirage, puis 2 de plus pour
 //      ceux qui font 3 etoiles, puis `conf` de plus pour les 20 meilleurs), par priorite (Campagne puis Cauchemar Normal,
 //      Difficile, Extreme) dans un budget de temps (`budget` minutes) ; le journal garde chaque combat fini : la nuit suivante reprend.
@@ -42,9 +42,13 @@ export async function parCombat(o) {
 
   // 2) confirmation : les 8 meilleurs candidats de chaque combat (au moins une fois 3 etoiles) jouent `conf` tirages de plus
   const seeds2 = Array.from({ length: conf }, (_, i) => 3 + i), conf2 = [];
+  const pretT = o.dejaAu99 ? t => t >= 0 && trios[t].every(o.dejaAu99) : null, pretCi = pretT && cands.map(pretT);
   for (let fi = 0; fi < NF; fi++) {
     const L = []; for (let ci = 0; ci < NC; ci++) if (s[ci * NF + fi]) L.push(ci);
     L.sort((a, b) => s[b * NF + fi] - s[a * NF + fi] || a - b); for (const ci of L.slice(0, garde)) conf2.push({ ci, fi });
+    // 5.43 : le meilleur trio deja pret (3 cartes au niveau 99, o.dejaAu99) est confirme aussi, meme hors des 8 premiers :
+    // l'onglet Campagne montre ainsi, combat par combat, ce que tu peux jouer tout de suite.
+    const pr = pretCi && L.find(ci => pretCi[ci]); if (pr != null && !L.slice(0, garde).includes(pr)) conf2.push({ ci: pr, fi });
   }
   log(`par combat : confirmation de ${conf2.length} paires trio / combat (${conf} tirages de plus)`);
   for (let a = 0; a < conf2.length; a += 20000) {
@@ -128,12 +132,21 @@ export async function parCombat(o) {
     if (d && !top.includes(d)) top.push(d);
     return top.map(([t, p]) => [refT(t), r1(p)]);
   });
-  const combats = F.map((x, fi) => { const m = meilleur[fi], fd = x.f.split('@')[0]; return [x.f, x.di, refT(m.t), r1(m.p), refT(planDe[fi]), planDe[fi] >= 0 ? r1(pDe(planDe[fi], fi)) : 0, m.spec ? 1 : 0, r1(pScript[fi]), fd, autres[fi]]; });
+  // 5.43 : meilleur trio deja pret de chaque combat (3 cartes au 99), quel que soit son taux : [trio, %] ; null si aucun trio
+  // pret n'a ete joue sur ce combat (aucune carte au 99, ou aucun trio pret parmi les candidats et les specialistes).
+  const pret = F.map((_, fi) => {
+    if (!pretT) return null; let b = -1, bp = -1, bc = -1; // un trio confirme (`plein` tirages) passe devant un trio joue 2 fois
+    const voir = (t, p, c) => { if (c > bc || (c === bc && p > bp)) { b = t; bp = p; bc = c; } };
+    for (let ci = 0; ci < NC; ci++) if (pretCi[ci] && n[ci * NF + fi]) voir(cands[ci], P(ci, fi), n[ci * NF + fi] >= plein ? 1 : 0);
+    for (const x of specs.get(fi) || []) { const t = indexTrio.get(x.ids.join('-')); if (pretT(t)) voir(t, x.s / x.n, 1); }
+    return b >= 0 ? [refT(b), r1(bp)] : null;
+  });
+  const combats = F.map((x, fi) => { const m = meilleur[fi], fd = x.f.split('@')[0]; return [x.f, x.di, refT(m.t), r1(m.p), refT(planDe[fi]), planDe[fi] >= 0 ? r1(pDe(planDe[fi], fi)) : 0, m.spec ? 1 : 0, r1(pScript[fi]), fd, autres[fi], pret[fi]]; });
   const resume = DIFF.map(([d], di) => { const L = combats.filter(c => c[1] === di); return { difficulte: d, combats: L.length, troisEtoilesSur: L.filter(c => c[3] >= Math.round(seuil * 100)).length, script: L.filter(c => c[7] >= Math.round(seuil * 100)).length, specialistes: L.filter(c => c[6]).length, impossibles: L.filter(c => c[3] === 0).length }; });
   const duree = Math.round((Date.now() - T0) / 1000);
   log(`par combat termine en ${duree} s : ${trouves} combats ameliores par un specialiste, plan de ${plan.length} trios ; ${resume.map(r => `${r.difficulte} ${r.troisEtoilesSur}/${r.combats} (script ${r.script})`).join(', ')}`);
   return { date: new Date().toISOString(), duree, candidats: NC, tirages: plein, seuil: r1(seuil), simules, repris,
     specialistes: { sousSeuil, campagneSous100: campPlus, cherches: specs.size, cetteFois: msCombat.length, restants, minutesParCombat: msMoy ? +(msMoy / 60e3).toFixed(2) : null, minutesRestantes: msMoy ? Math.round(restants * msMoy / 60e3) : null, budget: Math.round(budget / 60e3), ameliores: trouves },
-    colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase', 'autres'],
+    colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase', 'autres', 'pret'],
     trios: table, plan: plan.map(x => ({ trio: ti.get(x.t), combats: x.combats })), resume, combats };
 }

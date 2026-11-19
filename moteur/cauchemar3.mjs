@@ -8,7 +8,7 @@
 // Journal (cache/cauchemar3-*.jsonl) : rien n'est recalcule tant que le combat, la carte, son niveau, ses etoiles,
 // ses collectifs, les combats et l'IA sont les memes ; il sert aussi de point de reprise apres une coupure.
 //   node cauchemar3.mjs [--niveaux 99|actuel] [--difficultes toutes|cauchemar] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
-//   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--seuil 60] [--sans-etages] [--sans-diagnostic]
+//   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--candidats-prets 40] [--seuil 60] [--sans-etages] [--sans-diagnostic]
 //   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs  --sans-liens
 //   journal : --garder-journal (pas de nettoyage a la fin)  --journal-calculs 2 (lignes gardees si servies par l'un des N derniers calculs)
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
@@ -293,10 +293,13 @@ if (!arg('sans-etages')) {
   const classes = alive.map(t => ({ t, lo: lo(t) })).sort(parLo).slice(0, NCE);
   if (classes.length < NCE) { const pire = []; for (let t = 0; t < T; t++) { if (!N[t * ND] || enCourse.has(t)) continue; const v = lo(t); if (pire.length < NCE || v > pire[pire.length - 1].lo) { pire.push({ t, lo: v }); pire.sort(parLo); if (pire.length > NCE) pire.pop(); } } classes.push(...pire); }
   const cur = indexTrio.get(equipe.slice().sort((a, b) => a - b).join('-'));
-  const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...scriptSet, ...(cur != null ? [cur] : [])])];
+  // 5.43 : plus les meilleurs trios deja prets (3 cartes au niveau 99), pour que chaque combat ait un trio jouable tout de suite.
+  const au99 = id => (SAVE.lv?.[id]?.l || 1) >= 99, NPRET = +arg('candidats-prets', 40);
+  const prets = NIV === '99' ? classes.filter(x => trios[x.t].every(au99)).slice(0, NPRET).map(x => x.t) : [];
+  const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...prets, ...scriptSet, ...(cur != null ? [cur] : [])])];
   const sigColl = h53(IDS.map(id => cleCarte(id)).join(','));
   etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, indexDe, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
-    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: id => (SAVE.lv?.[id]?.l || 1) >= 99 });
+    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: au99 });
   etages.scriptCartes = [...dix].map(nom); etages.reprisCourse = vusReutilises;
   log(`par combat : ${vusReutilises} combats repris de la course au lieu d'etre rejoues`);
   // 5.41 : liens actifs a cocher pour les trios du plan dont une carte a plus de 6 liens (lib/liens.mjs), sur leurs combats.
