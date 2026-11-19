@@ -83,13 +83,23 @@ const cleTrio = new Proxy([], { get: (o, k) => { if (k === 'length') return T; i
 const sigCombat0 = f => { try { return f + JSON.stringify(B.enemies(G.setupBattle(G.findFight(f), [{ id: IDS[0], lv: 1, stars: 0 }], 1).st).map(e => [e.id, e.name, e.lv, e.atk, e.def, e.maxHp, e.spd, e.boss ? 1 : 0])); } catch { return f; } };
 const sigCache = new Map(), sigCombat = f => sigCache.get(f) ?? sigCache.set(f, sigCombat0(f)).get(f);
 const camp = G.ALL_WORLDS.filter(w => w.id !== 'halloween').flatMap(w => w.fights.map(f => f.id));
+// 5.51 : combats valides (3 etoiles dans ta partie : pve.stars de la sauvegarde, envoye par le script depuis la 5.45). Ils ne sont
+// simules nulle part : ni course, ni etape par combat, ni plancher. --rejouer-valides : comme avant. --valides-de fichier.json : liste
+// de combats (mesures).
+const VALIDES = new Set(arg('rejouer-valides') ? [] : arg('valides-de') ? JSON.parse(readFileSync(arg('valides-de'), 'utf8')) : Object.entries(SAVE.pve?.stars || {}).filter(([, v]) => v >= 3).map(([f]) => f));
 const paquets = DIFF.map(([d, suf], di) => {
   let fl = shuffle(camp.map(f => f + suf).filter(f => { try { return !!G.findFight(f); } catch { return false; } }), 101 + di);
   if (arg('max-combats')) fl = fl.slice(0, +arg('max-combats'));
+  fl = fl.filter(f => !VALIDES.has(f)); // 5.51 : combats deja a 3 etoiles dans ta partie, jamais rejoues
   const out = []; for (let i = 0; i < fl.length; i += PAQ) { const f = fl.slice(i, i + PAQ); out.push({ f, cle: h53(d + '#' + f.map(sigCombat).join('|')) }); }
   return out;
 });
-const NCOMB = paquets.map(p => p.reduce((s, x) => s + x.f.length, 0)), TOURS = Math.max(...paquets.map(p => p.length));
+const NCOMB = paquets.map(p => p.reduce((s, x) => s + x.f.length, 0)), TOURS = Math.max(0, ...paquets.map(p => p.length));
+// 5.51 : moins de --seuil-direct (100) combats Cauchemar restants : pas de course. Chaque combat restant est cherche sur TOUS les
+// trios (specialistes de lib/etages.mjs), apres le plancher et les candidats. Mesure (161 700 trios, 4 fils) : les combats restants
+// sont les durs, la course n'y elimine plus personne (81 combats : 161 700 trios encore en course apres 3 tours, 1 038 s, avant la
+// finale) ; recherche directe 1 090 s pour ces 81, 334 s pour 30. --course : course quand meme.
+const NREST = NCOMB.slice(0, 3).reduce((a, b) => a + b, 0), SEUIL_DIRECT = +arg('seuil-direct', 100), DIRECT = VALIDES.size > 0 && NREST < SEUIL_DIRECT && !arg('course');
 const FJ = D('cache', `cauchemar3-${sigG}-${wKey}.jsonl`), J = ouvrirJournal(FJ);
 // 5.42 : journaux d'un ancien code de combat ou d'une ancienne IA, inutilises depuis 30 jours, supprimes.
 const ANCIENS = nettoyerAnciens(D('cache'), 'cauchemar3-', FJ);
@@ -181,8 +191,10 @@ async function pause() {
 
 // ---------- course avec elimination ----------
 const N = new Uint16Array(T * ND), S3 = new Uint16Array(T * ND); // 5.42.1 : 16 bits suffisent (au plus 3 tirages x 1 979 combats = 5 937 par difficulte)
+// 5.51 : une difficulte dont tous les combats sont valides ne compte pas (sinon son erreur type, sans combat, empeche toute elimination).
+const OBJS_D = OBJS.map(x => x.d.filter(d => NCOMB[d] > 0)), objsAvec = L => L.filter(o => OBJS_D[o].length);
 const score = (t, o) => { // proportion de 3 etoiles et erreur type, par difficulte ou en moyenne
-  const ps = OBJS[o].d; let p = 0, v = 0;
+  const ps = OBJS_D[o]; let p = 0, v = 0; if (!ps.length) return { p: 0, se: 0 };
   for (const d of ps) { const n = N[t * ND + d], q = n ? S3[t * ND + d] / n : 0, qq = (S3[t * ND + d] + 1) / (n + 2); p += q; v += qq * (1 - qq) / Math.max(1, n); }
   return { p: p / ps.length, se: Math.sqrt(v) / ps.length };
 };
@@ -191,7 +203,7 @@ const score = (t, o) => { // proportion de 3 etoiles et erreur type, par difficu
 function eliminer(alive, pi) {
   if (alive.length <= K) return alive;
   const garde = new Uint8Array(T);
-  for (const o of pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0)) {
+  for (const o of objsAvec(pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0))) {
     // 5.42.1 : bornes dans des tableaux de nombres (avant : un objet par trio, 7 M au 1er tour d'une grosse collection)
     const n = alive.length, lo = new Float64Array(n), hi = new Float64Array(n);
     for (let j = 0; j < n; j++) { const x = score(alive[j], o); lo[j] = x.p - Z * x.se; hi[j] = x.p + Z * x.se; }
@@ -210,7 +222,7 @@ function eliminer(alive, pi) {
 // Moitie jouee gardee au journal (cle du paquet + '|1/2') pour la reprise. Etat dans des tableaux de nombres (pas d'objet par
 // trio : 7 M trios = 21 M moities). --sans-demi : tour complet pour tous (avant 5.46).
 const DEMI = !arg('sans-demi'), DEMI_MIN = +arg('demi-min', 3000), DEMI_BARRE = +arg('demi-barre', 2000);
-const objsTour = pi => pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0);
+const objsTour = pi => objsAvec(pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0));
 let demiEcartes = 0, demiEconomie = 0;
 const nb3 = st => { let s = 0; for (let c = 0; c < st.length; c++) if (st[c] === '3') s++; return s; };
 async function tourDemi(alive, pi, dis) {
@@ -297,8 +309,10 @@ if (PARTAGE_OK) {
 } else { log(`partage : coupe pour ce calcul (${COUPE})`); if (PART_ON) PARTAGE.noter('coupe', { quoi: COUPE }); }
 // 5.27 : la Campagne (Normal, Difficile, Extreme) n'elimine personne : pendant la course, seuls les Cauchemar sont joues ;
 // les finalistes jouent ensuite la Campagne avec les memes graines (memes resultats pour eux, moitie moins de combats pour les autres).
-let alive = [...Array(T).keys()]; const entonnoir = [];
-for (let pi = 0; pi < TOURS; pi++) {
+if (VALIDES.size) log(`combats valides en jeu : ${VALIDES.size} jamais rejoues ; restent ${NCOMB.join(' / ')} combats (${DIFF.map(d => d[0]).join(' / ')})${DIRECT ? ` : moins de ${SEUIL_DIRECT} en Cauchemar, pas de course, recherche directe sur tous les trios` : ''}`);
+if (!NCOMB.some(n => n)) { log('tous les combats sont valides en jeu : rien a calculer, resultats precedents gardes'); eveil.fin(); await pool.close(); process.exit(0); }
+let alive = DIRECT ? [] : [...Array(T).keys()]; const entonnoir = [];
+for (let pi = 0; pi < (DIRECT ? 0 : TOURS); pi++) {
   const avant = alive.length, garde = await tour(alive, pi, 1, DIS_ELIM); if (garde) alive = garde; // 5.46 : sans les ecartes a mi-paquet
   alive = eliminer(alive, pi); entonnoir.push(alive.length);
   const ecoule = (Date.now() - T0) / 1000, vit = simules / Math.max(1, ecoule);
@@ -307,9 +321,9 @@ for (let pi = 0; pi < TOURS; pi++) {
     const top = []; for (const t of alive) { const p = score(t, IMOY).p; if (top.length < 10 || p > top[top.length - 1].p) { top.push({ t, p }); top.sort((a, b) => b.p - a.p); if (top.length > 10) top.pop(); } }
     if (top.length) log(`top 10 tour ${pi + 1} : ${top.map(x => trios[x.t].join(',') + '=' + (100 * x.p).toFixed(1)).join(' | ')}`); }
 }
-if (DIS_CAMP.length) { for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, 1, DIS_CAMP); log(`Campagne : ${alive.length} finalistes, tirage 1`); }
+if (DIS_CAMP.length && !DIRECT) { for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, 1, DIS_CAMP); log(`Campagne : ${alive.length} finalistes, tirage 1`); }
 // Finale : 2 tirages de plus sur tous les combats pour les survivants (le hasard du combat compte).
-for (const seed of [2, 3]) for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, seed);
+if (!DIRECT) for (const seed of [2, 3]) for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, seed);
 log(`finale : ${alive.length} trios, ${simules} combats simules au total${demiEcartes ? `, ${demiEcartes} trios ecartes a mi-paquet (${demiEconomie} combats evites)` : ''}`);
 
 // ---------- classement et detail complet des meilleurs (combat complet : 3 et 2 etoiles, victoires, par monde, boss) ----------
@@ -411,7 +425,8 @@ if (!arg('sans-etages')) {
   }
   if (acquisJeu.size) log(`acquis en jeu : ${acquisJeu.size} combats a 3 etoiles dans ta partie, sans specialistes`);
   etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, indexDe, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
-    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: au99, essais, acquisJeu });
+    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: au99, essais, acquisJeu, tous: DIRECT });
+  etages.valides = VALIDES.size; etages.mode = DIRECT ? 'direct' : 'course';
   etages.scriptCartes = [...dix].map(nom); etages.reprisCourse = vusReutilises;
   log(`par combat : ${vusReutilises} combats repris de la course au lieu d'etre rejoues`);
   // 5.41 : liens actifs a cocher pour les trios du plan dont une carte a plus de 6 liens (lib/liens.mjs), sur leurs combats.
@@ -427,7 +442,8 @@ if (!arg('sans-etages')) {
 const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, raretes: RARETES, trios: T, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
   vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, demiPaquet: DEMI ? { ecartes: demiEcartes, combatsEvites: demiEconomie } : null, mondes: MONDES, repartition,
-  meilleurs: Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), equipeActuelle, maintenant, cartesCles, collectifs, etages };
+  // 5.51 : sans course, pas de nouveau classement global : celui du dernier calcul est garde.
+  meilleurs: DIRECT ? (() => { try { return JSON.parse(readFileSync(D('resultats', 'cauchemar3.json'), 'utf8')).meilleurs || {}; } catch { return {}; } })() : Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), mode: DIRECT ? 'direct' : 'course', valides: VALIDES.size, equipeActuelle, maintenant, cartesCles, collectifs, etages };
 // Base commune : envoi de ce qui reste, puis quelques controles du travail des autres.
 if (PARTAGE_OK) {
   versFile(true);
