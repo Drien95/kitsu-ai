@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.41.3
+// @version      5.41.4
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.41.3') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.41.4') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.41.3',
+          __v: '5.41.4',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1218,7 +1218,7 @@
                   const flTw = runTw.floor ? ` (etage ${runTw.floor})` : '';
                   // 5.41.2 : un combat d'Aventure ou d'evenement lance (save.fight) bloque la Tour (« Un combat est deja en cours ») :
                   // on le dit au lieu d'entourer « Combattre l'etage », sinon le clic echoue. La montee reste gardee.
-                  if (S.fight?.fid) { let nf = ''; try { nf = G.findFight(S.fight.fid)?.t || ''; } catch {} return mark(null, `Tour bloquee : un combat${nf ? ` « ${nf} »` : ''} est encore ouvert en Aventure ou en evenement. Termine-le ou abandonne-le, puis reviens : ta montee${flTw} est gardee`, 'twbloque'); }
+                  if (S.fight?.fid && !(Date.now() - (S.fight.t || 0) >= 12e5)) { let nf = ''; try { nf = G.findFight(S.fight.fid)?.t || ''; } catch {} return mark(null, `Tour bloquee : un combat${nf ? ` « ${nf} »` : ''} est encore ouvert en Aventure ou en evenement. Termine-le ou abandonne-le (sinon le jeu le libere seul 20 min apres son debut), puis reviens : ta montee${flTw} est gardee`, 'twbloque'); }
                   const ft = [...document.querySelectorAll('[data-tw="fight"]')].find(b => vis(b) && !b.disabled); if (ft) return mark(ft, `Tour : continue ta montee${flTw}`, 'twfight');
                   const ro = [...document.querySelectorAll('[data-tour-open]')].find(b => vis(b) && !b.disabled); if (ro) return mark(ro, `Tour : reprends ta montee en cours${flTw}`, 'twopen');
                   if (goView('tour', `Tour de l'infini : reprends ta montee en cours${flTw}`, 'twnav')) return;

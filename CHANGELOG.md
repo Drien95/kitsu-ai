@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.41.4
+
+Tour : le message « Tour bloquée » suit exactement la règle du jeu.
+
+- Lu dans le moteur du jeu (`towerFight`) : un combat d'Aventure ou d'événement ne bloque la Tour que pendant 20 minutes après son début (`fight.t`). Passé ce délai, le jeu laisse monter.
+- La 5.41.2 affichait « Tour bloquée » tant que le combat restait dans la sauvegarde, même après ces 20 minutes. Maintenant le guide revient sur « Combattre l'étage » dès que le jeu ne bloque plus, et le message indique ce délai.
+
 ## 5.41.3
 
 Base commune : un calcul Campagne qui ne partage pas le dit, avec la raison.
