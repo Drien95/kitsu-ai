@@ -19,6 +19,20 @@ Campagne : le 1er tour de la course ne fait plus jouer leur paquet complet aux t
 
 Avec des cartes au hasard, la barre reste trop basse à mi-chemin : peu de trios sont écartés (8 805 sur 161 700) et le gain ne couvre pas le surcoût.
 
+## 5.45.0
+
+Le panneau prend des visuels, sans rien qui tourne en continu.
+
+- **Campagne, la carte des mondes** : une case par combat du dernier calcul, monde par monde, pour chacune des 6 difficultés. Couleur : or = le meilleur trio fait 3★ à chaque tirage, orange = 60 % ou plus, rouge = parfois, sombre = aucun trio. Contour or = monde fini. Clic sur un monde : « Ton trio, combat par combat » s'ouvre dessus. Couche « Acquis dans le jeu » : les étoiles gagnées par combat, envoyées par le script.
+- **Tour, la tour verticale** : ton record, la prévision du meilleur trio (du pire au record, 9 montées sur 10, moyenne), les trios n° 2 et 3, l'étage exact privé s'il existe, et les étages où les montées s'arrêtent (champ `murs` de `tour.json`, détail au survol).
+- **Calcul en direct** (onglet Calculs, et une mini frise dans la carte de la tâche) : pendant un calcul Tour ou Campagne, les trios encore en course manche après manche et le top 10 provisoire, avec les places gagnées ou perdues. `tour.mjs` et `cauchemar3.mjs` écrivent une ligne « top 10 » à la fin de chaque manche (un seul passage sur les trios en course). Le dessin n'est refait qu'à la fin d'une manche (transition de 0,4 s).
+- **Fiche de carte** : radar PV, ATK, DÉF, VIT, critique au niveau actuel et au 99, lus dans le moteur du jeu (`/api/carte-stats`, carte seule avec ses étoiles, échelle = meilleure carte SSR, UR ou LR au 99) ; liens actifs dans son meilleur trio, dessinés entre les portraits, ceux qui ne sont pas gardés (6 par carte) en pointillés.
+- **Le modèle** : la conquête compacte (une ligne par difficulté Cauchemar, les autres modes en barres), environ 3 fois moins haute. Avec 1 979 combats par difficulté, une case regroupe des combats à la suite (80 cases au plus).
+- **Réactions de Kiko** : une bulle de 10 s sur un nouveau record de Tour, une carte au 99, un monde fini en Cauchemar (dans le jeu si le script envoie les étoiles, sinon prévu) ou de nouveaux 3★ après un calcul. Rien au premier passage. Réglage dans Guides.
+- **Script** : l'export de la sauvegarde ajoute les étoiles gagnées par combat (`pve.stars`) et le record de la Tour (`tower.best`). Le serveur les garde sans changer `hashSave` (elles ne demandent pas de recalcul).
+- **Pendant un calcul, la barre « en cours » ne défile plus** (bande fixe à rayures en mode repos). Mesuré sur un faux serveur avec les vraies données Campagne du 18/11, Chromium sans accélération graphique, médiane de 3 mesures de 10 s : 0,8 à 4,8 s de travail de rendu toutes les 10 s avant, 0,04 à 0,1 s après, selon l'onglet.
+- Tests : stats d'une unité et liens d'un trio lus dans le moteur du jeu, et `/api/carte-stats`.
+
 ## 5.44.0
 
 Campagne et Tour : avant de lancer, tu choisis et tu vois ce que coûtera le calcul.
