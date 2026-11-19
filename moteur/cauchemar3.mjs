@@ -389,8 +389,29 @@ if (!arg('sans-etages')) {
   const prets = NIV !== '99' ? [] : (() => { const L = vivants.filter(x => trios[x.t].every(au99)).slice(0, NPRET); return [...L, ...ecartesTop(NPRET - L.length, t => trios[t].every(au99))].map(x => x.t); })();
   const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...prets, ...scriptSet, ...(cur != null ? [cur] : [])])];
   const sigColl = h53(IDS.map(id => cleCarte(id)).join(','));
+  // 5.48 : plancher. Le meilleur trio de chaque combat au dernier calcul est rejoue 64 tirages sur ce combat (memes niveaux que ce
+  // calcul) : son taux sert de plancher au meilleur trio par combat, pour qu'un trio deja trouve ne soit jamais perdu d'un calcul a
+  // l'autre (8 tirages sur 8 ne garantissent que 69 % a 95 % de confiance, 64 sur 64 garantissent 95,4 %). --sans-plancher : avant 5.48.
+  // Combats a 3 etoiles dans ta partie (pve.stars de la sauvegarde, envoye par le script depuis la 5.45) : pas de specialistes.
+  // --sans-acquis-jeu : specialistes aussi sur ces combats.
+  const NPL = 64, essais = new Map(), tousF = new Set(paquets.flatMap(ps => ps.flatMap(p => p.f)));
+  const pst = arg('sans-acquis-jeu') ? {} : SAVE.pve?.stars || {}, acquisJeu = new Set(Object.keys(pst).filter(f => pst[f] >= 3 && tousF.has(f)));
+  if (!arg('sans-plancher')) {
+    let prec = null; try { prec = JSON.parse(readFileSync(D('resultats', 'cauchemar3.json'), 'utf8')).etages; } catch {}
+    const aTester = []; for (const c of prec?.combats || []) { const ids = prec.trios?.[c[2]], t = ids ? indexDe(ids) : undefined; if (tousF.has(c[0]) && t != null) aTester.push({ f: c[0], t }); }
+    const cleA = x => h53(`P${NPL}|${sigG}|${wKey}|${sigCombat(x.f)}|${cleTrio[x.t]}`), seeds = Array.from({ length: NPL }, (_, i) => 1 + i), t0 = Date.now();
+    const poser = (x, st) => { let k = 0; for (let c = 0; c < st.length; c++) if (st[c] === '3') k++; essais.set(x.f, { t: x.t, p: k / st.length, n: st.length }); };
+    const todo = []; for (const x of aTester) { const v = J.get(cleA(x)); if (v) poser(x, v); else todo.push(x); }
+    for (let a = 0; a < todo.length; a += 4000) {
+      const part = todo.slice(a, a + 4000), r = await pool.runAll(part.map(x => ({ type: 'etoiles', team: trios[x.t].map(id => carte(id)), fights: [x.f], seeds })), WA, { stop3: true }, 8);
+      r.forEach((y, j) => { J.set(cleA(part[j]), y.st); poser(part[j], y.st); simules += y.st.length; }); J.flush();
+    }
+    const plein = [...essais.values()].filter(e => e.p === 1).length;
+    if (aTester.length) log(`plancher : ${aTester.length} meilleurs trios du dernier calcul rejoues ${NPL} tirages (${aTester.length - todo.length} repris du journal, ${Math.round((Date.now() - t0) / 1000)} s), ${plein} a ${NPL}/${NPL}`);
+  }
+  if (acquisJeu.size) log(`acquis en jeu : ${acquisJeu.size} combats a 3 etoiles dans ta partie, sans specialistes`);
   etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, indexDe, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
-    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: au99 });
+    seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: au99, essais, acquisJeu });
   etages.scriptCartes = [...dix].map(nom); etages.reprisCourse = vusReutilises;
   log(`par combat : ${vusReutilises} combats repris de la course au lieu d'etre rejoues`);
   // 5.41 : liens actifs a cocher pour les trios du plan dont une carte a plus de 6 liens (lib/liens.mjs), sur leurs combats.
