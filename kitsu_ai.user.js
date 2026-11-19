@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.54.0
+// @version      5.55.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.54.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.55.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -517,16 +517,6 @@
         // 5.52 : empreinte des etoiles de l'Aventure. Le plan la garde : s'il ne correspond plus a ta partie (combats joues depuis),
         // le guide le recalcule au lieu de conclure qu'il n'y a plus rien a faire.
         const starsKey = S => { const st = S.pve?.stars || {}; let n = 0, t = 0; for (const k in st) { n++; t += st[k] || 0; } return n + ':' + t; };
-        // 5.52 : ce que rapporte une recharge (15 gemmes, regle du jeu G.EN_REFILL), calcule sur le plan : combats sur a 90 % ou plus,
-        // classes par gemmes attendues par energie, jusqu'a remplir la jauge. Gemmes attendues = formule du jeu x chances du plan.
-        const refillValue = (P, S, enMax = 10) => {
-          const prix = Number.isFinite(G?.EN_REFILL) ? G.EN_REFILL : 15;
-          const rows = (P?.combats || []).filter(r => !r.farm && worthNow(r, S) && r.gemmesEsperees > 0).sort((a, b) => b.gemmesEsperees / (b.cout || 1) - a.gemmesEsperees / (a.cout || 1));
-          let e = 0, gain = 0; const pris = [];
-          for (const r of rows) { const c = r.cout || 1; if (e + c > enMax) continue; e += c; gain += r.gemmesEsperees; pris.push(r); }
-          const parMode = {}; for (const r of pris) parMode[r.mode || 'Normal'] = (parMode[r.mode || 'Normal'] || 0) + 1;
-          return { prix, gain: Math.round(gain), net: Math.round(gain - prix), n: pris.length, energie: e, parMode, combats: pris };
-        };
         // Progression d'une quete : enregistree, ou calculee par le jeu (quetes d'histoire : « termine l'arc… »).
         const questProg = (d, q, S) => { const p = q.prog?.[d.id]; if (p != null) return p; if (typeof d.val === 'function') { try { return +d.val(S) || 0; } catch {} } return 0; };
         // Recompenses a recuperer : connexion du jour, quetes terminees, paliers du pass.
@@ -646,7 +636,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.54.0',
+          __v: '5.55.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1134,23 +1124,12 @@
           // invocation). Ne clique jamais : c'est toi qui cliques.
           guide(on = true) {
             clearInterval(window.__kitsuGuideT);
-            const clr = () => { document.querySelectorAll('.kitsu-guide,.kitsu-add,.kitsu-rm,.kitsu-refill').forEach(e => e.classList.remove('kitsu-guide', 'kitsu-add', 'kitsu-rm', 'kitsu-refill')); const l = document.getElementById('kitsuRefillLab'); if (l) l.hidden = true; };
-            // 5.52 : etiquette sous le « + » de l'energie (vert : la recharge rapporte plus qu'elle ne coute, gris : non).
-            const refillLab = (el, v) => {
-              if (!el) return;
-              let l = document.getElementById('kitsuRefillLab'); if (!l) { l = document.createElement('div'); l.id = 'kitsuRefillLab'; document.body.appendChild(l); }
-              const ok = v.net > 0, modes = Object.entries(v.parMode).map(([m, n]) => `${n} ${m}`).join(' · ');
-              l.style.setProperty('--c', ok ? '#3ddc84' : '#8a93a3');
-              l.innerHTML = `<b>Recharge : ${v.prix} &rarr; +${v.gain}</b> gemmes, ${ok ? 'net +' + v.net : 'pas rentable'}${v.n ? `<small>${v.n} combat${v.n > 1 ? 's' : ''} sûr${v.n > 1 ? 's' : ''} à 90 % ou plus : ${modes}</small>` : '<small>aucun combat du plan ne rapporte de gemmes</small>'}`;
-              const r = el.getBoundingClientRect(); l.hidden = false;
-              l.style.top = Math.round(r.bottom + 10) + 'px'; l.style.left = 'auto'; l.style.right = Math.max(8, Math.round(innerWidth - r.right - 6)) + 'px';
-              if (ok) el.classList.add('kitsu-refill');
-            };
+            const clr = () => document.querySelectorAll('.kitsu-guide,.kitsu-add,.kitsu-rm').forEach(e => e.classList.remove('kitsu-guide', 'kitsu-add', 'kitsu-rm'));
             let pill = document.getElementById('kitsuGuide');
             if (!on) { clr(); pill?.remove(); lsSet('kitsu_ai_guide', false); return 'guide desactive'; }
             lsSet('kitsu_ai_guide', true);
             ui();
-            if (!document.getElementById('kitsuGuideCss')) { const s = document.createElement('style'); s.id = 'kitsuGuideCss'; s.textContent = '.kitsu-guide{outline:3px solid #fff!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px;animation:kitsuPulse 1.2s ease-in-out 3}@keyframes kitsuPulse{50%{outline-color:#ff7a2f}}.kitsu-add{outline:3px solid #2fd27a!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px}.kitsu-rm{outline:3px solid #ff4436!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px}.kitsu-refill{outline:2px solid #3ddc84!important;outline-offset:4px;box-shadow:0 0 0 7px rgba(0,0,0,.85)!important;border-radius:8px}#kitsuRefillLab{position:fixed;z-index:2147483000;pointer-events:none;white-space:nowrap;background:rgba(12,14,19,.96);border:1px solid var(--c);border-left:4px solid var(--c);border-radius:6px;padding:6px 10px;font:600 13px system-ui,sans-serif;color:#fff;line-height:1.35}#kitsuRefillLab b{font:italic 700 17px Bahnschrift,system-ui,sans-serif;color:var(--c)}#kitsuRefillLab small{display:block;color:#aab3c2;font-weight:400}'; document.head.appendChild(s); }
+            if (!document.getElementById('kitsuGuideCss')) { const s = document.createElement('style'); s.id = 'kitsuGuideCss'; s.textContent = '.kitsu-guide{outline:3px solid #fff!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px;animation:kitsuPulse 1.2s ease-in-out 3}@keyframes kitsuPulse{50%{outline-color:#ff7a2f}}.kitsu-add{outline:3px solid #2fd27a!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px}.kitsu-rm{outline:3px solid #ff4436!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(8,9,12,.55)!important;border-radius:12px}'; document.head.appendChild(s); }
             if (!pill) { pill = document.createElement('div'); pill.id = 'kitsuGuide'; pill.className = 'kitsu-panel'; document.body.appendChild(pill); }
             // Sous la barre de navigation du jeu (sinon elle cache les onglets du haut).
             { const nav = [...document.querySelectorAll('header,nav,.topbar,#topbar')].find(e => e.offsetParent && e.getBoundingClientRect().top < 5); const top = nav ? Math.round(nav.getBoundingClientRect().bottom) + 8 : 72; pill.style.cssText = `top:${top}px;left:50%;right:auto;transform:translateX(-50%);font-size:12.5px;display:block;text-align:center;max-width:560px;border-radius:999px;padding:5px 14px 5px 6px;box-shadow:none`; }
@@ -1510,15 +1489,13 @@
                 // Energie vide : recharger si rentable, sinon attendre
                 if (en <= 0) {
                   if (planVieux && !todo.length) return mark(null, 'energie vide : plan en cours de mise a jour (tu as gagne des etoiles depuis), la recharge s\'affiche juste apres', 'wait-refill');
-                  let enMx = 10; try { enMx = G.enMax(S, Date.now()); } catch {}
-                  const rv = refillValue(P, S, enMx), plus = qv('[data-en-refill]');
-                  if ((S.ki || 0) >= rv.prix && rv.net > 0) { const r = mark(plus, `energie vide : recharge (${rv.prix} gemmes), tes ${rv.n} prochains combats en rapportent ${rv.gain}`, 'refill'); clr(); refillLab(plus, rv); return r; }
+                  // 5.55 : encadre blanc du guide sur le « + », comme les autres indications (recharge : 15 gemmes, regle du jeu).
+                  if ((S.ki || 0) >= 15 && todo.some(r => !r.farm)) return mark(qv('[data-en-refill]'), 'energie vide : clique sur « + » a cote de la jauge d\'energie pour recharger (15 gemmes)', 'refill');
                   const pulls = lsGet(LS.pulls, null);
                   if (econActions(S, 0).some(a => a.id === 'pull')) {
                     if (!/invocation|boosters/.test(location.hash)) return mark(qv('a[data-view="boosters"]'), `invoque x10 sur ${pulls.banners[0].banniere} : ouvre Bannieres`, 'nav-b');
                     return mark(qv('[data-open="10"]'), `multi-invocation x10 sur ${pulls.banners[0].banniere}`, 'pull');
                   }
-                  if ((S.ki || 0) >= rv.prix && rv.n) { mark(null, `energie vide : la recharge ne rapporte que ${rv.gain} gemmes pour ${rv.prix}. Reviens dans ~10 min (1 energie toutes les 10 min)`, 'no-refill'); refillLab(plus, rv); return; }
                   return mark(null, 'energie vide : reviens dans ~10 min (1 energie toutes les 10 min)');
                 }
                 if (!next) return mark(null, 'plus de combat facile disponible : voir la roadmap');
@@ -1666,7 +1643,7 @@
             if (en > 0 && todo.length) add(3, `Joue ${Math.min(en, todo.length)} combat${en > 1 ? 's' : ''} (${en}/${enMax} energie) : ${todo.slice(0, Math.min(en, 4)).map(r => `${r.nom} avec ${r.equipe.map(short).join(', ')}`).join(' ; ')}`);
             if (en >= enMax) add(2, `Energie pleine : elle ne se recharge plus, joue maintenant`);
             else add(8, `Energie pleine dans ~${(enMax - en) * 10} min`);
-            { const rv = refillValue(P, S, enMax); if (en === 0 && gems >= rv.prix && rv.net > 0) add(3, `Recharge l'energie (${rv.prix} gemmes) : tes ${rv.n} prochains combats sur rapportent ${rv.gain} gemmes, soit +${rv.net} net`); }
+            if (en === 0 && gems >= 15 && todo.length) add(3, `Recharge l'energie (15 gemmes) : il reste ${todo.length} combat${todo.length > 1 ? 's' : ''} a faire`);
             // Invocation : garder 15 gemmes pour une recharge, tirer par 10 sur la meilleure banniere
             const pulls = lsGet(LS.pulls, null), bb = pulls?.banners?.[0];
             const pullA = econActions(S, 99).find(a => a.id === 'pull');
