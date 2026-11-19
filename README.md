@@ -743,6 +743,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
 | 5.50.0 | Campagne : plancher (le meilleur trio de chaque combat au dernier calcul est rejoué 64 tirages, jamais perdu d'un calcul à l'autre) et pas de spécialistes sur les combats déjà à 3★ dans ta partie |
+| 5.49.1 | Onglet Plan : la case « Me proposer la Tour » est visible partout, pas seulement sur la carte de l'Aventure |
 | 5.49.0 | Guide : la Tour devient un choix (case « Me proposer la Tour » dans l'onglet Plan, décochée par défaut) ; la Campagne (3★ puis farm des murs) passe avant ; prévision de la Tour lue sans arrondi |
 | 5.47.0 | Campagne : spécialistes 2 fois plus rapides (8 combats par tâche au lieu d'un), 556 s puis 275 s pour 29 combats, résultats identiques ; même budget, deux fois plus de combats cherchés |
 | 5.46.0 | Campagne : 1er tour de la course en deux moitiés, les trios sans espoir à mi-paquet ne jouent pas la 2e moitié ; cartes fortes 1 331 s puis 1 061 s (−20 %), cartes au hasard sans changement, résultats identiques |
