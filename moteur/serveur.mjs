@@ -76,11 +76,15 @@ function prevision() {
   if (COMBATS_DIFF?.v !== VER) {
     const camp = G.ALL_WORLDS.filter(w => w.id !== 'halloween').flatMap(w => w.fights.map(f => f.id));
     const n = suf => camp.filter(f => { try { return !!G.findFight(f + suf); } catch { return false; } }).length;
-    COMBATS_DIFF = { v: VER, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') } };
+    // 5.43 : carte des mondes et combats du jeu (meme ordre de difficultes que cauchemar3.json), pour que l'onglet Campagne
+    // montre les mondes et combats arrives depuis le dernier calcul. Masque : bit k = le combat existe dans la difficulte k.
+    const SUF = ['@n', '@hn', '@xn', '', '@h', '@x'], existe = f => { try { return !!G.findFight(f); } catch { return false; } };
+    const carte = G.ALL_WORLDS.filter(w => w.id !== 'halloween').map(w => ({ id: w.id, nom: w.name || w.title || w.id, f: w.fights.map((f, i) => [f.id, f.idx ?? i, f.t || f.id, f.boss ? 1 : 0, SUF.reduce((m, s, k) => m | (existe(f.id + s) ? 1 << k : 0), 0)]) }));
+    COMBATS_DIFF = { v: VER, c: { normal: n('@n'), difficile: n('@hn'), extreme: n('@xn'), campNormal: n(''), campDifficile: n('@h'), campExtreme: n('@x') }, carte };
   }
   let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^cauchemar3-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
   const d = readJ(D('resultats', 'cauchemar3.json'));
-  return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
+  return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
     dernier: d ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.trios, combatsSimules: d.combatsSimules, cartes: d.cartes } : null };
 }
 // Tour : meme principe (cartes SSR/UR/LR possedees, tous leurs trios), journal cache/tour-*.jsonl.

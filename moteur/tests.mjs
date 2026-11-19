@@ -109,6 +109,16 @@ const r1 = resumer(G, B, version); t('patch : une version comparee a elle-meme e
   const S0 = { owned: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, lv: { 1: { l: 99 }, 2: { l: 99 }, 3: { l: 99 } } };
   const s = M.instantane({ plan: plan({ G, S: S0, campagne: camp, tour }), campagne: camp, tour, t: 1 });
   t('modele : un chiffre par combat, trios comptes', s.c.normal === '3210' && s.tour?.now === 100 && s.tr.some(x => x[0] === 'c' && x[4] === 2) && s.tr.some(x => x[0] === 't'), JSON.stringify(s)); }
+// Trio par combat (5.43) : le meilleur trio deja pret (3 cartes au 99) est garde pour chaque combat, confirme s'il a fait 3 etoiles.
+{ const { parCombat } = await import('./lib/etages.mjs');
+  const trios = [[1, 2, 3], [4, 5, 6], [1, 4, 5]], taux = { a: [1, 0.5, 0], b: [1, 0, 0] }; // 0.5 : 3 etoiles sur les tirages pairs
+  const pool = { runAll: async jobs => jobs.map(j => ({ st: j.fights.flatMap(f => j.seeds.map(sd => { const r = taux[f][j.team]; return r === 1 || (r === 0.5 && sd % 2 === 0) ? '3' : '2'; })).join('') })) };
+  const J = new Map(); J.flush = () => {};
+  const e = await parCombat({ pool, J, WA: null, paquets: [[{ f: ['a', 'b'], cle: 'p' }]], DIFF: [['normal']], trios, cleTrio: trios.map(x => x.join('-')), equipeDe: x => x, cands: [0, 1, 2], scriptSet: new Set(), sigG: 'g', wKey: 'w', sigColl: 'c', sigCombat: f => f, log: () => {}, dejaAu99: id => id >= 4 && id <= 6 });
+  const ligne = f => e.combats.find(c => c[0] === f), tri = r => r && e.trios[r[0]].join('-');
+  t('trio par combat : colonne pret', e.colonnes[10] === 'pret' && tri(ligne('a')[10]) === '4-5-6' && ligne('a')[10][1] === 50 && tri(ligne('b')[10]) === '4-5-6' && ligne('b')[10][1] === 0 && e.trios[ligne('a')[2]].join('-') === '1-2-3', JSON.stringify(e.combats));
+  const e2 = await parCombat({ pool, J: Object.assign(new Map(), { flush() {} }), WA: null, paquets: [[{ f: ['a', 'b'], cle: 'p' }]], DIFF: [['normal']], trios, cleTrio: trios.map(x => x.join('-')), equipeDe: x => x, cands: [0, 2], scriptSet: new Set(), sigG: 'g', wKey: 'w', sigColl: 'c', sigCombat: f => f, log: () => {}, dejaAu99: id => id >= 4 && id <= 6 });
+  t('trio par combat : aucun trio pret joue, pret vide', e2.combats.every(c => c[10] === null), JSON.stringify(e2.combats)); }
 // Serveur : demarre sur un autre port, verifie les protections.
 const PORT = 47199, srv = spawn(process.execPath, ['serveur.mjs'], { env: { ...process.env, KITSU_PORT: String(PORT) } });
 let up = false; for (let i = 0; i < 60 && !up; i++) { await new Promise(r => setTimeout(r, 250)); try { up = (await fetch(`http://127.0.0.1:${PORT}/ping`)).ok; } catch {} }
