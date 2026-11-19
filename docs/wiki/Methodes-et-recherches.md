@@ -26,6 +26,7 @@ Rappel des règles du projet : KitsuAI lit et affiche seulement. Aucun clic auto
 | Conseils de cartes | `conseils.mjs` | Collectifs, valeur des cartes des bannières, duos, marché | Mesurés avec le moteur sur tes cartes |
 | Plan d'XP et de bannière (5.21) | `lib/plan.mjs`, `/api/plan`, `/plan` | Score « modèle parfait » (Campagne 1, Tour 1, Arène 1, Raid 1/2, en % de ce que la collection peut faire au 99) ; montées classées en points pour 100 000 XP, de façon gloutonne (la suivante comptée une fois la précédente faite) | Aucun combat simulé : lu dans les résultats existants |
 | Collectifs calculés une fois par trio (5.33) | `lib/charger.mjs` | Le moteur du jeu est chargé depuis une copie locale où la recherche des collectifs actifs du trio garde ses résultats (elle parcourait toute la liste à chaque combat) ; repli sur le moteur normal si la fonction n'est plus reconnue | Profil CPU : 21 % du temps d'un combat ; test VM : 1,25 fois sur les combats coupés, environ 1,55 fois sur un calcul Campagne de 90 trios, résultats identiques (tests) |
+| Demi-paquet au 1er tour (5.45) | `cauchemar3.mjs` | Les trios sans espoir à mi-paquet (borne haute sous la barre des 2 000 meilleurs finis) ne jouent pas la 2e moitié | Cartes fortes : calcul −20 %, combats −27 % ; cartes au hasard : sans gain ; résultats identiques dans les deux cas |
 | Calcul sur tous les cœurs | `lib/pool.mjs`, `lib/worker.mjs` | Les combats sont répartis sur les fils du processeur | Vérifié identique au calcul sur un seul fil |
 | Raid : simulation et stratégie de groupe | `lib/raid.mjs`, `raid.mjs` | Raid complet joué avec le code du jeu, de 1 à 3 joueurs ; Ruptures planifiées pour le groupe, Garde sur la carte visée, 2 Ruptures gardées pour la phase 3 de Diavolo ; trios classés contre 3 niveaux de coéquipiers tirés au hasard, à 3 et à 2 joueurs | Trio recopié aux 3 places : 0 sur 20 en frappant seulement, 30 sur 30 avec la stratégie. Coéquipiers L/M niveau 99 : 93 % ; E/L : 60 % ; E niveau 70 : 7 % |
 | Détection de patch | `telecharger.mjs`, `lib/resume.mjs` | Repérer ce qui change dans le jeu (cartes, kits, combats) | Une version comparée à elle-même est vide (test) |
@@ -71,6 +72,9 @@ Limite connue : la règle à 19 critères joue bien mais pas parfaitement. Un tr
 
 | Piste | Raison |
 |---|---|
+| Arrêt anticipé « sans perte » d'un paquet (borne haute) | Mesuré le 19/11 : −13 % du temps seulement |
+| Pré-tri des cartes avant la course | Des trios gardés au 1er tour ont une carte classée 337e sur 348 (portée par une paire forte) |
+| Pré-tri de la Tour | Les trios écartés à la 1re manche font 58 à 97 % des étages montés, mais chacun s'arrête quand il perd : on ne peut pas les couper plus tôt sans deviner |
 | Automatiser le jeu ou contourner l'anti-robot | Interdit par les règles du projet |
 | Entraîner ou tester contre le vrai jeu | Interdit, et inutile : le simulateur reproduit le jeu |
 | Un modèle de langage (LLM) dans la boucle de combat | Trop lent et moins bon que les IA spécialisées (PokéAgent, PokéChamp) |
