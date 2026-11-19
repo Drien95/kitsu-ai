@@ -11,6 +11,8 @@ export const statsEtages = fl => {
   return { moy, se, min: s[0], p10: s[Math.floor(s.length * 0.1)], med: s[Math.floor(s.length / 2)], max: s[s.length - 1] };
 };
 const comb = (arr, k) => { const r = []; const f = (s, c) => { if (c.length === k) { r.push(c); return; } for (let i = s; i < arr.length; i++) f(i + 1, [...c, arr[i]]); }; f(0, []); return r; };
+// Cle d'une carte dans le journal de la Tour (tour.mjs et la prevision du serveur doivent donner la meme).
+export const cleCarteTour = (c, sigCarte) => `${c.id}:${c.lv}:${c.stars}:${(c.lk || []).join('+')}:${sigCarte(c.id)}`;
 const memeTrio = (a, b) => a.slice().sort().join() === b.slice().sort().join();
 
 // ctx : { G, B, pool, W, ids (cartes candidates), mk(ids, lk) -> equipe, actuelle (trio joue), log }
@@ -67,10 +69,12 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
     for (let r = 1; r <= manches; r++) {
       const todo = [];
       for (const t of alive) { const k = h53j(cle(t) + '|' + r), v = J.get(k); if (v != null) { const f = +v; n[t]++; s1[t] += f; s2[t] += f * f; repris++; } else todo.push([t, k]); }
+      // 5.42.1 : le travail reel de la manche (montees a simuler, reprises du journal) avant de la lancer.
+      onManche({ debut: true, r, manches, aFaire: todo.length, reprises: alive.length - todo.length, montees });
       for (let a = 0; a < todo.length; a += 20000) {
         const part = todo.slice(a, a + 20000), res = await climb(part.map(([t]) => mk(tr[t])), [r], 16);
         part.forEach(([t, k], j) => { const f = res[j][0]; n[t]++; s1[t] += f; s2[t] += f * f; J.set(k, String(f)); montees++; });
-        J.flush(); if (todo.length > 20000) onManche({ r, manches, fait: Math.min(todo.length, a + 20000), total: todo.length, montees, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000) });
+        J.flush(); onManche({ r, manches, fait: Math.min(todo.length, a + 20000), total: todo.length, montees, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000) });
       }
       const avant = alive.length;
       if (alive.length > garder) { const b = alive.map(t => ({ t, ...borne(t) })), lo = b.map(x => x.lo).sort((x, y) => y - x)[garder - 1]; alive = b.filter(x => x.hi >= lo).map(x => x.t); }
