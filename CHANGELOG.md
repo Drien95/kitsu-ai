@@ -4,6 +4,24 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.50.0
+
+Campagne : un trio déjà trouvé n'est plus perdu d'un calcul à l'autre, et les combats déjà à 3★ dans ta partie ne sont plus cherchés par les spécialistes.
+
+- **Plancher** (`cauchemar3.mjs`, `lib/etages.mjs`) : avant l'étape par combat, le meilleur trio de chaque combat au dernier calcul est rejoué 64 tirages sur ce combat, avec les niveaux de ce calcul. Son taux remplace le meilleur trio du combat s'il fait mieux. Pourquoi 64 : un trio à 8 tirages sur 8 n'est garanti qu'à 69 % (borne basse à 95 % de confiance), à 64 sur 64 il l'est à 95,4 %. Rejoués gardés au journal. `--sans-plancher` : comme avant.
+- **Combats à 3★ dans ta partie** (`pve.stars`, envoyé par le script depuis la 5.45) : pas de spécialistes. Colonne `acquisJeu` dans `etages.combats`. `--sans-acquis-jeu` : spécialistes aussi sur ces combats.
+- **Mesures** (VM 4 fils, moteur B4t5msj4, 100 cartes, 161 700 trios, Cauchemar, 96 combats par difficulté, journal vide, budget spécialistes 30 min). Étoiles en jeu simulées : 3★ sur les 265 combats où le calcul précédent avait un trio à plus de 0 % (la sauvegarde du bench n'a pas `pve.stars`).
+
+| | Avant (5.47.0) | Après (5.50.0) |
+|---|---|---|
+| Plancher | | 265 trios rejoués en 7 s, 207 à 64/64 |
+| Spécialistes | 29 combats, 305 s | 23 combats, 246 s |
+| Calcul complet | 1 398 s | 1 359 s |
+| Combats à 60 % ou plus (N / D / E) | 93 / 90 / 77 | 94 / 90 / 76 |
+| Plan | 14 trios | 12 trios |
+
+Meilleur trio par combat : 283 combats identiques, 3 meilleurs grâce au plancher (+10 points en moyenne), 2 moins bons, tous deux déjà à 3★ dans la partie (spécialistes sautés, dont celui qui fait passer l'Extrême de 77 à 76).
+
 ## 5.49.1
 
 Onglet Plan du script : la case « Me proposer la Tour dans le guide » est visible partout, plus seulement sur la carte de l'Aventure (hors de la carte, l'onglet n'affichait que l'objectif de bannière). Les combats du plan restent affichés sur la carte de l'Aventure.

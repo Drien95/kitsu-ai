@@ -65,6 +65,10 @@ export async function parCombat(o) {
   const P = (ci, fi) => { const i = ci * NF + fi; return n[i] ? s[i] / n[i] : 0; }, plein = 2 + conf;
   // Meilleur trio de chaque combat (seulement les trios confirmes : `plein` tirages)
   const meilleur = F.map((_, fi) => { let b = -1, bp = 0; for (let ci = 0; ci < NC; ci++) if (n[ci * NF + fi] >= plein && P(ci, fi) > bp) { bp = P(ci, fi); b = ci; } return { t: b >= 0 ? cands[b] : -1, p: bp, n: b >= 0 ? n[b * NF + fi] : 0, spec: false }; });
+  // 5.48 : plancher (o.essais : combat -> { t, p, n }, meilleur trio du dernier calcul rejoue 64 tirages) : il remplace le meilleur
+  // s'il fait mieux. Combats a 3 etoiles dans ta partie (o.acquisJeu) : pas de specialistes.
+  const ESS = o.essais || new Map(), AJ = o.acquisJeu || new Set(), essF = F.map(x => ESS.get(x.f) || null); let planchers = 0;
+  F.forEach((x, fi) => { const e = essF[fi]; if (e && e.p > meilleur[fi].p) { meilleur[fi] = { t: e.t, p: e.p, n: e.n, spec: false }; planchers++; } });
 
   // 3) specialistes sur les combats sous le seuil
   // 5.27 : la Campagne N/D/E n'est plus jouee par tous les trios pendant la course. Pour que son meilleur trio reste cherche
@@ -75,7 +79,7 @@ export async function parCombat(o) {
   // toutes difficultes, et seulement ensuite ceux a 0 % (avant : difficulte par difficulte, les 0 % du Normal passaient avant le
   // Difficile et l'Extreme ; journal du 19/11 : 9 combats a 0 % sur 52, aucun 3 etoiles trouve, environ 5 min de budget).
   const rang = fi => camp(fi) ? 0 : meilleur[fi].p > 0 ? 1 : 2;
-  const durs = F.map((x, fi) => fi).filter(fi => meilleur[fi].p < (camp(fi) ? Math.max(seuil, seuilCamp) : seuil)).sort((a, b) => rang(a) - rang(b) || ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || a - b);
+  const durs = F.map((x, fi) => fi).filter(fi => !AJ.has(F[fi].f)).filter(fi => meilleur[fi].p < (camp(fi) ? Math.max(seuil, seuilCamp) : seuil)).sort((a, b) => rang(a) - rang(b) || ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || a - b);
   const sousSeuil = durs.filter(fi => meilleur[fi].p < seuil).length, campPlus = durs.length - sousSeuil;
   const T = trios.length, seedsS = Array.from({ length: conf }, (_, i) => 4 + i), specs = new Map();
   const cleS = fi => h53(`S|${sigG}|${wKey}|${sigCombat(F[fi].f)}|${sigColl}|${conf}`);
@@ -128,9 +132,9 @@ export async function parCombat(o) {
 
   // Plan minimal : trio qui couvre le plus de combats encore non couverts (a un tirage pres du meilleur), puis le suivant.
   const tol = 1 / plein + 1e-9, couvert = new Uint8Array(NF), plan = [], planDe = new Int32Array(NF).fill(-1);
-  const pDe = (t, fi) => { const ci = cands.indexOf(t); if (ci >= 0 && n[ci * NF + fi] >= plein) return P(ci, fi); const L = specs.get(fi), x = L?.find(y => y.ids.join('-') === trios[t].join('-')); return x ? x.s / x.n : -1; };
+  const ciDe = new Map(cands.map((t, i) => [t, i])), pDe = (t, fi) => { if (essF[fi]?.t === t) return essF[fi].p; const ci = ciDe.get(t) ?? -1; if (ci >= 0 && n[ci * NF + fi] >= plein) return P(ci, fi); const L = specs.get(fi), x = L?.find(y => y.ids.join('-') === trios[t].join('-')); return x ? x.s / x.n : -1; };
   const vise = F.map((_, fi) => meilleur[fi].p > 0);
-  const pool2 = [...new Set([...cands, ...meilleur.filter(m => m.spec).map(m => m.t)])];
+  const pool2 = [...new Set([...cands, ...meilleur.filter(m => m.spec).map(m => m.t), ...essF.filter(Boolean).map(e => e.t)])];
   while (plan.length < 15) {
     let best = -1, bc = 0;
     for (const t of pool2) { let c = 0; for (let fi = 0; fi < NF; fi++) if (vise[fi] && !couvert[fi] && pDe(t, fi) >= meilleur[fi].p - tol) c++; if (c > bc) { bc = c; best = t; } }
@@ -163,12 +167,13 @@ export async function parCombat(o) {
     for (const x of specs.get(fi) || []) { const t = indexTrio.get(x.ids.join('-')); if (pretT(t)) voir(t, x.s / x.n, 1); }
     return b >= 0 ? [refT(b), r1(bp)] : null;
   });
-  const combats = F.map((x, fi) => { const m = meilleur[fi], fd = x.f.split('@')[0]; return [x.f, x.di, refT(m.t), r1(m.p), refT(planDe[fi]), planDe[fi] >= 0 ? r1(pDe(planDe[fi], fi)) : 0, m.spec ? 1 : 0, r1(pScript[fi]), fd, autres[fi], pret[fi]]; });
+  const combats = F.map((x, fi) => { const m = meilleur[fi], fd = x.f.split('@')[0]; return [x.f, x.di, refT(m.t), r1(m.p), refT(planDe[fi]), planDe[fi] >= 0 ? r1(pDe(planDe[fi], fi)) : 0, m.spec ? 1 : 0, r1(pScript[fi]), fd, autres[fi], pret[fi], AJ.has(x.f) ? 1 : 0]; });
   const resume = DIFF.map(([d], di) => { const L = combats.filter(c => c[1] === di); return { difficulte: d, combats: L.length, troisEtoilesSur: L.filter(c => c[3] >= Math.round(seuil * 100)).length, script: L.filter(c => c[7] >= Math.round(seuil * 100)).length, specialistes: L.filter(c => c[6]).length, impossibles: L.filter(c => c[3] === 0).length }; });
   const duree = Math.round((Date.now() - T0) / 1000);
   log(`par combat termine en ${duree} s : ${trouves} combats ameliores par un specialiste, plan de ${plan.length} trios ; ${resume.map(r => `${r.difficulte} ${r.troisEtoilesSur}/${r.combats} (script ${r.script})`).join(', ')}`);
   return { date: new Date().toISOString(), duree, candidats: NC, tirages: plein, seuil: r1(seuil), simules, repris,
     specialistes: { sousSeuil, campagneSous100: campPlus, cherches: specs.size, cetteFois: msCombat.length, restants, minutesParCombat: msMoy ? +(msMoy / 60e3).toFixed(2) : null, minutesRestantes: msMoy ? Math.round(restants * msMoy / 60e3) : null, budget: Math.round(budget / 60e3), ameliores: trouves },
-    colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase', 'autres', 'pret'],
-    trios: table, plan: plan.map(x => ({ trio: ti.get(x.t), combats: x.combats })), resume, combats };
+    colonnes: ['combat', 'difficulte', 'meilleurTrio', 'meilleur3e', 'trioDuPlan', 'plan3e', 'specialiste', 'script3e', 'combatDeBase', 'autres', 'pret', 'acquisJeu'],
+    trios: table, plan: plan.map(x => ({ trio: ti.get(x.t), combats: x.combats })), resume, combats,
+    plancher: ESS.size ? { rejoues: ESS.size, ameliores: planchers } : null, acquisJeu: AJ.size };
 }
