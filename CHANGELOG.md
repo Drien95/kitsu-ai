@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.41.3
+
+Base commune : un calcul Campagne qui ne partage pas le dit, avec la raison.
+
+- Le partage est lu au lancement du calcul. Allumé pendant le calcul, il ne sert qu'au calcul suivant : la page Campagne montrait seulement « pas encore de calcul partagé », sans dire pourquoi.
+- Maintenant, la tuile « Dernier calcul » affiche « non partagé » et la raison (base coupée au lancement, ton IA plus forte que l'IA commune, réglages de test), et le journal de la Base commune garde une ligne « Calcul lancé sans partage ».
+
 ## 5.41.2
 
 Script : le guide explique pourquoi la Tour refuse de combattre.

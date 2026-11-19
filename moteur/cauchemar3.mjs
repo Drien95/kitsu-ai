@@ -47,6 +47,8 @@ const IAC = PART_ON ? await PARTAGE.iaCommune(PART) : null, WCX = IAC ? construi
 const MIENNE = PART_ON && !!WCX && iaPersoMeilleure((() => { try { return JSON.parse(readFileSync(D('resultats', 'comparaison-ia.json'), 'utf8')); } catch { return null; } })(), WA_PC, WCX);
 const PARTAGE_OK = PART_ON && !!WCX && !MIENNE && (PAQ === 16 && !arg('max-combats') && !arg('max-trios') || !!arg('partage-test'));
 const WA = PARTAGE_OK ? WCX : WA_PC;
+// 5.41.2 : pourquoi ce calcul ne partage pas (affiche dans la Base commune, Campagne), null s'il partage.
+const COUPE = PARTAGE_OK ? null : arg('sans-partage') ? 'lance sans partage' : !PART_ON ? 'base commune coupee au lancement du calcul (Reglages)' : MIENNE ? 'ton IA est nettement meilleure que l IA commune : calcul avec la tienne' : !WCX ? 'IA commune absente' : 'reglages de test ou paquet non standard';
 const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r)).sort((a, b) => a - b);
 if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la sauvegarde exportee.'); process.exit(1); }
 
@@ -168,7 +170,7 @@ if (PARTAGE_OK) {
       onLigne: x => { if (paquets[x.di]?.[x.pi]?.cle !== x.clePaquet) return; const k = cle(x.di, x.pi, x.graine, x.ck); if (!J.get(k)) { J.set(k, x.n + ',' + x.s3); recus++; } } });
     J.flush(); log(`partage : ${recus} resultats ajoutes au journal depuis la base commune`);
   } catch (e) { PARTAGE.noter('erreur', { quoi: 'base injoignable au debut du calcul' }); log('partage : base injoignable, calcul local seul (' + e.message + ')'); }
-} else if (PART_ON) log(`partage : coupe pour ce calcul (${MIENNE ? 'ton IA est nettement meilleure que l IA commune : calcul avec la tienne, publie-la (Reglages) pour partager de nouveau' : !WCX ? 'poids-communs.json absent' : 'reglages de test ou paquet non standard'})`);
+} else { log(`partage : coupe pour ce calcul (${COUPE})`); if (PART_ON) PARTAGE.noter('coupe', { quoi: COUPE }); }
 // 5.27 : la Campagne (Normal, Difficile, Extreme) n'elimine personne : pendant la course, seuls les Cauchemar sont joues ;
 // les finalistes jouent ensuite la Campagne avec les memes graines (memes resultats pour eux, moitie moins de combats pour les autres).
 let alive = [...Array(T).keys()]; const entonnoir = [];
@@ -276,7 +278,7 @@ if (PARTAGE_OK) {
   if (PART.verifier) try { await PARTAGE.controler(PART, versionPartage, rejouerLignes, { max: PARTAGE.identite().admin && PART.controler ? 40 : 2, log }); } catch (e) { log('partage : controles reportes (' + e.message + ')'); }
   if (PARTAGE.identite().admin && PART.controler) try { await PARTAGE.regrouper(PART, { log }); } catch (e) { log('partage : regroupement reporte (' + e.message + ')'); }
 }
-out.partage = PARTAGE_OK ? { recus, envoyes, ia: 'commune' } : null;
+out.partage = PARTAGE_OK ? { recus, envoyes, ia: 'commune' } : { coupe: COUPE };
 // Pourquoi la 3e etoile saute sur les combats sous le seuil (lib/diagnostic.mjs, un seul fil, de l'ordre de la minute).
 if (etages && !arg('sans-diagnostic')) try { etages.diagnostic = diagnostiquer(G, B, SIM, SIM.smartPol(WA), out, ids => ids.map(id => carte(id)), { log }); if (etages.diagnostic) etages.diagnostic.ia = PARTAGE_OK ? 'commune' : 'pc'; } catch (e) { log('diagnostic reporte (' + e.message + ')'); }
 mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
