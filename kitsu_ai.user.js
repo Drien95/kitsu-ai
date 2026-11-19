@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.53.0
+// @version      5.54.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.53.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.54.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -646,7 +646,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.53.0',
+          __v: '5.54.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1981,7 +1981,15 @@
           // base (5.37, farm) : cartes dont on essaie tous les trios, a la place de tes 10 plus fortes.
           async _rankTeams(fid, S = save(), base = null) {
             const key = this._teamKey(fid, S, base), cache = lsGet('kitsu_ai_teams', {});
-            if (cache[key]) return cache[key].res;
+            // 5.54 : un classement en cache (calcule PC eteint, ou avant le dernier calcul Campagne exact) gardait le trio du public
+            // alors que le script prive avait un trio exact jouable. Le trio exact est donc redemande au PC a chaque ecran d'equipe :
+            // s'il est deja classe, on met a jour son marquage ; sinon le classement est refait avec lui. PC muet : cache tel quel.
+            if (cache[key]) {
+              const res = cache[key].res, x = localPC.ok && !base ? await this._exactPC(fid, S) : null;
+              if (!x) return res;
+              const kOf = r => r.t.slice().sort((a, b) => a - b).join('-');
+              if (!x.exact || res.some(r => kOf(r) === x.exact.k)) { for (const r of res) { if (x.exact && kOf(r) === x.exact.k) r.exact = x.exact.p; else delete r.exact; } return res; }
+            }
             const pol = smartPol(this.W), seeds = [1, 2, 3, 4, 5, 6, 7, 8];
             const trc = lsGet('kitsu_ai_training', null), tr0 = [...(trc?.objectif?.equipe || []), ...(trc?.cartes || []).slice(0, 2).map(c => c.id)].filter(id => S.owned?.[id]);
             const xw0 = xpWeights(), focusT = (trc?.objectif?.equipe || []).filter(id => S.owned?.[id]);
@@ -1989,12 +1997,9 @@
             // Trios du calcul Campagne du PC (meilleur trio de ce combat parmi TOUS tes trios, et trio du plan) : ajoutes a la liste,
             // puis classes comme les autres a tes niveaux actuels.
             const calc = new Set(); let exact = null;
-            if (localPC.ok) { const c = await localAsk('/equipes', { conseil: 1, fid }, 4000).catch(() => null);
-              // 5.28 : avec le script prive, trio du calcul Campagne exact (% de 3 etoiles en suivant le conseil exact en combat).
-              // Calcul fait au niveau 99 : seulement si les 3 cartes y sont deja.
-              const ex = c?.exact, exIds = (ex?.trio || []).map(Number).sort((a, b) => a - b);
-              if (exIds.length === 3 && exIds.every(id => S.owned?.[id] && (ex.niveaux !== '99' || (S.lv?.[id]?.l || 1) >= 99)) && ex.troisEtoiles > 0) { exact = { k: exIds.join('-'), p: ex.troisEtoiles / 100 }; if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === exact.k)) list.push(exIds); }
-              for (const x of c?.trios || []) { const ids = x.map(Number).sort((a, b) => a - b); if (ids.length === 3 && ids.every(id => S.owned?.[id])) { const k = ids.join('-'); calc.add(k); if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === k)) list.push(ids); } } }
+            if (localPC.ok) { const x = await this._exactPC(fid, S);
+              if (x?.exact) { exact = x.exact; if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === exact.k)) list.push(exact.k.split('-').map(Number)); }
+              for (const ids of x?.trios || []) { const k = ids.join('-'); calc.add(k); if (!list.some(t => t.slice().sort((a, b) => a - b).join('-') === k)) list.push(ids); } }
             // Calcul sur le PC (serveur local) : 24 tirages par trio au lieu de 8, sinon calcul dans le navigateur.
             let res = null;
             if (localPC.ok) { const r = await localAsk('/equipes', { dom: domFile(), fid, equipes: list.map(t => teamOf(t, S)), W: this.W, seeds: 24 }, 15000); if (r?.res?.length === list.length) res = list.map((t, i) => ({ t, w: r.res[i].win / r.res[i].n, s: r.res[i].s2 / r.res[i].n, s3: r.res[i].s3 / r.res[i].n, pc: 1 })); }
@@ -2005,6 +2010,16 @@
             const keys = Object.keys(c2).sort((a, b) => c2[b].t - c2[a].t).slice(0, 25);
             lsSet('kitsu_ai_teams', Object.fromEntries(keys.map(k => [k, c2[k]])));
             return res;
+          },
+          // Trios du calcul Campagne du PC pour ce combat : { exact: { k, p } | null, trios: [[id, id, id]...] }, null si le PC ne repond pas.
+          // 5.28 : avec le script prive, trio du calcul Campagne exact (% de 3 etoiles en suivant le conseil exact en combat).
+          // Calcul fait au niveau 99 : seulement si les 3 cartes y sont deja.
+          async _exactPC(fid, S = save()) {
+            const c = await localAsk('/equipes', { conseil: 1, fid }, 4000).catch(() => null); if (!c) return null;
+            const ex = c.exact, exIds = (ex?.trio || []).map(Number).sort((a, b) => a - b);
+            const exact = exIds.length === 3 && exIds.every(id => S.owned?.[id] && (ex.niveaux !== '99' || (S.lv?.[id]?.l || 1) >= 99)) && ex.troisEtoiles > 0 ? { k: exIds.join('-'), p: ex.troisEtoiles / 100 } : null;
+            const trios = (c.trios || []).map(x => x.map(Number).sort((a, b) => a - b)).filter(ids => ids.length === 3 && ids.every(id => S.owned?.[id]));
+            return { exact, trios };
           },
           // Precalcule les equipes des 3 prochains combats du plan (pendant l'ecran de resultats).
           // Combat a rejouer pour l'XP quand la campagne n'a plus de 3 etoiles faciles : meilleur XP par energie

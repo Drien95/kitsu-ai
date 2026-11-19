@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.54.0
+
+Choix d'équipe (Campagne) : le trio du calcul exact du script privé passe devant même quand le classement de ce combat était déjà en cache.
+
+- **Cause** : le classement des trios d'un combat est gardé en cache (`kitsu_ai_teams`). S'il avait été calculé PC éteint, ou avant le dernier calcul Campagne exact, l'écran d'équipe réaffichait le trio du public sans redemander le trio exact au PC.
+- **Correction** : à chaque écran d'équipe, le trio exact est redemandé au PC (`_exactPC`, une requête locale). Déjà classé : son marquage est mis à jour ; absent : le classement est refait avec lui ; PC muet : le cache sert tel quel.
+- **Mesure** (vrai jeu joué en local, PC simulé) : 1er passage PC éteint, « À jouer » = trio du public ; 2e passage PC allumé avec un trio exact : avant, trio du public (aucune demande au PC) ; après, trio exact (« calcul exact (script privé) : 3 étoiles 92 % »).
+
 ## 5.53.0
 
 Combat : quand le script privé donne le coup, le conseil orange du script public n'apparaît plus du tout, même un instant.
