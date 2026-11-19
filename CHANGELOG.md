@@ -4,6 +4,21 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.46.0
+
+Campagne : le 1er tour de la course ne fait plus jouer leur paquet complet aux trios sans espoir.
+
+- **Méthode** (tours de 3 000 trios ou plus, Cauchemar N/D/E) : tous les trios jouent la 1re moitié de leur paquet. Les 2 000 meilleurs à mi-chemin (borne basse, chaque objectif qui élimine) jouent la 2e moitié et donnent la barre : la 30e meilleure borne basse sur paquets complets, qui ne dépasse jamais celle du tour complet. Un trio dont la borne haute à mi-chemin est sous la barre de tous ces objectifs est écarté sans jouer la 2e moitié ; les autres finissent leur paquet (mêmes graines par combat : paquets complets identiques, journal et base commune inchangés). La moitié jouée est gardée au journal pour la reprise. `--sans-demi` : tour complet pour tous ; `--demi-min`, `--demi-barre`.
+- **Mémoire** : état dans des tableaux de nombres (7 M trios = 21 M moitiés), aucun objet par trio. 348 cartes, 3 min de calcul : 1,43 Go sans, 1,49 Go avec (+4 %).
+- **Mesures** (VM 4 fils, moteur B4t5msj4, 100 cartes, 161 700 trios, Cauchemar, 96 combats par difficulté) :
+
+| Collection | 1er tour | Calcul complet | Combats simulés | Résultats |
+|---|---|---|---|---|
+| Cartes fortes | 747 s puis 491 s (−34 %) | 1 331 s puis 1 061 s (−20 %) | 10,67 M puis 7,77 M (−27 %) | identiques (top 10 des 4 objectifs, meilleur trio des 288 combats, plan) |
+| Cartes au hasard | 681 s puis 698 s | 989 s puis 991 s | 10,60 M puis 10,36 M | identiques |
+
+Avec des cartes au hasard, la barre reste trop basse à mi-chemin : peu de trios sont écartés (8 805 sur 161 700) et le gain ne couvre pas le surcoût.
+
 ## 5.45.0
 
 Le panneau prend des visuels, sans rien qui tourne en continu.
