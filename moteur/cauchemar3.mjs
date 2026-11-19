@@ -57,9 +57,24 @@ if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la s
 const sigCarte = makeSigCarte(G, B), sigG = signatureCombat(G, B, SIM, WA), wKey = h53(JSON.stringify(WA));
 const carte = (id, lk = LK(id)) => ({ id, lv: LV(id), stars: ET(id), ...(lk ? { lk } : {}) });
 const cleCarte = (id, lk = LK(id)) => `${id}:${LV(id)}:${ET(id)}:${(lk || []).join('+')}:${sigCarte(id)}`;
-let trios = []; for (let a = 0; a < IDS.length; a++) for (let b = a + 1; b < IDS.length; b++) for (let c = b + 1; c < IDS.length; c++) trios.push([IDS[a], IDS[b], IDS[c]]);
-if (arg('max-trios')) trios = shuffle(trios, 5).slice(0, +arg('max-trios'));
-const T = trios.length, cleTrio = trios.map(t => t.map(id => cleCarte(id)).sort().join(','));
+// 5.42.1 : trios ranges en tableau compact (3 x 16 bits par trio : place des cartes dans IDS) au lieu de 7 M petits tableaux, et
+// cles de journal calculees a la demande depuis la cle de chaque carte (avant : 7 M chaines gardees en memoire).
+// trios[t] et cleTrio[t] s'utilisent comme avant (meme ordre, memes valeurs).
+const NI = IDS.length, POS = new Map(IDS.map((id, i) => [id, i]));
+const C2 = k => k * (k - 1) / 2, debutA = new Float64Array(NI + 1); for (let a = 0; a < NI; a++) debutA[a + 1] = debutA[a] + C2(NI - 1 - a);
+const rangDe = (a, b, c) => debutA[a] + (b - a - 1) * (NI - 2 - a) - C2(b - a - 1) + (c - b - 1); // trio a < b < c dans l'ordre lexicographique
+let TRI = new Uint16Array(3 * debutA[NI]); { let k = 0; for (let a = 0; a < NI; a++) for (let b = a + 1; b < NI; b++) for (let c = b + 1; c < NI; c++) { TRI[k++] = a; TRI[k++] = b; TRI[k++] = c; } }
+let rangMelange = null; // --max-trios : trios tires au hasard (tests), retrouves par une table
+if (arg('max-trios')) {
+  const tous = [...Array(debutA[NI]).keys()], pris = shuffle(tous, 5).slice(0, +arg('max-trios')), t2 = new Uint16Array(3 * pris.length);
+  pris.forEach((r, i) => t2.set(TRI.subarray(3 * r, 3 * r + 3), 3 * i)); TRI = t2; rangMelange = new Map(pris.map((r, i) => [r, i]));
+}
+const T = TRI.length / 3;
+const trios = new Proxy([], { get: (o, k) => { if (k === 'length') return T; if (typeof k === 'string' && k.length && k.charCodeAt(0) >= 48 && k.charCodeAt(0) <= 57) { const t = +k; return t < T ? [IDS[TRI[3 * t]], IDS[TRI[3 * t + 1]], IDS[TRI[3 * t + 2]]] : undefined; } return undefined; } });
+// Index d'un trio a partir de ses cartes (dans n'importe quel ordre), ou undefined.
+const indexDe = ids => { const p = ids.map(id => POS.get(id)); if (p.length !== 3 || p.some(x => x === undefined)) return undefined; p.sort((x, y) => x - y); if (p[0] === p[1] || p[1] === p[2]) return undefined; const r = rangDe(p[0], p[1], p[2]); return rangMelange ? rangMelange.get(r) : r; };
+const CLEC = IDS.map(id => cleCarte(id));
+const cleTrio = new Proxy([], { get: (o, k) => { if (k === 'length') return T; if (typeof k === 'string' && k.length && k.charCodeAt(0) >= 48 && k.charCodeAt(0) <= 57) { const t = +k; return [CLEC[TRI[3 * t]], CLEC[TRI[3 * t + 1]], CLEC[TRI[3 * t + 2]]].sort().join(','); } return undefined; } });
 // Signature d'un combat : les ennemis tels que le jeu les met en place (stats, niveau, boss).
 const sigCombat0 = f => { try { return f + JSON.stringify(B.enemies(G.setupBattle(G.findFight(f), [{ id: IDS[0], lv: 1, stars: 0 }], 1).st).map(e => [e.id, e.name, e.lv, e.atk, e.def, e.maxHp, e.spd, e.boss ? 1 : 0])); } catch { return f; } };
 const sigCache = new Map(), sigCombat = f => sigCache.get(f) ?? sigCache.set(f, sigCombat0(f)).get(f);
@@ -98,23 +113,38 @@ async function rejouerLignes(lot, lignes) {
 // ---------- etoiles combat par combat deja jouees (5.27) ----------
 // La course joue deja chaque trio sur chaque combat (tirage 1 ; tirages 2 et 3 pour les finalistes). On garde l'etoile de chaque
 // combat : les etapes par combat (lib/etages.mjs) la reprennent au lieu de rejouer le meme trio sur le meme combat avec la meme
-// graine (resultat identique, le simulateur est deterministe). Tirage 1 : 1 octet par trio et par combat ; tirages 2 et 3 :
-// seulement les trios qui les jouent (finalistes).
+// graine (resultat identique, le simulateur est deterministe). Tirage 1 : un mot de 32 bits par trio et par paquet joue (bit k = 3 etoiles
+// au combat k, bit 30 = paquet joue) ; tirages 2 et 3 : seulement les trios qui les jouent (finalistes).
+// 5.42.1 : avant, 1 octet par trio et par combat, joue ou non (6,96 M trios x 11 874 combats = 83 Go : plantage des grosses collections).
+// Maintenant seuls les paquets joues comptent : d'abord une table (trio -> mot), puis un tableau de T mots (4 octets par trio)
+// quand plus d'un trio sur 16 a joue le paquet (en pratique le 1er tour, ou tous les trios jouent).
 const OFF = DIFF.map(() => []); let NFT = 0; paquets.forEach((ps, di) => ps.forEach((p, pi) => { OFF[di][pi] = NFT; NFT += p.f.length; }));
-const VU1 = new Uint8Array(T * NFT), VU23 = new Map();
+const FDI = new Uint8Array(NFT), FPI = new Uint16Array(NFT), FK = new Uint16Array(NFT); // combat global -> difficulte, paquet, place
+paquets.forEach((ps, di) => ps.forEach((p, pi) => p.f.forEach((_, k) => { const fi = OFF[di][pi] + k; FDI[fi] = di; FPI[fi] = pi; FK[fi] = k; })));
+const JOUE = 1 << 30, BITS = PAQ <= 30 && paquets.every(ps => ps.every(p => p.f.length <= 30));
+const VU1 = DIFF.map(() => []), VU23 = new Map(), DENSE = Math.max(1024, T >> 4);
+const lire1 = (t, di, pi) => { const v = VU1[di][pi]; return !v ? 0 : v instanceof Map ? v.get(t) || 0 : v[t]; };
+function ecrire1(t, di, pi, mot) {
+  let v = VU1[di][pi]; if (!v) v = VU1[di][pi] = new Map();
+  if (v instanceof Map) { v.set(t, mot); if (v.size > DENSE) { const d = new Uint32Array(T); for (const [k, x] of v) d[k] = x; VU1[di][pi] = d; } } else v[t] = mot;
+}
 let vusReutilises = 0;
 function noter(t, di, pi, seed, st) {
   if (t == null || typeof st !== 'string' || st.length !== paquets[di][pi].f.length) return;
-  if (seed === 1) { const b = t * NFT + OFF[di][pi]; for (let k = 0; k < st.length; k++) VU1[b + k] = st[k] === '3' ? 2 : 1; }
+  if (seed === 1) { if (BITS) { let m = JOUE; for (let k = 0; k < st.length; k++) if (st[k] === '3') m |= 1 << k; ecrire1(t, di, pi, m); } else VU23.set(`${t}|${di}|${pi}|1`, st); }
   else if (seed === 2 || seed === 3) VU23.set(`${t}|${di}|${pi}|${seed}`, st);
 }
 // Etoiles d'un trio sur un paquet pour une graine (chaine '3'/'0' par combat), ou null si pas encore joue.
 function connu(t, di, pi, seed) {
-  if (seed === 1) { const b = t * NFT + OFF[di][pi], n = paquets[di][pi].f.length; let st = ''; for (let k = 0; k < n; k++) { const v = VU1[b + k]; if (!v) return null; st += v === 2 ? '3' : '0'; } vusReutilises += n; return st; }
+  if (seed === 1 && BITS) { const m = lire1(t, di, pi), n = paquets[di][pi].f.length; if (!m) return null; let st = ''; for (let k = 0; k < n; k++) st += m >> k & 1 ? '3' : '0'; vusReutilises += n; return st; }
   const st = VU23.get(`${t}|${di}|${pi}|${seed}`); if (st) vusReutilises += st.length; return st || null;
 }
 // Tirage 1 d'un trio sur un combat (index global, meme ordre que lib/etages.mjs) : 0 inconnu, 1 pas 3 etoiles, 2 trois etoiles.
-const connu1 = (t, fi) => { const v = VU1[t * NFT + fi]; if (v) vusReutilises++; return v; };
+const connu1 = (t, fi) => {
+  let v; if (BITS) { const m = lire1(t, FDI[fi], FPI[fi]); v = m ? (m >> FK[fi] & 1 ? 2 : 1) : 0; }
+  else { const st = VU23.get(`${t}|${FDI[fi]}|${FPI[fi]}|1`); v = st ? (st[FK[fi]] === '3' ? 2 : 1) : 0; }
+  if (v) vusReutilises++; return v;
+};
 
 // ---------- calcul d'un lot (journal d'abord, combats manquants en parallele) ----------
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined, version);
@@ -135,7 +165,7 @@ async function jouer(items) { // items : { di, pi, seed, team, ck, t? } -> [n, s
 }
 
 // ---------- course avec elimination ----------
-const N = new Uint32Array(T * ND), S3 = new Uint32Array(T * ND);
+const N = new Uint16Array(T * ND), S3 = new Uint16Array(T * ND); // 5.42.1 : 16 bits suffisent (au plus 3 tirages x 1 979 combats = 5 937 par difficulte)
 const score = (t, o) => { // proportion de 3 etoiles et erreur type, par difficulte ou en moyenne
   const ps = OBJS[o].d; let p = 0, v = 0;
   for (const d of ps) { const n = N[t * ND + d], q = n ? S3[t * ND + d] / n : 0, qq = (S3[t * ND + d] + 1) / (n + 2); p += q; v += qq * (1 - qq) / Math.max(1, n); }
@@ -147,18 +177,24 @@ function eliminer(alive, pi) {
   if (alive.length <= K) return alive;
   const garde = new Uint8Array(T);
   for (const o of pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0)) {
-    const sc = alive.map(t => ({ t, ...score(t, o) })); const lo = sc.map(x => x.p - Z * x.se).sort((a, b) => b - a), bar = lo[Math.min(K, lo.length) - 1];
-    for (const x of sc) if (x.p + Z * x.se >= bar) garde[x.t] = 1;
+    // 5.42.1 : bornes dans des tableaux de nombres (avant : un objet par trio, 7 M au 1er tour d'une grosse collection)
+    const n = alive.length, lo = new Float64Array(n), hi = new Float64Array(n);
+    for (let j = 0; j < n; j++) { const x = score(alive[j], o); lo[j] = x.p - Z * x.se; hi[j] = x.p + Z * x.se; }
+    const bar = lo.slice().sort()[n - Math.min(K, n)]; // Ke plus grande borne basse
+    for (let j = 0; j < n; j++) if (hi[j] >= bar) garde[alive[j]] = 1;
   }
   return alive.filter(t => garde[t]);
 }
+// 5.42.1 : lots de 60 000 paquets construits au fur et a mesure (avant : tous les paquets du tour d'un coup, soit 21 M objets
+// pour 7 M trios, plusieurs Go de memoire).
 async function tour(alive, pi, seed, dis = DIS_TOUTES) {
-  const items = [], idx = [];
-  for (const t of alive) for (const di of dis) if (paquets[di][pi]) { items.push({ di, pi, seed, team: trios[t].map(id => carte(id)), ck: cleTrio[t], t }); idx.push(t * ND + di); }
-  for (let a = 0; a < items.length; a += 60000) {
-    const r = await jouer(items.slice(a, a + 60000));
-    r.forEach(([n, s3], j) => { N[idx[a + j]] += n; S3[idx[a + j]] += s3; });
-    if (Date.now() - dernierLog > 60000 && items.length > 60000) { dernierLog = Date.now(); log(`  tour ${pi + 1} : ${Math.min(items.length, a + 60000)} / ${items.length} paquets, ${Math.round(simules / ((Date.now() - T0) / 1000))} combats/s`); }
+  const ds = dis.filter(di => paquets[di][pi]), total = alive.length * ds.length;
+  for (let a = 0, fait = 0; a < alive.length;) {
+    const items = [], idx = [];
+    for (; a < alive.length && items.length < 60000; a++) { const t = alive[a]; for (const di of ds) { items.push({ di, pi, seed, team: trios[t].map(id => carte(id)), ck: cleTrio[t], t }); idx.push(t * ND + di); } }
+    const r = await jouer(items); fait += items.length;
+    r.forEach(([n, s3], j) => { N[idx[j]] += n; S3[idx[j]] += s3; });
+    if (Date.now() - dernierLog > 60000 && total > 60000) { dernierLog = Date.now(); log(`  tour ${pi + 1} : ${fait} / ${total} paquets, ${Math.round(simules / ((Date.now() - T0) / 1000))} combats/s`); }
   }
 }
 
@@ -247,19 +283,25 @@ if (!arg('sans-collectifs') && G.activeLinks && G.linkKey) for (const x of tops[
 // ---------- meilleur trio par combat (lib/etages.mjs) ----------
 // Trios que le script Tampermonkey essaie sur l'ecran d'equipe : ceux de tes 10 cartes les plus fortes (meme formule que pool(10)).
 const force = id => { const c = CH[id]; let st; try { st = G.statsAt(c, LVA(id), ET(id)); } catch { st = { atk: c.atk, def: c.def }; } return (st.atk + st.def) * (c.hpK || 1.1) * ({ M: 1.25, L: 1.15, E: 1.1 }[c.r] || 1); };
-const dix = new Set(IDS.slice().sort((a, b) => force(b) - force(a)).slice(0, 10)), indexTrio = new Map(trios.map((t, i) => [t.join('-'), i]));
-const scriptSet = new Set(trios.map((t, i) => t.every(id => dix.has(id)) ? i : -1).filter(i => i >= 0));
+const dix = new Set(IDS.slice().sort((a, b) => force(b) - force(a)).slice(0, 10)), indexTrio = { get: k => indexDe(String(k).split('-').map(Number)) };
+const scriptSet = new Set((() => { const d = [...dix], L = []; for (let a = 0; a < d.length; a++) for (let b = a + 1; b < d.length; b++) for (let c = b + 1; c < d.length; c++) { const t = indexDe([d[a], d[b], d[c]]); if (t !== undefined) L.push(t); } return L.sort((x, y) => x - y); })()); // ordre des trios, comme avant (departage des egalites par combat)
 let etages = null;
 if (!arg('sans-etages')) {
   const objE = TOUTES ? OBJ.indexOf('Les6') : IMOY, enCourse = new Set(alive), NCE = +arg('candidats-etages', 120);
-  const classes = [...Array(T).keys()].filter(t => N[t * ND]).map(t => ({ t, a: enCourse.has(t) ? 1 : 0, ...score(t, objE) })).sort((x, y) => y.a - x.a || (y.p - Z * y.se) - (x.p - Z * x.se));
+  // 5.42.1 : en course d'abord, puis les meilleurs ecartes ; seuls les NCE premiers servent (avant : les 7 M trios tries).
+  const lo = t => { const x = score(t, objE); return x.p - Z * x.se; }, parLo = (x, y) => y.lo - x.lo || x.t - y.t;
+  // Meilleurs ecartes (hors course) qui verifient f : les k premiers par borne basse, sans trier tous les trios.
+  const ecartesTop = (k, f) => { const L = []; if (k <= 0) return L; for (let t = 0; t < T; t++) { if (!N[t * ND] || enCourse.has(t) || !f(t)) continue; const v = lo(t); if (L.length < k || parLo({ t, lo: v }, L[L.length - 1]) < 0) { L.push({ t, lo: v }); L.sort(parLo); if (L.length > k) L.pop(); } } return L; };
+  const vivants = alive.map(t => ({ t, lo: lo(t) })).sort(parLo), classes = vivants.slice(0, NCE);
+  if (classes.length < NCE) classes.push(...ecartesTop(NCE - classes.length, () => true));
   const cur = indexTrio.get(equipe.slice().sort((a, b) => a - b).join('-'));
   // 5.43 : plus les meilleurs trios deja prets (3 cartes au niveau 99), pour que chaque combat ait un trio jouable tout de suite.
   const au99 = id => (SAVE.lv?.[id]?.l || 1) >= 99, NPRET = +arg('candidats-prets', 40);
-  const prets = NIV === '99' ? classes.filter(x => trios[x.t].every(au99)).slice(0, NPRET).map(x => x.t) : [];
+  // 5.43.2 : comme la 5.43.0, les NPRET premiers trios prets de tout le classement (en course d'abord, puis les ecartes).
+  const prets = NIV !== '99' ? [] : (() => { const L = vivants.filter(x => trios[x.t].every(au99)).slice(0, NPRET); return [...L, ...ecartesTop(NPRET - L.length, t => trios[t].every(au99))].map(x => x.t); })();
   const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...prets, ...scriptSet, ...(cur != null ? [cur] : [])])];
   const sigColl = h53(IDS.map(id => cleCarte(id)).join(','));
-  etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
+  etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, indexDe, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
     seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: au99 });
   etages.scriptCartes = [...dix].map(nom); etages.reprisCourse = vusReutilises;
   log(`par combat : ${vusReutilises} combats repris de la course au lieu d'etre rejoues`);

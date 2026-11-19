@@ -67,17 +67,18 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
     let alive = [...Array(T).keys()], montees = 0, repris = 0; const entonnoir = [], t0 = Date.now();
     const borne = t => { const m = s1[t] / n[t], v = n[t] > 1 ? Math.max(0, (s2[t] - n[t] * m * m) / (n[t] - 1)) : 0; const se = Math.sqrt(Math.max(v, sd0 * sd0) / n[t]); return { m, lo: m - z * se, hi: m + z * se }; };
     for (let r = 1; r <= manches; r++) {
-      const todo = [];
-      for (const t of alive) { const k = h53j(cle(t) + '|' + r), v = J.get(k); if (v != null) { const f = +v; n[t]++; s1[t] += f; s2[t] += f * f; repris++; } else todo.push([t, k]); }
+      // 5.42.1 : journal lu sans garder une liste d'objets ; les montees a simuler sont jouees par lots de 20 000 trios.
+      const todo = new Int32Array(alive.length); let nt = 0;
+      for (const t of alive) { const v = J.get(h53j(cle(t) + '|' + r)); if (v != null) { const f = +v; n[t]++; s1[t] += f; s2[t] += f * f; repris++; } else todo[nt++] = t; }
       // 5.42.1 : le travail reel de la manche (montees a simuler, reprises du journal) avant de la lancer.
-      onManche({ debut: true, r, manches, aFaire: todo.length, reprises: alive.length - todo.length, montees });
-      for (let a = 0; a < todo.length; a += 20000) {
-        const part = todo.slice(a, a + 20000), res = await climb(part.map(([t]) => mk(tr[t])), [r], 16);
-        part.forEach(([t, k], j) => { const f = res[j][0]; n[t]++; s1[t] += f; s2[t] += f * f; J.set(k, String(f)); montees++; });
-        J.flush(); onManche({ r, manches, fait: Math.min(todo.length, a + 20000), total: todo.length, montees, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000) });
+      onManche({ debut: true, r, manches, aFaire: nt, reprises: alive.length - nt, montees });
+      for (let a = 0; a < nt; a += 20000) {
+        const part = todo.subarray(a, Math.min(nt, a + 20000)), res = await climb(Array.from(part, t => mk(tr[t])), [r], 16);
+        part.forEach((t, j) => { const f = res[j][0]; n[t]++; s1[t] += f; s2[t] += f * f; J.set(h53j(cle(t) + '|' + r), String(f)); montees++; });
+        J.flush(); onManche({ r, manches, fait: Math.min(nt, a + 20000), total: nt, montees, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000) });
       }
       const avant = alive.length;
-      if (alive.length > garder) { const b = alive.map(t => ({ t, ...borne(t) })), lo = b.map(x => x.lo).sort((x, y) => y - x)[garder - 1]; alive = b.filter(x => x.hi >= lo).map(x => x.t); }
+      if (alive.length > garder) { const lo = new Float64Array(alive.length), hi = new Float64Array(alive.length); alive.forEach((t, j) => { const x = borne(t); lo[j] = x.lo; hi[j] = x.hi; }); const bar = lo.slice().sort()[alive.length - garder]; alive = alive.filter((t, j) => hi[j] >= bar); } // 5.42.1 : sans un objet par trio
       entonnoir.push(alive.length);
       onManche({ r, manches, avant, apres: alive.length, montees, repris, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000), fin: true });
     }
