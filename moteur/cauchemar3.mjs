@@ -9,7 +9,7 @@
 // ses collectifs, les combats et l'IA sont les memes ; il sert aussi de point de reprise apres une coupure.
 //   node cauchemar3.mjs [--niveaux 99|actuel] [--difficultes toutes|cauchemar] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
 //   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--seuil 60] [--sans-etages] [--sans-diagnostic]
-//   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs
+//   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs  --sans-liens
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
@@ -23,6 +23,7 @@ import { construireWC, iaPersoMeilleure } from './lib/ia-commune.mjs';
 import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
 import { diagnostiquer } from './lib/diagnostic.mjs';
+import { chercherLiens, ciblesDuPlan } from './lib/liens.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, SIM = makeSim(G, B);
 const NIV = String(arg('niveaux', '99')), K = +arg('garder', 30), Z = +arg('z', 3), PAQ = +arg('paquet', 16);
@@ -254,6 +255,11 @@ if (!arg('sans-etages')) {
     seuil: +arg('seuil', 60) / 100, budget: +arg('budget-specialistes', 60), connu, connu1, dejaAu99: id => (SAVE.lv?.[id]?.l || 1) >= 99 });
   etages.scriptCartes = [...dix].map(nom); etages.reprisCourse = vusReutilises;
   log(`par combat : ${vusReutilises} combats repris de la course au lieu d'etre rejoues`);
+  // 5.41 : liens actifs a cocher pour les trios du plan dont une carte a plus de 6 liens (lib/liens.mjs), sur leurs combats.
+  if (!arg('sans-liens') && G.activeLinks && G.linkPlan) try {
+    const cibles = ciblesDuPlan(G, etages);
+    if (cibles.length) { log(`liens : ${cibles.length} trio(s) du plan avec une carte a plus de ${G.LINK_CAP || 6} liens actifs`); etages.liens = await chercherLiens({ G, pool, WA, cibles, carte, lkDe: LK, nom, seuil: +arg('seuil', 60) / 100, log }); }
+  } catch (e) { log('liens reportes (' + e.message + ')'); }
   // Nom, monde et place de chaque combat de base, pour l'affichage par etage.
   etages.infos = {}; const vus = new Set(etages.combats.map(c => c[8])); for (const w of G.ALL_WORLDS) for (const f of w.fights) if (vus.has(f.id)) etages.infos[f.id] = [w.id, f.idx ?? w.fights.indexOf(f), f.t || f.id, f.boss ? 1 : 0];
 }

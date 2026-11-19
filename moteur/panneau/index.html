@@ -1241,6 +1241,20 @@ function campDiag(e, nomD) {
   h += `<div class="muted" style="font-size:12.5px;margin-top:8px">${r.combats} combats sous ${e.seuil} % en ${esc(nomD(ET.d))}, ${g.maxTrios} trios × ${g.tirages} tirages chacun.${r.pv9Med != null ? ` Quand c'est trop lent, il reste en médiane <b>${Math.round(100 * r.pv9Med)} %</b> des PV ennemis au début du cycle 9.` : ''}${vict ? ` Cartes le plus souvent K.O. en premier (toutes difficultés) : ${vict}.` : ''} La cause de chaque combat est aussi dans le tableau ci-dessous.</div>`;
   return h;
 }
+// Liens actifs a cocher (5.41, lib/liens.mjs) : trios du plan dont une carte a plus de 6 liens actifs, cherches sur leurs combats.
+function campLiens(e) {
+  const L = e.liens?.cartes || []; if (!L.length) return '';
+  const st = { atk: 'ATK', def: 'DEF', hp: 'PV', crit: 'critique', spd: 'VIT', energy: 'énergie' };
+  let h = `<div class="sp"></div><h3 class="cat">Liens actifs à cocher</h3><div class="muted" style="font-size:12.5px;margin:-4px 0 8px">Une carte garde 6 liens actifs au plus ; sans choix de ta part, le jeu prend les 6 plus gros %. Pour les trios du plan où une carte en a plus, chaque choix a été joué sur les combats de ce trio. Deux choix qui donnent les mêmes totaux jouent le même combat, et un total qui a moins partout (VIT à part) est écarté. Le réglage se fait par carte dans le jeu : il vaut pour toutes ses équipes.</div>`;
+  h += `<table class="c3t"><tr><th>Trio</th><th>Carte</th><th>Coche ces 6 liens</th><th class="n">3★ (ton réglage puis conseil)</th><th class="n">Combats sûrs</th></tr>${L.map(c => {
+    const tot = Object.entries(c.stats || {}).map(([k, v]) => `+${v} % ${st[k] || k}`).join(', ');
+    const ctrl = c.controle?.testes ? `<div class="c3s muted">contrôle : ${c.controle.mieux} / ${c.controle.testes} choix écartés font mieux</div>` : '';
+    return `<tr><td>${equipeHTML(c.ids, true)}</td><td><b>${esc(c.carte)}</b><div class="c3s muted">${c.actifs} liens actifs, ${c.choix.tous} choix, ${c.choix.distincts} totaux, ${c.choix.gardes} gardés</div></td>
+      <td>${c.utile ? c.conseil.map(esc).join('<br>') + `<div class="c3s muted">total : ${esc(tot)}</div>` : '<span class="muted">garde ton réglage (pas nettement mieux)</span>'}${ctrl}</td>
+      <td class="n">${c.avant} % ${c.utile ? `puis <b style="color:var(--ok)">${c.apres} %</b>` : ''}<div class="c3s muted">${c.combats} combats × ${c.tirages} tirages</div></td><td class="n">${c.sursAvant}${c.utile ? ' puis <b>' + c.sursApres + '</b>' : ''}</td></tr>`;
+  }).join('')}</table>`;
+  return h;
+}
 function campEtages(j) {
   const e = j.etages; if (!e?.combats?.length) return '';
   const C = e.combats, info = e.infos || {}, nomD = di => (DIFFS.find(x => x[0] === di) || [, j.difficultes?.[di]])[1], colD = di => (DIFFS.find(x => x[0] === di) || [])[2] || 'var(--acc)';
@@ -1258,6 +1272,7 @@ function campEtages(j) {
   // plan minimal
   const plan = e.plan || [], nPlan = C.filter(c => c[1] === ET.d && c[4] >= 0);
   h += `<div class="sp"></div><h3 class="cat">Le plan : ${plan.length} trio${plan.length > 1 ? 's' : ''} pour tout couvrir</h3><table class="c3t"><tr><th>#</th><th>Trio</th><th>Combats couverts (${esc(nomD(ET.d))})</th><th>Toutes difficultés</th></tr>${plan.map((p, k) => `<tr${k ? '' : ' class="c3top"'}><td>${k + 1}</td><td>${equipeHTML(trio(p.trio), true)}</td><td>${nPlan.filter(c => c[4] === p.trio).length}</td><td>${p.combats}</td></tr>`).join('')}</table>`;
+  h += campLiens(e);
   // combats de la difficulte, filtres
   const ici = new Set(C.filter(c => c[1] === ET.d).map(c => info[c[8]]?.[0] || c[8].split('-')[0])), mondes = [...(j.mondes || []).map(m => m.id).filter(m => ici.has(m)), ...[...ici].filter(m => !(j.mondes || []).some(x => x.id === m))]; // ordre du jeu
   let L = C.filter(c => c[1] === ET.d);
@@ -2142,7 +2157,7 @@ refresh(); setInterval(refreshDoux, 1500); chargerCartes();
 // Calque par-dessus le panneau : projecteur sur l'element dont parle Kiko, etiquette, boite de dialogue.
 // Etapes « A toi » : on avance quand tu ouvres toi-meme l'onglet montre. Rien ne se lance, rien n'est clique a ta place.
 // Etat dans localStorage (kitsuGuide) : chapitres vus, version des nouveautes vues, options. Aucune animation hors du calque ouvert.
-const KG_VER = '5.40.0';
+const KG_VER = '5.41.0';
 function kgFox(ex, id) {
   id = id || 'kf' + Math.random().toString(36).slice(2, 7);
   const D = '#07080c', C = '#f4ede3', oeil = (x) => `<ellipse cx="${x}" cy="107" rx="7.5" ry="8.5" fill="${D}"/><circle cx="${x + 2.5}" cy="104" r="2.4" fill="#fff"/>`;
@@ -2207,7 +2222,10 @@ const KG = [
     { x: 'malin', p: 'guides', s: ['#kgList'], tag: 'Chapitres', t: "Les chapitres vus ont une coche. Après une mise à jour, je te montre <em>seulement ce qui a changé</em>." }] }
 ];
 // Nouveautes par version : le point rouge sur « ? » s'allume tant que celles de la version installee n'ont pas ete vues.
-const KG_NEWS = { '5.40.0': [
+const KG_NEWS = { '5.41.0': [
+  { x: 'malin', p: 'campagne', tag: 'Nouveau', t: "Une carte garde 6 liens actifs au plus. Quand elle en a plus, le calcul Campagne essaie les choix sur les combats de son trio et te dit lesquels cocher." },
+  { x: 'neutre', p: 'campagne', s: ['#c3etages'], t: "Tu les trouves sous <em>Le plan</em>, avec les 3★ de ton réglage puis du conseil. Ton réglage actuel part maintenant avec la sauvegarde." }],
+  '5.40.0': [
   { x: 'surpris', p: 'accueil', t: "Nouvelle version ! Une seule nouveauté, mais elle a des oreilles." },
   { x: 'joie', p: 'accueil', s: ['#kgHelp'], tag: 'Nouveau', t: "Ce <em>?</em> ouvre la visite guidée, à rejouer en entier ou par chapitre." },
   { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="guides"]'], tag: 'Nouveau', t: "Tu la retrouves aussi dans <em>Outils, Guides</em>, avec le choix de quand je me montre." }] };

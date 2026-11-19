@@ -47,6 +47,26 @@ t('journal : cle stable et distincte', h53('abc') === h53('abc') && h53('abc') !
 const pool = await makePool(2), jobs = fights.slice(0, 12).map(f => ({ team, fights: [f], seeds: [7] }));
 const pr = await pool.runAll(jobs, W_DEFAUT, {}, 3); await pool.close();
 t('multithread = fil unique', pr.every((r, i) => r.s2 === (a[i].stars >= 2 ? 1 : 0) && r.win === (a[i].win ? 1 : 0)));
+// Liens actifs (5.41, lib/liens.mjs) : memes totaux de stats = memes combats ; front de Pareto ; recherche sur quelques combats.
+{
+  const L = await import('./lib/liens.mjs'), cap = G.LINK_CAP || 6;
+  let tr = [9902707, 9637855, 3180].every(id => G.CHAR_BY_ID[id]) ? [9902707, 9637855, 3180] : null;
+  if (!tr) { const M = Object.values(G.CHAR_BY_ID).filter(c => ['M', 'L', 'E'].includes(c.r)).map(c => c.id); for (let x = 0; x < M.length && !tr; x++) for (let y = x + 1; y < M.length && !tr; y++) { const t3 = [M[x], M[y], M.find(z => z !== M[x] && z !== M[y])]; if (G.activeLinks(t3).filter(l => l.ids.includes(M[x])).length > cap) tr = t3; } }
+  const id = tr?.find(i => G.activeLinks(tr).filter(l => l.ids.includes(i)).length > cap), P = id ? L.profilsLiens(G, tr, id) : null;
+  t('liens : une carte a plus de 6 liens trouvee', !!P && P.actifs > cap, tr && tr.join('/'));
+  const dom = (p, q) => L.STATS.every((s2, j) => s2 === 'spd' ? q.v[j] === p.v[j] : q.v[j] >= p.v[j]) && L.STATS.some((_, j) => q.v[j] > p.v[j]);
+  t('liens : totaux distincts puis front de Pareto', !!P && P.gardes.length >= 1 && P.gardes.length <= P.distincts.length && P.distincts.length <= P.tous && P.gardes.every(p => !P.distincts.some(q => q !== p && dom(p, q))), P && `${P.tous} / ${P.distincts.length} / ${P.gardes.length}`);
+  // deux choix differents avec les memes totaux : memes combats (la base de la recherche)
+  let pair = null; if (P) { const n = P.liens.length, v = P.liens.map(l => L.STATS.map(s2 => s2 === l.stat ? l.pct : 0)), vus = new Map();
+    const rec = (i, k, acc, pris) => { if (pair) return; if (k === 0) { const c = acc.join(','), cl = pris.map(j => G.linkKey(P.liens[j])); if (vus.has(c)) pair = [vus.get(c), cl]; else vus.set(c, cl); return; } if (n - i < k) return; pris.push(i); rec(i + 1, k - 1, acc.map((x, j) => x + v[i][j]), pris); pris.pop(); rec(i + 1, k, acc, pris); };
+    rec(0, cap, L.STATS.map(() => 0), []); }
+  const eqLk = lk => tr.map(x => ({ id: x, lv: 99, stars: 0, ...(x === id ? { lk } : {}) }));
+  t('liens : memes totaux = memes combats', !!pair && fights.slice(0, 10).every(f => JSON.stringify(S.fight(f, eqLk(pair[0]), 7, pol)) === JSON.stringify(S.fight(f, eqLk(pair[1]), 7, pol))), pair ? '' : 'aucune paire');
+  const pl = await makePool(2), R = await L.chercherLiens({ G, pool: pl, WA: W_DEFAUT, cibles: [{ trio: tr, fights: fights.slice(0, 4) }], carte: (x, lk) => ({ id: x, lv: 99, stars: 0, ...(lk ? { lk } : {}) }), lkDe: () => null, nom: x => G.CHAR_BY_ID[x]?.n, conf: 1, controle: 2, log: () => {} });
+  await pl.close();
+  const c0 = R.cartes[0];
+  t('liens : recherche sur quelques combats', !!c0 && c0.cles.length === cap && c0.combats === 4 && c0.tirages === 2 && c0.apres >= c0.avant && R.simules > 0, JSON.stringify(c0 && { avant: c0.avant, apres: c0.apres, utile: c0.utile }));
+}
 // Raid : meme graine = meme raid, actions acceptees par le jeu, la coordination fait mieux que frapper seulement.
 const RA = await import('./lib/raid.mjs'), LG = Object.values(G.CHAR_BY_ID).filter(c => c.r === 'M' && !c.raidExclusive).slice(0, 9).map(c => ({ id: c.id, lv: 99 }));
 const rr = RA.roster(LG.slice(0, 3), LG.slice(3)), j1 = RA.jouer(G, rr, 11), j2 = RA.jouer(G, rr, 11);
