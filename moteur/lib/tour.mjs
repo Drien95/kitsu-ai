@@ -80,7 +80,9 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
       const avant = alive.length;
       if (alive.length > garder) { const lo = new Float64Array(alive.length), hi = new Float64Array(alive.length); alive.forEach((t, j) => { const x = borne(t); lo[j] = x.lo; hi[j] = x.hi; }); const bar = lo.slice().sort()[alive.length - garder]; alive = alive.filter((t, j) => hi[j] >= bar); } // 5.42.1 : sans un objet par trio
       entonnoir.push(alive.length);
-      onManche({ r, manches, avant, apres: alive.length, montees, repris, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000), fin: true });
+      // 5.45 : top 10 provisoire (etage moyen des trios encore en course), pour le suivi en direct du panneau. Un seul passage.
+      const top = []; for (const t of alive) { const m = s1[t] / n[t]; if (top.length < 10 || m > top[top.length - 1].m) { top.push({ t, m }); top.sort((a, b) => b.m - a.m); if (top.length > 10) top.pop(); } }
+      onManche({ r, manches, avant, apres: alive.length, montees, repris, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000), fin: true, top: top.map(x => ({ ids: tr[x.t], v: x.m })) });
     }
     const classement = alive.map(t => ({ t: tr[t], moy: s1[t] / n[t], n: n[t] })).sort((a, b) => b.moy - a.moy);
     // Ecartes les mieux places (souvent une seule montee) : prefiltre du departage exact, qui juge autrement que la regle apprise.

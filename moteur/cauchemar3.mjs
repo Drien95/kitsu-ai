@@ -303,6 +303,9 @@ for (let pi = 0; pi < TOURS; pi++) {
   alive = eliminer(alive, pi); entonnoir.push(alive.length);
   const ecoule = (Date.now() - T0) / 1000, vit = simules / Math.max(1, ecoule);
   log(`tour ${pi + 1}/${TOURS} : ${avant} -> ${alive.length} trios en course, ${simules} combats simules (${Math.round(vit)}/s), ${repris} paquets repris du journal`);
+  { // 5.45 : top 10 provisoire (3 etoiles en moyenne sur les Cauchemar), pour le suivi en direct du panneau. Un seul passage.
+    const top = []; for (const t of alive) { const p = score(t, IMOY).p; if (top.length < 10 || p > top[top.length - 1].p) { top.push({ t, p }); top.sort((a, b) => b.p - a.p); if (top.length > 10) top.pop(); } }
+    if (top.length) log(`top 10 tour ${pi + 1} : ${top.map(x => trios[x.t].join(',') + '=' + (100 * x.p).toFixed(1)).join(' | ')}`); }
 }
 if (DIS_CAMP.length) { for (let pi = 0; pi < TOURS; pi++) await tour(alive, pi, 1, DIS_CAMP); log(`Campagne : ${alive.length} finalistes, tirage 1`); }
 // Finale : 2 tirages de plus sur tous les combats pour les survivants (le hasard du combat compte).

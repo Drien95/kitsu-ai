@@ -58,7 +58,7 @@ const C = await T.course({ trios: tr, cle: cles, J, arret, garder: +arg('garder'
       const tp = PREC?.triosEssayes || 0, suite = Math.round((ent ? ent.reduce((a, b) => a + (b >= tp ? tr.length : Math.min(b, tr.length)), 0) : 0.1 * tr.length * (MANCHES - 1)) * x.aFaire / Math.max(1, tr.length));
       PREVU = x.aFaire + suite; log(`travail prevu : ${PREVU} montees a simuler (1re manche ${x.aFaire}, ${x.reprises} reprises du journal sur ${tr.length} ; manches suivantes ${ent ? 'environ' : 'estimees a'} ${suite})`); }
     log(`manche ${x.r}/${x.manches} : ${x.aFaire} montees a simuler, ${x.reprises} reprises du journal`);
-  } else if (x.fin) log(`manche ${x.r}/${x.manches} : ${x.avant} -> ${x.apres} trios en course, ${x.montees} montees simulees (${Math.round(x.vitesse)}/s), ${x.repris} reprises du journal`);
+  } else if (x.fin) { log(`manche ${x.r}/${x.manches} : ${x.avant} -> ${x.apres} trios en course, ${x.montees} montees simulees (${Math.round(x.vitesse)}/s), ${x.repris} reprises du journal`); if (x.top?.length) log(`top 10 manche ${x.r} : ${x.top.map(o => [...o.ids].join(',') + '=' + o.v.toFixed(1)).join(' | ')}`); }
   else if (Date.now() - dernierLog > 30000) { dernierLog = Date.now(); log(`  manche ${x.r}/${x.manches} : ${x.fait} / ${x.total} montees (${x.montees} au total, prevu ${PREVU}), ${Math.round(x.vitesse)} montees/s`); } } });
 // Etat du journal pour la prevision du panneau (/api/tour/prevision) : quelles cartes ont toutes leurs montees de 1re manche.
 const etatJournal = () => { const f = D('cache', 'tour-etat.json'), e = readJ(f) || {}; if (e.fichier !== path.basename(FJ)) for (const k of Object.keys(e)) delete e[k]; return { f, e }; };
