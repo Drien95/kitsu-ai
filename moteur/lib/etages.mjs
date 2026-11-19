@@ -67,7 +67,11 @@ export async function parCombat(o) {
   // combat par combat parmi TOUS les trios, chaque combat de Campagne qui n'est pas a 100 % chez les candidats passe aussi
   // par les specialistes (hors budget : c'est le calcul que la course faisait avant, en plus court).
   const camp = fi => DIFF[F[fi].di][0].startsWith('camp'), seuilCamp = o.seuilCamp ?? 1;
-  const durs = F.map((x, fi) => fi).filter(fi => meilleur[fi].p < (camp(fi) ? Math.max(seuil, seuilCamp) : seuil)).sort((a, b) => ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || (meilleur[b].p > 0) - (meilleur[a].p > 0) || a - b); // dans une difficulte : d'abord les combats deja gagnes parfois
+  // 5.41.1 : la Campagne d'abord (hors budget), puis les combats de Cauchemar ou un candidat a deja fait 3 etoiles au moins une fois,
+  // toutes difficultes, et seulement ensuite ceux a 0 % (avant : difficulte par difficulte, les 0 % du Normal passaient avant le
+  // Difficile et l'Extreme ; journal du 19/11 : 9 combats a 0 % sur 52, aucun 3 etoiles trouve, environ 5 min de budget).
+  const rang = fi => camp(fi) ? 0 : meilleur[fi].p > 0 ? 1 : 2;
+  const durs = F.map((x, fi) => fi).filter(fi => meilleur[fi].p < (camp(fi) ? Math.max(seuil, seuilCamp) : seuil)).sort((a, b) => rang(a) - rang(b) || ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || a - b);
   const sousSeuil = durs.filter(fi => meilleur[fi].p < seuil).length, campPlus = durs.length - sousSeuil;
   const T = trios.length, seedsS = Array.from({ length: conf }, (_, i) => 4 + i), specs = new Map();
   const cleS = fi => h53(`S|${sigG}|${wKey}|${sigCombat(F[fi].f)}|${sigColl}|${conf}`);

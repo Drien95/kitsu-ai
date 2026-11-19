@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.41.1
+
+Calcul Campagne : la progression dit la vérité pendant les spécialistes, et les combats sans aucune 3★ passent en dernier.
+
+- **Constat** (19/11, calcul Cauchemar seulement, spécialistes 1 h) : après 1 h 43, la barre affichait « 97 %, finale » et l'aperçu « 1er tour ≈ 23 min, par combat ≈ 64 min ». En réalité la course a pris 1 h 07, puis les spécialistes ont démarré avec leur budget de 60 min, compté à partir de leur premier combat de Cauchemar (comportement voulu, inchangé). Et les combats étaient pris difficulté par difficulté : sur les 52 premiers, 9 combats du Normal où aucun trio n'avait jamais fait 3★ ont coûté environ 5 min de budget sans rien trouver, avant tout combat Difficile ou Extrême.
+- **Progression** : la course va jusqu'à 72 %, la finale 75 %, le meilleur trio par combat 78 %, les spécialistes de 80 à 97 % selon le budget écoulé, avec « X combats cherchés sur Y, budget restant ≈ Z min ». La fin (plan, liens, diagnostic) affiche 98 %.
+- **Aperçu** : « 1er tour » dit qu'il ne compte que le 1er tour de la course et donne la durée du dernier calcul complet sur ce PC ; « Par combat » précise que le budget démarre après la course.
+- **Ordre des spécialistes** (`lib/etages.mjs`) : Campagne d'abord (hors budget, inchangé), puis les combats de Cauchemar où un candidat a déjà fait 3★ au moins une fois, toutes difficultés, puis ceux à 0 %. Le journal garde chaque combat fini, la reprise ne refait rien. Gain à mesurer sur ton prochain calcul (combats améliorés dans le même budget), pas encore mesuré.
+
 ## 5.41.0
 
 Calcul Campagne : les liens actifs à cocher, cherchés combat par combat pour les trios du plan.
