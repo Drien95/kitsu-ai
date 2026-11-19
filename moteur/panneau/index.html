@@ -1575,17 +1575,30 @@ async function campPrev() {
     + tile('Trios à tester', P.trios.toLocaleString('fr-FR'), 'toutes les combinaisons de 3')
     + tile('Combats par trio', fmt(parTrio), `${nd} difficultés, joués 16 par 16`)
     + tile('Déjà en mémoire', P.journalOctets ? (P.journalOctets / 1048576).toFixed(0) + ' Mo' : 'rien', P.journalOctets ? 'ces combats ne sont pas rejoués' : 'premier calcul sur ce PC')
-    + tile('Par combat', (() => { const b = +$('o_c3spec').value || 0, m = Math.round(140 * parTrio * 2 / vit / 60); return '≈ ' + (m + b >= 90 ? Math.round((m + b) / 60) + ' h' : (m + b) + ' min'); })(), `~${Math.round(140 * parTrio * 2 / vit / 60)} min pour les meilleurs trios, puis les spécialistes dans le budget choisi`)
-    + tile('1er tour', s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), 'ensuite les trios faibles sont écartés : le total dépend de tes cartes'));
+    + tile('Par combat', (() => { const b = +$('o_c3spec').value || 0, m = Math.round(140 * parTrio * 2 / vit / 60); return '≈ ' + (m + b >= 90 ? Math.round((m + b) / 60) + ' h' : (m + b) + ' min'); })(), `~${Math.round(140 * parTrio * 2 / vit / 60)} min pour les meilleurs trios, puis les spécialistes dans le budget choisi. Ce budget démarre après la course des trios.`)
+    + tile('1er tour', s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), P.dernier?.duree ? `seulement le 1er tour de la course. Dernier calcul complet sur ce PC : ${dur(P.dernier.duree).replace(/ \d+ s$/, '')}` : 'seulement le 1er tour de la course : ensuite les trios faibles sont écartés, le total dépend de tes cartes'));
 }
 // Progression lue dans le journal de la tache : « tour 3/12 : 383306 -> 41210 trios en course, ... (7300/s) ».
+// 5.41.1 : apres la course, l'etape par combat (candidats, puis specialistes dans leur budget) a sa propre progression.
 function campProgres(L) {
-  let t = null, p = null, fin = null;
-  for (const l of L) { const a = l.match(/tour (\d+)\/(\d+) : (\d+) -> (\d+) trios en course.*\((\d+)\/s\)/); if (a) t = a; const b = l.match(/tour (\d+) : (\d+) \/ (\d+) paquets, (\d+) combats\/s/); if (b) p = b; if (/^.*finale :/.test(l)) fin = l; }
-  if (fin) return { pct: 97, txt: 'Finale et détail des meilleurs trios.' };
+  let t = null, p = null, fin = null, pc = null, sp = null, spFait = null, spDebut = null, fini = null;
+  const sec = l => { const m = l.match(/^\[\s*(\d+) s\]/); return m ? +m[1] : null; };
+  for (const l of L) { const a = l.match(/tour (\d+)\/(\d+) : (\d+) -> (\d+) trios en course.*\((\d+)\/s\)/); if (a) t = a; const b = l.match(/tour (\d+) : (\d+) \/ (\d+) paquets, (\d+) combats\/s/); if (b) p = b; if (/^.*finale :/.test(l)) fin = l;
+    if (/par combat : \d+ trios candidats/.test(l)) pc = l;
+    const c = l.match(/par combat : .*, (\d+) a chercher sur tous les \d+ trios, budget (\d+) min/); if (c) sp = { n: +c[1], budget: +c[2], t: sec(l) };
+    const d = l.match(/specialistes (\d+)\/(\d+) : \S+ \((\w+)\).*, (\d+) s$/); if (d) { spFait = { k: +d[1], n: +d[2], t: sec(l) }; if (spDebut == null && !d[3].startsWith('camp') && spFait.t != null) spDebut = spFait.t - +d[4]; }
+    if (/par combat termine/.test(l)) fini = l; }
+  if (fini) return { pct: 98, txt: 'Plan, liens actifs et diagnostic : presque fini.' };
+  if (sp) {
+    const k = spFait?.k || 0, ecoule = spDebut != null && spFait?.t != null ? spFait.t - spDebut : 0, reste = Math.max(0, sp.budget * 60 - ecoule);
+    const pct = 80 + Math.round(17 * (sp.budget ? Math.min(1, ecoule / (sp.budget * 60)) : 1));
+    return { pct, txt: `Spécialistes : ${k} combat${k > 1 ? 's' : ''} cherché${k > 1 ? 's' : ''} sur ${sp.n}. ${spDebut == null ? (k ? 'Combats de Campagne d’abord (hors budget).' : 'Premier combat en cours.') : `Budget restant ≈ ${Math.round(reste / 60)} min, puis arrêt ; la suite reprend au prochain calcul (journal).`}` };
+  }
+  if (pc) return { pct: 78, txt: 'Meilleur trio par combat : les meilleurs trios de la course jouent chaque combat.' };
+  if (fin) return { pct: 75, txt: 'Finale et détail des meilleurs trios, puis meilleur trio par combat et spécialistes.' };
   if (!t && !p) return { pct: 2, txt: 'Préparation : chargement du moteur, des trios et du journal.' };
   const k = t ? +t[1] : 0, n = t ? +t[2] : 0, enCours = p && (!t || +p[1] > k) ? p : null;
-  const pct = n ? Math.min(95, Math.round(100 * (k + (enCours ? +enCours[2] / +enCours[3] : 0)) / (n + 2))) : 5;
+  const pct = n ? Math.min(72, Math.round(72 * (k + (enCours ? +enCours[2] / +enCours[3] : 0)) / (n + 2))) : 5;
   return { pct, txt: (t ? `Tour ${k}/${n} fini : ${(+t[4]).toLocaleString('fr-FR')} trios encore en course (sur ${(+t[3]).toLocaleString('fr-FR')}), ${(+t[5]).toLocaleString('fr-FR')} combats/s.` : '') + (enCours ? ` Tour ${enCours[1]} : ${(+enCours[2]).toLocaleString('fr-FR')} / ${(+enCours[3]).toLocaleString('fr-FR')} paquets.` : '') };
 }
 
