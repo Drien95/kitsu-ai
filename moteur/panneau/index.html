@@ -215,6 +215,8 @@
   body.repos .fx { display: none; }
   body.repos .maj::after, body.repos .pf.r-LR, body.repos .pf.r-LR::before, body.repos .upd, body.repos .blink, body.repos .skel { animation: none !important; }
   body.repos .top, body.repos .veil { backdrop-filter: none; }
+  /* 5.45 : pendant un calcul, la barre « en cours » ne defile plus (elle coutait autant qu'un coeur de rendu logiciel) : bande fixe a rayures. */
+  body.repos .prog.run i { animation: none !important; margin-left: 0; width: 100%; background: repeating-linear-gradient(135deg, rgba(255,122,61,.55) 0 8px, rgba(255,75,62,.25) 8px 16px); }
   /* ---- Tableau de bord : memes cartes que les onglets (mode, card, pill) ---- */
   #dbModes { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); } #p-accueil .mode { min-height: 300px; } #p-accueil .mode .v small { font-size: 24px; color: var(--mute); margin-left: 4px; }
   #p-accueil .mode .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
@@ -450,6 +452,54 @@
     .tc-scroll { max-height: none; border: 0; border-radius: 0; margin: 0 -6px; } .tc-g .tc-hd.tc-cb { display: none; } .tc-g .tc-hd.tc-col.v { grid-column: 1 / -1; } .tc-mo { min-width: 104px; }
   }
   .seg a.off { opacity: .45; cursor: default; }
+  /* 5.45 : visuels (carte des mondes, tour verticale, calcul en direct, fiche radar, Kiko). Aucune animation en continu. */
+  .seg .lab { padding: 6px 10px; font: 700 11px var(--body); color: var(--mute); text-transform: uppercase; letter-spacing: 1px; }
+  .seg a.dis { opacity: .45; cursor: not-allowed; }
+  .cm-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; } .cm-seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cm-tot { margin-left: auto; text-align: right; } .cm-tot b { font: 400 32px/1 var(--head); font-style: italic; } .cm-tot small { color: var(--mute); font-size: 12px; display: block; }
+  .cm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .cm-w { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; cursor: pointer; contain: content; }
+  .cm-w:hover { border-color: var(--line2); } .cm-w.done { border-color: rgba(247,197,72,.55); }
+  .cm-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .cm-h b { font: 400 17px/1.1 var(--head); font-style: italic; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
+  .cm-h span { margin-left: auto; font: 800 12px var(--body); white-space: nowrap; } .cm-h span em { color: var(--mute); font-style: normal; font-weight: 600; }
+  .cm-cells { display: grid; grid-template-columns: repeat(auto-fill, 9px); gap: 2px; }
+  .cm-cells i, .cm-leg i { width: 9px; height: 9px; border-radius: 2px; background: #262a37; display: inline-block; }
+  .cm-cells i.s { background: #f7c548; } .cm-cells i.o { background: #ff7a3d; } .cm-cells i.r { background: #ff4b3e; } .cm-cells i.x, .cm-leg i.x { background: #1b1e28; box-shadow: inset 0 0 0 1px #2f3343; } .cm-cells i.z, .cm-leg i.z { background: #262a37; }
+  .cm-bar { height: 4px; border-radius: 3px; background: #1d202b; margin-top: 10px; overflow: hidden; display: flex; } .cm-bar b { display: block; height: 100%; }
+  .cm-leg { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--mute); margin-top: 12px; } .cm-leg i { margin-right: 6px; vertical-align: -1px; }
+  .tw-wrap { display: grid; grid-template-columns: 400px 1fr; gap: 22px; align-items: start; } .tw-svg { width: 100%; height: auto; display: block; }
+  .tw-list { display: flex; flex-direction: column; gap: 10px; }
+  .tw-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .tw-row .pfs { display: flex; gap: 4px; } .tw-row b.n { font: 400 30px/1 var(--head); font-style: italic; } .tw-row small { display: block; color: var(--mute); font-size: 12px; } .tw-row .t { font-weight: 700; font-size: 13px; } .tw-row.gold { border-color: rgba(247,197,72,.55); }
+  .tw-fill { transform-box: fill-box; transform-origin: 50% 100%; animation: twUp .6s ease-out 1; } @keyframes twUp { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .lv-wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 22px; }
+  .lv-fr { display: grid; gap: 6px; align-items: end; height: 190px; }
+  .lv-col { display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .lv-col .b { width: 100%; min-height: 3px; border-radius: 6px 6px 2px 2px; background: #2a2e3b; transition: height .4s ease-out; }
+  .lv-col.fait .b { background: linear-gradient(180deg, #ff7a3d, #ff4b3e); } .lv-col.cours .b { background: repeating-linear-gradient(135deg, #ff7a3d 0 6px, #c9452b 6px 12px); }
+  .lv-col .n { font: 800 11px var(--body); color: #d9d3c9; white-space: nowrap; } .lv-col .m { font: 700 10px var(--body); color: var(--mute); } .lv-col.attente .n { color: #555b6a; }
+  .lv-sum { display: flex; gap: 22px; margin-top: 14px; flex-wrap: wrap; } .lv-sum div { font-size: 12px; color: var(--mute); } .lv-sum b { display: block; font: 400 24px/1.1 var(--head); font-style: italic; color: var(--txt); }
+  .lv-top { position: relative; }
+  .lv-it { position: absolute; left: 0; right: 0; height: 43px; display: grid; grid-template-columns: 26px auto 1fr auto 44px; gap: 10px; align-items: center; padding: 0 10px; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; transition: transform .45s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+  .lv-it .rk { font: 400 20px var(--head); font-style: italic; text-align: center; } .lv-it .pfs { display: flex; gap: 3px; } .lv-it .pf { width: 24px; height: 32px; border-radius: 5px; } .lv-it .pf .ini { font-size: 11px; } .lv-it .pf i { display: none; }
+  .lv-it .nm { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .lv-it .sc { font: 800 13px var(--body); } .lv-it .dl { font: 800 11px var(--body); text-align: right; }
+  .lv-it .up { color: var(--ok); } .lv-it .dn { color: var(--acc); } .lv-it .nw { color: var(--gold); } .lv-it.top1 { border-color: rgba(247,197,72,.5); }
+  .mini-fr { display: flex; gap: 3px; align-items: flex-end; height: 18px; margin: 8px 0 4px; } .mini-fr i { flex: 1; background: #2a2e3b; border-radius: 2px; } .mini-fr i.f { background: var(--acc2); } .mini-fr i.c { background: repeating-linear-gradient(135deg, #ff7a3d 0 3px, #c9452b 3px 6px); }
+  .rd-svg { width: 100%; max-width: 380px; height: auto; display: block; margin: 0 auto; }
+  .rd-l { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--mute); margin: 4px 0 6px; } .rd-l b { color: var(--txt); } .rd-l em { color: var(--gold); font-style: normal; font-weight: 700; }
+  .lk-tri { position: relative; height: 236px; margin: 6px 8% 0; } .lk-tri svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .lk-p { position: absolute; transform: translate(-50%, 0); display: flex; flex-direction: column; align-items: center; gap: 4px; } .lk-p small { font-size: 11px; font-weight: 800; color: var(--mute); white-space: nowrap; } .lk-p.moi small { color: var(--txt); }
+  .lk-l { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-size: 12.5px; } .lk-l div { display: flex; gap: 8px; align-items: center; } .lk-l i { width: 18px; height: 3px; border-radius: 2px; flex: 0 0 auto; } .lk-l .off { color: #6b7180; }
+  .kk-toast { position: fixed; right: 22px; bottom: 22px; z-index: 75; width: 380px; display: grid; grid-template-columns: 74px 1fr; gap: 12px; background: #0e1017; border: 1px solid var(--line2); border-left: 3px solid var(--acc); border-radius: 14px; padding: 12px 14px 12px 8px; box-shadow: 0 24px 60px -20px rgba(0,0,0,.8); animation: kkIn .35s ease-out 1; }
+  .kk-toast.gold { border-left-color: var(--gold); } .kk-toast .f svg { width: 74px; height: auto; display: block; }
+  .kk-toast b { font: 400 19px/1.1 var(--head); font-style: italic; text-transform: uppercase; display: block; margin-bottom: 3px; } .kk-toast p { margin: 0; font-size: 13px; color: #d9d3c9; } .kk-toast p em { color: var(--acc2); font-style: normal; font-weight: 800; }
+  .kk-toast .x { position: absolute; top: 6px; right: 10px; color: var(--mute); cursor: pointer; } .kk-toast .a { margin-top: 8px; } .kk-toast .a button { font-size: 11px; padding: 5px 10px; }
+  @keyframes kkIn { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (max-width: 1250px) { .cm-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 900px) { .cm-grid { grid-template-columns: 1fr; } .cm-tot { margin-left: 0; text-align: left; } .cm-cells { grid-template-columns: repeat(auto-fill, 8px); } .cm-cells i { width: 8px; height: 8px; }
+    .seg .lab { padding: 6px 8px; font-size: 10px; } .cm-top .seg a { padding: 6px 8px; font-size: 11px; } .tw-wrap, .lv-wrap { grid-template-columns: 1fr; } .lv-fr { height: 140px; gap: 4px; } .lv-col .m { display: none; } .lv-col .n { font-size: 9.5px; }
+    .kk-toast { left: 10px; right: 10px; bottom: 78px; width: auto; } }
 </style>
 </head>
 <body>
@@ -479,7 +529,7 @@
     <a href="#journal" data-p="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Journal et nouveautés</span><span class="b o" id="nbJour" style="display:none"></span></a>
     <a href="#reglages" data-p="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>Réglages</span></a>
   </nav>
-  <div class="job" id="sideJob" onclick="go('journal')"><div class="t" id="sjT">Aucune tâche</div><div class="prog" id="sjP"><i></i></div><div class="s" id="sjS">Prêt.</div></div>
+  <div class="job" id="sideJob" onclick="go('journal')"><div class="t" id="sjT">Aucune tâche</div><div class="mini-fr" id="sjMini" style="display:none" title="Trios encore en course, manche par manche"></div><div class="prog" id="sjP"><i></i></div><div class="s" id="sjS">Prêt.</div></div>
 </aside>
 <div class="mainw">
 <header class="top"><button class="burger" onclick="menu()" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="crumb" id="crumb"></div><div class="topr"><button class="kbtn" onclick="kOuvrir()" title="Rechercher un onglet ou une carte">⌕ <span>Rechercher</span> <kbd>Ctrl K</kbd></button><button class="upd" id="btnUpd" onclick="go('nouveautes')">Mise à jour <span id="updV"></span></button><button class="kg-help" id="kgHelp" onclick="kgAide()" title="Guides : la visite guidée de Kiko">?<i></i></button><span class="chip bell" id="bell" onclick="go('journal')" title="Alertes"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><i id="bellN" style="display:none"></i></span><span class="chip" id="chipSrv"><span class="dot"></span>Serveur</span><span class="chip" id="chipVer">v-</span></div></header>
@@ -563,6 +613,7 @@
     <div class="eyebrow">Calculs sur ton processeur</div>
     <h1>Calculs</h1>
     <p class="lead">Chaque calcul utilise tous les coeurs moins deux. Une seule tâche à la fois.</p>
+    <div id="lvBox"></div><div class="sp"></div>
     <div class="grid g3">
       <div class="card act">
         <h3><span class="dur">30 à 75 min</span><i data-ic="campagne_extreme"></i>Analyse complète</h3>
@@ -678,7 +729,7 @@
       <h2>La conquête <span class="r" id="mdScore"></span></h2>
       <div class="md-vz"><svg id="mdSvg1" viewBox="0 0 1200 500"></svg></div>
       <div class="md-ctl"><button id="mdPlay1" onclick="mdJouer(1)">▶ Rejouer l'apprentissage</button><span class="muted" id="mdMsg1" style="font-size:13px"></span><input type="range" id="mdR1" min="0" max="0" value="0" oninput="mdSet1(+this.value)"><span class="lab" id="mdL1"></span></div>
-      <div class="md-leg"><span><i style="background:#f7c548"></i>3★ sûr</span><span><i style="background:#ff7a3d"></i>3★ souvent</span><span><i style="background:#ff4b3e"></i>3★ parfois</span><span><i style="background:#2a2d3a"></i>jamais 3★</span><span>Une case = un combat Cauchemar, avec le meilleur trio trouvé (niveau 99)</span></div>
+      <div class="md-leg"><span><i style="background:#f7c548"></i>presque tous à 3★ sûrs</span><span><i style="background:#ff7a3d"></i>la plupart</span><span><i style="background:#ff4b3e"></i>quelques-uns</span><span><i style="background:#3a2a30"></i>aucun</span><span>Une case = des combats Cauchemar à la suite, avec le meilleur trio trouvé (niveau 99)</span></div>
     </div>
     <div id="mdCerveau" style="display:none">
       <h2>Le cerveau <span class="r" id="mdInfo2"></span></h2>
@@ -831,6 +882,7 @@
       <div class="set"><div class="x"><b>Au premier lancement</b><span>Une carte d'accueil, jamais imposée.</span></div><label class="sw"><input type="checkbox" id="kg_o_acc" onchange="kgOpt('acc',this.checked)"><span></span></label></div>
       <div class="set"><div class="x"><b>Après une mise à jour avec des nouveautés</b><span>Un point rouge sur « ? » et un mini guide de quelques étapes.</span></div><label class="sw"><input type="checkbox" id="kg_o_news" onchange="kgOpt('news',this.checked)"><span></span></label></div>
       <div class="set"><div class="x"><b>Texte instantané</b><span>Sans effet machine à écrire.</span></div><label class="sw"><input type="checkbox" id="kg_o_inst" onchange="kgOpt('inst',this.checked)"><span></span></label></div>
+      <div class="set"><div class="x"><b>Réactions de Kiko</b><span>Une bulle de 10 s sur un record de Tour, une carte au 99, un monde fini ou de nouveaux 3★.</span></div><label class="sw"><input type="checkbox" id="kg_o_reac" onchange="kgOpt('reac',this.checked)"><span></span></label></div>
     </div>
   </section>
 
@@ -912,6 +964,7 @@
 <div class="kbar" id="kbar"><input id="kq" placeholder="Aller à un onglet ou une carte…" autocomplete="off"><div id="kres"></div><div class="ft">Ctrl+K partout · Entrée pour ouvrir · Échap pour fermer</div></div>
 <div id="modal" onclick="if(event.target===this)this.style.display='none'"><div class="box" id="mbox"></div></div>
 <div id="toast"></div>
+<div id="kkHost"></div>
 <!-- ===================== GUIDE (5.39) : carte d'accueil et calque de Kiko ===================== -->
 <div class="kg-wel" id="kgWel"><div class="w"><div class="f" id="kgWelFox"></div><div>
   <h3>Salut, moi c'est <em>Kiko</em></h3>
@@ -1854,7 +1907,7 @@ function campRender() {
   const objNom = CP.obj === 'Les6' ? 'moyenne des 6 difficultés' : CP.obj === 'Moyenne' ? 'moyenne des trois Cauchemar' : objLib.replace('☾ ', '');
   const tile = (k, v, s, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
   const nC = Object.values(j.combats || {}).reduce((a, v) => a + (+v || 0), 0);
-  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), nDiff() + ' difficultés')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div><div id="tcBox"></div>`;
+  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), nDiff() + ' difficultés')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div><div id="cmBox"></div><div id="tcBox"></div>`;
   // podium et carte a partager
   if (L.length >= 3) h += `<div class="card"><h2>Podium <span class="r">${esc(objNom)} · ${esc(nivTxt)}</span></h2><div class="sp"></div><div class="podium">${L.slice(0, 3).map((l, i) => `<div class="pod ${['first', 'second', 'third'][i]}"><div class="rk">${i + 1}</div><div class="trio">${l.ids.map(id => pf(id, i ? 'lg' : 'xl')).join('')}</div><div class="nm">${esc(l.equipe.join(' · '))}</div><div class="sc">${fmt(l.troisEtoiles)} %</div><div class="muted" style="font-size:12px">en 3 étoiles · ± ${fmt(l.marge)}</div><div class="pills">${VIS.map(([d, , c, n]) => `<span class="pill" style="color:${c}">${n} ${fmt(pdVal(l.parDifficulte, [d]))}</span>`).join('')}</div></div>`).join('')}</div></div><div class="sp"></div>`;
   if (b0) h += `<div class="card"><h2>Carte à partager <span class="r"><button class="ghost" onclick="partager('copier')">Copier</button><button onclick="partager('png')">Télécharger PNG</button></span></h2><div class="share"><canvas id="c3share" width="1200" height="630"></canvas><div class="muted" style="font-size:13px">Ton meilleur trio en image, avec les portraits des cartes, prête à envoyer à ta guilde. Les portraits viennent de leur adresse d'origine ; si une adresse refuse, ses initiales les remplacent.</div></div></div><div class="sp"></div>`;
@@ -1888,7 +1941,7 @@ function campRender() {
   const col = j.collectifs || [];
   h += `<div class="card"><h2>Collectifs conseillés <span class="r">quand une carte en a plus de 6</span></h2>${col.length ? col.map(c => `<div class="c3c"><div class="muted c3s">${esc(c.equipe.join(' / '))}</div>${c.cartes.map(x => `<div><b>${esc(x.carte)}</b> · ${x.possibles} possibles · ${fmt(x.avant)} % vers ${fmt(x.apres)} % ${x.utile ? '<span class="okc">à changer</span>' : '<span class="muted">garder les actuels</span>'}${x.utile ? `<div class="muted c3s">${x.conseil.map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`).join('') : '<div class="muted">Aucune carte des 5 meilleurs trios n’a plus de 6 collectifs possibles : les choix du jeu suffisent.</div>'}</div></div><div class="sp"></div>`;
   h += `<div class="card"><h2>Méthode</h2><div class="muted">Tous les trios de tes cartes SSR, UR et LR (${(j.trios || 0).toLocaleString('fr-FR')}) jouent les ${nC.toLocaleString('fr-FR')} combats avec l'IA de KitsuAI. Course par manches : un trio est retiré seulement quand il est nettement derrière en Cauchemar (z ${'>'} 3). ${nDiff() > 3 ? "La Campagne est jouée par les mêmes trios mais ne retire personne (beaucoup y font 100 %) : son classement est celui des finalistes du Cauchemar. " : ''}Les finalistes rejouent tout avec d'autres tirages. Un combat est arrêté dès que les 3 étoiles sont perdues : même résultat, 1,8 fois plus vite. Le journal garde chaque paquet de combats : il n'est refait que si le jeu, une carte, ses niveaux, ses étoiles, ses collectifs ou l'IA changent.<br>Moteur ${esc(j.version)} · signature ${esc(j.signatureCombat)} · ${quand(j.date)}</div></div>`;
-  setH('c3body', h); tcRender();
+  setH('c3body', h); tcRender(); cmRender();
   if (typeof window.campApres === 'function') try { window.campApres(j); } catch {}
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
@@ -1958,7 +2011,7 @@ function majAction(e) {
 function sideRender(run) {
   const j = E.job;
   if (!j) { $('sjT').textContent = 'Aucune tâche'; $('sjS').textContent = 'Prêt.'; $('sjP').className = 'prog'; }
-  else { const el = Math.round(((j.fin || Date.now()) - j.debut) / 1000), L = j.lignes.filter(l => l.trim()); $('sjT').textContent = j.nom; $('sjP').className = 'prog' + (run ? ' run' : ''); $('sjP').firstElementChild.style.width = run ? '' : (j.code === 0 ? '100%' : '0'); $('sjS').textContent = run ? dur(el) + ' · ' + (L[L.length - 1] || '…').replace(/^\[\s*\d+ s\]\s*/, '') : (j.code === 0 ? 'Terminée en ' : 'Arrêtée après ') + dur(el); }
+  else { const el = Math.round(((j.fin || Date.now()) - j.debut) / 1000), L = j.lignes.filter(l => l.trim()); $('sjT').textContent = j.nom; $('sjP').className = 'prog' + (run ? ' run' : ''); $('sjP').firstElementChild.style.width = run ? '' : (j.code === 0 ? '100%' : '0'); $('sjS').textContent = run ? dur(el) + ' · ' + (L.filter(l => !/top 10 /.test(l)).pop() || '…').replace(/^\[\s*\d+ s\]\s*/, '') : (j.code === 0 ? 'Terminée en ' : 'Arrêtée après ') + dur(el); }
   const b0 = CP.j?.meilleurs?.[CP.j?.meilleurs?.Les6 ? 'Les6' : 'Moyenne']?.[0], t0 = TW.j?.trios?.[0], sc = E.script || {}, vu = sc.vu;
   const C3 = dbCampagne(), G3 = C3 && (C3.avecCau ? C3.cau : C3.camp); $('nbCamp').textContent = C3 ? C3.ok(G3) + '/' + C3.n(G3) : b0 ? fmt(b0.troisEtoiles) + ' %' : ''; $('nbCamp').className = 'b g'; $('nbCamp').style.display = C3 || b0 ? '' : 'none';
   const tX = window.DB_PRIVE?.tour; $('nbTour').textContent = tX ? 'ét. ' + Math.round(tX.etage) : t0 ? 'ét. ' + Math.round(t0.etageMoyen) : ''; $('nbTour').className = 'b o'; $('nbTour').style.display = tX || t0 ? '' : 'none';
@@ -2078,6 +2131,7 @@ function twRender() {
   if (!t0) { setH('twBody', TW.charge || !E ? '<div class="skel"></div>' : '<div class="card"><div class="muted">Pas encore de calcul de la Tour. Lance-le avec le bouton ci-dessus.</div></div>'); return; }
   LAB = 'TOUR DE L’INFINI'; const ea = j?.equipeActuelle, nivTxt = j ? (j.niveaux === '99' ? 'toutes au niveau 99' : 'tes niveaux actuels') : 'analyse complète', course = j?.methode === 'course';
   let h = `<div class="card hero"><div class="bgimg">${imgsTrio(t0.ids)}</div><div class="trio">${eqList(t0.ids || t0.equipe).map(x => pf(x, 'xl')).join('')}</div><div class="txt"><div class="k">Meilleur trio · ${nivTxt}${j?.date ? ' · ' + quand(j.date) : ''}</div><div class="bigv">Étage ${fmt(t0.etageMoyen)}</div><div class="s">${esc(eqList(t0.equipe).join(' · '))}${t0.marge ? ` · ± ${fmt(t0.marge)}` : ''} · étage moyen atteint</div><div class="pills">${t0.min ?? t0.etageMin ? `<span class="pill e">pire ${t0.min ?? t0.etageMin}</span>` : ''}${t0.p10 ? `<span class="pill d">9 fois sur 10 : ${t0.p10}+</span>` : ''}${t0.mediane ? `<span class="pill">médiane ${t0.mediane}</span>` : ''}${t0.max ? `<span class="pill n">record ${t0.max}</span>` : ''}${ea ? `<span class="pill p">ton équipe : ${fmt(ea.etageMoyen)}</span>` : ''}${j?.record ? `<span class="pill">ton record en jeu : ${j.record}</span>` : ''}</div></div></div><div class="sp"></div>`;
+  h += twTour(j, tr); // 5.45 : la tour verticale
   // resume du calcul
   if (j) h += `<div class="grid g5">${tuile('Meilleur trio', 'Étage ' + fmt(t0.etageMoyen), esc(trioCourt(eqList(t0.equipe))))}${tuile('Trios testés', (j.triosEssayes || 0).toLocaleString('fr-FR'), course ? `${j.cartes || '?'} cartes SSR, UR, LR` : 'ancienne méthode : les 26 meilleures cartes seules')}${tuile('Montées simulées', course ? (j.monteesSimulees || 0).toLocaleString('fr-FR') : '-', course ? `${(j.entonnoir || []).length} manches puis la finale` : 'relance pour la nouvelle méthode')}${tuile('Repris du journal', course ? (j.reprisesJournal || 0).toLocaleString('fr-FR') : '-', 'montées déjà faites, pas refaites')}${tuile('Durée', j.duree ? dur(j.duree).replace(/ \d+ s$/, '') : '-', j.vitesse ? `${j.vitesse.toLocaleString('fr-FR')} montées par seconde` : '')}</div><div class="sp"></div>`;
   // podium
@@ -2160,7 +2214,7 @@ function evRender() {
 
 // ---------- collection (Sauvegarde) ----------
 const COL = { j: null, charge: false }; let colMax = 120;
-async function colCharger() { COL.charge = true; try { COL.j = await api('/api/collection'); } catch { COL.j = null; } COL.charge = false; colRender(); if (CP.j) tcRender(); }
+async function colCharger() { COL.charge = true; try { COL.j = await api('/api/collection'); } catch { COL.j = null; } COL.charge = false; colRender(); if (CP.j) { tcRender(); cmRender(); } }
 const RORD = { LR: 6, UR: 5, SSR: 4, SR: 3, R: 2, N: 1 }, sansAcc = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 function mesTrios() { const s = new Set(), M = E?.dernier?.modes; for (const m of Object.values(M || {})) for (const c of Object.values(m)) for (const x of (c.top || []).slice(0, 5)) eqList(x.ids || []).forEach(i => s.add(String(i))); for (const L of Object.values(CP.j?.meilleurs || {})) for (const x of L.slice(0, 5)) x.ids.forEach(i => s.add(String(i))); for (const x of (TW.j?.trios || []).slice(0, 5)) x.ids.forEach(i => s.add(String(i))); return s; }
 function colRender() {
@@ -2191,9 +2245,10 @@ function fiche(id) {
   const tl = (k, v) => `<div class="tile" style="min-height:0"><div class="k">${k}</div><div class="v" style="font-size:22px">${v ? Number(v).toLocaleString('fr-FR') : '-'}</div></div>`;
   $('drawer').innerHTML = `${sr[1] ? `<div class="bn" style="background-image:url('${esc(sr[1])}')"></div>` : ''}<button class="ghost x" onclick="fermer()">Fermer</button>
     <div style="display:flex;gap:16px;align-items:flex-start;margin-top:34px">${pf(c.id, 'xl')}<div style="min-width:0"><div class="eyebrow" style="font-size:10.5px">Fiche · ${esc(c.r)}${c.s ? ' · ' + esc(c.s) : ''}</div><div class="nm">${esc(c.n)}</div><div class="muted">${J ? (own ? `Niveau ${lv} · ${st} étoile${st > 1 ? 's' : ''}` : 'Pas dans ta collection') : 'Collection non importée'}</div>${tr.length ? `<div class="pills"><span class="pill n">dans ${tr.length} meilleur${tr.length > 1 ? 's' : ''} trio${tr.length > 1 ? 's' : ''}</span></div>` : ''}</div></div>
-    <div class="sp"></div><div class="grid g4" style="gap:8px">${tl('Puissance', c.pw)}${tl('ATK', c.atk)}${tl('DEF', c.def)}${tl('VIT', c.spd)}</div><div class="muted" style="font-size:11.5px;margin-top:6px">Stats de base du jeu (niveau 1, sans étoile ni collectif).</div>
+    <div class="sp"></div><div class="grid g4" style="gap:8px">${tl('Puissance', c.pw)}${tl('ATK', c.atk)}${tl('DEF', c.def)}${tl('VIT', c.spd)}</div><div class="muted" style="font-size:11.5px;margin-top:6px">Stats de base du jeu (niveau 1, sans étoile ni collectif).</div><div id="fcVis" data-id="${c.id}"></div>
     <div class="sp"></div><h2>Meilleurs trios avec elle</h2>${tr.slice(0, 10).map(t => `<div class="chg"><span style="width:110px;flex:none;color:var(--mute);font-weight:800;font-size:11.5px">${esc(t.m)}</span>${equipeHTML(t.ids, 1)}<b class="x" style="color:var(--txt);white-space:nowrap">${esc(t.v)}</b></div>`).join('') || '<div class="muted">Dans aucun des meilleurs trios des dernières analyses.</div>'}`;
   $('kbar').classList.remove('on'); $('drawer').classList.add('on'); voile();
+  const t1 = tr.find(t => eqList(t.ids).length === 3 && eqList(t.ids).every(x => carte(x).id)); ficheVisuel(c.id, t1 ? eqList(t1.ids).map(x => carte(x).id) : null, t1?.m); // 5.45
 }
 document.addEventListener('click', e => { const p = e.target.closest('.pf[data-id]'); if (p && !e.target.closest('#drawer .x')) { e.preventDefault(); fiche(p.dataset.id); } });
 
@@ -2254,57 +2309,11 @@ function mdRender() {
   mdJournal(); mdAdn();
 }
 // --- 1. la conquete ---
-function mdDessin1() {
-  const sv = $('mdSvg1'), H = MD.j.historique; sv.innerHTML = '';
-  const last = H[H.length - 1], diffs = MDDIF.filter(([d]) => H.some(s => s.c?.[d]));
-  const cols = 16, cw = 34, ch = 30; let y = 70; MD.cells = [];
-  mdTxt(sv, 30, 44, '/ CAMPAGNE CAUCHEMAR', { h: 1, s: 20, c: '#f4ede3' });
-  for (const [d, nom] of diffs) {
-    const n = Math.max(...H.map(s => (s.c?.[d] || '').length)); MD.cells.push({ d, lab: mdTxt(sv, 30, y + 12, nom.toUpperCase()), r: [] });
-    y += 20;
-    for (let i = 0; i < n; i++) MD.cells[MD.cells.length - 1].r.push(mdEl('rect', { x: 30 + (i % cols) * cw, y: y + Math.floor(i / cols) * ch, width: 28, height: 24, rx: 5, fill: MDCOL[0] }, sv));
-    y += Math.ceil(n / cols) * ch + 18;
-  }
-  if (!diffs.length) mdTxt(sv, 30, 90, 'Lance le calcul Campagne 3★ pour remplir cette carte.', { s: 14 });
-  MD.campLab = mdTxt(sv, 30, Math.max(y + 10, 120), '', { c: '#c9c3b9', s: 13 });
-  // Tour : etage du meilleur trio deja au 99, et trait du meilleur trio possible.
-  const tmax = Math.max(1, ...H.map(s => s.tour?.max || 0)) * 1.1, tx = 640, tb = 460, th = 380;
-  MD.ty = v => tb - v / tmax * th;
-  if (H.some(s => s.tour)) {
-    mdTxt(sv, 620, 44, '/ TOUR', { h: 1, s: 20, c: '#f4ede3' });
-    for (let f = 0; f < 20; f++) mdEl('rect', { x: tx, y: tb - (f + 1) * th / 20 + 2, width: 70, height: th / 20 - 4, rx: 3, fill: '#191b24' }, sv);
-    const g = mdEl('linearGradient', { id: 'mdGT', x1: 0, y1: 1, x2: 0, y2: 0 }, mdEl('defs', {}, sv)); mdEl('stop', { offset: 0, 'stop-color': '#ff4b3e' }, g); mdEl('stop', { offset: 1, 'stop-color': '#f7c548' }, g);
-    MD.tFill = mdEl('rect', { x: tx, y: tb, width: 70, height: 0, rx: 3, fill: 'url(#mdGT)' }, sv);
-    MD.tMax = mdEl('line', { x1: tx - 6, x2: tx + 76, stroke: last.tour?.prive ? '#4fa8ff' : '#c9c3b9', 'stroke-width': 2, 'stroke-dasharray': '5 4' }, sv);
-    MD.tMaxL = mdTxt(sv, tx + 84, 0, '', { c: last.tour?.prive ? '#8cc4ff' : '#8f96a6' });
-    MD.tLab = mdTxt(sv, tx + 84, 0, '', { h: 1, s: 26, c: '#f4ede3' });
-  } else MD.tFill = null;
-  // Arene (prive) et Raid : % du parfait.
-  MD.arc = []; MD.aLab = MD.rBar = null;
-  if (H.some(s => s.m?.arene != null)) {
-    mdTxt(sv, 860, 44, '/ ARÈNE', { h: 1, s: 20, c: '#f4ede3' }); mdTxt(sv, 960, 44, 'PRIVÉ', { c: '#8cc4ff' });
-    const cx = 990, cy = 200, R = 100, n = 24;
-    for (let i = 0; i < n; i++) {
-      const a0 = i / n * 2 * Math.PI - Math.PI / 2, a1 = (i + .82) / n * 2 * Math.PI - Math.PI / 2, P = (a, r) => `${cx + Math.cos(a) * r} ${cy + Math.sin(a) * r}`;
-      MD.arc.push(mdEl('path', { d: `M${P(a0, R)} A${R} ${R} 0 0 1 ${P(a1, R)} L${P(a1, R - 26)} A${R - 26} ${R - 26} 0 0 0 ${P(a0, R - 26)} Z`, fill: MDCOL[0] }, sv));
-    }
-    MD.aLab = mdTxt(sv, cx, cy + 13, '', { h: 1, s: 38, a: 'middle', c: '#f4ede3' }); mdTxt(sv, cx, cy + 128, 'du parfait (victoires contre les fantômes)', { a: 'middle' });
-  }
-  if (H.some(s => s.m?.raid != null)) {
-    mdTxt(sv, 860, 400, '/ RAID', { h: 1, s: 20, c: '#f4ede3' });
-    MD.rBar = mdEl('rect', { x: 860, y: 416, width: 0, height: 22, rx: 6, fill: '#2fd27a' }, sv); mdEl('rect', { x: 860, y: 416, width: 300, height: 22, rx: 6, fill: 'none', stroke: '#33374a' }, sv);
-    MD.rLab = mdTxt(sv, 1160, 460, '', { a: 'end', c: '#c9c3b9' });
-  }
-  sv.setAttribute('viewBox', `0 0 1200 ${Math.max(500, y + 40)}`);
-}
+function mdDessin1() { mdDessinCompact(); } // 5.45 : conquete compacte (une ligne par difficulte, autres modes en barres)
 function mdSet1(i) {
   const H = MD.j?.historique; if (!H?.length) return; i = Math.max(0, Math.min(H.length - 1, Math.round(i))); MD.i1 = i; const s = H[i];
   $('mdR1').value = i; $('mdL1').textContent = i === H.length - 1 ? mdDate(s.t) + ' · actuel' : mdDate(s.t);
-  for (const c of MD.cells || []) { const str = s.c?.[c.d] || ''; c.r.forEach((r, k) => r.setAttribute('fill', MDCOL[+str[k] || 0])); }
-  MD.campLab.textContent = MD.cells?.length ? '3★ sûrs : ' + MD.cells.map(c => `${MDDIF.find(x => x[0] === c.d)[1]} ${md3(s, c.d)}/${(s.c?.[c.d] || '').length}`).join(' · ') : '';
-  if (MD.tFill) { const v = s.tour?.now || 0, y = MD.ty(v), ym = MD.ty(s.tour?.max || 0); MD.tFill.setAttribute('y', y); MD.tFill.setAttribute('height', Math.max(0, 460 - y)); MD.tLab.setAttribute('y', y + 10); MD.tLab.textContent = s.tour ? fmt(v) + ' étages' : '-'; MD.tMax.setAttribute('y1', ym); MD.tMax.setAttribute('y2', ym); MD.tMaxL.setAttribute('y', ym - 6); MD.tMaxL.textContent = s.tour ? fmt(s.tour.max) + ' possible' : ''; }
-  if (MD.aLab) { const a = s.m?.arene; MD.arc.forEach((p, k) => p.setAttribute('fill', a != null && k / MD.arc.length < a / 100 ? '#4fa8ff' : MDCOL[0])); MD.aLab.textContent = a != null ? fmt(a) + ' %' : '-'; }
-  if (MD.rBar) { const r = s.m?.raid ?? 0; MD.rBar.setAttribute('width', 3 * Math.min(100, r)); MD.rLab.textContent = s.m?.raid != null ? fmt(r) + ' % du meilleur trio possible' : '-'; }
+  mdSetCompact(s);
   $('mdScore').innerHTML = s.score != null ? `score modèle parfait : <b style="color:var(--txt)">${fmt(s.score)}</b> / 100` : '';
 }
 // --- 2. le cerveau : cartes = etoiles, liens = cartes jouees ensemble dans les meilleurs trios ---
@@ -2418,7 +2427,7 @@ refresh(); setInterval(refreshDoux, 1500); chargerCartes();
 // Calque par-dessus le panneau : projecteur sur l'element dont parle Kiko, etiquette, boite de dialogue.
 // Etapes « A toi » : on avance quand tu ouvres toi-meme l'onglet montre. Rien ne se lance, rien n'est clique a ta place.
 // Etat dans localStorage (kitsuGuide) : chapitres vus, version des nouveautes vues, options. Aucune animation hors du calque ouvert.
-const KG_VER = '5.43.0';
+const KG_VER = '5.45.0';
 function kgFox(ex, id) {
   id = id || 'kf' + Math.random().toString(36).slice(2, 7);
   const D = '#07080c', C = '#f4ede3', oeil = (x) => `<ellipse cx="${x}" cy="107" rx="7.5" ry="8.5" fill="${D}"/><circle cx="${x + 2.5}" cy="104" r="2.4" fill="#fff"/>`;
@@ -2483,7 +2492,13 @@ const KG = [
     { x: 'malin', p: 'guides', s: ['#kgList'], tag: 'Chapitres', t: "Les chapitres vus ont une coche. Après une mise à jour, je te montre <em>seulement ce qui a changé</em>." }] }
 ];
 // Nouveautes par version : le point rouge sur « ? » s'allume tant que celles de la version installee n'ont pas ete vues.
-const KG_NEWS = { '5.43.0': [
+const KG_NEWS = { '5.45.0': [
+  { x: 'surpris', p: 'campagne', tag: 'Nouveau', s: ['#cmBox'], t: "La <em>carte des mondes</em> : une case par combat, en or quand le meilleur trio fait 3★ à chaque fois. Clique un monde pour voir son trio combat par combat." },
+  { x: 'neutre', p: 'campagne', s: ['#cmBox'], t: "Avec le script 5.45, tes étoiles partent avec la sauvegarde : passe sur <em>Acquis dans le jeu</em> pour voir ce que tu as déjà gagné." },
+  { x: 'joie', p: 'tour', t: "La Tour se dessine : ton <em>record</em>, ce que prévoit le calcul, et les étages où les montées s'arrêtent." },
+  { x: 'malin', p: 'calculs', s: ['#lvBox'], t: "Pendant un calcul Tour ou Campagne, regarde les trios tomber <em>manche après manche</em> et le top 10 se réorganiser. Rien ne bouge entre deux manches." },
+  { x: 'joie', p: 'guides', t: "Et moi, je réagis maintenant à tes records, tes cartes au 99 et tes mondes finis. Une bulle, 10 secondes. Tu peux me couper dans les réglages des guides." }],
+  '5.43.0': [
   { x: 'malin', p: 'campagne', tag: 'Nouveau', s: ['#tcCard'], t: "Campagne : ton trio, combat par combat. Choisis un monde et lis la colonne de ta difficulté : tu ne changes d'équipe que sur les lignes orange." },
   { x: 'neutre', p: 'campagne', s: ['#tcCard'], t: "« Avec mes niveaux actuels » ne garde que les trios dont les 3 cartes sont déjà au 99. Relance la Campagne une fois pour que chaque combat ait le sien. Un nouveau monde du jeu apparaît « à calculer »." }],
   '5.42.0': [
@@ -2498,7 +2513,7 @@ const KG_NEWS = { '5.43.0': [
   { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="guides"]'], tag: 'Nouveau', t: "Tu la retrouves aussi dans <em>Outils, Guides</em>, avec le choix de quand je me montre." }] };
 
 let KGS = (() => { try { return JSON.parse(localStorage.getItem('kitsuGuide') || 'null'); } catch { return null; } })();
-const kgNeuf = !KGS; KGS = Object.assign({ vu: {}, news: '', acc: true, optNews: true, inst: false, ouvert: false }, KGS || {});
+const kgNeuf = !KGS; KGS = Object.assign({ vu: {}, news: '', acc: true, optNews: true, inst: false, ouvert: false, reac: true }, KGS || {});
 const kgSave = () => { try { localStorage.setItem('kitsuGuide', JSON.stringify(KGS)); } catch {} };
 let KT = null, kgTy = null, kgFull = '', kgIv = 0;
 const kgMob = () => innerWidth <= 900;
@@ -2602,13 +2617,13 @@ function kgRender() {
   $('kgNewsB').style.display = KG_NEWS[KG_VER] ? '' : 'none'; $('kgNewsB').textContent = 'Nouveautés ' + KG_VER.replace(/\.0$/, '');
   $('kgList').innerHTML = KG.map((c, i) => `<div class="kg-c${c.prive ? ' p' : ''}" onclick="kgStart('', '${c.id}')"><div class="n">${String(i + 1).padStart(2, '0')}${c.prive ? ' · <span style="color:#c4b5fd">privé</span>' : ''}</div><div class="t">${esc(c.n)}</div><div class="s">${esc(c.d)}</div><div class="ft">${c.e.length} étape${c.e.length > 1 ? 's' : ''} · ${KGS.vu[c.id] ? `<span class="ok">✓ vu ${kgQuand(KGS.vu[c.id])}</span>` : 'à voir'}<span style="margin-left:auto">▶</span></div></div>`).join('');
   $('kgHeroFox').innerHTML = kgFox(n === KG.length ? 'joie' : 'neutre', 'kh');
-  $('kg_o_acc').checked = KGS.acc; $('kg_o_news').checked = KGS.optNews; $('kg_o_inst').checked = KGS.inst;
+  $('kg_o_acc').checked = KGS.acc; $('kg_o_news').checked = KGS.optNews; $('kg_o_inst').checked = KGS.inst; $('kg_o_reac').checked = KGS.reac !== false;
 }
 function kgReprendre(id) { // reprend la visite complete au premier chapitre pas encore vu
   kgStart(); const k = KT.L.findIndex(s => s.chId === id); if (k > 0) { KT.i = k - 1; kgPas(1); }
 }
 function kgRaz() { KGS.vu = {}; kgSave(); kgRender(); toast('Guide remis à zéro'); }
-function kgOpt(k, v) { if (k === 'acc') KGS.acc = v; if (k === 'news') KGS.optNews = v; if (k === 'inst') KGS.inst = v; kgSave(); kgPoint(); }
+function kgOpt(k, v) { if (k === 'acc') KGS.acc = v; if (k === 'news') KGS.optNews = v; if (k === 'inst') KGS.inst = v; if (k === 'reac') KGS.reac = v; kgSave(); kgPoint(); }
 function kgPoint() { $('kgHelp').classList.toggle('nv', !!(KGS.optNews && KG_NEWS[KG_VER] && KGS.news !== KG_VER)); }
 function kgAide() { if (KGS.optNews && KG_NEWS[KG_VER] && KGS.news !== KG_VER && !kgNeuf) kgStart('news'); else go('guides'); }
 function kgWelFin() { $('kgWel').classList.remove('on'); KGS.ouvert = true; kgSave(); }
@@ -2618,6 +2633,215 @@ if (kgNeuf || (KGS.acc && !KGS.ouvert)) {
   if (kgNeuf) { KGS.news = KG_VER; kgSave(); kgPoint(); }
   if (KGS.acc) setTimeout(() => { if (KT) return; $('kgWelFox').innerHTML = kgFox('joie', 'kw'); $('kgWel').classList.add('on'); }, 700);
 }
+
+// ---------- 5.45 : visuels (carte des mondes, tour verticale, calcul en direct, fiche radar, reactions de Kiko) ----------
+// Regle : rien ne bouge en continu. Chaque dessin est refait seulement quand ses donnees changent (cle), les seules
+// transitions sont ponctuelles (fin de manche 0,4 s, entree d'une bulle de Kiko 0,35 s).
+
+// --- Campagne : la carte des mondes. Une case = un combat du dernier calcul, couleur = 3 etoiles (prevu) ou etoiles gagnees (acquis).
+const CM = { d: '', couche: 'prevu', cle: '' };
+function cmSet(k, v) { CM[k] = v; cmRender(); }
+function cmOuvre(m) { const dn = CM.d; TC.g = dn.startsWith('camp') ? 'camp' : 'cau'; TC.m = m; TC.open = null; tcRender(); $('tcBox')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+function cmRender() {
+  const box = $('cmBox'), j = CP.j, e = j?.etages; if (!box) return;
+  if (!e?.combats?.length) { CM.cle = ''; box.innerHTML = ''; return; }
+  const D = tcDonnees(j), dispo = TC_BIT.filter(dn => D.diffs.has(dn)), pv = COL.j?.pve || null, sl = e.seuil ?? 60;
+  if (!dispo.includes(CM.d)) CM.d = dispo[0];
+  if (CM.couche === 'acquis' && !pv) CM.couche = 'prevu';
+  const acq = CM.couche === 'acquis', cle = [j.date, D.cle, CM.d, CM.couche, acq ? Object.keys(pv).length + ':' + Object.values(pv).reduce((a, b) => a + b, 0) : ''].join('|');
+  if (cle === CM.cle && box.firstChild) return; CM.cle = cle;
+  const cl = c => { if (acq) { const s = pv[c[0]] || 0; return s >= 3 ? 's' : s > 0 ? 'o' : 'z'; } const p = c[2] < 0 ? -1 : c[3]; return p < 0 ? 'x' : p >= 100 ? 's' : p >= sl ? 'o' : p > 0 ? 'r' : 'x'; };
+  let tot = 0, ok = 0;
+  const tuiles = D.mondes.map(m => {
+    const L = m.f.map(fd => [fd, D.rows[fd]?.[CM.d]]).filter(x => x[1]); if (!L.length) return '';
+    const k = L.map(([, c]) => cl(c)), n = L.length, s = k.filter(x => x === 's').length, o = k.filter(x => x === 'o').length, r = k.filter(x => x === 'r').length, bon = acq ? s : s + o;
+    tot += n; ok += bon; const pc = v => (100 * v / n).toFixed(2) + '%';
+    const titre = (fd, c) => esc(`${D.info[fd]?.t || fd} : ${acq ? (pv[c[0]] || 0) + ' étoile(s) gagnée(s)' : c[2] < 0 ? 'aucun trio ne fait 3★' : c[3] + ' % de 3★'}`);
+    return `<div class="cm-w${bon === n ? ' done' : ''}" onclick="cmOuvre('${esc(m.id)}')"><div class="cm-h"><b>${esc(m.nom.replace('’s Bizarre Adventure', ''))}</b><span>${bon}<em> / ${n}</em></span></div><div class="cm-cells">${L.map(([fd, c], i) => `<i class="${k[i]}" title="${titre(fd, c)}"></i>`).join('')}</div><div class="cm-bar"><b style="width:${pc(s)};background:#f7c548"></b><b style="width:${pc(o)};background:#ff7a3d"></b><b style="width:${pc(r)};background:#ff4b3e"></b></div></div>`;
+  }).join('');
+  const segD = (g, lab) => { const L = TC_G[g].filter(dn => dispo.includes(dn)); return L.length ? `<div class="seg"><span class="lab">${lab}</span>${L.map(dn => `<a class="${dn === CM.d ? 'on' : ''}" onclick="cmSet('d','${dn}')">${TC_N[dn][0].replace('Cauchemar ', '')[0]}</a>`).join('')}</div>` : ''; };
+  const leg = acq ? `<span><i style="background:#f7c548"></i>3★ gagnées</span><span><i style="background:#ff7a3d"></i>1 ou 2★</span><span><i class="z"></i>pas encore d'étoile</span>`
+    : `<span><i style="background:#f7c548"></i>3★ à chaque tirage</span><span><i style="background:#ff7a3d"></i>3★ souvent (${sl} % ou plus)</span><span><i style="background:#ff4b3e"></i>3★ parfois</span><span><i class="x"></i>aucun trio ne fait 3★</span>`;
+  box.innerHTML = `<div class="card"><h2>La carte des mondes <span class="r">${quand(j.date)}</span></h2><div class="cm-top"><div class="cm-seg">${segD('cau', 'Cauchemar')}${segD('camp', 'Campagne')}</div>
+    <div class="seg"><a class="${acq ? '' : 'on'}" onclick="cmSet('couche','prevu')">Prévu par le calcul</a><a class="${acq ? 'on' : ''}${pv ? '' : ' dis'}" ${pv ? `onclick="cmSet('couche','acquis')"` : 'title="Le script KitsuAI 5.45 ou plus envoie tes étoiles avec la sauvegarde"'}>Acquis dans le jeu</a></div>
+    <div class="cm-tot"><b>${ok.toLocaleString('fr-FR')} / ${tot.toLocaleString('fr-FR')}</b><small>combats ${acq ? 'déjà à 3★' : 'en 3★'} · ${TC_N[CM.d][0]}</small></div></div>
+    <div class="cm-grid">${tuiles}</div><div class="cm-leg">${leg}<span>Une case = un combat · contour or = monde fini · clic = ton trio, combat par combat</span></div></div>`;
+}
+
+// --- Tour : la tour verticale (record, prevision du meilleur trio, autres trios, etages ou les montees s'arretent).
+function twTour(j, tr) {
+  const t0 = tr[0]; if (!t0) return '';
+  const rec = COL.j?.tour ?? j?.record ?? null, px = window.DB_PRIVE?.tour, murs = (j?.murs || []).filter(w => w.etage).slice(0, 5);
+  const hi = Math.max(rec || 0, t0.max || 0, t0.etageMoyen || 0, px?.etage || 0, ...murs.map(w => w.etage)), max = Math.max(20, Math.ceil(hi * 1.08 / 10) * 10);
+  const top = 26, bot = 528, y = f => bot - (bot - top) * f / max, x0 = 74, x1 = 164, bx = 196, pas = max > 300 ? 50 : max > 120 ? 20 : 10;
+  let s = `<defs><linearGradient id="twVG" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff4b3e"/><stop offset="1" stop-color="#f7c548"/></linearGradient></defs>`;
+  for (let f = 0; f < max; f += 10) s += `<rect x="${x0}" y="${y(f + 10) + 1}" width="${x1 - x0}" height="${Math.max(1, y(f) - y(f + 10) - 2)}" rx="2" fill="#171a23" stroke="#232633"/>`;
+  for (let i = 0; i < 5; i++) s += `<rect x="${x0 + i * 20}" y="${top - 14}" width="12" height="12" fill="#171a23" stroke="#232633"/>`;
+  const plein = rec ?? t0.etageMoyen;
+  s += `<rect class="tw-fill" x="${x0 + 6}" y="${y(plein)}" width="${x1 - x0 - 12}" height="${y(0) - y(plein)}" rx="3" fill="url(#twVG)" opacity=".92"/>`;
+  for (let f = 10; f < plein; f += 10) s += `<line x1="${x0 + 6}" x2="${x1 - 6}" y1="${y(f)}" y2="${y(f)}" stroke="#07080c" stroke-opacity=".45"/>`;
+  for (let f = 0; f <= max; f += pas) if (rec == null || Math.abs(f - rec) > max / 30) s += `<text x="${x0 - 10}" y="${y(f) + 4}" text-anchor="end" fill="#8f96a6" font-size="11" font-weight="700">${f}</text>`;
+  // murs : la part des montees qui s'arretent a cet etage, sur la tour
+  for (const w of murs) s += `<rect x="${x0}" y="${y(w.etage) - 2}" width="${(x1 - x0) * Math.min(1, .25 + w.part / 40)}" height="4" fill="#ff4b3e"><title>Étage ${w.etage} : ${w.part} % des montées s'y arrêtent${(w.ennemis || []).length ? ' (' + w.ennemis.join(', ') + ')' : ''}</title></rect>`;
+  const lab = []; // etiquettes de droite, ecartees si elles se chevauchent
+  if (murs[0]) lab.push({ y: y(murs[0].etage), t: `mur ${murs[0].etage} · ${murs[0].part} % des montées`, c: '#ff8a7e' });
+  // prevision du meilleur trio : du pire au record (trait), 9 montees sur 10 a la moyenne (boite)
+  if (t0.min != null && t0.max != null) {
+    s += `<line x1="${bx}" x2="${bx}" y1="${y(t0.max)}" y2="${y(t0.min)}" stroke="#8f96a6" stroke-width="2"/>`;
+    for (const f of [t0.max, t0.min]) s += `<line x1="${bx - 6}" x2="${bx + 6}" y1="${y(f)}" y2="${y(f)}" stroke="#8f96a6" stroke-width="2"/>`;
+    lab.push({ y: y(t0.max), t: `max ${t0.max}`, c: '#8f96a6' }, { y: y(t0.min), t: `min ${t0.min}`, c: '#8f96a6' });
+  }
+  const lo = t0.p10 ?? t0.etageMoyen, hm = Math.max(lo, t0.etageMoyen);
+  s += `<rect x="${bx - 7}" y="${y(hm)}" width="14" height="${Math.max(3, y(lo) - y(hm))}" fill="#ff7a3d" fill-opacity=".35" stroke="#ff7a3d"/>`; lab.push({ y: y((lo + hm) / 2), t: `prévu ${t0.p10 != null ? fmt(t0.p10) + ' à ' : ''}${fmt(t0.etageMoyen)}`, c: '#ffb08a' });
+  if (px?.etage) { s += `<line x1="${x1 - 10}" x2="${bx + 6}" y1="${y(px.etage)}" y2="${y(px.etage)}" stroke="#4fa8ff" stroke-dasharray="4 3" stroke-width="2"/>`; lab.push({ y: y(px.etage), t: `${fmt(px.etage)} · exact privé`, c: '#8fc3ff' }); }
+  tr.slice(1, 3).forEach((l, i) => { const f = l.etageMoyen; s += `<line x1="${x1 - 10}" x2="${bx - 8}" y1="${y(f)}" y2="${y(f)}" stroke="#d9d3c9" stroke-opacity=".7" stroke-dasharray="3 3"/>`; lab.push({ y: y(f), t: `${fmt(f)} · trio n°${i + 2}`, c: '#d9d3c9' }); });
+  lab.sort((a, b) => a.y - b.y); let bas = -1e9; for (const l of lab) { const yy = Math.max(l.y + 4, bas + 14); bas = yy; s += `<text x="${bx + 14}" y="${yy}" fill="${l.c}" font-size="11" font-weight="800">${esc(l.t)}</text>`; }
+  if (rec != null) s += `<line x1="${x0 - 4}" x2="${x1 + 4}" y1="${y(rec)}" y2="${y(rec)}" stroke="#f7c548" stroke-width="3"/><text x="${x0 - 10}" y="${y(rec) - 6}" text-anchor="end" fill="#f7c548" font-family="Anton,Impact" font-style="italic" font-size="22">${rec}</text><text x="${x0 - 10}" y="${y(rec) + 10}" text-anchor="end" fill="#f7c548" font-size="10" font-weight="800">RECORD</text>`;
+  const ligne = (ids, v, k, sous, g) => `<div class="tw-row${g ? ' gold' : ''}"><div class="pfs">${eqList(ids).map(x => pf(x)).join('')}</div><div style="min-width:0"><div class="t">${esc(trioCourt(eqList(ids).map(x => carte(x).n)))}</div><small>${sous}</small></div><div style="text-align:right"><b class="n">${v}</b><small>${k}</small></div></div>`;
+  const L = [ligne(t0.ids || t0.equipe, fmt(t0.etageMoyen), 'prévu', `Meilleur trio · ${t0.p10 != null ? `9 montées sur 10 au-dessus de ${t0.p10}` : 'étage moyen'}${t0.max != null ? `, max ${t0.max}` : ''}`, 1)];
+  if (px?.ids) L.push(ligne(px.ids, fmt(px.etage), 'exact', 'Calcul exact privé (le conseil bleu en jeu)'));
+  tr.slice(1, 3).forEach((l, i) => L.push(ligne(l.ids || l.equipe, fmt(l.etageMoyen), 'prévu', `N° ${i + 2} du calcul`)));
+  return `<div class="card"><h2>Ta tour <span class="r">${rec != null ? `ton record : <b style="color:var(--gold)">${rec}</b>` : 'record : importe ta sauvegarde avec le script 5.45'}</span></h2><div class="tw-wrap"><svg class="tw-svg" viewBox="0 0 400 560">${s}</svg><div class="tw-list">${L.join('')}${murs.length ? `<div class="muted" style="font-size:12px">Traits rouges : étages où les montées s'arrêtent (épaisseur = part des montées, détail au survol).</div>` : ''}</div></div></div>`;
+}
+
+// --- Calcul en direct : entonnoir des trios manche par manche et top 10 provisoire (lignes « top 10 » de tour.mjs et cauchemar3.mjs).
+const LVD = { id: null, cle: '', ent: [], top: null, prev: null, avant: 0, n: 10, mode: '' };
+function lvLire(job) {
+  const tour = /^Tour de l'infini/.test(job.nom), camp = /^Campagne : 3 etoiles/.test(job.nom); if (!tour && !camp) return null;
+  if (LVD.id !== job.id) Object.assign(LVD, { id: job.id, cle: '', ent: [], top: null, prev: null, avant: 0, n: 10, mode: tour ? 'tour' : 'camp' });
+  const reE = tour ? /manche (\d+)\/(\d+) : (\d+) -> (\d+) trios en course/ : /^(?:\[\s*\d+ s\]\s*)?tour (\d+)\/(\d+) : (\d+) -> (\d+) trios en course/, reT = tour ? /top 10 manche (\d+) : (.*)$/ : /top 10 tour (\d+) : (.*)$/;
+  let topK = LVD.topK || 0, topL = null;
+  for (const l of job.lignes || []) {
+    let a; if ((a = l.match(reE))) { const k = +a[1]; LVD.n = +a[2]; LVD.ent[k - 1] = +a[4]; if (k === 1 || !LVD.avant) LVD.avant = Math.max(LVD.avant, +a[3]); }
+    if ((a = l.match(reT)) && +a[1] >= topK) { topK = +a[1]; topL = a[2]; }
+  }
+  if (topL && topK !== LVD.topK) { LVD.prev = LVD.top; LVD.topK = topK; LVD.top = topL.split(' | ').map(x => { const [ids, v] = x.split('='); return { ids: ids.split(',').map(Number), v: +v }; }); }
+  return LVD;
+}
+function lvMaj() {
+  const job = E?.job, box = $('lvBox'), mini = $('sjMini');
+  const d = job ? lvLire(job) : null, k = d ? d.ent.filter(x => x != null).length : 0;
+  if (!d || (!k && !d.top)) { if (box && box.firstChild) box.innerHTML = ''; if (mini) mini.style.display = 'none'; LVD.cle = ''; return; }
+  const run = !job.fin, cle = [job.id, k, d.topK, run].join('|'); if (cle === d.cle) return; d.cle = cle;
+  const n = Math.max(d.n, k), A = d.avant || Math.max(...d.ent.filter(Boolean)), lg = v => v > 1 ? Math.log10(v) / Math.log10(Math.max(10, A)) : .02, nf = v => v >= 1e5 ? Math.round(v / 1000) + ' k' : v.toLocaleString('fr-FR');
+  if (mini) { mini.style.display = ''; mini.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < k ? 'f' : i === k && run ? 'c' : ''}" style="height:${i < k ? 4 + lg(d.ent[i]) * 14 : 3}px"></i>`).join(''); }
+  if (!box) return;
+  const unite = d.mode === 'tour' ? 'étage moyen' : '% de 3★ (Cauchemar)', dernier = d.ent[k - 1] ?? A;
+  if (!box.querySelector('.lv-fr') || box.dataset.id !== String(job.id)) {
+    box.dataset.id = job.id;
+    box.innerHTML = `<div class="card hot"><h2>En direct · ${d.mode === 'tour' ? "Tour de l'infini" : 'Campagne'} <span class="r" id="lvEtat"></span></h2><div class="lv-wrap"><div><div class="muted" style="font-size:12px;margin-bottom:8px">Trios encore en course, manche par manche (échelle logarithmique)</div><div class="lv-fr" id="lvFr"></div><div class="lv-sum" id="lvSum"></div></div><div><div class="muted" style="font-size:12px;margin-bottom:8px">Top 10 provisoire · ${unite} · flèche = places gagnées ou perdues à la dernière manche</div><div class="lv-top" id="lvTop"></div></div></div></div>`;
+  }
+  $('lvEtat').textContent = run ? `manche ${Math.min(n, k + 1)} / ${n} en cours` : 'calcul fini';
+  $('lvFr').style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  $('lvFr').innerHTML = Array.from({ length: n }, (_, i) => { const v = d.ent[i], st = v != null ? 'fait' : i === k && run ? 'cours' : 'attente'; return `<div class="lv-col ${st}"><span class="n">${v != null ? nf(v) : '·'}</span><div class="b" style="height:${v != null ? Math.max(3, lg(v) * 78) : st === 'cours' ? 6 : 3}%"></div><span class="m">${i + 1}</span></div>`; }).join('');
+  $('lvSum').innerHTML = `<div><b>${k} / ${n}</b>manches finies</div><div><b>${dernier.toLocaleString('fr-FR')}</b>trios en course</div>${A ? `<div><b>${Math.max(0, A - dernier).toLocaleString('fr-FR')}</b>écartés sur ${A.toLocaleString('fr-FR')}</div>` : ''}`;
+  const T = d.top || [], P = d.prev || [], cleT = x => x.ids.join('-'), rangP = new Map(P.map((x, i) => [cleT(x), i])), top = $('lvTop'), vus = new Set();
+  top.style.height = (T.length * 47) + 'px';
+  T.forEach((x, i) => {
+    const c = cleT(x); vus.add(c); let el = top.querySelector(`[data-k="${c}"]`);
+    if (!el) { el = document.createElement('div'); el.className = 'lv-it'; el.dataset.k = c; el.innerHTML = `<span class="rk"></span><span class="pfs">${x.ids.map(id => pf(id)).join('')}</span><span class="nm">${esc(trioCourt(x.ids.map(id => carte(id).n)))}</span><span class="sc"></span><span class="dl"></span>`; el.style.transform = `translateY(${T.length * 47}px)`; el.style.opacity = 0; top.appendChild(el); el.offsetHeight; }
+    const pr = rangP.get(c), dl = pr == null ? (P.length ? '<span class="nw">nouv.</span>' : '') : pr > i ? `<span class="up">▲${pr - i}</span>` : pr < i ? `<span class="dn">▼${i - pr}</span>` : '<span class="muted">=</span>';
+    el.style.transform = `translateY(${i * 47}px)`; el.style.opacity = 1; el.classList.toggle('top1', i === 0);
+    el.querySelector('.rk').textContent = i + 1; el.querySelector('.sc').textContent = fmt(x.v) + (d.mode === 'tour' ? '' : ' %'); el.querySelector('.dl').innerHTML = dl;
+  });
+  for (const el of [...top.children]) if (!vus.has(el.dataset.k)) el.remove();
+  if (!T.length) top.innerHTML = `<div class="muted" style="font-size:12.5px">Le classement s'affiche à la fin de la 1re manche.</div>`;
+}
+
+// --- Fiche de carte : radar des stats (niveau actuel et 99, lues dans le moteur du jeu) et liens actifs dans son meilleur trio.
+const RD_AX = [['hp', 'PV'], ['atk', 'ATK'], ['def', 'DÉF'], ['spd', 'VIT'], ['crit', 'CRIT']], LK_COL = { atk: '#ff4b3e', hp: '#2fd27a', def: '#4fa8ff', spd: '#f7c548', crit: '#e14fd6', energy: '#b38cff' }, LK_NOM = { atk: 'ATK', def: 'DÉF', hp: 'PV', crit: 'critique', spd: 'VIT', energy: 'énergie' };
+async function ficheVisuel(id, trio, mode) {
+  const box = $('fcVis'); if (!box) return;
+  let r; try { r = await api(`/api/carte-stats?id=${id}${trio ? '&trio=' + trio.join(',') : ''}`); } catch { r = null; }
+  if (!$('fcVis') || $('fcVis').dataset.id !== String(id)) return;
+  let h = '';
+  if (r?.actuel && r.echelle) {
+    const cx = 170, cy = 150, R = 108, N = RD_AX.length, pt = (i, v) => [cx + R * v * Math.sin(2 * Math.PI * i / N), cy - R * v * Math.cos(2 * Math.PI * i / N)], val = (o, k) => Math.min(1, (o[k] || 0) / (r.echelle[k] || 1));
+    let s = ''; for (const q of [.25, .5, .75, 1]) s += `<polygon points="${RD_AX.map((_, i) => pt(i, q).join(',')).join(' ')}" fill="none" stroke="#232633"/>`;
+    RD_AX.forEach(([k, n], i) => { const [x, y] = pt(i, 1), [tx, ty] = pt(i, 1.2); s += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#232633"/><text x="${tx}" y="${ty + 4}" text-anchor="middle" fill="#8f96a6" font-size="11" font-weight="800">${n}</text>`; });
+    const pareil = r.lv >= 99, poly = (o, a) => `<polygon points="${RD_AX.map(([k], i) => pt(i, Math.max(.03, val(o, k))).join(',')).join(' ')}" ${a}/>`;
+    if (!pareil) s += poly(r.max, 'fill="none" stroke="#f7c548" stroke-dasharray="5 4" stroke-width="2"');
+    s += poly(r.actuel, 'fill="#ff4b3e" fill-opacity=".22" stroke="#ff4b3e" stroke-width="2"');
+    const lst = RD_AX.map(([k, n]) => `<span title="${n}">${n} <b>${k === 'crit' ? Math.round(100 * r.actuel[k]) + ' %' : Math.round(r.actuel[k]).toLocaleString('fr-FR')}</b>${pareil ? '' : ` <em>${k === 'crit' ? Math.round(100 * r.max[k]) + ' %' : Math.round(r.max[k]).toLocaleString('fr-FR')}</em>`}</span>`).join('');
+    h += `<div class="sp"></div><h2>Ses stats <span class="r">${pareil ? 'niveau 99' : `niveau ${r.lv} · <span style="color:var(--gold)">pointillés = au 99</span>`}</span></h2><svg class="rd-svg" viewBox="0 0 340 300">${s}</svg><div class="rd-l">${lst}</div><div class="muted" style="font-size:11.5px">Carte seule, avec ses étoiles, sans collectif. Chaque axe va jusqu'à la meilleure carte SSR, UR ou LR au niveau 99.</div>`;
+  } else if (r?.err) h += `<div class="sp"></div><div class="muted" style="font-size:12px">${esc(r.err)}</div>`;
+  if (r?.trio && r.liens) {
+    const P = [[50, 2], [6, 60], [94, 60]], pos = new Map(r.trio.map((x, i) => [x, P[i]])), aretes = new Map();
+    let s = '';
+    for (const l of r.liens) for (let a = 0; a < l.ids.length; a++) for (let b = a + 1; b < l.ids.length; b++) { const k = [l.ids[a], l.ids[b]].sort().join('-'), n = aretes.get(k) || 0; aretes.set(k, n + 1); const [x1, y1] = pos.get(l.ids[a]), [x2, y2] = pos.get(l.ids[b]), o = (n - 1.5) * 1.4; s += `<line x1="${x1 + o}" y1="${y1 + 11 + o}" x2="${x2 + o}" y2="${y2 + 11 + o}" stroke="${l.garde ? LK_COL[l.stat] || '#8f96a6' : '#3a3e4c'}" stroke-width="${l.garde ? 1.1 : .7}" ${l.garde ? '' : 'stroke-dasharray="1.5 1.5"'} vector-effect="non-scaling-stroke" style="stroke-width:${l.garde ? 3 : 2}px"/>`; }
+    const mine = r.liens.filter(l => l.ids.length > 1).sort((a, b) => l2(b) - l2(a) || b.garde - a.garde || b.pct - a.pct), l2 = l => l.ids.includes(+id) ? 1 : 0;
+    h += `<div class="sp"></div><h2>Liens dans son trio</h2>${mode ? `<div class="muted" style="font-size:12px;margin-top:-8px">Son meilleur trio · ${esc(mode)}</div>` : ''}<div class="lk-tri"><svg viewBox="0 0 100 100" preserveAspectRatio="none">${s}</svg>${r.trio.map(x => { const [l, t] = pos.get(x); return `<div class="lk-p${x === +id ? ' moi' : ''}" style="left:${l}%;top:${t}%">${pf(x)}<small>${esc(carte(x).n.replace(/\s*\(.*\)/, ''))}</small></div>`; }).join('')}</div>
+      <div class="lk-l">${mine.map(l => `<div class="${l.garde ? '' : 'off'}"><i style="background:${l.garde ? LK_COL[l.stat] || '#8f96a6' : '#3a3e4c'}"></i>${esc(l.nom)} · +${l.pct} % ${LK_NOM[l.stat] || l.stat} · ${l.ids.includes(+id) ? 'avec ' : 'entre '}${esc(l.ids.filter(x => x !== +id).map(x => carte(x).n.replace(/\s*\(.*\)/, '')).join(l.ids.includes(+id) ? ', ' : ' et '))}${l.garde ? '' : ' · pas gardé (6 par carte)'}</div>`).join('') || '<div class="muted">Aucun lien actif avec les deux autres.</div>'}</div>`;
+  }
+  box.innerHTML = h;
+}
+
+// --- Le modele : la conquete compacte (une ligne par difficulte, les autres modes en barres).
+function mdDessinCompact() {
+  const sv = $('mdSvg1'), H = MD.j.historique; sv.innerHTML = '';
+  const last = H[H.length - 1], diffs = MDDIF.filter(([d]) => H.some(s => s.c?.[d])); MD.cells = [];
+  // Ecran etroit (telephone) : les autres modes passent sous la Campagne, dans un dessin deux fois moins large.
+  const tel = (sv.getBoundingClientRect().width || 1200) < 700, W = tel ? 480 : 1200, cx1 = tel ? 360 : 630, cv = tel ? 456 : 720;
+  let y = 44; mdTxt(sv, 30, 30, '/ CAMPAGNE CAUCHEMAR', { h: 1, s: 18, c: '#f4ede3' });
+  for (const [d, nom] of diffs) {
+    // 1 979 combats par difficulte : une case = un paquet de combats consecutifs (au plus 80 cases), couleur = part de 3★ surs.
+    const n = Math.max(...H.map(s => (s.c?.[d] || '').length)), B = Math.max(1, Math.min(tel ? 40 : 80, n)), w = (cx1 - 130) / B, row = { d, r: [], n, B };
+    mdTxt(sv, 30, y + 17, nom.toUpperCase(), { c: '#d9d3c9', s: 12 });
+    for (let i = 0; i < B; i++) row.r.push(mdEl('rect', { x: 130 + i * w, y: y + 2, width: Math.max(1.5, w - 2), height: 20, rx: 2, fill: MDCOL[0] }, sv));
+    row.lab = mdTxt(sv, cv, y + 19, '', { h: 1, s: 20, a: 'end', c: '#f4ede3' }); MD.cells.push(row); y += 32;
+  }
+  if (!diffs.length) { mdTxt(sv, 30, y + 16, 'Lance le calcul Campagne 3★ pour remplir cette ligne.', { s: 13 }); y += 30; }
+  MD.campLab = mdTxt(sv, 30, y + 14, '', { c: '#8f96a6', s: 12 });
+  const ox = tel ? 30 : 760, bx = tel ? 120 : 850, bw = tel ? 240 : 230; MD.bx = bx; MD.bw = bw; let yy = tel ? y + 48 : 44; mdTxt(sv, ox, yy - 14, '/ LES AUTRES MODES', { h: 1, s: 18, c: '#f4ede3' });
+  const barre = (lab, coul, col) => { mdTxt(sv, ox, yy + 16, lab, { c: col || '#d9d3c9', s: 12 }); mdEl('rect', { x: bx, y: yy + 5, width: bw, height: 12, rx: 6, fill: '#1d202b' }, sv); const b = mdEl('rect', { x: bx, y: yy + 5, width: 0, height: 12, rx: 6, fill: coul }, sv), t = mdTxt(sv, W - 30, yy + 18, '', { h: 1, s: 20, a: 'end', c: '#f4ede3' }); yy += 32; return { b, t }; };
+  const g = mdEl('linearGradient', { id: 'mdGT', x1: 0, y1: 0, x2: 1, y2: 0 }, mdEl('defs', {}, sv)); mdEl('stop', { offset: 0, 'stop-color': '#ff4b3e' }, g); mdEl('stop', { offset: 1, 'stop-color': '#f7c548' }, g);
+  MD.tB = H.some(s => s.tour) ? barre('TOUR', 'url(#mdGT)') : null;
+  if (MD.tB) { MD.tB.m = mdEl('line', { y1: yy - 32 + 1, y2: yy - 32 + 21, stroke: last.tour?.prive ? '#4fa8ff' : '#c9c3b9', 'stroke-width': 2 }, sv); MD.tmax = Math.max(1, ...H.map(s => s.tour?.max || 0)); }
+  MD.aB = H.some(s => s.m?.arene != null) ? barre('ARÈNE', '#4fa8ff', '#8cc4ff') : null;
+  MD.rB = H.some(s => s.m?.raid != null) ? barre('RAID', '#2fd27a') : null;
+  if (MD.tB) mdTxt(sv, ox, yy + 8, `Tour : trait = ${last.tour?.prive ? 'meilleur possible (exact privé)' : 'meilleur trio possible'}`, { c: '#8f96a6', s: 11 });
+  sv.setAttribute('viewBox', `0 0 ${W} ${Math.max(y + 30, yy + 20)}`);
+}
+function mdSetCompact(s) {
+  for (const c of MD.cells || []) { const str = s.c?.[c.d] || ''; c.r.forEach((r, k) => { const a = Math.floor(k * c.n / c.B), b = Math.max(a + 1, Math.floor((k + 1) * c.n / c.B)), p = str.slice(a, b); const q = p.length ? p.split('').filter(x => x === '3').length / p.length : -1; r.setAttribute('fill', q < 0 ? MDCOL[0] : q >= .95 ? MDCOL[3] : q >= .6 ? MDCOL[2] : q > .2 ? MDCOL[1] : '#3a2a30'); }); c.lab.textContent = `${md3(s, c.d)} / ${str.length}`; }
+  const per = MD.cells?.[0] ? Math.round(MD.cells[0].n / MD.cells[0].B) : 0;
+  MD.campLab.textContent = MD.cells?.length ? `combats à 3★ sûrs sur le total · une case ≈ ${per} combat${per > 1 ? 's' : ''}` : '';
+  if (MD.tB) { const v = s.tour?.now || 0, w = MD.bw * Math.min(1, v / MD.tmax), m = MD.bx + MD.bw * Math.min(1, (s.tour?.max || 0) / MD.tmax); MD.tB.b.setAttribute('width', w); MD.tB.t.textContent = s.tour ? fmt(v) : '-'; MD.tB.m.setAttribute('x1', m); MD.tB.m.setAttribute('x2', m); }
+  if (MD.aB) { const a = s.m?.arene; MD.aB.b.setAttribute('width', MD.bw / 100 * Math.min(100, a || 0)); MD.aB.t.textContent = a != null ? fmt(a) + ' %' : '-'; }
+  if (MD.rB) { const r = s.m?.raid; MD.rB.b.setAttribute('width', MD.bw / 100 * Math.min(100, r || 0)); MD.rB.t.textContent = r != null ? fmt(r) + ' %' : '-'; }
+}
+
+// --- Reactions de Kiko : une bulle par evenement (record de Tour, carte au 99, monde fini en Cauchemar, nouveaux 3★ apres un calcul).
+// Au premier passage tout est note sans bulle. Etat dans localStorage `kitsuKiko`. Reglage : Guides › Réactions de Kiko.
+let KK = (() => { try { return JSON.parse(localStorage.getItem('kitsuKiko') || 'null'); } catch { return null; } })() || {};
+const kkSave = () => { try { localStorage.setItem('kitsuKiko', JSON.stringify(KK)); } catch {} };
+const KKQ = [];
+function kkDire(x, titre, txt, g) { if (KGS.reac === false) return; KKQ.push({ x, titre, txt, g }); if (!$('kkHost').firstChild) kkSuivante(); }
+function kkSuivante() {
+  const b = KKQ.shift(), host = $('kkHost'); clearTimeout(host._h); if (!b) { host.innerHTML = ''; return; }
+  host.innerHTML = `<div class="kk-toast${b.g ? ' gold' : ''}"><div class="f">${kgFox(b.x, 'kk')}</div><div><b>${b.titre}</b><p>${b.txt}</p><div class="a"><button class="ghost" onclick="kkSuivante()">Merci Kiko</button></div></div><span class="x" onclick="kkSuivante()">✕</span></div>`;
+  host._h = setTimeout(kkSuivante, 10000);
+}
+function kkVerifier() {
+  const neuf = !KK.init;
+  // record de Tour (sauvegarde envoyee par le script)
+  const rec = COL.j?.tour; if (rec != null) { if (!neuf && KK.rec != null && rec > KK.rec) { const p = TW.j?.trios?.[0]; kkDire('joie', 'Nouveau record !', `Étage <em>${rec}</em> en Tour (avant : ${KK.rec}).${p ? ` Le calcul prévoit ${fmt(p.etageMoyen)} en moyenne pour ton meilleur trio.` : ''}`, 1); } KK.rec = rec; }
+  // cartes qui arrivent au 99
+  if (COL.j?.lv) { const l99 = Object.entries(COL.j.lv).filter(([id, l]) => l >= 99 && COL.j.owned?.[id]).map(([id]) => id); if (!neuf && KK.l99) { const av = new Set(KK.l99), nv = l99.filter(id => !av.has(id)); if (nv.length) kkDire('surpris', nv.length > 1 ? `${nv.length} cartes au 99` : 'Une carte au 99', `<em>${esc(nv.map(id => carte(id).n).slice(0, 4).join(', '))}</em> ${nv.length > 1 ? 'sont' : 'est'} au niveau 99. Les trios « prêts » de la Campagne et de la Tour en tiennent compte.`); } KK.l99 = l99; }
+  // mondes finis : dans le jeu (etoiles gagnees) si le script les envoie, sinon prevus par le dernier calcul
+  const j = CP.j, e = j?.etages; if (e?.combats?.length) {
+    const D = tcDonnees(j), pv = COL.j?.pve, sl = e.seuil ?? 60, finis = [];
+    for (const m of D.mondes) for (const dn of TC_G.cau) { const L = m.f.map(fd => D.rows[fd]?.[dn]).filter(Boolean); if (L.length && L.every(c => pv ? (pv[c[0]] || 0) >= 3 : c[2] >= 0 && c[3] >= sl)) finis.push(`${pv ? 'j' : 'p'}:${m.id}:${dn}:${m.nom}:${L.length}`); }
+    if (!neuf && KK.mf && KK.mfq === (pv ? 'j' : 'p')) { const av = new Set(KK.mf); for (const f of finis.filter(f => !av.has(f)).slice(0, 2)) { const [q, , dn, nom, n] = f.split(':'); kkDire('malin', `${nom.replace('’s Bizarre Adventure', '')} fini`, `Les <em>${n} combats</em> en 3★ en ${TC_N[dn][0]}${q === 'j' ? ', dans le jeu.' : `, d'après le calcul du ${quand(j.date)}.`}`); } }
+    KK.mf = finis; KK.mfq = pv ? 'j' : 'p'; // passage du prevu a l'acquis : on note sans bulle
+  }
+  // nouveaux 3★ entre les deux derniers instantanes du modele
+  const H = MD.j?.historique; if (H?.length) { const s = H[H.length - 1]; if (!neuf && KK.snap && s.t > KK.snap && H.length > 1) { const p = H[H.length - 2], gain = MDDIF.map(([d, n]) => [n, md3(s, d) - md3(p, d)]).filter(([, g]) => g > 0); if (gain.length) kkDire('neutre', 'Nouveaux 3★', `Ce calcul ajoute ${gain.map(([n, g]) => `<em>+${g}</em> en Cauchemar ${n}`).join(', ')} (combats à 3★ sûrs).`); } KK.snap = s.t; }
+  if (COL.j || CP.j) KK.init = 1; kkSave();
+}
+// Verifications legeres toutes les 1,5 s : rien n'est refait tant que la sauvegarde, les resultats ou l'instantane du modele ne changent pas.
+let KKC = '';
+setInterval(() => { if (!E || document.hidden) return; lvMaj(); const k = [COL.j?.t, COL.j?.tour, CP.j?.date, MD.j?.historique?.length, MD.j?.historique?.at(-1)?.t].join('|'); if (k !== KKC) { KKC = k; kkVerifier(); } }, 1500);
 </script>
 </body>
 </html>

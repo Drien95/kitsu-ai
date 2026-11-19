@@ -156,6 +156,32 @@ setInterval(verifierAlertes, 30000);
 // Pourquoi relancer « Mettre a jour l'IA » : patch du jeu ou collection changee depuis la derniere analyse.
 // 5.40.3 : les liens choisis (lk) comptent aussi ; sans lk, meme empreinte qu'avant (pas de fausse alerte « collection changee »).
 const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), Object.entries(sv.lv || {}).map(([k, v]) => k + ':' + (v?.l || v)).sort(), Object.entries(sv.stars || {}).sort(), ...(sv.lk && Object.keys(sv.lk).length ? [Object.entries(sv.lk).map(([k, v]) => k + ':' + [].concat(v || []).join('+')).sort()] : [])]).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0) : 0;
+// 5.45 : etoiles gagnees par combat et record de la Tour. Hors de hashSave : elles ne changent pas les calculs, seulement l'affichage.
+const hashJeu = sv => JSON.stringify([sv?.pve?.stars || {}, sv?.tower?.best ?? null]);
+// 5.45 : fiche de carte. Stats d'une carte seule (sans collectif) a son niveau et au 99, lues dans le moteur du jeu via
+// setupBattle, echelle = meilleure valeur de chaque stat parmi les cartes SSR, UR et LR au niveau 99 (calculee une fois par
+// version du jeu), et liens actifs du trio donne (G.activeLinks, 6 gardes par carte selon tes choix lk).
+let ECHELLE = { v: null, e: null };
+const STAT_U = [['hp', 'maxHp'], ['atk', 'atk'], ['def', 'def'], ['spd', 'spd'], ['crit', 'crit']];
+function statsUnite(G, B, id, lv, stars) {
+  const st = G.setupBattle(G.findFight(G.ALL_WORLDS[0].fights[0].id + '@xn'), [{ id: +id, lv, stars }], 1).st, u = B.allies(st)[0];
+  return Object.fromEntries(STAT_U.map(([k, f]) => [k, +u?.[f] || 0]));
+}
+function carteStats(id, trio) {
+  const G = ENG.G, B = ENG.B, c = G.CHAR_BY_ID[id]; if (!c) return { err: 'carte inconnue' };
+  const sv = readJ(D('data', 'sauvegarde.json')), lv = sv?.owned?.[id] ? (sv.lv?.[id]?.l || sv.lv?.[id] || 1) : 1, stars = sv?.stars?.[id] || 0, out = { id: +id, lv, stars, possedee: !!sv?.owned?.[id] };
+  try {
+    out.actuel = statsUnite(G, B, id, lv, stars); out.max = statsUnite(G, B, id, 99, stars);
+    if (ECHELLE.v !== VER) { const e = {}; for (const x of Object.values(G.CHAR_BY_ID)) if (['M', 'L', 'E'].includes(x.r)) try { const s = statsUnite(G, B, x.id, 99, 0); for (const k in s) e[k] = Math.max(e[k] || 0, s[k]); } catch {} ECHELLE = { v: VER, e }; }
+    out.echelle = ECHELLE.e;
+  } catch (e) { out.err = 'stats illisibles dans le moteur du jeu (' + e.message + ')'; }
+  const t = String(trio || '').split(',').map(Number).filter(x => G.CHAR_BY_ID[x]);
+  if (t.length === 3 && t.includes(+id)) try {
+    const kept = G.linkPlan(t, sv?.lk || {}).kept || {}, garde = new Set(Object.values(kept).flat().map(l => G.linkKey(l)));
+    out.trio = t; out.liens = G.activeLinks(t).map(l => ({ nom: l.name, stat: l.stat, pct: l.pct, ids: l.ids.filter(x => t.includes(x)), garde: garde.has(G.linkKey(l)) && l.ids.filter(x => t.includes(x)).every(x => (kept[x] || []).some(k => G.linkKey(k) === G.linkKey(l))) }));
+  } catch {}
+  return out;
+}
 function calculConseille() {
   const d = readJ(D('resultats', 'dernier.json')), sv = readJ(D('data', 'sauvegarde.json')), out = [];
   if (!d) { if (sv) out.push('aucune analyse complete pour ta collection'); return out; }
@@ -333,7 +359,7 @@ http.createServer(async (req, res) => {
     if (u.pathname === '/sauvegarde' && req.method === 'POST') {
       const j = JSON.parse(await body(req)); if (!j.owned || !j.lv) return send(res, 400, { err: 'export invalide' }, 'application/json', CORS);
       const old = readJ(D('data', 'sauvegarde.json')); mkdirSync(D('data'), { recursive: true });
-      if (hashSave(old) !== hashSave(j) || !old?.guild && j.guild) { writeFileSync(D('data', 'sauvegarde.json'), JSON.stringify({ ...j, auto: true })); say(`sauvegarde mise a jour par le script (${Object.keys(j.owned).length} cartes)`); }
+      if (hashSave(old) !== hashSave(j) || hashJeu(old) !== hashJeu(j) || !old?.guild && j.guild) { writeFileSync(D('data', 'sauvegarde.json'), JSON.stringify({ ...j, auto: true })); say(`sauvegarde mise a jour par le script (${Object.keys(j.owned).length} cartes)`); }
       return send(res, 200, { ok: true }, 'application/json', CORS);
     }
     if (u.pathname === '/jeu' && req.method === 'POST') { jeu = { ...JSON.parse(await body(req)), t: Date.now() }; verifierAlertes(); return send(res, 200, { ok: true }, 'application/json', CORS); }
@@ -375,7 +401,7 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/reglages' && req.method === 'POST') { const r = { ...reglages(), ...JSON.parse(await body(req)) }; mkdirSync(D('data'), { recursive: true }); writeFileSync(D('data', 'reglages.json'), JSON.stringify(r, null, 1)); say('reglages enregistres'); return send(res, 200, r); }
       // Fiches des cartes pour l'affichage (nom, rarete, serie, adresse du portrait). Les portraits ne sont pas copies :
       // le panneau les affiche depuis leur adresse d'origine, comme le jeu.
-      if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [] }); }
+      if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [], pve: sv.pve?.stars || null, tour: sv.tower?.best ?? null }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour(u.searchParams.get('niveaux')));
       if (u.pathname === '/api/plan') return send(res, 200, await planCalcule(ENG.G));
@@ -390,6 +416,7 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/partage/cf-jeton' && req.method === 'POST') { if (!PARTAGE.identite().admin) return send(res, 403, { err: 'reserve au PC validateur' }); const j = String(JSON.parse(await body(req)).jeton || '').trim(); if (j && !/^[A-Za-z0-9_-]{30,200}$/.test(j)) return send(res, 400, { err: 'jeton illisible' }); const f = D('data', 'partage.json'), o = readJ(f) || {}; if (j) o.cloudflare = j; else delete o.cloudflare; writeFileSync(f, JSON.stringify(o, null, 1)); return send(res, 200, { ok: true, enregistre: !!j }); }
       if (u.pathname === '/api/partage/changer-id' && req.method === 'POST') return send(res, 200, { id: PARTAGE.changerIdentite().id.slice(0, 8) });
       if (u.pathname === '/api/raids') return send(res, 200, readJ(D('data', 'raids.json')) || []);
+      if (u.pathname === '/api/carte-stats') return send(res, 200, carteStats(u.searchParams.get('id'), u.searchParams.get('trio')));
       if (u.pathname === '/api/fiche') { if (FICHE.v !== VER) FICHE = { v: VER, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: VER, ...FICHE.j }); }
       if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
       if (u.pathname === '/api/poids-historique') { const p = readJ(D('data', 'poids.json')); return send(res, 200, { actuel: p ? { regles: p.t || null, gains: p.gains || {}, equipes: Object.keys(p.equipes || {}).length, imitation: !!p.distillation, restaure: p.restaure || null } : null, copies: listerPoids() }); }
