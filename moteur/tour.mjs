@@ -20,7 +20,10 @@ const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
 const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? () => 99 : lvOf;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
-const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r));
+// 5.44 : raretes essayees (--raretes LR,UR,SSR) et pause au bout d'un temps de travail (--pause-apres minutes), comme la Campagne.
+const RAR = { LR: 'M', UR: 'L', SSR: 'E' }, RARETES = String(arg('raretes', 'LR,UR,SSR')).split(',').filter(r => RAR[r]), CODES = RARETES.map(r => RAR[r]);
+const PAUSE = Math.max(0, +arg('pause-apres', 0) || 0);
+const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => CODES.includes(CH[id]?.r));
 if (!IDS.length) { console.log('Aucune carte LR, UR ou SSR dans la sauvegarde exportee.'); process.exit(1); }
 const mk = (ids, lk = {}) => ids.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LV(id), stars: stOf(id), ...(l ? { lk: l } : {}) }; });
 const actuelle = (SAVE.team || []).map(Number).filter(id => IDS.includes(id));
@@ -48,7 +51,8 @@ const solo = IDS.map((id, i) => ({ id, etage: (solo0[i][0] + solo0[i][1]) / 2 })
 // estimees sur l'entonnoir du calcul precedent (trios encore en course avant chaque manche ; tous si rien n'avait ete elimine)
 // au prorata des trios a simuler.
 const PREC = readJ(D('resultats', 'tour.json')), MANCHES = +arg('manches', 10); let PREVU = 0;
-const C = await T.course({ trios: tr, cle: cles, J, garder: +arg('garder', 200), z: +arg('z', 3), manches: MANCHES, onManche: x => {
+const arret = async () => { if (!PAUSE || Date.now() - T0 < PAUSE * 60000) return; log(`pause apres ${PAUSE} min de travail : montees gardees dans le journal, relance le calcul pour finir (rien n est refait)`); eveil.fin(); await pool.close(); process.exit(0); };
+const C = await T.course({ trios: tr, cle: cles, J, arret, garder: +arg('garder', 200), z: +arg('z', 3), manches: MANCHES, onManche: x => {
   if (x.debut) {
     if (x.r === 1) { const ent = PREC?.methode === 'course' && Array.isArray(PREC.entonnoir) ? PREC.entonnoir.slice(0, MANCHES - 1) : null;
       const tp = PREC?.triosEssayes || 0, suite = Math.round((ent ? ent.reduce((a, b) => a + (b >= tp ? tr.length : Math.min(b, tr.length)), 0) : 0.1 * tr.length * (MANCHES - 1)) * x.aFaire / Math.max(1, tr.length));
@@ -67,7 +71,7 @@ const fin = top.map((t, i) => ({ t, fl: r2[i], ...statsEtages(r2[i]) })).sort((a
 const act = actuelle.length === 3 ? fin.find(x => x.t.slice().sort().join() === actuelle.slice().sort().join()) || null : null;
 log(`finale : ${top.length} trios, ${+arg('tirages', 30)} montees chacun`);
 const ligne = x => ({ equipe: x.t.map(nom), ids: x.t, etageMoyen: +x.moy.toFixed(1), marge: +(2 * x.se).toFixed(1), min: x.min, p10: x.p10, mediane: x.med, max: x.max });
-const out = { version, date: new Date().toISOString(), niveaux: NIV, record: SAVE.tower?.best ?? null, triosEssayes: essais, cartes: IDS.length,
+const out = { version, date: new Date().toISOString(), niveaux: NIV, record: SAVE.tower?.best ?? null, triosEssayes: essais, cartes: IDS.length, raretes: RARETES,
   methode: 'course', entonnoir: C.entonnoir, monteesSimulees: C.montees, reprisesJournal: C.repris, duree: Math.round((Date.now() - T0) / 1000), vitesse: Math.round(C.montees / Math.max(1, C.duree)),
   classement: C.classement.slice(0, 200).map(x => ({ ids: x.t, etageMoyen: +x.moy.toFixed(1), montees: x.n })),
   // Suite du classement (trios en course apres les 200 premiers, puis les mieux places des ecartes) : prefiltre du departage exact.

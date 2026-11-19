@@ -108,6 +108,22 @@
   @media (max-width: 700px) { .pt-cols { grid-template-columns: 1fr; } }
   .note { background: rgba(255,122,61,.07); border: 1px solid rgba(255,122,61,.3); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #e9ded0; }
   ol.how { margin: 0; padding-left: 20px; color: #d9d3c9; } ol.how li { margin: 6px 0; }
+  /* 5.44 : choix avant le lancement (raretes, temps de travail), risques et frise de duree */
+  .opt { display: grid; grid-template-columns: 150px 1fr; gap: 10px 18px; align-items: start; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .opt > .lab { font-size: 11px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: var(--mute); padding-top: 9px; }
+  .opt .seg { margin-bottom: 0; } .opt > div { min-width: 0; }
+  .rar { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line2); background: var(--panel2); font-weight: 800; font-size: 13px; cursor: pointer; user-select: none; color: var(--mute); }
+  .rar b { font: 400 16px var(--head); letter-spacing: .5px; } .rar i { font-style: normal; font-weight: 600; font-size: 12px; }
+  .rar.on { color: var(--txt); border-color: var(--acc2); background: rgba(255,122,61,.10); } .rar.on::before { content: "✓"; color: var(--acc2); }
+  .rar.LR.on b { color: var(--gold); } .rar.UR.on b { color: #c9a2ff; } .rar.SSR.on b { color: #6fc3ff; } .rar.vide { opacity: .45; cursor: default; }
+  .risk { margin-top: 10px; border-radius: 10px; padding: 11px 14px; font-size: 13px; line-height: 1.5; }
+  .risk.ok { background: rgba(47,210,122,.07); border: 1px solid rgba(47,210,122,.35); } .risk.warn { background: rgba(245,165,36,.08); border: 1px solid rgba(245,165,36,.45); } .risk.bad { background: rgba(255,75,62,.09); border: 1px solid rgba(255,75,62,.5); }
+  .risk b { color: var(--txt); }
+  .frise { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 14px; background: var(--panel2); } .frise i { display: block; height: 100%; }
+  .frise .c1 { background: var(--acc); } .frise .c2 { background: var(--acc2); } .frise .c3 { background: var(--gold); } .frise .c4 { background: #5a6075; }
+  .frleg { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--mute); margin-top: 6px; } .frleg span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; background: var(--c); }
+  .avlan .big { font: 400 54px/1 var(--head); font-style: italic; margin: 6px 0 4px; } .avlan ul { margin: 10px 0 16px; padding-left: 18px; color: #e2dbd0; font-size: 13px; } .avlan li { margin: 5px 0; }
+  @media (max-width: 700px) { .opt { grid-template-columns: 1fr; gap: 6px; } .opt > .lab { padding-top: 0; } .lance { flex-direction: column; align-items: stretch !important; } }
   #modal { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: none; align-items: center; justify-content: center; z-index: 50; }
   #modal .box { background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; width: min(1150px, 94vw); max-height: 86vh; overflow: auto; padding: 20px; }
   #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--acc2); color: var(--txt); padding: 10px 18px; border-radius: 10px; font-weight: 700; display: none; z-index: 60; }
@@ -499,9 +515,11 @@
     <p class="lead">Le trio qui monte le plus haut. Tous les trios de tes cartes SSR, UR et LR montent sur les vrais étages (les PV sont gardés d'un étage à l'autre), les plus faibles sont écartés manche après manche, puis les meilleurs refont 30 montées. Aussi : les étages où tes montées s'arrêtent et les collectifs à cocher.</p>
     <div class="card hot">
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="planche('#p-tour', 'tw-planche')">Exporter la planche PNG</button></span></h2>
-      <div class="row"><label>Niveaux <select id="o_twniv" onchange="twPrev()"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99 (potentiel)</option></select></label><button data-act="tour" style="margin-left:auto">Lancer le calcul</button></div>
-      <div id="twPrev" class="grid g5" style="margin-top:14px"></div>
-      <p class="muted" style="font-size:12px;margin:10px 0 0">Le PC reste éveillé, tu peux jouer pendant ce temps. Si tu arrêtes, la reprise repart du journal : les montées déjà faites ne sont pas refaites.</p>
+      <div class="row"><label>Niveaux <select id="o_twniv" onchange="twPrev()"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99 (potentiel)</option></select></label></div>
+      <div class="opt"><div class="lab">Cartes essayées</div><div><div class="row" id="twrar"></div><div class="risk" id="twriskRar"></div></div></div>
+      <div class="opt"><div class="lab">Temps de travail</div><div><div class="seg" id="twtps"><a data-t="0" onclick="chxTps('tw',0)">Jusqu'au bout</a><a data-t="2" onclick="chxTps('tw',2)">2 h puis pause</a><a data-t="8" onclick="chxTps('tw',8)">Une nuit (8 h) puis pause</a></div><div class="risk" id="twriskTps"></div></div></div>
+      <div id="twPrev" class="grid g5" style="margin-top:18px"></div>
+      <div class="row lance" style="margin-top:16px"><span class="muted" style="font-size:12px;flex:1">Le PC reste éveillé, tu peux jouer pendant ce temps. Une pause ou un arrêt n'efface rien : la reprise repart du journal, les montées déjà faites ne sont pas refaites.</span><button data-act="tour">Lancer le calcul</button></div>
       <div id="twJob" class="muted" style="margin:8px 0 0"></div>
     </div>
     <div class="sp"></div>
@@ -693,10 +711,12 @@
         <label>Niveaux <select id="o_c3niv" onchange="campPrev()"><option value="99">Toutes au niveau 99 (potentiel)</option><option value="actuel">Tes niveaux actuels</option></select></label>
         <label>Difficultés <select id="o_c3dif" onchange="campPrev()"><option value="toutes">Les 6 (Campagne et Cauchemar)</option><option value="cauchemar">Cauchemar seulement (plus rapide)</option></select></label>
         <label title="Combats sans trio sûr : recherche sur tous tes trios, par priorité. Le journal garde ce qui est fait, la nuit suivante reprend.">Spécialistes par combat <select id="o_c3spec" onchange="campPrev()"><option value="60">1 h</option><option value="0">Pas de recherche</option><option value="180">3 h</option><option value="360">6 h (nuit)</option><option value="600">10 h</option></select></label>
-        <button data-act="cauchemar3" style="margin-left:auto">Lancer le calcul</button>
       </div>
-      <div id="c3prev" class="grid g5" style="margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
-      <p class="muted" style="font-size:12px;margin:10px 0 0">Le PC reste éveillé, tu peux jouer pendant ce temps. Si tu arrêtes, la reprise repart du journal : les combats déjà joués ne sont pas refaits.</p>
+      <div class="opt"><div class="lab">Cartes essayées</div><div><div class="row" id="c3rar"></div><div class="risk" id="c3riskRar"></div></div></div>
+      <div class="opt"><div class="lab">Temps de travail</div><div><div class="seg" id="c3tps"><a data-t="0" onclick="chxTps('c3',0)">Jusqu'au bout</a><a data-t="2" onclick="chxTps('c3',2)">2 h puis pause</a><a data-t="8" onclick="chxTps('c3',8)">Une nuit (8 h) puis pause</a></div><div class="risk" id="c3riskTps"></div></div></div>
+      <div id="c3prev" class="grid g5" style="margin-top:18px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
+      <div class="frise" id="c3frise"></div><div class="frleg" id="c3leg"></div>
+      <div class="row lance" style="margin-top:16px"><span class="muted" style="font-size:12px;flex:1">Le PC reste éveillé, tu peux jouer pendant ce temps. Une pause ou un arrêt n'efface rien : la reprise repart du journal, les combats déjà joués ne sont pas refaits.</span><button data-act="cauchemar3">Lancer le calcul</button></div>
       <div id="c3job" class="muted" style="margin:8px 0 0"></div>
     </div>
     <div class="sp"></div>
@@ -1233,7 +1253,7 @@ if (APP) { APP.surMaj(s => { MAJ = s; renderMaj(); }); APP.etat().then(s => { MA
 setTimeout(renderMaj, 1500); setInterval(renderMaj, 600e3);
 
 // ---------- actions ----------
-async function lancer(action) {
+async function lancer(action, confirme) {
   const o = {};
   if (action === 'tout') Object.assign(o, { niveaux: $('o_niv').value, tirages: +$('o_tir').value, cartes: +$('o_car').value });
   if (action === 'entrainer') Object.assign(o, { types: [['nm', 'o_tnm'], ['boss', 'o_tbo'], ['norm', 'o_tno'], ['tour', 'o_ttw']].filter(([, i]) => $(i).checked).map(([k]) => k).join(','), generations: +$('o_gen').value });
@@ -1243,10 +1263,25 @@ async function lancer(action) {
   if (action === 'equipes') o.n = +$('o_neq').value;
   if (action === 'cauchemar3') Object.assign(o, { niveaux: $('o_c3niv').value, difficultes: $('o_c3dif').value, specialistes: $('o_c3spec').value });
   if (action === 'tour') o.niveaux = $('o_twniv').value;
+  // 5.44 : raretes et temps de travail choisis ; au-dela de 3 h prevues, un recapitulatif avant de lancer.
+  if (action === 'cauchemar3' || action === 'tour') {
+    const k = action === 'tour' ? 'tw' : 'c3', P = chxPrev(k), est = k === 'tw' ? TW.est : CP.est;
+    if (P?.parRarete) { const r = chxRaretes(k, P); if (C3n(chxCartes(k, P)) < 1) return toast('Il faut au moins 3 cartes : coche une autre rareté'); o.raretes = r.join(','); }
+    o.pause = CHX[k].t * 60;
+    if (!confirme && est && est.total >= 3 * 3600) return avantLancer(action, est, k);
+  }
   if (action === 'raid') o.niveaux = $('o_rdniv').value;
   if (action === 'imitation') o.combats = +$('o_nim').value;
   if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;
   try { await api('/api/lancer', { method: 'POST', body: JSON.stringify({ action, options: o }) }); lastLog = -1; toast('Lancé'); refresh(); } catch (e) { alert(e.message); }
+}
+function avantLancer(action, est, k) {
+  const off = RARS.filter(r => !CHX[k].on[r] && chxPrev(k)?.parRarete?.[r]);
+  $('mbox').innerHTML = `<div class="avlan"><div class="eyebrow">Avant de lancer</div><div class="big">${dCourt(est.total)}</div><div class="muted">${est.pause ? `Pause vers ${est.fin} (au bout de ${CHX[k].t} h), reprise au prochain lancement.` : `Fin vers ${est.fin} si le PC reste allumé.`} ${Math.round(est.T).toLocaleString('fr-FR')} trios.</div>
+    <ul><li>Tu peux jouer pendant le calcul, et l’arrêter : la reprise repart du journal.</li><li>Plus court sans rien manquer : rien de plus, tout ce qui est sans perte est déjà appliqué.</li>
+    <li>Plus court en acceptant un risque : ${off.length ? `déjà fait (sans ${off.join(', ')})` : 'décocher une rareté (risque affiché sur la page)'} ou choisir une pause (pas de nouveau classement avant la fin).</li></ul>
+    <div class="row" style="justify-content:flex-end"><button class="ghost" onclick="$('modal').style.display='none'">Changer les choix</button><button onclick="$('modal').style.display='none';lancer('${action}',true)">Lancer quand même</button></div></div>`;
+  $('modal').style.display = 'flex';
 }
 async function arreter() { if (confirm('Arrêter la tâche en cours ?')) { await api('/api/arreter', { method: 'POST' }); refresh(); } }
 async function rechargerMoteur() { try { const r = await api('/api/redemarrer-pool', { method: 'POST' }); toast('Moteur rechargé : ' + r.version); refresh(); } catch (e) { alert(e.message); } }
@@ -1591,23 +1626,69 @@ async function partager(act, id = 'c3share') {
 }
 
 // ---------- ce que fera le calcul (avant le lancement) et ou il en est (pendant) ----------
-async function campPrev() {
-  try { CP.prev = await api('/api/campagne/prevision'); } catch { CP.prev = null; }
-  if (CP.j) tcRender();
-  const P = CP.prev; if (!P) return setH('c3prev', '');
+// ---------- 5.44 : choix avant le lancement (Campagne c3, Tour tw) : raretes essayees et temps de travail ----------
+const RARS = ['LR', 'UR', 'SSR'];
+const CHX = (() => { const d = () => ({ on: { LR: 1, UR: 1, SSR: 1 }, t: 0 }); try { const x = JSON.parse(localStorage.getItem('kitsu-choix-calcul') || 'null'); if (x?.c3?.on && x?.tw?.on) return x; } catch {} return { c3: d(), tw: d() }; })();
+const chxSave = () => { try { localStorage.setItem('kitsu-choix-calcul', JSON.stringify(CHX)); } catch {} };
+const C3n = n => n < 3 ? 0 : n * (n - 1) * (n - 2) / 6;
+const chxPrev = k => k === 'c3' ? CP.prev : TW.prev, chxMaj = k => k === 'c3' ? campPrev(true) : twPrev(true);
+function chxRar(k, r) { if (!chxPrev(k)?.parRarete?.[r]) return; CHX[k].on[r] = CHX[k].on[r] ? 0 : 1; chxSave(); chxMaj(k); }
+function chxTps(k, t) { CHX[k].t = t; chxSave(); chxMaj(k); }
+const chxRaretes = (k, P) => RARS.filter(r => CHX[k].on[r] && P?.parRarete?.[r]);
+const chxCartes = (k, P) => chxRaretes(k, P).reduce((a, r) => a + P.parRarete[r], 0);
+const hFin = s => new Date(Date.now() + s * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const dCourt = s => s < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s)).replace(/ \d+ s$/, '');
+// Raretes, risques et temps de travail. total : duree prevue en secondes. Retourne { pause, fin }.
+function chxRender(k, P, total) {
+  const C = CHX[k], T = C3n(chxCartes(k, P)), tout = C3n(RARS.reduce((a, r) => a + (P.parRarete?.[r] || 0), 0)), n = x => Math.round(x).toLocaleString('fr-FR');
+  setH(k + 'rar', RARS.map(r => { const c = P.parRarete?.[r] || 0; return `<span class="rar ${r} ${c && C.on[r] ? 'on' : ''} ${c ? '' : 'vide'}" onclick="chxRar('${k}','${r}')"><b>${r}</b><i>${c} carte${c > 1 ? 's' : ''}</i></span>`; }).join('')
+    + `<span class="muted" style="font-size:12px">${n(T)} trios${T < tout ? ` au lieu de ${n(tout)}` : ''}</span>`);
+  const off = RARS.filter(r => !C.on[r] && P.parRarete?.[r]), W = P.poidsRaretes || {}, rk = $(k + 'riskRar');
+  const txt = r => { const w = W[r], c = P.parRarete[r];
+    if (k === 'c3') return w ? `<b>Sans ${r}</b> : sur ton dernier calcul, ${w.trios} des ${w.sur} trios de ton plan par combat ont une ${r}, ils couvrent <b>${String(w.part).replace('.', ',')} %</b> des combats. Ils ne seraient plus essayés${w.ex?.length ? ` (ex. ${esc(w.ex.join(' + '))})` : ''}.` : `<b>Sans ${r}</b> : ${c} cartes écartées d’avance. Pas encore de calcul pour dire ce qu’elles apportent.`;
+    return w ? `<b>Sans ${r}</b> : sur ton dernier calcul Tour, ${w.finalistes} des ${w.sur} finalistes ont une ${r}${w.meilleur ? ', <b>dont le meilleur trio</b>' : ''}${w.ex ? ` (ex. ${esc(w.ex.equipe.join(' / '))}, étage ${String(w.ex.etage).replace('.', ',')} en moyenne)` : ''}.` : `<b>Sans ${r}</b> : ${c} cartes écartées d’avance. Pas encore de calcul pour dire ce qu’elles apportent.`; };
+  if (rk) { rk.className = 'risk ' + (T < 1 ? 'bad' : off.length ? 'bad' : 'ok'); rk.innerHTML = T < 1 ? 'Il faut au moins 3 cartes : coche une autre rareté.' : !off.length ? 'Toutes tes raretés sont essayées : rien n’est écarté d’avance.' : off.map(txt).join('<br>'); }
+  const cap = C.t * 3600, pause = cap > 0 && total > cap, rt = $(k + 'riskTps');
+  document.querySelectorAll(`#${k}tps a`).forEach(a => a.classList.toggle('on', +a.dataset.t === C.t));
+  if (rt) { rt.className = 'risk ' + (pause ? 'warn' : 'ok');
+    rt.innerHTML = !C.t ? 'Le calcul va jusqu’au bout, même long. Rien n’est manqué.'
+      : pause ? `Pause au bout de ${C.t} h, avant la fin prévue. <b>Risque</b> : pas de nouveau classement tant que le calcul n’est pas fini (le précédent reste affiché). Relance pour finir : rien n’est refait.`
+      : `Le calcul tient en ${C.t} h : il ira au bout, rien n’est manqué.`; }
+  return { pause, fin: hFin(pause ? cap : total), T };
+}
+const frise = (k, parts, total) => { setH(k + 'frise', total ? parts.filter(x => x[2] > 0).map(([c, , s]) => `<i class="${c}" style="width:${100 * s / total}%"></i>`).join('') : '');
+  setH(k + 'leg', parts.map(([c, l, s, note]) => `<span style="--c:var(--${({ c1: 'acc', c2: 'acc2', c3: 'gold', c4: 'line2' })[c]})">${l} ${s > 0 ? dCourt(s) : note || '0'}</span>`).join('')); };
+
+// ---------- ce que fera le calcul (avant le lancement) et ou il en est (pendant) ----------
+async function campPrev(local) {
+  if (!local) { try { CP.prev = await api('/api/campagne/prevision'); } catch { CP.prev = null; } if (CP.j) tcRender(); }
+  const P = CP.prev; if (!P) { CP.est = null; return setH('c3prev', ''); }
+  const tile = (k, v, sub, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  if (!P.cartes) { CP.est = null; return setH('c3prev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>'); }
   const six = $('o_c3dif').value !== 'cauchemar', cles = six ? Object.keys(P.combats) : ['normal', 'difficile', 'extreme'];
-  const parTrio = cles.reduce((a, k) => a + (P.combats[k] || 0), 0), nd = cles.length;
+  const parTrio = cles.reduce((a, k) => a + (P.combats[k] || 0), 0), nd = cles.length, nCamp = parTrio - ['normal', 'difficile', 'extreme'].reduce((a, k) => a + (P.combats[k] || 0), 0);
   // Vitesse : celle du dernier vrai calcul sur ce PC, sinon environ 650 combats par seconde et par fil (mesure du 17/11/2026).
   const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 650 * P.fils;
-  const tour1 = P.trios * nd * 16, s1 = tour1 / vit; // 1er tour : 16 combats par difficulte pour chaque trio, avant toute elimination
-  const tile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
-  if (!P.cartes) return setH('c3prev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>');
-  setH('c3prev', tile('Cartes', fmt(P.cartes), 'tes SSR, UR et LR')
-    + tile('Trios à tester', P.trios.toLocaleString('fr-FR'), 'toutes les combinaisons de 3')
-    + tile('Combats par trio', fmt(parTrio), `${nd} difficultés, joués 16 par 16`)
+  const T = C3n(chxCartes('c3', P)), D = P.dernier;
+  // 1er tour : chaque trio joue 16 combats de chaque difficulte de Cauchemar (la Campagne n'elimine pas : seuls les finalistes la jouent).
+  const s1 = T * 3 * 16 / vit;
+  // Tours suivants et finale : part des trios encore en course a chaque tour sur l'entonnoir du dernier calcul (sinon 1er tour = 70 %
+  // de la course, mesure sur le calcul du 18/11/2026 : 487 344 trios). Estimation : une autre collection peut s'ecarter.
+  // L'entonnoir ne sert que si le dernier calcul avait les memes combats de Cauchemar (un essai court a moins de tours et plus de finalistes).
+  const memes = D?.combats && ['normal', 'difficile', 'extreme'].every(k => D.combats[k] === P.combats[k]);
+  const ent = memes && D.entonnoir?.length && D.trios ? D.entonnoir.map(x => x / D.trios) : null;
+  const sSuite = ent ? s1 * ent.slice(0, -1).reduce((a, b) => a + b, 0) : s1 * 0.3 / 0.7, sFinale = ent ? T * ent[ent.length - 1] * (nCamp + 2 * parTrio) / vit : 0;
+  const mCand = 140 * parTrio * 2 / vit, b = +$('o_c3spec').value || 0;
+  const sCamp = six && D?.campSous100 && D.minParCombat && D.trios ? D.campSous100 * D.minParCombat * 60 * T / D.trios : 0;
+  const total = s1 + sSuite + sFinale + mCand + sCamp + b * 60, R = chxRender('c3', P, total), n = x => Math.round(x).toLocaleString('fr-FR');
+  CP.est = { total, fin: R.fin, T, pause: R.pause };
+  setH('c3prev', tile('Cartes', fmt(chxCartes('c3', P)), chxRaretes('c3', P).join(', ') || 'aucune')
+    + tile('Trios à tester', n(T), 'toutes les combinaisons de 3')
     + tile('Déjà en mémoire', P.journalOctets ? (P.journalOctets / 1048576).toFixed(0) + ' Mo' : 'rien', P.journalOctets ? 'ces combats ne sont pas rejoués' : 'premier calcul sur ce PC')
-    + tile('Par combat', (() => { const b = +$('o_c3spec').value || 0, m = Math.round(140 * parTrio * 2 / vit / 60); return '≈ ' + (m + b >= 90 ? Math.round((m + b) / 60) + ' h' : (m + b) + ' min'); })(), `~${Math.round(140 * parTrio * 2 / vit / 60)} min pour les meilleurs trios, puis les spécialistes dans le budget choisi. Ce budget démarre après la course des trios.`)
-    + tile('1er tour', s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), P.dernier?.duree ? `seulement le 1er tour de la course. Dernier calcul complet sur ce PC : ${dur(P.dernier.duree).replace(/ \d+ s$/, '')}` : 'seulement le 1er tour de la course : ensuite les trios faibles sont écartés, le total dépend de tes cartes'));
+    + tile('1er tour', dCourt(s1), `à ${n(vit)} combats/s${D?.vitesse ? ', vitesse de ton dernier calcul' : ''}`)
+    + tile('Durée prévue', dCourt(total), ent ? 'estimation sur l’entonnoir de ton dernier calcul' : 'estimation : 1er tour = 70 % de la course', total > 8 * 3600 ? 'warn' : '')
+    + tile(R.pause ? 'Pause vers' : 'Fin vers', R.fin, R.pause ? 'reprise au prochain lancement' : 'si le PC reste allumé', R.pause ? 'warn' : 'ok'));
+  frise('c3', [['c1', 'Course (1er tour)', s1], ['c2', 'Tours suivants et finale', sSuite + sFinale], ['c3', six ? 'Par combat et Campagne sous 100 %' : 'Par combat', mCand + sCamp, six ? 'inconnu avant un 1er calcul' : ''], ['c4', 'Spécialistes Cauchemar', b * 60, 'aucun']], total);
 }
 // Progression lue dans le journal de la tache : « tour 3/12 : 383306 -> 41210 trios en course, ... (7300/s) ».
 // 5.41.1 : apres la course, l'etape par combat (candidats, puis specialistes dans leur budget) a sa propre progression.
@@ -1638,7 +1719,7 @@ async function campCharger() { campPrev(); ptCharger(); CP.charge = true; try { 
 function campEtat() {
   if (CP.j && CARTES && !CP.rc) { CP.rc = 1; campRender(); } // portraits arrives apres le premier rendu
   const run = E?.job && !E.job.fin, moi = /^Campagne : 3 etoiles/.test(E?.job?.nom || '');
-  const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}. Le PC reste éveillé ; tu peux arrêter, la reprise repart du journal.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les combats déjà faits sont gardés.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
+  const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}. Le PC reste éveillé ; tu peux arrêter, la reprise repart du journal.` : E.job.code === 0 ? (E.job.pause ? '<span class="dot warn"></span> En pause (temps de travail choisi atteint) : relance le calcul pour finir, rien n’est refait.' : '<span class="dot"></span> Dernier calcul terminé.') : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les combats déjà faits sont gardés.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
   const pg = moi && run ? campProgres((E.job.lignes || []).filter(l => l.trim())) : null;
   setH('c3job', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
   if (moi && run) CP.fin = null; // vu en cours : la fin doit recharger les resultats
@@ -1941,22 +2022,27 @@ function etageBarres(titre, sous, L) { // intervalle min..max, 10 % les plus bas
 }
 const ennemiCarte = n => { const k = String(n).replace(/^Écho de\s+/, ''); return CARTES && PAR_NOM[k] ? pf(PAR_NOM[k]) : ''; };
 // Ce que fera le calcul de la Tour (avant le lancement) et ou il en est (pendant).
-async function twPrev() {
+async function twPrev(local) {
   const niv = document.getElementById('o_twniv')?.value === '99' ? '99' : 'actuel';
-  try { TW.prev = await api('/api/tour/prevision?niveaux=' + niv); } catch { TW.prev = null; }
-  const P = TW.prev; if (!P) return setH('twPrev', '');
-  if (!P.cartes) return setH('twPrev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>');
+  if (!local) try { TW.prev = await api('/api/tour/prevision?niveaux=' + niv); } catch { TW.prev = null; }
+  const P = TW.prev; if (!P) { TW.est = null; return setH('twPrev', ''); }
+  if (!P.cartes) { TW.est = null; return setH('twPrev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>'); }
   // 5.42.1 : la duree ne compte que les montees a simuler. Les reprises du journal ne coutent rien.
+  // 5.44 : trios et reprises recomptes sur les raretes cochees (cartes reprises du journal par rarete : repRarete).
   // Vitesse : celle du dernier calcul complet sur ce PC, sinon environ 100 montees par seconde et par fil (mesure du 17/11/2026).
   const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 100 * P.fils, n = x => Math.round(x).toLocaleString('fr-FR');
-  const ent = P.dernier?.entonnoir, suite = ent?.length ? ent.slice(0, -1).reduce((a, b) => a + (b >= P.dernier.trios ? P.trios : Math.min(b, P.trios)), 0) * P.aSimuler / Math.max(1, P.trios) : 0, s1 = (P.aSimuler + suite) / vit;
+  const T = C3n(chxCartes('tw', P)), reprises = P.etatJournal === 'ok' && P.repRarete ? C3n(chxRaretes('tw', P).reduce((a, r) => a + (P.repRarete[r] || 0), 0)) : 0, aSim = Math.max(0, T - reprises);
+  const ent = P.dernier?.entonnoir, suite = ent?.length ? ent.slice(0, -1).reduce((a, b) => a + (b >= P.dernier.trios ? T : Math.min(b, T)), 0) * aSim / Math.max(1, T) : 0;
+  const s1 = aSim / vit, sSuite = suite / vit, total = s1 + sSuite, R = chxRender('tw', P, total);
+  TW.est = { total, fin: R.fin, T, pause: R.pause };
   const raison = { patch: 'patch du jeu depuis : tout est refait', ia: 'IA changée depuis : tout est refait', autreMode: 'rien encore pour ces niveaux', vide: 'premier calcul sur ce PC' }[P.etatJournal];
-  const tile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
-  setH('twPrev', tile('Cartes', fmt(P.cartes), 'tes SSR, UR et LR')
-    + tile('Trios à tester', n(P.trios), 'toutes les combinaisons de 3')
-    + tile('Montées à simuler', n(P.aSimuler), '1re manche : une par trio absent du journal')
-    + tile('Reprises du journal', P.etatJournal === 'ok' ? n(P.reprises) : '0', P.etatJournal === 'ok' ? (P.reprises ? 'trios dont les 3 cartes n’ont pas bougé' : 'tes cartes ont changé : tout est refait') : raison)
-    + tile('Durée estimée', !P.aSimuler && !suite ? '< 1 min' : s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), P.dernier ? `à ${n(vit)} montées/s, manches suivantes comprises` : 'sans calcul précédent : 1re manche seule'));
+  const tile = (k, v, sub, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  setH('twPrev', tile('Cartes', fmt(chxCartes('tw', P)), chxRaretes('tw', P).join(', ') || 'aucune')
+    + tile('Trios à tester', n(T), 'toutes les combinaisons de 3')
+    + tile('Montées à simuler', n(aSim), '1re manche : une par trio absent du journal')
+    + tile('Reprises du journal', P.etatJournal === 'ok' ? n(reprises) : '0', P.etatJournal === 'ok' ? (reprises ? 'trios dont les 3 cartes n’ont pas bougé' : 'tes cartes ont changé : tout est refait') : raison)
+    + tile('Durée estimée', !aSim && !suite ? '< 1 min' : dCourt(total), P.dernier ? `à ${n(vit)} montées/s, manches suivantes comprises` : 'sans calcul précédent : 1re manche seule', total > 8 * 3600 ? 'warn' : '')
+    + tile(R.pause ? 'Pause vers' : 'Fin vers', R.fin, R.pause ? 'reprise au prochain lancement' : 'si le PC reste allumé', R.pause ? 'warn' : 'ok'));
 }
 // Lignes de tour.mjs (5.42.1) : « travail prevu : N montees a simuler », « manche k/N : X montees a simuler, Y reprises du journal »,
 // «   manche k : a / b montees (M au total), V montees/s », « manche k/N : A -> B trios en course, M montees simulees (V/s), R reprises du journal »
@@ -1980,7 +2066,7 @@ function twProgres(L) {
 }
 function twEtat() {
   const run = E?.job && !E.job.fin, moi = /^Tour de l'infini/.test(E?.job?.nom || '');
-  const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}.` : E.job.code === 0 ? '<span class="dot"></span> Dernier calcul terminé.' : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les montées déjà faites sont gardées.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
+  const t = !E?.job ? '' : moi ? (run ? `<span class="dot warn"></span> Calcul en cours depuis ${dur(Math.round((Date.now() - E.job.debut) / 1000))}.` : E.job.code === 0 ? (E.job.pause ? '<span class="dot warn"></span> En pause (temps de travail choisi atteint) : relance le calcul pour finir, rien n’est refait.' : '<span class="dot"></span> Dernier calcul terminé.') : '<span class="dot bad"></span> Calcul arrêté avant la fin : relance-le, les montées déjà faites sont gardées.') : run ? `<span class="dot warn"></span> Une autre tâche tourne (${esc(E.job.nom)}).` : '';
   const pg = moi && run ? twProgres((E.job.lignes || []).filter(l => l.trim())) : null;
   setH('twJob', t + (run ? ' <a class="lnk" href="#journal">Voir le journal</a>' : '') + (pg ? `<div class="prog" style="margin-top:10px"><i style="width:${pg.pct}%"></i></div><div style="margin-top:6px;font-size:12.5px">${pg.pct} % environ. ${esc(pg.txt)}</div>` : ''));
   if (moi && run) TW.fin = null; // vu en cours : la fin doit recharger les resultats

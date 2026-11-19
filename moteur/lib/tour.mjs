@@ -62,7 +62,7 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
   // (meme graine pour tous). Un trio est abandonne quand sa borne haute passe sous la borne basse du Ke meilleur.
   // Ecart type d'une montee pris au moins egal a SD0 etages (prudent avec peu de montees). Journal : montee deja faite = reprise.
   // ctx : { trios, cle(t) -> cle du trio, J (journal), garder, z, manches, onManche(log) }
-  async function course({ trios: tr, cle, J, garder = 200, z = 3, manches = 10, sd0 = 4, largeur = 1500, onManche = () => {} }) {
+  async function course({ trios: tr, cle, J, arret = async () => {}, garder = 200, z = 3, manches = 10, sd0 = 4, largeur = 1500, onManche = () => {} }) {
     const T = tr.length, n = new Uint16Array(T), s1 = new Float64Array(T), s2 = new Float64Array(T);
     let alive = [...Array(T).keys()], montees = 0, repris = 0; const entonnoir = [], t0 = Date.now();
     const borne = t => { const m = s1[t] / n[t], v = n[t] > 1 ? Math.max(0, (s2[t] - n[t] * m * m) / (n[t] - 1)) : 0; const se = Math.sqrt(Math.max(v, sd0 * sd0) / n[t]); return { m, lo: m - z * se, hi: m + z * se }; };
@@ -75,7 +75,7 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
       for (let a = 0; a < nt; a += 20000) {
         const part = todo.subarray(a, Math.min(nt, a + 20000)), res = await climb(Array.from(part, t => mk(tr[t])), [r], 16);
         part.forEach((t, j) => { const f = res[j][0]; n[t]++; s1[t] += f; s2[t] += f * f; J.set(h53j(cle(t) + '|' + r), String(f)); montees++; });
-        J.flush(); onManche({ r, manches, fait: Math.min(nt, a + 20000), total: nt, montees, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000) });
+        J.flush(); await arret(); onManche({ r, manches, fait: Math.min(nt, a + 20000), total: nt, montees, vitesse: montees / Math.max(1, (Date.now() - t0) / 1000) });
       }
       const avant = alive.length;
       if (alive.length > garder) { const lo = new Float64Array(alive.length), hi = new Float64Array(alive.length); alive.forEach((t, j) => { const x = borne(t); lo[j] = x.lo; hi[j] = x.hi; }); const bar = lo.slice().sort()[alive.length - garder]; alive = alive.filter((t, j) => hi[j] >= bar); } // 5.42.1 : sans un objet par trio
