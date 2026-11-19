@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.53.0
+
+Combat : quand le script privé donne le coup, le conseil orange du script public n'apparaît plus du tout, même un instant.
+
+- **Contours et étiquette « CIBLE » cachés dès que le privé a pris le combat** (`html[data-kar-avis]`), et plus seulement quand il a déjà un coup (`data-kar-coup`). Avant, au début de chacun de tes tours, le public répondait en quelques dizaines de ms et son contour orange restait visible le temps que le privé calcule.
+- **Début de combat** : si le script privé est là (`html[data-kar-pret]`) et que le combat est un étage de Tour ou un combat à graine connue, le cadre public attend qu'il prenne le combat ou le rende (`data-kar-libre`), 2,5 s au plus, puis s'affiche (`data-kitsu-public`). Avant, le cadre orange restait affiché 0,2 à 0,3 s.
+- **Repli inchangé** : sans script privé, ou quand il ne peut pas calculer, le conseil public s'affiche comme avant.
+- **Mesure** (vrai jeu joué en local, image par image, script privé 0.27.0) : Tour, 7 tours de jeu, 5,9 s d'orange avant, 0 ms après ; Campagne, 3 combats, 0,3 à 3,9 s avant, 0 ms après. Privé absent : public tout de suite ; privé muet : public après 2,7 s ; calcul exact impossible : public 0,25 s après le début du tour.
+
 ## 5.52.0
 
 Guide : quand l'énergie est vide, le « + » dit ce que la recharge rapporte vraiment, et le plan ne reste plus bloqué sur des combats déjà faits.
