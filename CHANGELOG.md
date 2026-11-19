@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.52.0
+
+Guide : quand l'énergie est vide, le « + » dit ce que la recharge rapporte vraiment, et le plan ne reste plus bloqué sur des combats déjà faits.
+
+- **Recharge calculée** (`refillValue`) : prix lu dans le jeu (`G.EN_REFILL`, 15 gemmes, aucune limite par jour, remplit la jauge). Gain = gemmes attendues des combats du plan sûrs à 90 % ou plus, classés par gemmes par énergie, jusqu'à remplir la jauge (formule du jeu : nouvelles étoiles + bonus de 1re victoire Difficile 1 / Extrême 2, x2 en Cauchemar, multipliée par les chances du plan). Remplace le texte fixe « ~+15 gemmes nettes ».
+- **Repère sur le « + »** : rentable, contour vert et étiquette « Recharge : 15 → +44 gemmes, net +29 » avec le nombre de combats par difficulté ; pas rentable, pas de contour, étiquette grise et « reviens dans ~10 min ». La roadmap reprend le même calcul.
+- **Plan à jour** : le plan garde une empreinte de tes étoiles (`cle`). Le guide, la roadmap et l'onglet Plan le recalculent dès qu'elle ne correspond plus à ta partie. Le plan ne garde que le combat suivant de chaque arc : une fois ceux-là faits, un plan ancien semblait vide (« reviens dans ~10 min ») alors que les combats d'après étaient ouverts.
+- **Un seul calcul du plan à la fois** : un appel pendant un calcul en relance un à la fin. Avant, deux calculs lancés coup sur coup pouvaient finir dans le désordre et laisser le plus ancien enregistré.
+- **Mesure** (sauvegarde du 19/11 19 h 51, IA publique, 8 simulations par combat) : 81 combats jouables pas à 3★, dont 4 Extrême et 8 Difficile à 0★ sûrs à 100 % ; 10 énergies = 44 gemmes pour 15. L'ancien guide affichait « reviens dans ~10 min » sans repère.
+
 ## 5.51.0
 
 Campagne : un combat déjà à 3★ dans ta partie n'est plus jamais rejoué, et quand il en reste peu, le calcul va droit aux combats à finir.
