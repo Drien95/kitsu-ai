@@ -290,12 +290,15 @@ if (!arg('sans-etages')) {
   const objE = TOUTES ? OBJ.indexOf('Les6') : IMOY, enCourse = new Set(alive), NCE = +arg('candidats-etages', 120);
   // 5.42.1 : en course d'abord, puis les meilleurs ecartes ; seuls les NCE premiers servent (avant : les 7 M trios tries).
   const lo = t => { const x = score(t, objE); return x.p - Z * x.se; }, parLo = (x, y) => y.lo - x.lo || x.t - y.t;
-  const classes = alive.map(t => ({ t, lo: lo(t) })).sort(parLo).slice(0, NCE);
-  if (classes.length < NCE) { const pire = []; for (let t = 0; t < T; t++) { if (!N[t * ND] || enCourse.has(t)) continue; const v = lo(t); if (pire.length < NCE || v > pire[pire.length - 1].lo) { pire.push({ t, lo: v }); pire.sort(parLo); if (pire.length > NCE) pire.pop(); } } classes.push(...pire); }
+  // Meilleurs ecartes (hors course) qui verifient f : les k premiers par borne basse, sans trier tous les trios.
+  const ecartesTop = (k, f) => { const L = []; if (k <= 0) return L; for (let t = 0; t < T; t++) { if (!N[t * ND] || enCourse.has(t) || !f(t)) continue; const v = lo(t); if (L.length < k || parLo({ t, lo: v }, L[L.length - 1]) < 0) { L.push({ t, lo: v }); L.sort(parLo); if (L.length > k) L.pop(); } } return L; };
+  const vivants = alive.map(t => ({ t, lo: lo(t) })).sort(parLo), classes = vivants.slice(0, NCE);
+  if (classes.length < NCE) classes.push(...ecartesTop(NCE - classes.length, () => true));
   const cur = indexTrio.get(equipe.slice().sort((a, b) => a - b).join('-'));
   // 5.43 : plus les meilleurs trios deja prets (3 cartes au niveau 99), pour que chaque combat ait un trio jouable tout de suite.
   const au99 = id => (SAVE.lv?.[id]?.l || 1) >= 99, NPRET = +arg('candidats-prets', 40);
-  const prets = NIV === '99' ? classes.filter(x => trios[x.t].every(au99)).slice(0, NPRET).map(x => x.t) : [];
+  // 5.43.2 : comme la 5.43.0, les NPRET premiers trios prets de tout le classement (en course d'abord, puis les ecartes).
+  const prets = NIV !== '99' ? [] : (() => { const L = vivants.filter(x => trios[x.t].every(au99)).slice(0, NPRET); return [...L, ...ecartesTop(NPRET - L.length, t => trios[t].every(au99))].map(x => x.t); })();
   const cands = [...new Set([...classes.slice(0, NCE).map(x => x.t), ...prets, ...scriptSet, ...(cur != null ? [cur] : [])])];
   const sigColl = h53(IDS.map(id => cleCarte(id)).join(','));
   etages = await parCombat({ pool, J, WA, paquets, DIFF, trios, cleTrio, indexDe, equipeDe: t => trios[t].map(id => carte(id)), cands, scriptSet, sigG, wKey, sigColl, sigCombat, log,
