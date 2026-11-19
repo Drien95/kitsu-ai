@@ -3,7 +3,7 @@
 // pour tous, abandon quand un trio est nettement derriere le Ke meilleur), puis les 20 meilleurs font 30 montees de plus.
 // Journal (cache/tour-*.jsonl) : une montee deja faite n'est pas refaite tant que le combat, la Tour, la carte et l'IA sont les memes.
 //   node tour.mjs [--niveaux actuel|99] [--garder 200] [--z 3] [--manches 10] [--finale 20] [--tirages 30] [--fils 11]
-//   tests : --max-trios 2000 (trios au hasard)
+//   tests : --max-trios 2000 (trios au hasard)  journal : --garder-journal  --journal-calculs 2
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { writeFileSync } from 'node:fs';
@@ -12,7 +12,7 @@ import { dir as D } from './lib/chemins.mjs';
 import { makeTour, statsEtages } from './lib/tour.mjs';
 import { makeSim } from './lib/sim.mjs';
 import { shuffle } from './lib/commun.mjs';
-import { h53, signatureCombat, makeSigCarte, ouvrirJournal } from './lib/journal.mjs';
+import { h53, signatureCombat, makeSigCarte, ouvrirJournal, nettoyerAnciens } from './lib/journal.mjs';
 import { garderEveille } from './lib/eveil.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
@@ -29,7 +29,7 @@ log(`moteur ${version}, ${IDS.length} cartes LR/UR/SSR, niveaux ${NIV}, ${pool.n
 // Signatures du journal : code de combat, etages de la Tour (ennemis de quelques etages), IA, chaque carte.
 const SIM = makeSim(G, B), sigG = signatureCombat(G, B, SIM, WA), wKey = h53(JSON.stringify(WA)), sigCarte = makeSigCarte(G, B);
 const sigT = h53(String(G.setupTower) + '#' + [1, 10, 37, 100, 150, 250, 400].map(fl => { try { return JSON.stringify(B.enemies(G.setupTower(fl, mk([IDS[0]]), 7).st).map(e => [e.id, e.lv, e.atk, e.def, e.maxHp, e.spd, e.boss ? 1 : 0])); } catch { return fl; } }).join('|'));
-const J = ouvrirJournal(D('cache', `tour-${sigG}-${sigT}-${wKey}.jsonl`));
+const FJ = D('cache', `tour-${sigG}-${sigT}-${wKey}.jsonl`), J = ouvrirJournal(FJ), ANCIENS = nettoyerAnciens(D('cache'), 'tour-', FJ);
 const cleCarte = id => { const c = mk([id])[0]; return `${id}:${c.lv}:${c.stars}:${(c.lk || []).join('+')}:${sigCarte(id)}`; };
 let tr = []; const S_ = [...IDS].sort((a, b) => a - b); for (let a = 0; a < S_.length; a++) for (let b = a + 1; b < S_.length; b++) for (let c = b + 1; c < S_.length; c++) tr.push([S_[a], S_[b], S_[c]]);
 if (arg('max-trios')) tr = shuffle(tr, 5).slice(0, +arg('max-trios'));
@@ -61,6 +61,11 @@ out.murs = T.murs(fin[0]);
 out.murs.forEach(m => log(`  arret a l'etage ${m.etage} : ${m.part} % des montees (${m.ennemis.join(', ')})`));
 out.collectifs = (await T.collectifs(fin[0].t, { tirages: +arg('tirages', 30) })).map(l => ({ carte: nom(l.id), ...l }));
 out.collectifs.forEach(l => log(`collectifs ${l.carte} : etage moyen ${l.avant} puis ${l.apres}${l.utile ? '' : ' (pas significatif, garde les tiens)'}`));
+// 5.42 : le journal ne garde que les montees servies par ce calcul ou le precedent (lib/journal.mjs).
+if (!arg('max-trios') && !arg('garder-journal')) try {
+  const c = J.compacter(+arg('journal-calculs', 2)), Mo = o => (o / 1048576).toFixed(1); out.journal = { ...c, anciens: ANCIENS };
+  log(`journal : ${c.avant} -> ${c.apres} montees (${Mo(c.octetsAvant)} -> ${Mo(c.octetsApres)} Mo)${ANCIENS.length ? `, ${ANCIENS.length} ancien(s) journal(aux) supprime(s)` : ''}`);
+} catch (e) { log('journal : nettoyage reporte (' + e.message + ')'); }
 ecrire('tour.json', out);
 // Le panneau affiche la categorie « tour » de la derniere analyse : on la remplace par ce resultat plus complet.
 const prec = readJ(D('resultats', 'dernier.json'));

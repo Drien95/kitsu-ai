@@ -10,6 +10,7 @@
 //   node cauchemar3.mjs [--niveaux 99|actuel] [--difficultes toutes|cauchemar] [--garder 30] [--z 3] [--paquet 16] [--fils 11]
 //   par combat (lib/etages.mjs) : [--budget-specialistes 60] (minutes) [--candidats-etages 120] [--seuil 60] [--sans-etages] [--sans-diagnostic]
 //   tests : --max-trios 2000 (trios au hasard)  --max-combats 160 (par difficulte)  --sans-collectifs  --sans-liens
+//   journal : --garder-journal (pas de nettoyage a la fin)  --journal-calculs 2 (lignes gardees si servies par l'un des N derniers calculs)
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
@@ -17,7 +18,7 @@ import { makeSim } from './lib/sim.mjs';
 import { arg, log, SAVE, WA as WA_PC, WC, shuffle } from './lib/commun.mjs';
 import * as PARTAGE from './lib/partage.mjs';
 import { dir as D } from './lib/chemins.mjs';
-import { h53, signatureCombat, makeSigCarte, ouvrirJournal } from './lib/journal.mjs';
+import { h53, signatureCombat, makeSigCarte, ouvrirJournal, nettoyerAnciens } from './lib/journal.mjs';
 import { cleTrioDe } from './lib/partage-format.mjs';
 import { construireWC, iaPersoMeilleure } from './lib/ia-commune.mjs';
 import { garderEveille } from './lib/eveil.mjs';
@@ -68,7 +69,9 @@ const paquets = DIFF.map(([d, suf], di) => {
   return out;
 });
 const NCOMB = paquets.map(p => p.reduce((s, x) => s + x.f.length, 0)), TOURS = Math.max(...paquets.map(p => p.length));
-const J = ouvrirJournal(D('cache', `cauchemar3-${sigG}-${wKey}.jsonl`));
+const FJ = D('cache', `cauchemar3-${sigG}-${wKey}.jsonl`), J = ouvrirJournal(FJ);
+// 5.42 : journaux d'un ancien code de combat ou d'une ancienne IA, inutilises depuis 30 jours, supprimes.
+const ANCIENS = nettoyerAnciens(D('cache'), 'cauchemar3-', FJ);
 const cle = (di, pi, seed, ck) => h53(`${sigG}|${wKey}|${paquets[di][pi].cle}|${seed}|${ck}`);
 
 // ---------- base commune : recuperer, envoyer, controler ----------
@@ -279,6 +282,12 @@ if (PARTAGE_OK) {
 out.partage = PARTAGE_OK ? { recus, envoyes, ia: 'commune' } : null;
 // Pourquoi la 3e etoile saute sur les combats sous le seuil (lib/diagnostic.mjs, un seul fil, de l'ordre de la minute).
 if (etages && !arg('sans-diagnostic')) try { etages.diagnostic = diagnostiquer(G, B, SIM, SIM.smartPol(WA), out, ids => ids.map(id => carte(id)), { log }); if (etages.diagnostic) etages.diagnostic.ia = PARTAGE_OK ? 'commune' : 'pc'; } catch (e) { log('diagnostic reporte (' + e.message + ')'); }
+// 5.42 : calcul complet fini, le journal ne garde que les lignes servies par ce calcul ou le precedent (lib/journal.mjs).
+if (!arg('max-trios') && !arg('max-combats') && !arg('garder-journal')) try {
+  const c = J.compacter(+arg('journal-calculs', 2)), Mo = o => (o / 1048576).toFixed(1);
+  out.journal = { ...c, anciens: ANCIENS };
+  log(`journal : ${c.avant} -> ${c.apres} lignes (${Mo(c.octetsAvant)} -> ${Mo(c.octetsApres)} Mo), ${c.apres < c.avant ? 'lignes inutilisees par les 2 derniers calculs retirees' : 'rien a retirer'}${ANCIENS.length ? ` ; ${ANCIENS.length} ancien(s) journal(aux) supprime(s), ${Mo(ANCIENS.reduce((a, x) => a + x.octets, 0))} Mo` : ''}`);
+} catch (e) { log('journal : nettoyage reporte (' + e.message + ')'); }
 mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
 for (const [o, l] of Object.entries(out.meilleurs)) { log(`== 3 etoiles, ${o} ==`); l.slice(0, 5).forEach((x, i) => log(`  ${i + 1}. ${x.equipe.join(' / ')} : ${x.troisEtoiles} % (+/- ${x.marge}) | ${x.parDifficulte.map(d => `${d.difficulte} ${d.troisEtoiles} / 2* ${d.deuxEtoiles}`).join(', ')}`)); }
 for (const c of collectifs) for (const l of c.cartes) log(`collectifs ${c.equipe.join(' / ')}, ${l.carte} : 3 etoiles ${l.avant} -> ${l.apres} %${l.utile ? ' : ' + l.conseil.join(', ') : ' (pas mieux que les tiens)'}`);

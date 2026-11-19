@@ -5,7 +5,7 @@
 //   - les combats du paquet (definition des ennemis) ;
 //   - les reglages de l'IA qui joue tes coups.
 // Un patch qui ne touche que les bannieres ou les boutiques ne vide donc pas le journal.
-import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, appendFileSync, mkdirSync, writeFileSync, renameSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 
 // Hachage 53 bits (deux FNV-1a 32 bits) : ~0,0003 collision attendue pour 3 millions d'entrees.
@@ -46,12 +46,48 @@ export function makeSigCarte(G, B) {
 }
 
 // Journal en ajout seul (une ligne par paquet calcule) : sert aussi de point de reprise apres une coupure.
+// 5.42 : chaque calcul complet est une « generation » (ligne `#g N` avant ses ajouts). Une ligne lue ou ecrite par un calcul
+// passe a sa generation ; compacter() reecrit le fichier sans les lignes qui n'ont servi a aucun des `garder` derniers
+// calculs complets (cartes montees en etoiles, anciens liens, resultats recus pour des cartes que tu n'as pas).
+// Memoire : generations dans un Uint16Array (2 octets par ligne) ; mesure sur un journal de 4,35 M lignes : 567 Mo de tas contre 533.
 export function ouvrirJournal(fichier) {
   mkdirSync(path.dirname(fichier), { recursive: true });
-  const m = new Map();
-  if (existsSync(fichier)) for (const l of readFileSync(fichier, 'utf8').split('\n')) { if (!l) continue; const i = l.indexOf(' '); m.set(l.slice(0, i), l.slice(i + 1)); }
-  let tampon = [];
-  const flush = () => { if (tampon.length) { appendFileSync(fichier, tampon.join('\n') + '\n'); tampon = []; } };
-  const set = (k, v) => { if (m.has(k)) return; m.set(k, v); tampon.push(k + ' ' + v); if (tampon.length >= 20000) flush(); };
-  return { taille: () => m.size, get: k => m.get(k), set, flush };
+  const m = new Map(), vals = []; let gens = new Uint16Array(1 << 16), g = 0, gMax = 0;
+  const poser = (k, v, gen) => { const i = m.get(k); if (i !== undefined) { vals[i] = v; gens[i] = gen; return; }
+    if (vals.length >= gens.length) { const x = new Uint16Array(gens.length * 2); x.set(gens); gens = x; }
+    m.set(k, vals.length); gens[vals.length] = gen; vals.push(v); };
+  if (existsSync(fichier)) for (const l of readFileSync(fichier, 'utf8').split('\n')) {
+    if (!l) continue;
+    if (l.startsWith('#g ')) { g = +l.slice(3) || 0; if (g > gMax) gMax = g; continue; }
+    const i = l.indexOf(' '); poser(l.slice(0, i), l.slice(i + 1), g);
+  }
+  const G = Math.min(gMax + 1, 65535); let tampon = [], marque = false;
+  const flush = () => { if (tampon.length) { appendFileSync(fichier, (marque ? '' : `#g ${G}\n`) + tampon.join('\n') + '\n'); marque = true; tampon = []; } };
+  const get = k => { const i = m.get(k); if (i === undefined) return undefined; gens[i] = G; return vals[i]; };
+  const set = (k, v) => { const i = m.get(k); if (i !== undefined) { gens[i] = G; return; } poser(k, v, G); tampon.push(k + ' ' + v); if (tampon.length >= 20000) flush(); };
+  // Reecrit le fichier avec les lignes servies par l'une des `garder` dernieres generations (celle-ci comprise).
+  const compacter = (garder = 2) => {
+    flush(); const min = G - garder + 1, parGen = new Map(); let avant = 0, octetsAvant = 0, apres = 0, octetsApres = 0;
+    for (const [k, i] of m) { const n = k.length + vals[i].length + 2; avant++; octetsAvant += n; if (gens[i] < min) continue;
+      apres++; octetsApres += n; let a = parGen.get(gens[i]); if (!a) parGen.set(gens[i], a = []); a.push(k + ' ' + vals[i]); }
+    { // reecrit toujours : les generations des lignes reprises changent aussi
+      const tmp = fichier + '.tmp'; writeFileSync(tmp, '');
+      for (const gen of [...parGen.keys()].sort((x, y) => x - y)) { const a = parGen.get(gen); for (let j = 0; j < a.length; j += 50000) appendFileSync(tmp, (j ? '' : `#g ${gen}\n`) + a.slice(j, j + 50000).join('\n') + '\n'); }
+      renameSync(tmp, fichier);
+    }
+    return { avant, apres, octetsAvant, octetsApres, generation: G };
+  };
+  return { taille: () => m.size, get, set, flush, compacter, generation: G };
+}
+
+// Supprime les journaux `prefixe*.jsonl` du dossier qui n'ont servi a aucun calcul depuis `jours` jours (ancien code de
+// combat apres un patch, ancienne IA), sauf le journal en service. Renvoie [{ fichier, octets }].
+export function nettoyerAnciens(dossier, prefixe, actuel, jours = 30) {
+  const out = [], lim = Date.now() - jours * 86400000;
+  let fs = []; try { fs = readdirSync(dossier); } catch { return out; }
+  for (const f of fs) {
+    if (!f.startsWith(prefixe) || !/\.jsonl(\.tmp)?$/.test(f) || path.join(dossier, f) === actuel) continue;
+    try { const st = statSync(path.join(dossier, f)); if (st.mtimeMs < lim) { unlinkSync(path.join(dossier, f)); out.push({ fichier: f, octets: st.size }); } } catch {}
+  }
+  return out;
 }
