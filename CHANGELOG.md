@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.41.2
+
+Script : le guide explique pourquoi la Tour refuse de combattre.
+
+- **Constat** (19/11) : en pleine montée (étage 64), « Combattre l'étage » répondait « Un combat est déjà en cours (Aventure ou événement) : termine-le ou abandonne-le avant de monter dans la Tour ». Un combat d'Aventure ou d'événement lancé pendant la montée reste dans ta sauvegarde (`fight`) et bloque la Tour ; le guide entourait quand même « Combattre l'étage ».
+- **Correction** : avec une montée en cours et un combat encore ouvert, le guide n'entoure plus rien dans la Tour et dit de terminer ou d'abandonner ce combat (avec son nom quand il le trouve). La montée est gardée.
+
 ## 5.41.1
 
 Calcul Campagne : la progression dit la vérité pendant les spécialistes, et les combats sans aucune 3★ passent en dernier.
