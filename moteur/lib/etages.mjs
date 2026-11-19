@@ -78,14 +78,16 @@ export async function parCombat(o) {
   // 5.41.1 : la Campagne d'abord (hors budget), puis les combats de Cauchemar ou un candidat a deja fait 3 etoiles au moins une fois,
   // toutes difficultes, et seulement ensuite ceux a 0 % (avant : difficulte par difficulte, les 0 % du Normal passaient avant le
   // Difficile et l'Extreme ; journal du 19/11 : 9 combats a 0 % sur 52, aucun 3 etoiles trouve, environ 5 min de budget).
+  // 5.51 : o.tous (recherche directe, sans course) : chaque combat sous 100 % est cherche sur tous les trios, sans budget.
+  const TOUS = !!o.tous;
   const rang = fi => camp(fi) ? 0 : meilleur[fi].p > 0 ? 1 : 2;
-  const durs = F.map((x, fi) => fi).filter(fi => !AJ.has(F[fi].f)).filter(fi => meilleur[fi].p < (camp(fi) ? Math.max(seuil, seuilCamp) : seuil)).sort((a, b) => rang(a) - rang(b) || ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || a - b);
+  const durs = F.map((x, fi) => fi).filter(fi => !AJ.has(F[fi].f)).filter(fi => TOUS ? meilleur[fi].p < 1 : meilleur[fi].p < (camp(fi) ? Math.max(seuil, seuilCamp) : seuil)).sort((a, b) => rang(a) - rang(b) || ORDRE.indexOf(DIFF[F[a].di][0]) - ORDRE.indexOf(DIFF[F[b].di][0]) || a - b);
   const sousSeuil = durs.filter(fi => meilleur[fi].p < seuil).length, campPlus = durs.length - sousSeuil;
   const T = trios.length, seedsS = Array.from({ length: conf }, (_, i) => 4 + i), specs = new Map();
   const cleS = fi => h53(`S|${sigG}|${wKey}|${sigCombat(F[fi].f)}|${sigColl}|${conf}`);
   for (const fi of durs) { const v = J.get(cleS(fi)); if (v) { specs.set(fi, JSON.parse(v)); repris++; } }
   const reste = durs.filter(fi => !specs.has(fi)), msCombat = []; let debutS = Date.now(), campFini = false;
-  log(`par combat : ${sousSeuil} combats sous ${Math.round(seuil * 100)} % de 3 etoiles${campPlus ? ` et ${campPlus} combats de Campagne sous 100 %` : ''}, ${specs.size} deja cherches (journal), ${reste.length} a chercher sur tous les ${T} trios, budget ${Math.round(budget / 60e3)} min`);
+  log(`par combat : ${sousSeuil} combats sous ${Math.round(seuil * 100)} % de 3 etoiles${campPlus ? ` et ${campPlus} combats ${TOUS ? 'entre ' + Math.round(seuil * 100) + ' et 100 %' : 'de Campagne sous 100 %'}` : ''}, ${specs.size} deja cherches (journal), ${reste.length} a chercher sur tous les ${T} trios, ${TOUS ? 'sans budget (recherche directe)' : `budget ${Math.round(budget / 60e3)} min`}`);
   // 5.47 : combats cherches par groupes de GS (8) : une seule tache par trio joue tous les combats du groupe qu'il n'a pas deja joues
   // dans la course (memes combats, memes graines, memes etoiles). Mesure : 1 combat par tache 7 400 a 8 100 combats/s, 8 par tache
   // 12 500 a 18 300 combats/s (4 fils), etoiles identiques. Le budget est verifie avant chaque groupe.
@@ -100,7 +102,7 @@ export async function parCombat(o) {
   for (let i0 = 0; i0 < reste.length;) {
     const fi0 = reste[i0];
     if (!camp(fi0) && !campFini) { campFini = true; debutS = Date.now(); } // le budget compte a partir du Cauchemar
-    if (!camp(fi0) && Date.now() - debutS >= budget) break;
+    if (!TOUS && !camp(fi0) && Date.now() - debutS >= budget) break;
     const grp = []; for (let i = i0; i < reste.length && grp.length < GS && camp(reste[i]) === camp(fi0); i++) grp.push(reste[i]);
     i0 += grp.length;
     const t0 = Date.now(), NG = grp.length, fs = grp.map(fi => F[fi].f), ok1 = grp.map(() => []);
