@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.52.0
+// @version      5.53.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.52.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.53.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -402,7 +402,12 @@
               + '.kitsu-me{outline:2px solid #2fd27a!important;outline-offset:3px;border-radius:12px}'
               + '.kitsu-btn{outline:3px solid #ff7a2f!important;outline-offset:2px;box-shadow:0 0 0 6px rgba(8,9,12,.55)!important;border-radius:10px}'
               // 5.19 : le script prive donne un conseil exact (Tour, Campagne, arene) -> ses contours bleus seuls, pas deux conseils a l'ecran.
-              + 'html[data-kar-coup] .kitsu-tgt:not(.kAr-tgt),html[data-kar-coup] .kitsu-all:not(.kAr-tgt),html[data-kar-coup] .kitsu-btn:not(.kAr-btn),html[data-kar-coup] .kitsu-me{outline:none!important;box-shadow:none!important}html[data-kar-coup] #kitsuBadge{display:none!important}'
+              // 5.53 : aucun orange quand le script prive a pris le combat (data-kar-avis, pose aussi pendant qu'il calcule et pendant
+              // le tour adverse), ni au debut d'un combat tant qu'il ne l'a pas pris ou rendu : le jeu affiche le combat (.unit) mais le
+              // public n'a pas encore dit qu'il s'affiche (data-kitsu-public, pose apres l'attente du prive, 2,5 s au plus).
+              // Avant, seul data-kar-coup cachait les contours : contour et etiquette « CIBLE » orange au debut de chaque tour.
+              + ['html[data-kar-coup]', 'html[data-kar-avis]', 'html[data-kar-pret]:not([data-kitsu-public]):not([data-kar-libre]):has(.unit[data-unit])'].map(a => `${a} .kitsu-tgt:not(.kAr-tgt),${a} .kitsu-all:not(.kAr-tgt),${a} .kitsu-btn:not(.kAr-btn),${a} .kitsu-me{outline:none!important;box-shadow:none!important}${a} #kitsuBadge{display:none!important}`).join('')
+              + 'html[data-kar-pret]:not([data-kitsu-public]):not([data-kar-libre]):has(.unit[data-unit]) #kitsuDock:not(.priv){display:none!important}'
               + '.kitsu-panel{position:fixed;right:12px;z-index:2147483647;background:rgba(12,14,19,.96);color:#f2ede6;font:12.5px/1.45 "Segoe UI",system-ui,sans-serif;padding:9px 12px 10px 13px;border:1px solid #262a33;border-radius:10px;min-width:230px;max-width:340px;pointer-events:none;display:none;box-shadow:inset 3px 0 0 var(--k-acc,#ff7a2f)}'
               + '#kitsuAdv{top:70px}#kitsuTeam,#kitsuPull{bottom:90px;font-size:12px;--k-acc:#2fd27a}#kitsuPull{--k-acc:#ffc24a}'
               + '#kitsuToast{top:12px;left:50%;right:auto;transform:translateX(-50%);font-size:12px}'
@@ -641,7 +646,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.52.0',
+          __v: '5.53.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1892,7 +1897,7 @@
 
           live() {
             const { box, badge } = ui();
-            let last = '', cur = null, wasOver = true;
+            let last = '', cur = null, wasOver = true, attente = 0;
             clearInterval(window.__kitsuAdvT);
             let tick = 0;
             window.__kitsuAdvT = setInterval(() => {
@@ -1900,8 +1905,14 @@
                 // Hors combat : on ne cherche un combat que toutes les 600 ms (4 ticks) et on ne nettoie qu'une fois, a la fin du combat (5.18).
                 if (wasOver && (++tick & 3)) return;
                 const T = liveBattle();
-                if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; window.__kitsuCoup = null; window.__kitsuAvis = null; clearMarks(badge); } wasOver = true; return; }
+                if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; window.__kitsuCoup = null; window.__kitsuAvis = null; clearMarks(badge); } attente = 0; if (document.documentElement.dataset.kitsuPublic != null) delete document.documentElement.dataset.kitsuPublic; wasOver = true; return; }
                 if (document.hidden) return;
+                // 5.53 : debut d'un combat que le script prive sait calculer (Tour, ou combat a graine connue) : on n'affiche rien le
+                // temps que le prive le prenne (data-kar-avis) ou dise qu'il ne peut pas (data-kar-libre). S'il ne dit rien en 2,5 s, le public s'affiche.
+                const h = document.documentElement;
+                if (wasOver) { const f = save().fight; attente = h.dataset.karPret != null && (T.tower || (f?.seed != null && !!f.fid)) ? Date.now() : 0; }
+                if (attente && (h.dataset.karAvis != null || h.dataset.karLibre != null || Date.now() - attente > 2500)) attente = 0;
+                if (!attente && h.dataset.kitsuPublic == null) h.dataset.kitsuPublic = '';
                 wasOver = false; box.style.display = 'block';
                 const st = T.st, a = T.active;
                 if (cur) {
