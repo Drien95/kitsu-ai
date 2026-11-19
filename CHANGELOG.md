@@ -4,6 +4,14 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.40.2
+
+Script : le guide fait reprendre une montée de la Tour en cours avant le reste du plan.
+
+- **Constat** (19/11) : sur la page de la Tour, avec une montée en cours (étage 6, bouton « Reprendre la montée »), le guide disait d'ouvrir l'Aventure pour « Le dernier coup ». La Tour ne passait qu'une fois tous les combats du plan faits.
+- **Correction** : si ta sauvegarde a une montée en cours, le guide entoure « Reprendre la montée » (`[data-tour-open]`), puis le bouton de l'étage suivant (`[data-tw="fight"]`) ; ailleurs, il te ramène à la Tour. Les étages suivants sont gratuits et l'équipe est figée : rien ne justifie de les laisser attendre.
+- Pendant un combat, rien ne change.
+
 ## 5.40.1
 
 Script : le guide ne répète plus en boucle « fais defiler la carte jusqu'a l'arc … » pour un combat déjà fait.
