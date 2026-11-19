@@ -390,6 +390,50 @@
     .kg-wel .w { flex-direction: column; text-align: center; padding: 20px; } .kg-wel .f { width: 120px; } .kg-wel .row { justify-content: center; }
   }
   @media (prefers-reduced-motion: reduce) { #kg .kg-spot, #kg .kg-tag { transition: none; } }
+  /* 5.43 : ton trio, combat par combat (onglet Campagne) */
+  .tc-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; } .tc-top .seg { margin-bottom: 0; }
+  .tc-mondes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; scrollbar-width: thin; }
+  .tc-mo { flex: 0 0 auto; min-width: 118px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 8px 10px 9px; cursor: pointer; }
+  .tc-mo b { display: block; font-size: 12.5px; white-space: nowrap; } .tc-mo span { color: var(--mute); font-size: 11px; font-weight: 700; } .tc-mo span.nv { color: var(--gold); }
+  .tc-mo .b3 { display: flex; gap: 3px; margin-top: 6px; } .tc-mo .b3 i { flex: 1; height: 4px; border-radius: 4px; background: var(--line2); position: relative; overflow: hidden; }
+  .tc-mo .b3 i em { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+  .tc-mo.on { border-color: var(--acc); background: rgba(255,75,62,.08); box-shadow: 0 0 0 1px rgba(255,75,62,.2); }
+  .tc-mo.neuf { border-style: dashed; border-color: var(--gold); background: rgba(247,197,72,.06); } .tc-mo.neuf b { color: var(--gold); }
+  .tc-scroll { max-height: 640px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+  .tc-g { display: grid; grid-template-columns: minmax(210px, 1.1fr) repeat(3, minmax(0, 1fr)); }
+  .tc-g > div, .tc-g .tc-ro > div { padding: 9px 12px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .tc-g .tc-hd { position: sticky; top: 0; z-index: 5; background: var(--panel); flex-direction: column; align-items: flex-start; gap: 6px; border-bottom: 1px solid var(--line2); padding-bottom: 12px; }
+  .tc-hd .k { font-size: 11px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; }
+  .tc-hd .bs { display: flex; gap: 8px; align-items: center; } .tc-hd .bs small { color: var(--mute); font-size: 11.5px; line-height: 1.3; } .tc-hd .bs small b { color: var(--txt); font-size: 13px; }
+  .tc-cb { cursor: pointer; } .tc-cb .no { font: 400 22px/1 var(--head); font-style: italic; color: var(--mute); width: 34px; text-align: right; flex: none; }
+  .tc-cb .t { min-width: 0; } .tc-cb .t b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tc-cb .t span { color: var(--mute); font-size: 11px; }
+  .tc-tri { display: flex; gap: 3px; flex: none; } .tc-tri .pf { width: 30px; height: 40px; border-radius: 6px; } .tc-tri .pf i { display: none; } .tc-tri .pf .ini { font-size: 12px; }
+  .tc-hd .tc-tri .pf { width: 34px; height: 46px; } .tc-det .tc-tri .pf { width: 24px; height: 32px; }
+  .tc-tri .pf .lv { top: 2px; right: 2px; padding: 2px 3px; font-size: 8.5px; color: #ffb39b; z-index: 4; } .tc-tri .pf .lv.ok { display: none; }
+  .tc-pc { font: 400 19px/1 var(--head); letter-spacing: .3px; white-space: nowrap; margin-left: auto; } .tc-pc.ok { color: var(--gold); } .tc-pc.mid { color: var(--warn); } .tc-pc.zero { color: var(--mute); font: 700 12px var(--body); margin-left: 0; }
+  .tc-same { display: flex; align-items: center; gap: 8px; color: var(--mute); font-size: 12px; font-weight: 700; }
+  .tc-same .eq { width: 30px; height: 22px; border-radius: 6px; border: 1px dashed var(--line2); display: grid; place-items: center; font-weight: 800; color: #6d7384; }
+  .tc-cell.chg { background: linear-gradient(90deg, rgba(255,122,61,.10), transparent 75%); box-shadow: inset 2px 0 0 var(--acc2); }
+  .tc-cell.exact { background: linear-gradient(90deg, rgba(79,168,255,.10), transparent 75%); box-shadow: inset 2px 0 0 #4fa8ff; }
+  .tc-cell.neuf { background: rgba(247,197,72,.05); box-shadow: inset 2px 0 0 var(--gold); } .tc-cell.neuf .tc-pc { color: var(--gold); }
+  .tc-cw { display: flex; flex-direction: column; min-width: 0; flex: 1; } .tc-cw > span:first-child { display: flex; align-items: center; gap: 10px; }
+  .tc-now { display: block; font-size: 11px; color: var(--mute); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tc-now b { color: #8fe3b4; }
+  .tc-tag { font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 99px; border: 1px solid; white-space: nowrap; margin-left: 6px; }
+  .tc-tag.chg { color: var(--acc2); border-color: rgba(255,122,61,.45); } .tc-tag.boss { color: var(--acc); border-color: rgba(255,75,62,.45); } .tc-tag.px { color: #8cc4ff; border-color: rgba(79,168,255,.5); } .tc-tag.sp { color: #c4a5ff; border-color: rgba(167,139,250,.5); } .tc-tag.nv { color: var(--gold); border-color: rgba(247,197,72,.5); }
+  .tc-g .tc-ro { display: contents; } .tc-g .tc-ro:hover > div, .tc-g .tc-ro.open > div { background-color: rgba(255,255,255,.025); }
+  .tc-g > .tc-det { grid-column: 1 / -1; background: var(--panel2); display: grid; grid-template-columns: minmax(210px, 1.1fr) repeat(3, minmax(0, 1fr)); padding: 0; align-items: stretch; }
+  .tc-det > div { padding: 12px; border-left: 1px solid var(--line); font-size: 12px; color: var(--mute); display: flex; flex-direction: column; gap: 8px; } .tc-det > div:first-child { border-left: 0; }
+  .tc-det .li { display: flex; align-items: center; gap: 8px; } .tc-det b { color: var(--txt); }
+  .tc-leg { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--mute); margin-top: 12px; align-items: center; }
+  .tc-dsel { display: none !important; }
+  @media (max-width: 900px) {
+    .tc-dsel { display: flex !important; } .tc-lg { display: none; } .tc-top { gap: 8px; } .tc-top .seg a { padding-left: 12px; padding-right: 12px; }
+    .tc-g, .tc-g > .tc-det { grid-template-columns: 1fr; } .tc-g .tc-ro > .tc-cb { border-bottom: 0; padding-bottom: 0; } .tc-g .tc-ro > .tc-cell { padding-left: 44px; }
+    .tc-g .tc-col, .tc-det .tc-col { display: none !important; } .tc-g .tc-col.v, .tc-det .tc-col.v { display: flex !important; }
+    .tc-cb .no { width: 26px; font-size: 18px; } .tc-g > div, .tc-g .tc-ro > div { padding: 9px 8px; }
+    .tc-scroll { max-height: none; border: 0; border-radius: 0; margin: 0 -6px; } .tc-g .tc-hd.tc-cb { display: none; } .tc-g .tc-hd.tc-col.v { grid-column: 1 / -1; } .tc-mo { min-width: 104px; }
+  }
+  .seg a.off { opacity: .45; cursor: default; }
 </style>
 </head>
 <body>
@@ -869,7 +913,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // ---------- cartes : portraits, raretes, icones ----------
 let CARTES = null, PAR_NOM = {}, CARTES_S = {};
-async function chargerCartes() { try { const r = await api('/api/cartes'); CARTES = r.c; CARTES_S = r.s || {}; PAR_NOM = {}; for (const [id, c] of Object.entries(CARTES)) if (!(c[0] in PAR_NOM)) PAR_NOM[c[0]] = id; HC.clear(); refresh(); } catch { setTimeout(chargerCartes, 5000); } }
+async function chargerCartes() { try { const r = await api('/api/cartes'); CARTES = r.c; CARTES_S = r.s || {}; PAR_NOM = {}; for (const [id, c] of Object.entries(CARTES)) if (!(c[0] in PAR_NOM)) PAR_NOM[c[0]] = id; HC.clear(); refresh(); if (CP.j) campRender(); } catch { setTimeout(chargerCartes, 5000); } }
 const carte = x => { const id = typeof x === 'number' || /^\d+$/.test(String(x)) ? String(x) : PAR_NOM[x]; const c = CARTES?.[id]; return c ? { id, n: c[0], r: c[1], img: c[2], s: c[3], sid: c[4], pw: c[5], atk: c[6], def: c[7], spd: c[8], crit: c[9] } : { n: String(x ?? '?'), r: '', img: '' }; };
 function pf(x, big) {
   const c = carte(x), ini = c.n.replace(/\(.*\)/, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -1264,7 +1308,7 @@ function campEtages(j) {
   const sp = e.specialistes || {}, sl = e.seuil, rD = (e.resume || [])[ET.d] || {};
   const tile = (k, v, s, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
   const trio = i => i >= 0 ? e.trios[i] : null, pc = v => `<b style="color:${v >= sl ? 'var(--ok)' : v > 0 ? 'var(--warn)' : 'var(--mute)'}">${v} %</b>`;
-  let h = `<div class="card" id="c3etages"><h2>Meilleur trio par combat <span class="r">${esc(j.niveaux === '99' ? 'cartes au niveau 99' : 'tes niveaux actuels')} · ${e.tirages} tirages par trio</span></h2>
+  let h = `<div class="card" id="c3etages"><h2>Plan et diagnostic par combat <span class="r">${esc(j.niveaux === '99' ? 'cartes au niveau 99' : 'tes niveaux actuels')} · ${e.tirages} tirages par trio</span></h2>
     <div class="muted" style="font-size:12.5px;margin:-6px 0 10px">Chaque combat est regardé seul : le trio qui a le plus de chances de faire 3★ à chaque essai (le jeu tire le hasard au lancement du combat). Le <b>plan</b> donne le moins de trios possible pour tout couvrir, à un tirage près du meilleur. Seuil : ${sl} %.</div>
     <div class="seg" style="margin-bottom:12px">${diffs.map(d => `<a class="${d === ET.d ? 'on' : ''}" onclick="etSet('d',${d})">${esc(nomD(d))}</a>`).join('')}</div>
     <div class="grid g5">${tile('3★ à ' + sl + ' % ou plus', `${rD.troisEtoilesSur ?? '-'} / ${rD.combats ?? '-'}`, 'combats avec un trio sûr', 'ok')}${tile('Avec le script seul', `${rD.script ?? '-'}`, 'trios de tes 10 cartes les plus fortes')}${tile('Gagnés par un spécialiste', `${rD.specialistes ?? 0}`, 'trio hors des meilleurs du classement')}${tile('Sans 3★ trouvé', `${rD.impossibles ?? '-'}`, 'aucun trio, aucun tirage', rD.impossibles ? 'warn' : '')}${tile('Recherche restante', sp.restants ? `${sp.restants} combats` : 'finie', sp.restants ? (sp.minutesRestantes != null ? `≈ ${sp.minutesRestantes >= 90 ? Math.round(sp.minutesRestantes / 60) + ' h' : sp.minutesRestantes + ' min'} sur tous les trios` : '') : `${sp.cherches || 0} combats cherchés`, sp.restants ? 'warn' : 'ok')}</div>`;
@@ -1274,22 +1318,7 @@ function campEtages(j) {
   const plan = e.plan || [], nPlan = C.filter(c => c[1] === ET.d && c[4] >= 0);
   h += `<div class="sp"></div><h3 class="cat">Le plan : ${plan.length} trio${plan.length > 1 ? 's' : ''} pour tout couvrir</h3><table class="c3t"><tr><th>#</th><th>Trio</th><th>Combats couverts (${esc(nomD(ET.d))})</th><th>Toutes difficultés</th></tr>${plan.map((p, k) => `<tr${k ? '' : ' class="c3top"'}><td>${k + 1}</td><td>${equipeHTML(trio(p.trio), true)}</td><td>${nPlan.filter(c => c[4] === p.trio).length}</td><td>${p.combats}</td></tr>`).join('')}</table>`;
   h += campLiens(e);
-  // combats de la difficulte, filtres
-  const ici = new Set(C.filter(c => c[1] === ET.d).map(c => info[c[8]]?.[0] || c[8].split('-')[0])), mondes = [...(j.mondes || []).map(m => m.id).filter(m => ici.has(m)), ...[...ici].filter(m => !(j.mondes || []).some(x => x.id === m))]; // ordre du jeu
-  let L = C.filter(c => c[1] === ET.d);
-  if (ET.monde) L = L.filter(c => (info[c[8]]?.[0] || c[8].split('-')[0]) === ET.monde);
-  if (ET.filtre === 'durs') L = L.filter(c => c[3] < sl); else if (ET.filtre === 'spec') L = L.filter(c => c[6]); else if (ET.filtre === 'script') L = L.filter(c => c[3] - c[7] >= 25);
-  L.sort((a, b) => { const ia = info[a[8]] || [], ib = info[b[8]] || []; return mondes.indexOf(ia[0]) - mondes.indexOf(ib[0]) || (ia[1] ?? 0) - (ib[1] ?? 0); });
-  const PAGE = 60, pages = Math.max(1, Math.ceil(L.length / PAGE)); ET.page = Math.min(ET.page, pages - 1);
-  const sel = (k, opts) => `<select onchange="etSet('${k}',this.value)">${opts.map(([v, t]) => `<option value="${v}"${String(ET[k]) === String(v) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
-  h += `<div class="sp"></div><h3 class="cat">Combat par combat</h3><div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:8px">${sel('monde', [['', 'Tous les mondes'], ...mondes.map(m => [m, (j.mondes || []).find(x => x.id === m)?.nom || m])])}${sel('filtre', [['tous', 'Tous les combats'], ['durs', `Sous ${sl} %`], ['spec', 'Gagnés par un spécialiste'], ['script', 'Où le calcul bat le script de 25 pts']])}<span class="muted">${L.length} combats</span></div>
-    <table class="c3t"><tr><th>Combat</th><th>Trio du plan</th><th>3★</th><th>Meilleur trio (si autre)</th><th>3★</th><th>Script</th></tr>${L.slice(ET.page * PAGE, ET.page * PAGE + PAGE).map(c => {
-      const inf = info[c[8]] || [], titre = `${esc(inf[2] || c[8])}${inf[3] ? ' <span class="pill" style="color:var(--acc)">boss</span>' : ''}`;
-      const autre = c[2] >= 0 && c[2] !== c[4];
-      const dg = DG.get(c[0] + '|' + c[1]), cause = dg ? `<div class="c3s" style="color:${DIAG_C[dg[2]] || 'var(--mute)'}">${esc(DIAG_N[dg[2]] || '')}</div>` : '';
-      return `<tr><td><b>${titre}</b><div class="muted c3s">${esc(inf[0] || '')} · combat ${inf[1] != null ? inf[1] + 1 : '?'}</div></td><td>${c[4] >= 0 ? equipeHTML(trio(c[4]), true) : '<span class="muted">aucun trio à 3★</span>'}</td><td>${c[4] >= 0 ? pc(c[5]) : '-'}${cause}</td><td>${autre ? equipeHTML(trio(c[2]), true) + (c[6] ? ' <span class="pill" style="color:#a78bfa">spécialiste</span>' : '') : '<span class="muted">le même</span>'}</td><td>${autre ? pc(c[3]) : ''}</td><td>${pc(c[7])}${c[3] - c[7] >= 10 ? ` <span class="muted c3s">(+${c[3] - c[7]})</span>` : ''}</td></tr>`;
-    }).join('')}</table>${pages > 1 ? `<div class="row" style="gap:8px;margin-top:8px">${Array.from({ length: pages }, (_, p) => `<button class="${p === ET.page ? '' : 'ghost'}" onclick="etSet('page',${p})">${p + 1}</button>`).join('')}</div>` : ''}
-    <div class="muted" style="font-size:12px;margin-top:8px">Colonne Script : meilleur des trios que le script Tampermonkey essaie seul sur l'écran d'équipe (tes 10 cartes les plus fortes : ${esc((e.scriptCartes || []).join(', '))}). Le script reçoit maintenant aussi le trio du plan et le meilleur trio de ce combat, et les rejoue à tes niveaux actuels.</div></div>`;
+  h += `<div class="muted" style="font-size:12px;margin-top:10px">Le détail combat par combat est dans « Ton trio, combat par combat », en haut de la page. Script : trios de tes 10 cartes les plus fortes (${esc((e.scriptCartes || []).join(', '))}).</div></div>`;
   return h;
 }
 
@@ -1564,6 +1593,7 @@ async function partager(act, id = 'c3share') {
 // ---------- ce que fera le calcul (avant le lancement) et ou il en est (pendant) ----------
 async function campPrev() {
   try { CP.prev = await api('/api/campagne/prevision'); } catch { CP.prev = null; }
+  if (CP.j) tcRender();
   const P = CP.prev; if (!P) return setH('c3prev', '');
   const six = $('o_c3dif').value !== 'cauchemar', cles = six ? Object.keys(P.combats) : ['normal', 'difficile', 'extreme'];
   const parTrio = cles.reduce((a, k) => a + (P.combats[k] || 0), 0), nd = cles.length;
@@ -1615,6 +1645,124 @@ function campEtat() {
   if (moi && E.job.fin && CP.fin !== E.job.fin) { const premier = CP.fin === undefined; CP.fin = E.job.fin; if (!premier || !CP.j) campCharger(); }
 }
 function campCmp(i) { const L = CP.j?.meilleurs?.[CP.obj] || [], k = L[i]?.ids.join('-'); if (!k) return; const at = CP.cmp.indexOf(k); if (at >= 0) CP.cmp.splice(at, 1); else { if (CP.cmp.length >= 3) CP.cmp.shift(); CP.cmp.push(k); } campRender(); }
+// ---------- 5.43 : ton trio, combat par combat (Campagne et Cauchemar, Normal / Difficile / Extreme) ----------
+// Chaque combat de chaque difficulte montre le trio qui y fait le plus souvent 3 etoiles (etages.combats de cauchemar3.json).
+// Par monde et difficulte, le « trio de base » est celui qui est a egalite du meilleur sur le plus de combats : les autres lignes
+// (« change ») sont celles ou il faut changer d'equipe. Deux lectures : « objectif tout au 99 » (le calcul) et « avec mes niveaux
+// actuels » (meilleur trio dont les 3 cartes sont deja au 99 dans ta sauvegarde). Les mondes et combats du jeu absents du dernier
+// calcul (nouveau monde, nouvelle difficulte) sont signales « a calculer ».
+// Calcul prive : window.CAMP_EXACT = { '<combat de cauchemar3.json, ex. naruto-4@xn>': { ids: [a, b, c], p } }, puis tcRender() :
+// son trio passe devant le public sur ce combat, marque « exact ».
+const TC = { g: '', m: '', f: 'tous', d: 0, open: null, n: 'cible', cache: null };
+const TC_G = { cau: ['normal', 'difficile', 'extreme'], camp: ['campNormal', 'campDifficile', 'campExtreme'] };
+const TC_BIT = ['normal', 'difficile', 'extreme', 'campNormal', 'campDifficile', 'campExtreme']; // ordre du masque de /api/campagne/prevision
+const TC_N = { normal: ['Cauchemar Normal', CC.cn], difficile: ['Cauchemar Difficile', CC.cd], extreme: ['Cauchemar Extrême', CC.ce], campNormal: ['Normal', CC.N], campDifficile: ['Difficile', CC.D], campExtreme: ['Extrême', CC.E] };
+function tcSet(k, v) { TC[k] = v; if (k === 'g' || k === 'm') TC.open = null; tcRender(); }
+function tcOuvre(ev, fd) { if (ev.target.closest('.pf')) return; TC.open = TC.open === fd ? null : fd; tcRender(); }
+// Index du calcul (par combat de base puis difficulte) et carte des mondes du jeu, refaits seulement quand l'un des deux change.
+function tcDonnees(j) {
+  const e = j.etages, carteJeu = CP.prev?.carte || null, cle = j.date + '|' + (carteJeu ? carteJeu.length + ':' + carteJeu.reduce((a, w) => a + w.f.length, 0) : 0);
+  if (TC.cache?.cle === cle) return TC.cache;
+  const rows = {}; for (const c of e.combats) (rows[c[8]] ||= {})[j.difficultes[c[1]]] = c;
+  const diffs = new Set(e.combats.map(c => j.difficultes[c[1]])), info = {};
+  for (const [fd, x] of Object.entries(e.infos || {})) info[fd] = { m: x[0], i: x[1], t: x[2], boss: x[3], mask: -1 };
+  const parM = {}; for (const fd of Object.keys(rows)) (parM[info[fd]?.m || fd.split('-')[0]] ||= []).push(fd);
+  const mondes = [], vu = new Set(), nomM = id => (j.mondes || []).find(x => x.id === id)?.nom;
+  for (const w of carteJeu || []) {
+    for (const [fd, i, t, boss, mask] of w.f) info[fd] = { m: w.id, i, t, boss, mask };
+    const f = [...new Set([...w.f.map(x => x[0]), ...(parM[w.id] || [])])]; vu.add(w.id); mondes.push({ id: w.id, nom: nomM(w.id) || w.nom, f });
+  }
+  for (const m of [...(j.mondes || []).map(x => x.id), ...Object.keys(parM)]) if (!vu.has(m) && parM[m]) { vu.add(m); mondes.push({ id: m, nom: nomM(m) || m, f: parM[m] }); }
+  for (const m of mondes) m.f.sort((a, b) => (info[a]?.i ?? 0) - (info[b]?.i ?? 0));
+  return TC.cache = { cle, rows, diffs, info, mondes, avecPret: (e.colonnes || []).includes('pret') };
+}
+function tcRender() {
+  const box = $('tcBox'), j = CP.j, e = j?.etages; if (!box) return;
+  if (!e?.combats?.length) { box.innerHTML = ''; return; }
+  const D = tcDonnees(j), sl = e.seuil ?? 60, au99 = j.niveaux === '99', lvOk = !!COL.j?.lv;
+  const lv = id => COL.j?.lv?.[id] || 1, pret = t => e.trios[t].every(id => lv(id) >= 99);
+  if (!TC.g || !TC_G[TC.g].some(dn => D.diffs.has(dn))) TC.g = TC_G.cau.some(dn => D.diffs.has(dn)) ? 'cau' : 'camp';
+  const actuel = au99 && lvOk && TC.n === 'pret', exact = window.CAMP_EXACT || null, cs = TC_G[TC.g];
+  const existe = (fd, dn) => { const x = D.info[fd]; return x && x.mask >= 0 ? !!(x.mask & 1 << TC_BIT.indexOf(dn)) : !!D.rows[fd]?.[dn]; };
+  // trios a egalite du meilleur (objectif 99), ou meilleur trio deja pret (niveaux actuels)
+  const egauxC = c => c[2] < 0 ? [] : [...new Set([c[2], ...(c[9] || []).filter(a => a[1] >= c[3]).map(a => a[0])])];
+  const bestP = c => { const L = [[c[2], c[3]], ...(c[9] || []), ...(c[10] ? [c[10]] : [])].filter(a => a[0] >= 0 && pret(a[0])); if (!L.length) return null; const p = Math.max(...L.map(a => a[1])); return { p, eg: [...new Set(L.filter(a => a[1] >= p).map(a => a[0]))] }; };
+  const egaux = c => actuel ? bestP(c)?.eg || [] : egauxC(c), pDe = c => actuel ? bestP(c)?.p ?? 0 : c[3];
+  const combatsDe = m => D.mondes.find(x => x.id === m)?.f || [];
+  const base = (m, dn) => { const n = new Map(); for (const fd of combatsDe(m)) { const c = D.rows[fd]?.[dn]; if (c) for (const t of egaux(c)) n.set(t, (n.get(t) || 0) + 1); } let b = -1, bn = 0; for (const [t, v] of n) if (v > bn) { b = t; bn = v; } return { t: b, n: bn }; };
+  const BASES = {}, baseDe = dn => BASES[dn] ||= base(TC.m, dn);
+  const cellule = (fd, dn) => {
+    if (!D.diffs.has(dn)) return { z: 'nc' };
+    const c = D.rows[fd]?.[dn]; if (!c) return { z: existe(fd, dn) ? 'neuf' : 'abs' };
+    const x = exact?.[c[0]]; if (x?.ids?.length === 3) return { ex: x, c };
+    if (c[2] < 0) return { z: 'aucun', c };
+    const eg = egaux(c); if (!eg.length) return { z: 'pret', c };
+    const b = baseDe(dn).t; return eg.includes(b) ? { t: b, p: pDe(c), base: 1, c } : { t: (lvOk ? eg.find(pret) : undefined) ?? eg[0], p: pDe(c), c }; // a egalite, un trio deja pret passe devant
+  };
+  const ok3 = c => c && (exact?.[c[0]]?.p ?? pDe(c)) >= sl;
+  const pfL = id => { const h = pf(id); if (!lvOk) return h; const l = lv(id); return h.replace('<span class="ini">', `<span class="lv${l >= 99 ? ' ok' : ''}" title="niveau ${l}">${l}</span><span class="ini">`); };
+  const triI = ids => `<span class="tc-tri">${ids.map(pfL).join('')}</span>`, tri = t => triI(e.trios[t]);
+  const nomsI = ids => ids.map(id => carte(id).n.replace(/\s*\(.*\)/, '').split(' ')[0]).join(' / '), noms = t => nomsI(e.trios[t]);
+  const pcl = p => p >= sl ? 'ok' : p > 0 ? 'mid' : 'zero', pct = p => `<span class="tc-pc ${pcl(p)}">${p} %</span>`;
+  // mondes : barres = combats a 3 etoiles surs, par difficulte du groupe ; « a calculer » = combats du jeu absents du calcul
+  const neufs = m => combatsDe(m).filter(fd => cs.some(dn => D.diffs.has(dn) && !D.rows[fd]?.[dn] && existe(fd, dn))).length;
+  const visibles = D.mondes.filter(m => m.f.some(fd => cs.some(dn => D.rows[fd]?.[dn] || (D.diffs.has(dn) && existe(fd, dn)))));
+  if (!visibles.some(m => m.id === TC.m)) TC.m = (visibles.find(m => m.f.some(fd => cs.some(dn => D.rows[fd]?.[dn]))) || visibles[0])?.id || '';
+  const mondesH = visibles.map(m => {
+    const L = m.f.filter(fd => cs.some(dn => D.rows[fd]?.[dn])), nv = neufs(m.id), nom = esc(m.nom.replace('’s Bizarre Adventure', ''));
+    if (!L.length) return `<div class="tc-mo neuf${TC.m === m.id ? ' on' : ''}" onclick="tcSet('m','${esc(m.id)}')" title="Monde absent du dernier calcul : relance la Campagne"><b>+ ${nom}</b><span class="nv">nouveau · ${nv} à calculer</span><div class="b3"><i></i><i></i><i></i></div></div>`;
+    const ok = cs.map(dn => L.filter(fd => ok3(D.rows[fd]?.[dn])).length);
+    return `<div class="tc-mo${TC.m === m.id ? ' on' : ''}" onclick="tcSet('m','${esc(m.id)}')"><b>${nom}</b><span>${L.length} combats</span>${nv ? `<span class="nv"> · +${nv} à calculer</span>` : ''}<div class="b3">${cs.map((dn, i) => `<i title="${TC_N[dn][0]} : ${ok[i]} / ${L.length} à 3★ sûrs"><em style="width:${100 * ok[i] / L.length}%;background:${TC_N[dn][1]}"></em></i>`).join('')}</div></div>`;
+  }).join('');
+  // lignes du monde choisi
+  const tous = combatsDe(TC.m).filter(fd => cs.some(dn => D.rows[fd]?.[dn] || (D.diffs.has(dn) && existe(fd, dn))));
+  let L = tous;
+  if (TC.f === 'chg') L = L.filter(fd => cs.some(dn => { const x = cellule(fd, dn); return x.ex || x.z === 'neuf' || x.z === 'pret' || (x.t != null && !x.base); }));
+  if (TC.f === 'durs') L = L.filter(fd => cs.some(dn => { const c = D.rows[fd]?.[dn]; return c ? !ok3(c) : D.diffs.has(dn) && existe(fd, dn); }));
+  const v = i => i === TC.d ? ' v' : '', nomMonde = D.mondes.find(m => m.id === TC.m)?.nom || TC.m;
+  let h = `<div class="tc-hd tc-cb"><span class="k" style="color:var(--mute)">Combat</span><small class="muted" style="font-size:11.5px">${esc(nomMonde)}</small></div>`;
+  h += cs.map((dn, i) => {
+    if (!D.diffs.has(dn)) return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><small class="muted">pas dans ce calcul (lance-le avec les 6 difficultés)</small></div>`;
+    const b = baseDe(dn), n = tous.filter(fd => D.rows[fd]?.[dn]).length, ok = tous.filter(fd => ok3(D.rows[fd]?.[dn])).length;
+    if (!n) return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><small class="muted"><b style="color:var(--gold)">${tous.filter(fd => existe(fd, dn)).length}</b> combats à calculer</small></div>`;
+    return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><div class="bs">${b.t >= 0 ? tri(b.t) : ''}<small>${b.t >= 0 ? `Trio de base sur <b>${b.n}</b> / ${n}<br>` : `${actuel ? 'Aucun trio prêt ici' : 'Aucun trio à 3★'}<br>`}<b>${ok}</b> combats à 3★ sûrs</small></div></div>`;
+  }).join('');
+  for (const fd of L) {
+    const inf = D.info[fd] || {}, open = TC.open === fd;
+    h += `<div class="tc-ro${open ? ' open' : ''}" onclick="tcOuvre(event,'${esc(fd)}')"><div class="tc-cb"><span class="no">${inf.i != null ? inf.i + 1 : '?'}</span><span class="t"><b>${esc(inf.t || fd)}</b>${inf.boss ? '<span class="tc-tag boss">boss</span>' : ''}${cs.some(dn => cellule(fd, dn).z === 'neuf') ? '<span class="tc-tag nv">nouveau</span>' : ''}</span></div>`;
+    h += cs.map((dn, i) => {
+      const x = cellule(fd, dn), cl = `tc-cell tc-col${v(i)}`;
+      if (x.z === 'nc' || x.z === 'abs') return `<div class="${cl}"><span class="tc-pc zero">-</span></div>`;
+      if (x.z === 'neuf') return `<div class="${cl} neuf"><span class="tc-cw"><span><span class="tc-pc zero" style="color:var(--gold)">à calculer</span></span><span class="tc-now">absent du dernier calcul : relance la Campagne</span></span></div>`;
+      if (x.z === 'aucun') return `<div class="${cl}"><span class="tc-pc zero">aucun 3★ trouvé</span></div>`;
+      if (x.z === 'pret') return `<div class="${cl} chg"><span class="tc-cw"><span><span class="tc-pc zero">${D.avecPret && x.c[10] === null ? 'aucun trio prêt' : 'pas encore calculé'}</span></span><span class="tc-now">au 99 : ${esc(noms(x.c[2]))} <b>${x.c[3]} %</b></span></span></div>`;
+      if (x.ex) return `<div class="${cl} exact"><span class="tc-cw"><span>${triI(x.ex.ids)}<span class="tc-tag px">exact</span>${x.ex.p != null ? pct(x.ex.p) : ''}</span><span class="tc-now">public : ${esc(noms(x.c[2] >= 0 ? x.c[2] : x.c[4]))} <b>${x.c[3]} %</b></span></span></div>`;
+      if (x.base) return `<div class="${cl}"><span class="tc-same"><span class="eq">=</span><span>trio de base</span></span>${pct(x.p)}</div>`;
+      const bp = !actuel && lvOk && !pret(x.t) ? bestP(x.c) : null;
+      return `<div class="${cl} chg"><span class="tc-cw"><span>${tri(x.t)}${pct(x.p)}</span>${!actuel && lvOk && !pret(x.t) ? `<span class="tc-now">${bp ? `prêt maintenant : ${esc(noms(bp.eg[0]))} <b>${bp.p} %</b>` : 'aucun trio déjà au 99 ici'}</span>` : ''}</span></div>`;
+    }).join('') + '</div>';
+    if (open) h += `<div class="tc-det"><div class="tc-cb" style="color:var(--mute);cursor:default">${esc(nomMonde)} · combat ${inf.i != null ? inf.i + 1 : '?'}<br>Le hasard est tiré au lancement du combat : le % est la part des essais finis en 3★ (${e.tirages} tirages par trio).</div>${cs.map((dn, i) => {
+      const c = D.rows[fd]?.[dn], cl = `tc-col${v(i)}`;
+      if (!c) return `<div class="${cl}">${D.diffs.has(dn) && existe(fd, dn) ? 'Combat absent du dernier calcul : il sera joué au prochain calcul de la Campagne.' : 'Pas de combat ici.'}</div>`;
+      const dg = DG.get(c[0] + '|' + c[1]), cause = dg ? `<div style="color:${DIAG_C[dg[2]] || 'var(--mute)'}">${esc(DIAG_N[dg[2]] || '')}</div>` : '';
+      if (c[2] < 0) return `<div class="${cl}">Aucun trio n'a fait 3★ ici, sur aucun tirage.<br>Script seul : <b>${c[7]} %</b>${cause}</div>`;
+      const eg = egauxC(c), ensuite = (c[9] || []).filter(a => a[1] < c[3]).slice(0, 2), bp = lvOk ? bestP(c) : null;
+      return `<div class="${cl}"><div><b>${eg.length > 1 ? eg.length + ' trios à égalité' : 'Meilleur trio'}</b> · ${c[3]} %${c[6] ? '<span class="tc-tag sp">spécialiste</span>' : ''}</div>${eg.slice(0, 3).map(t => `<div class="li">${tri(t)}<span>${esc(noms(t))}</span></div>`).join('')}${ensuite.length ? `<div>Ensuite : ${ensuite.map(a => `${esc(noms(a[0]))} <b>${a[1]} %</b>`).join(' · ')}</div>` : ''}${lvOk ? `<div>Prêt maintenant : ${bp ? `${esc(noms(bp.eg[0]))} <b>${bp.p} %</b>` : 'aucun trio aux 3 cartes au 99 parmi ceux gardés'}</div>` : ''}<div>Trio du plan : ${c[4] >= 0 ? (eg.includes(c[4]) ? '' : esc(noms(c[4])) + ' ') + `<b>${c[5]} %</b>` : '-'} · script seul : <b>${c[7]} %</b></div>${cause}</div>`;
+    }).join('')}</div>`;
+  }
+  const d0 = j.date ? new Date(j.date) : null, quandC = d0 ? d0.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + d0.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const ctl = `<div class="seg">${TC_G.camp.some(dn => D.diffs.has(dn)) ? `<a class="${TC.g === 'camp' ? 'on' : ''}" onclick="tcSet('g','camp')">Campagne</a><span class="sep"></span>` : ''}<a class="nm ${TC.g === 'cau' ? 'on' : ''}" onclick="tcSet('g','cau')">☾ Cauchemar</a></div>
+    <div class="seg tc-dsel">${cs.map((dn, i) => `<a class="${TC.d === i ? 'on' : ''}" onclick="tcSet('d',${i})">${['N', 'D', 'E'][i]}</a>`).join('')}</div>
+    ${au99 ? `<div class="seg"><a class="${!actuel ? 'on' : ''}" onclick="tcSet('n','cible')"><span class="tc-lg">Objectif : tout </span>au 99</a><a class="${actuel ? 'on' : ''}${lvOk ? '' : ' off'}" onclick="${lvOk ? "tcSet('n','pret')" : ''}" title="${lvOk ? 'Meilleur trio dont les 3 cartes sont déjà au niveau 99 dans ta sauvegarde' : 'Importe ta sauvegarde pour lire tes niveaux'}"><span class="tc-lg">Avec mes </span>niveaux actuels</a></div>` : ''}
+    <select onchange="tcSet('f',this.value)">${[['tous', 'Tous les combats'], ['chg', "Seulement où changer d'équipe"], ['durs', `Sous ${sl} %`]].map(([k, t]) => `<option value="${k}"${TC.f === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+    <span class="muted" style="font-size:12.5px">${L.length} combat${L.length > 1 ? 's' : ''}</span>`;
+  box.innerHTML = `<div class="card" id="tcCard"><h2>Ton trio, combat par combat <span class="r">${au99 ? 'niveau 99' : 'tes niveaux au moment du calcul'} · ${e.tirages} tirages par trio · calcul du ${esc(quandC)}</span></h2>
+    <div class="muted" style="font-size:12.5px;margin:-6px 0 12px">Choisis un monde et lis la colonne de ta difficulté de haut en bas : tu ne changes d'équipe que sur les lignes orange.${au99 && lvOk ? ' « Avec mes niveaux actuels » ne garde que les trios dont les 3 cartes sont déjà au 99 dans ta sauvegarde.' : ''}${au99 && !lvOk ? ' Importe ta sauvegarde pour voir tes niveaux sur les portraits.' : ''}</div>
+    <div class="tc-top">${ctl}</div>${actuel && !D.avecPret ? `<div class="muted" style="font-size:12.5px;margin:-4px 0 12px;color:var(--warn)">Ce calcul date d'avant la 5.43 : il ne garde que les trios au-dessus de ${sl} %, souvent sans trio déjà prêt. Relance la Campagne : chaque combat aura son meilleur trio aux 3 cartes au 99.</div>` : ''}<div class="tc-mondes">${mondesH}</div>
+    <div class="tc-scroll"><div class="tc-g">${h}</div></div>
+    <div class="tc-leg"><span class="tc-same" style="display:inline-flex"><span class="eq">=</span> trio de base du monde (en haut de la colonne)</span><span><span class="tc-tag chg" style="margin:0">change</span> un autre trio fait mieux ici</span>${exact ? '<span><span class="tc-tag px" style="margin:0">exact</span> trio du calcul privé, prioritaire</span>' : ''}${lvOk ? '<span><span class="tc-tri" style="display:inline-flex;vertical-align:middle"><span class="pf r-SSR" style="width:22px;height:28px"><span class="lv" style="top:1px;right:1px;padding:1px 2px;font-size:8px;color:#ffb39b">34</span></span></span> niveau actuel d\'une carte pas encore au 99</span>' : ''}<span><span class="tc-tag nv" style="margin:0">nouveau</span> combat du jeu absent du dernier calcul</span><span>Clique un combat : trios à égalité, prêt maintenant, trio du plan et script (tes 10 cartes les plus fortes).</span></div></div><div class="sp"></div>`;
+}
+
 function campRender() {
   const j = CP.j;
   if (!j) { setH('c3tabs', ''); setH('c3body', CP.charge ? '<div class="skel"></div>' : `<div class="card"><div class="muted">${CP.err && !/introuvable|404/.test(CP.err) ? 'Lecture impossible : ' + esc(CP.err) : 'Aucun calcul de campagne pour l’instant. Lance-le avec le bouton ci-dessus.'}</div></div>`); return; }
@@ -1625,7 +1773,7 @@ function campRender() {
   const objNom = CP.obj === 'Les6' ? 'moyenne des 6 difficultés' : CP.obj === 'Moyenne' ? 'moyenne des trois Cauchemar' : objLib.replace('☾ ', '');
   const tile = (k, v, s, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
   const nC = Object.values(j.combats || {}).reduce((a, v) => a + (+v || 0), 0);
-  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), nDiff() + ' difficultés')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div>`;
+  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), nDiff() + ' difficultés')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div><div id="tcBox"></div>`;
   // podium et carte a partager
   if (L.length >= 3) h += `<div class="card"><h2>Podium <span class="r">${esc(objNom)} · ${esc(nivTxt)}</span></h2><div class="sp"></div><div class="podium">${L.slice(0, 3).map((l, i) => `<div class="pod ${['first', 'second', 'third'][i]}"><div class="rk">${i + 1}</div><div class="trio">${l.ids.map(id => pf(id, i ? 'lg' : 'xl')).join('')}</div><div class="nm">${esc(l.equipe.join(' · '))}</div><div class="sc">${fmt(l.troisEtoiles)} %</div><div class="muted" style="font-size:12px">en 3 étoiles · ± ${fmt(l.marge)}</div><div class="pills">${VIS.map(([d, , c, n]) => `<span class="pill" style="color:${c}">${n} ${fmt(pdVal(l.parDifficulte, [d]))}</span>`).join('')}</div></div>`).join('')}</div></div><div class="sp"></div>`;
   if (b0) h += `<div class="card"><h2>Carte à partager <span class="r"><button class="ghost" onclick="partager('copier')">Copier</button><button onclick="partager('png')">Télécharger PNG</button></span></h2><div class="share"><canvas id="c3share" width="1200" height="630"></canvas><div class="muted" style="font-size:13px">Ton meilleur trio en image, avec les portraits des cartes, prête à envoyer à ta guilde. Les portraits viennent de leur adresse d'origine ; si une adresse refuse, ses initiales les remplacent.</div></div></div><div class="sp"></div>`;
@@ -1659,7 +1807,7 @@ function campRender() {
   const col = j.collectifs || [];
   h += `<div class="card"><h2>Collectifs conseillés <span class="r">quand une carte en a plus de 6</span></h2>${col.length ? col.map(c => `<div class="c3c"><div class="muted c3s">${esc(c.equipe.join(' / '))}</div>${c.cartes.map(x => `<div><b>${esc(x.carte)}</b> · ${x.possibles} possibles · ${fmt(x.avant)} % vers ${fmt(x.apres)} % ${x.utile ? '<span class="okc">à changer</span>' : '<span class="muted">garder les actuels</span>'}${x.utile ? `<div class="muted c3s">${x.conseil.map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`).join('') : '<div class="muted">Aucune carte des 5 meilleurs trios n’a plus de 6 collectifs possibles : les choix du jeu suffisent.</div>'}</div></div><div class="sp"></div>`;
   h += `<div class="card"><h2>Méthode</h2><div class="muted">Tous les trios de tes cartes SSR, UR et LR (${(j.trios || 0).toLocaleString('fr-FR')}) jouent les ${nC.toLocaleString('fr-FR')} combats avec l'IA de KitsuAI. Course par manches : un trio est retiré seulement quand il est nettement derrière en Cauchemar (z ${'>'} 3). ${nDiff() > 3 ? "La Campagne est jouée par les mêmes trios mais ne retire personne (beaucoup y font 100 %) : son classement est celui des finalistes du Cauchemar. " : ''}Les finalistes rejouent tout avec d'autres tirages. Un combat est arrêté dès que les 3 étoiles sont perdues : même résultat, 1,8 fois plus vite. Le journal garde chaque paquet de combats : il n'est refait que si le jeu, une carte, ses niveaux, ses étoiles, ses collectifs ou l'IA changent.<br>Moteur ${esc(j.version)} · signature ${esc(j.signatureCombat)} · ${quand(j.date)}</div></div>`;
-  setH('c3body', h);
+  setH('c3body', h); tcRender();
   if (typeof window.campApres === 'function') try { window.campApres(j); } catch {}
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
@@ -1913,7 +2061,7 @@ function evRender() {
 
 // ---------- collection (Sauvegarde) ----------
 const COL = { j: null, charge: false }; let colMax = 120;
-async function colCharger() { COL.charge = true; try { COL.j = await api('/api/collection'); } catch { COL.j = null; } COL.charge = false; colRender(); }
+async function colCharger() { COL.charge = true; try { COL.j = await api('/api/collection'); } catch { COL.j = null; } COL.charge = false; colRender(); if (CP.j) tcRender(); }
 const RORD = { LR: 6, UR: 5, SSR: 4, SR: 3, R: 2, N: 1 }, sansAcc = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 function mesTrios() { const s = new Set(), M = E?.dernier?.modes; for (const m of Object.values(M || {})) for (const c of Object.values(m)) for (const x of (c.top || []).slice(0, 5)) eqList(x.ids || []).forEach(i => s.add(String(i))); for (const L of Object.values(CP.j?.meilleurs || {})) for (const x of L.slice(0, 5)) x.ids.forEach(i => s.add(String(i))); for (const x of (TW.j?.trios || []).slice(0, 5)) x.ids.forEach(i => s.add(String(i))); return s; }
 function colRender() {
@@ -2171,7 +2319,7 @@ refresh(); setInterval(refreshDoux, 1500); chargerCartes();
 // Calque par-dessus le panneau : projecteur sur l'element dont parle Kiko, etiquette, boite de dialogue.
 // Etapes « A toi » : on avance quand tu ouvres toi-meme l'onglet montre. Rien ne se lance, rien n'est clique a ta place.
 // Etat dans localStorage (kitsuGuide) : chapitres vus, version des nouveautes vues, options. Aucune animation hors du calque ouvert.
-const KG_VER = '5.42.0';
+const KG_VER = '5.43.0';
 function kgFox(ex, id) {
   id = id || 'kf' + Math.random().toString(36).slice(2, 7);
   const D = '#07080c', C = '#f4ede3', oeil = (x) => `<ellipse cx="${x}" cy="107" rx="7.5" ry="8.5" fill="${D}"/><circle cx="${x + 2.5}" cy="104" r="2.4" fill="#fff"/>`;
@@ -2236,7 +2384,10 @@ const KG = [
     { x: 'malin', p: 'guides', s: ['#kgList'], tag: 'Chapitres', t: "Les chapitres vus ont une coche. Après une mise à jour, je te montre <em>seulement ce qui a changé</em>." }] }
 ];
 // Nouveautes par version : le point rouge sur « ? » s'allume tant que celles de la version installee n'ont pas ete vues.
-const KG_NEWS = { '5.42.0': [
+const KG_NEWS = { '5.43.0': [
+  { x: 'malin', p: 'campagne', tag: 'Nouveau', s: ['#tcCard'], t: "Campagne : ton trio, combat par combat. Choisis un monde et lis la colonne de ta difficulté : tu ne changes d'équipe que sur les lignes orange." },
+  { x: 'neutre', p: 'campagne', s: ['#tcCard'], t: "« Avec mes niveaux actuels » ne garde que les trios dont les 3 cartes sont déjà au 99. Relance la Campagne une fois pour que chaque combat ait le sien. Un nouveau monde du jeu apparaît « à calculer »." }],
+  '5.42.0': [
   { x: 'malin', p: 'calculs', tag: 'Nouveau', t: "Le journal des calculs fait le ménage : à la fin d'un calcul complet, il retire les résultats qui n'ont servi ni à ce calcul ni au précédent, par exemple ceux d'une carte qui a pris des étoiles depuis." },
   { x: 'neutre', p: 'calculs', t: "Sur ton journal Campagne du 18/11, la moitié des lignes ne servaient plus : 78 Mo deviennent 39 Mo, et le calcul en garde deux fois moins en mémoire." }],
   '5.41.0': [

@@ -4,6 +4,18 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.43.0
+
+Campagne : ton trio, combat par combat.
+
+- **Nouvelle carte en haut de la page Campagne** : « Ton trio, combat par combat ». Campagne ou Cauchemar, puis un monde ; chaque combat a une ligne et chaque difficulté (Normal, Difficile, Extrême) une colonne, avec le trio qui y fait le plus souvent 3★ et son %. Par monde et difficulté, le **trio de base** (celui à égalité du meilleur sur le plus de combats) est en tête de colonne : les lignes « = trio de base » le rejouent, les lignes orange disent quand changer d'équipe. Sur le résultat du 18/11, Dragon Ball Z Cauchemar Normal : trio de base sur 93 combats sur 172. Filtres : seulement où changer, sous le seuil. Clic sur un combat : trios à égalité, suivants, trio du plan, script seul, cause du diagnostic.
+- **Objectif : tout au 99 / Avec mes niveaux actuels** : la 2e lecture ne garde que les trios dont les 3 cartes sont déjà au 99 dans ta sauvegarde. Les portraits portent le niveau actuel des cartes pas encore au 99. En lecture « au 99 », si le trio montré n'est pas prêt, la ligne dit ce que tu peux jouer tout de suite. À égalité, un trio déjà prêt passe devant.
+- **Calcul** (`lib/etages.mjs`, `cauchemar3.mjs`) : nouvelle colonne `pret` dans `etages.combats` (meilleur trio aux 3 cartes au 99 sur ce combat, quel que soit son %), ce trio est confirmé avec les autres sur chaque combat où il a fait 3★ au moins une fois, et les 40 meilleurs trios prêts du classement rejoignent les candidats (`--candidats-prets 40`, en niveaux 99 seulement). Avant, `autres` ne gardait que les trios au-dessus du seuil et la lecture « niveaux actuels » restait souvent vide : le calcul du 18/11 n'a pas cette colonne, il faut relancer la Campagne pour la remplir.
+- **Futurs mondes et combats** : `/api/campagne/prevision` donne la carte des mondes et combats du jeu par difficulté. Un monde, un combat ou une difficulté absents du dernier calcul apparaissent « à calculer » (puce « + monde », étiquette « nouveau »).
+- **Calcul privé** : `window.CAMP_EXACT = { '<combat>': { ids, p } }` puis `tcRender()` ; ce trio passe devant le public, marqué « exact ».
+- La carte « Meilleur trio par combat » devient « Plan et diagnostic par combat » (son tableau combat par combat est remplacé par la nouvelle carte).
+- Tests : 34 (2 nouveaux sur la colonne `pret`).
+
 ## 5.42.0
 
 Journal des calculs : il ne garde plus ce qui ne sert plus.
