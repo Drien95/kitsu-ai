@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.40.1
+// @version      5.40.2
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.40.1') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.40.2') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.40.1',
+          __v: '5.40.2',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1209,6 +1209,15 @@
                 const todo = (P?.combats || []).filter(r => worthNow(r, S))
                   .sort((a, b) => b.troisEtoiles - a.troisEtoiles || (b.gemmesEsperees / (b.cout || 1)) - (a.gemmesEsperees / (a.cout || 1)) || b.xp - a.xp);
                 let next = todo[0];
+                // 5.40.2 : une montee de la Tour en cours passe avant le reste du plan (etages suivants gratuits, equipe figee) :
+                // page de la Tour : « Reprendre la montee » ([data-tour-open]) puis l'etage suivant ([data-tw="fight"]) ; ailleurs, on y ramene.
+                const runTw = S.tower?.run;
+                if (runTw && !T) {
+                  const flTw = runTw.floor ? ` (etage ${runTw.floor})` : '';
+                  const ft = [...document.querySelectorAll('[data-tw="fight"]')].find(b => vis(b) && !b.disabled); if (ft) return mark(ft, `Tour : continue ta montee${flTw}`, 'twfight');
+                  const ro = [...document.querySelectorAll('[data-tour-open]')].find(b => vis(b) && !b.disabled); if (ro) return mark(ro, `Tour : reprends ta montee en cours${flTw}`, 'twopen');
+                  if (goView('tour', `Tour de l'infini : reprends ta montee en cours${flTw}`, 'twnav')) return;
+                }
                 // Plus aucune 3 etoiles facile : on rejoue le combat deja gagne qui donne le plus d'XP par energie
                 // aux cartes a faire monter (equipe cible), pour franchir les murs plus vite.
                 // Tour de l'infini (niveau de compte 25) : une montee si l'IA prevoit de depasser ton record.
