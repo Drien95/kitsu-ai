@@ -11,6 +11,11 @@ t('moteur charge', G.ALL_WORLDS.length > 5 && Object.keys(G.CHAR_BY_ID).length >
 const ids = Object.values(G.CHAR_BY_ID).filter(c => c.r === 'M').slice(0, 3).map(c => c.id), team = ids.map(id => ({ id, lv: 99, stars: 0 }));
 const fights = []; for (const w of G.ALL_WORLDS) w.fights.forEach((f, i) => { if (i % 25 === 0) fights.push(f.id + '@xn'); });
 const a = fights.map(f => S.fight(f, team, 7, pol)), b = fights.map(f => S.fight(f, team, 7, pol));
+// 5.45 : la fiche de carte lit les stats d'une unite apres setupBattle (PV, ATK, DEF, VIT, critique) et les liens actifs d'un trio.
+{ const u = B.allies(G.setupBattle(G.findFight(fights[0]), [{ id: ids[0], lv: 99, stars: 0 }], 1).st)[0], u1 = B.allies(G.setupBattle(G.findFight(fights[0]), [{ id: ids[0], lv: 1, stars: 0 }], 1).st)[0];
+  t('fiche : stats d une unite lisibles (PV, ATK, DEF, VIT, crit)', ['maxHp', 'atk', 'def', 'spd'].every(k => +u[k] > 0) && typeof u.crit === 'number' && u.maxHp > u1.maxHp, JSON.stringify({ maxHp: u?.maxHp, atk: u?.atk, def: u?.def, spd: u?.spd, crit: u?.crit, pv1: u1?.maxHp }));
+  const L = G.activeLinks(ids), P = G.linkPlan(ids, {});
+  t('fiche : liens actifs du trio (nom, stat, %, cartes) et liens gardes', Array.isArray(L) && L.every(l => l.name && l.stat && l.pct > 0 && Array.isArray(l.ids)) && P && typeof P.kept === 'object', `${L?.length} liens`); }
 t('meme tirage = meme resultat', JSON.stringify(a) === JSON.stringify(b));
 t('regle des etoiles', a.every(r => !r.win ? r.stars === 0 : r.stars === Math.min(r.cycle > 8 ? 2 : 3, Math.max(1, 3 - r.ko))));
 const tw = [1, 2].map(() => S.tower(team, 3, pol, 60));
@@ -129,6 +134,10 @@ if (up) {
   t("plan d'XP lisible par le script", (await fetch(`http://127.0.0.1:${PORT}/plan`)).status === 200);
   t('modele reserve au panneau', (await fetch(`http://127.0.0.1:${PORT}/api/modele`)).status === 403);
   t('sauvegarde reservee au script', (await fetch(`http://127.0.0.1:${PORT}/sauvegarde`, { method: 'POST', body: '{}' })).status === 403);
+  // 5.45 : fiche de carte (stats lues dans le moteur, echelle des cartes SSR/UR/LR au 99, liens du trio)
+  const tok = ((await (await fetch(`http://127.0.0.1:${PORT}/`)).text()).match(/const TOKEN = '([^']+)'/) || [])[1];
+  const cs = await (await fetch(`http://127.0.0.1:${PORT}/api/carte-stats?id=${ids[0]}&trio=${ids.join(',')}`, { headers: { 'X-Kitsu-Token': tok } })).json();
+  t('fiche : /api/carte-stats (actuel, 99, echelle, liens)', !cs.err && cs.actuel?.hp > 0 && cs.max?.hp >= cs.actuel.hp && cs.echelle?.hp >= cs.max.hp && Array.isArray(cs.liens), JSON.stringify(cs).slice(0, 300));
 }
 srv.kill();
 console.log(`\n${ok} reussi(s), ${ko} echec(s)`); process.exit(ko ? 1 : 0);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.44.0
+// @version      5.45.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.44.0',
+          __v: '5.45.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -967,6 +967,10 @@
             const S = save(), data = { t: Date.now(), script: this.__v, owned: S.owned || {}, lv: S.lv || {}, stars: S.stars || {}, team: S.pve?.team || [], acct: { lv: S.acct?.lv || 1 }, W: this.W };
             // 5.40.3 : liens actifs choisis dans le jeu (6 max par carte, S.lk[id] = cles « serie|nom »), pour que les calculs jouent ton vrai reglage.
             if (S.lk && Object.keys(S.lk).length) data.lk = S.lk;
+            // 5.45.0 : etoiles gagnees par combat (carte des mondes du panneau, couche « acquis dans le jeu ») et record de la Tour (tour de l'infini et reactions de Kiko).
+            const pv = {}; for (const [f, n] of Object.entries(S.pve?.stars || {})) if (+n > 0) pv[f] = +n;
+            if (Object.keys(pv).length) data.pve = { stars: pv };
+            if (S.tower?.best != null) data.tower = { best: +S.tower.best || 0 };
             // Boss de guilde de la semaine (pour l'analyse locale), sans aucun jeton dans le fichier.
             try { const r = await fetch('/api/guilds/week', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.boss) data.guild = { boss: { id: g.boss.id, name: g.boss.name, lv: g.boss.lv, hp: g.boss.hp, turns: g.week?.turns || 12 }, minLv: g.week?.minLv || 15 }; } } catch {}
             // Marche (echanges) : lots ouverts et offres recues sur tes lots, lus comme le fait la page du marche.
