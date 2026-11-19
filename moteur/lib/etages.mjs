@@ -96,7 +96,7 @@ export async function parCombat(o) {
     log(`  specialistes ${k}/${reste.length} : ${f} (${DIFF[F[fi].di][0]}), ${ok1.length} trios a 3 etoiles au 1er tirage, meilleur ${L3[0] ? Math.round(100 * L3[0].s / L3[0].n) + ' %' : 'aucun'} (avant ${Math.round(100 * meilleur[fi].p)} %), ${Math.round((Date.now() - t0) / 1000)} s`);
   }
   const restants = durs.filter(fi => !specs.has(fi)).length, msMoy = msCombat.length ? msCombat.reduce((a, b) => a + b, 0) / msCombat.length : simules ? 1.05 * T / (simules / ((Date.now() - T0) / 1000)) * 1000 : null; // sinon : estime a la vitesse de ce calcul
-  const indexTrio = new Map(trios.map((t, i) => [t.join('-'), i]));
+  const indexTrio = o.indexDe ? { get: k => o.indexDe(k.split('-').map(Number)) } : new Map(trios.map((t, i) => [t.join('-'), i])); // 5.42.1 : sans table de 7 M cles
   let trouves = 0;
   for (const [fi, L] of specs) { const x = L[0]; if (x && x.s / x.n > meilleur[fi].p) { meilleur[fi] = { t: indexTrio.get(x.ids.join('-')), p: x.s / x.n, n: x.n, spec: true }; trouves++; } }
 

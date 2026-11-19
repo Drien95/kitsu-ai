@@ -4,6 +4,19 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.42.1
+
+Campagne et Tour : les très grosses collections ne plantent plus faute de mémoire.
+
+- **Constat** (19/11, collection de 348 SSR/UR/LR, 6 963 596 trios) : le calcul s'arrêtait dès le lancement (`RangeError: Array buffer allocation failed`, `cauchemar3.mjs`). Le tableau des étoiles déjà jouées prenait 1 octet par trio et par combat, joué ou non : 6,96 M × 11 874 combats = 83 Go. Avec « Cauchemar seulement », 41 Go. Reproduit sur une VM : même erreur.
+- **Étoiles déjà jouées** : un mot de 32 bits par trio et par paquet de 16 combats, seulement pour les paquets joués (d'abord une table, puis un tableau de 4 octets par trio quand plus d'un trio sur 16 a joué le paquet, c'est-à-dire au 1er tour). Mêmes étoiles relues par les étapes par combat.
+- **Trios** : tableau compact (3 × 16 bits par trio) au lieu de 7 M petits tableaux ; clés de journal calculées à la demande ; plus de table de 7 M clés pour retrouver un trio (rang calculé) ; candidats par combat choisis sans trier les 7 M trios ; élimination sans un objet par trio ; compteurs sur 16 bits.
+- **Tour de course** : paquets préparés par lots de 60 000 au lieu de 21 M objets d'un coup.
+- **Journal** (`lib/journal.mjs`) : le 1er tour de 7 M trios écrit 21 M lignes. Une table de Node plafonne à 16,7 M clés : 2e plantage reproduit (`Map maximum size exceeded`). Les clés sont maintenant des nombres dans une table de hachage hors du tas, et les valeurs, très répétitives, sont mises en commun ; fichier relu par morceaux de 32 Mo ; compaction par lots. Mesuré avec 21 M lignes : écrites, relues (21 s) et compactées (14 s), 0,8 Go au plus.
+- **Mesures** (VM 4 fils, Node 22, moteur B4t5msj4, 348 cartes, les 6 difficultés) : avant, plantage immédiat ; après, 0,5 Go au début du 1er tour. Course complète sur 100 cartes (161 700 trios, Cauchemar, 96 combats par difficulté) : résultats identiques à la 5.42.0 (top 10 des 4 objectifs, meilleur trio des 288 combats, plan ; les trios essayés par le script restent dans l'ordre d'avant, sinon une égalité à 100 % se départage autrement).
+- **Tour** (`tour.mjs`, `lib/tour.mjs`) : mêmes trios compacts, clés à la demande, manche jouée par lots de 20 000 trios, élimination sans un objet par trio. 348 cartes : 2,6 Go dès la 1re manche avant, 0,55 Go après. Essai 3 000 trios : `tour.json` identique (classement, entonnoir, murs, collectifs).
+- Tests : 32.
+
 ## 5.42.0
 
 Journal des calculs : il ne garde plus ce qui ne sert plus.

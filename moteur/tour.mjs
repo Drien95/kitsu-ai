@@ -31,14 +31,19 @@ const SIM = makeSim(G, B), sigG = signatureCombat(G, B, SIM, WA), wKey = h53(JSO
 const sigT = h53(String(G.setupTower) + '#' + [1, 10, 37, 100, 150, 250, 400].map(fl => { try { return JSON.stringify(B.enemies(G.setupTower(fl, mk([IDS[0]]), 7).st).map(e => [e.id, e.lv, e.atk, e.def, e.maxHp, e.spd, e.boss ? 1 : 0])); } catch { return fl; } }).join('|'));
 const FJ = D('cache', `tour-${sigG}-${sigT}-${wKey}.jsonl`), J = ouvrirJournal(FJ), ANCIENS = nettoyerAnciens(D('cache'), 'tour-', FJ);
 const cleCarte = id => { const c = mk([id])[0]; return `${id}:${c.lv}:${c.stars}:${(c.lk || []).join('+')}:${sigCarte(id)}`; };
-let tr = []; const S_ = [...IDS].sort((a, b) => a - b); for (let a = 0; a < S_.length; a++) for (let b = a + 1; b < S_.length; b++) for (let c = b + 1; c < S_.length; c++) tr.push([S_[a], S_[b], S_[c]]);
-if (arg('max-trios')) tr = shuffle(tr, 5).slice(0, +arg('max-trios'));
-const cles = tr.map(t => t.map(cleCarte).sort().join(','));
+// 5.42.1 : trios ranges en tableau compact (3 x 16 bits) et cles calculees a la demande (avant : 7 M petits tableaux et 7 M chaines
+// pour 348 cartes, 2,6 Go des la 1re manche). tr[t] et l'ordre des trios sont inchanges.
+const S_ = [...IDS].sort((a, b) => a - b), NS = S_.length;
+let TRI = new Uint16Array(3 * (NS * (NS - 1) * (NS - 2) / 6)); { let k = 0; for (let a = 0; a < NS; a++) for (let b = a + 1; b < NS; b++) for (let c = b + 1; c < NS; c++) { TRI[k++] = a; TRI[k++] = b; TRI[k++] = c; } }
+if (arg('max-trios')) { const pris = shuffle([...Array(TRI.length / 3).keys()], 5).slice(0, +arg('max-trios')), t2 = new Uint16Array(3 * pris.length); pris.forEach((r, i) => t2.set(TRI.subarray(3 * r, 3 * r + 3), 3 * i)); TRI = t2; }
+const NTR = TRI.length / 3, estIndex = k => typeof k === 'string' && k.length > 0 && k.charCodeAt(0) >= 48 && k.charCodeAt(0) <= 57;
+const tr = new Proxy([], { get: (o, k) => k === 'length' ? NTR : estIndex(k) && +k < NTR ? [S_[TRI[3 * k]], S_[TRI[3 * k + 1]], S_[TRI[3 * k + 2]]] : undefined });
+const CLEC = S_.map(cleCarte), cles = t => [CLEC[TRI[3 * t]], CLEC[TRI[3 * t + 1]], CLEC[TRI[3 * t + 2]]].sort().join(',');
 const eveil = garderEveille(), T0 = Date.now(); let dernierLog = Date.now();
 log(`${tr.length} trios, journal ${J.taille()} montees${eveil.ok ? ', PC garde eveille' : ''}`);
 const solo0 = await T.climb(IDS.map(id => mk([id])), [1, 2], 16);
 const solo = IDS.map((id, i) => ({ id, etage: (solo0[i][0] + solo0[i][1]) / 2 })).sort((a, b) => b.etage - a.etage);
-const C = await T.course({ trios: tr, cle: t => cles[t], J, garder: +arg('garder', 200), z: +arg('z', 3), manches: +arg('manches', 10), onManche: x => {
+const C = await T.course({ trios: tr, cle: cles, J, garder: +arg('garder', 200), z: +arg('z', 3), manches: +arg('manches', 10), onManche: x => {
   if (x.fin) log(`manche ${x.r}/${x.manches} : ${x.avant} -> ${x.apres} trios en course, ${x.montees} montees simulees (${Math.round(x.vitesse)}/s), ${x.repris} reprises du journal`);
   else if (Date.now() - dernierLog > 60000) { dernierLog = Date.now(); log(`  manche ${x.r} : ${x.fait} / ${x.total} montees, ${Math.round(x.vitesse)} montees/s`); } } });
 // Finale : les meilleurs (et ton trio actuel) font beaucoup de montees de plus, sur d'autres graines.
