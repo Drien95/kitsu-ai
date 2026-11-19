@@ -4,6 +4,17 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.42.0
+
+Journal des calculs : il ne garde plus ce qui ne sert plus.
+
+- **Constat** (mesuré le 19/11 sur le journal Campagne d'Adrien, 78 Mo, 4 349 501 lignes) : avec ses cartes actuelles, 2 211 072 lignes (39,2 Mo) peuvent encore servir, au niveau 99 comme aux niveaux actuels. Les autres datent d'anciennes étoiles (34 cartes ont changé depuis) : elles ne seront jamais relues. Le calcul charge pourtant tout au démarrage : 533 Mo de mémoire et 5,5 s, contre 269 Mo et 2,9 s pour les lignes utiles.
+- **Générations** (`lib/journal.mjs`) : chaque calcul complet ajoute `#g N` avant ses lignes, et toute ligne lue ou écrite passe à sa génération. À la fin d'un calcul complet (Campagne et Tour, sans `--max-trios` ni `--max-combats`), `compacter()` réécrit le fichier avec les lignes servies par ce calcul ou le précédent (`--journal-calculs 2`). Un calcul en niveaux actuels puis un en niveau 99, ou Cauchemar seul puis tout, ne se gênent donc pas. Un calcul coupé ne retire rien. `--garder-journal` saute le nettoyage. Les journaux sans génération (avant 5.42) sont lus comme la génération 0 : le ménage se fait au 2e calcul complet.
+- **Essai sur le vrai journal** (copie, deux calculs simulés qui lisent les lignes utiles) : 1er calcul 78 Mo gardés, 2e calcul 4 349 501 vers 2 211 072 lignes, 39,2 Mo, 8 s de réécriture ; au chargement suivant 291 Mo de mémoire au lieu de 533. Le suivi des générations coûte 2 octets par ligne (567 Mo contre 533 sur le journal complet).
+- **Anciens journaux** : un `cauchemar3-*.jsonl` ou `tour-*.jsonl` d'un autre code de combat ou d'une autre IA, inutilisé depuis 30 jours, est supprimé au début du calcul.
+- **Anciens moteurs du jeu** (`telecharger.mjs`) : au téléchargement d'une nouvelle version, seuls la nouvelle et la précédente (comparaison du patch) restent. Sur le PC d'Adrien : 3 anciennes versions, environ 23 Mo chacune.
+- Tests : 32 (3 nouveaux sur le journal).
+
 ## 5.41.4
 
 Tour : le message « Tour bloquée » suit exactement la règle du jeu.

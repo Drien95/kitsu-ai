@@ -44,6 +44,21 @@ console.log(JSON.stringify({ memo: memoCollectifs || null, out })); process.kill
 }
 const { h53 } = await import('./lib/journal.mjs');
 t('journal : cle stable et distincte', h53('abc') === h53('abc') && h53('abc') !== h53('abd'));
+// 5.42 : generations du journal ; compacter() garde les lignes servies par l'un des 2 derniers calculs complets.
+{
+  const { ouvrirJournal, nettoyerAnciens } = await import('./lib/journal.mjs'), fsm = await import('node:fs'), os = await import('node:os'), pth = await import('node:path');
+  const dos = fsm.mkdtempSync(pth.join(os.tmpdir(), 'kj-')), f = pth.join(dos, 'cauchemar3-x-y.jsonl');
+  fsm.writeFileSync(f, 'a 1\nb 2\nc 3\n'); // ancien format, sans generation
+  let J = ouvrirJournal(f); J.get('a'); J.set('d', '4'); const c1 = J.compacter(2);
+  J = ouvrirJournal(f); const g2 = J.generation; J.get('d'); const c2 = J.compacter(2);
+  J = ouvrirJournal(f);
+  t('journal : ancien format lu, rien retire au 1er calcul', c1.avant === 4 && c1.apres === 4 && c1.generation === 1, JSON.stringify(c1));
+  t('journal : lignes inutilisees par les 2 derniers calculs retirees', g2 === 2 && c2.apres === 2 && J.get('a') === '1' && J.get('d') === '4' && J.get('b') === undefined && J.get('c') === undefined, JSON.stringify(c2));
+  const vieux = pth.join(dos, 'cauchemar3-vieux.jsonl'); fsm.writeFileSync(vieux, 'z 1\n'); fsm.utimesSync(vieux, new Date(0), new Date(0));
+  const sup = nettoyerAnciens(dos, 'cauchemar3-', f);
+  t('journal : ancien journal inutilise depuis 30 jours supprime, journal en service garde', sup.length === 1 && !fsm.existsSync(vieux) && fsm.existsSync(f), JSON.stringify(sup));
+  fsm.rmSync(dos, { recursive: true, force: true });
+}
 const pool = await makePool(2), jobs = fights.slice(0, 12).map(f => ({ team, fights: [f], seeds: [7] }));
 const pr = await pool.runAll(jobs, W_DEFAUT, {}, 3); await pool.close();
 t('multithread = fil unique', pr.every((r, i) => r.s2 === (a[i].stars >= 2 ? 1 : 0) && r.win === (a[i].win ? 1 : 0)));

@@ -57,3 +57,10 @@ try {
   if (d) console.log(`Patch KITSU : ${d.nouvellesCartes.length} nouvelles cartes, ${d.cartesModifiees.length} cartes modifiees, ${d.nouveauxMondes.length} nouveaux mondes.`);
 } catch (e) { console.log('resume du patch impossible : ' + e.message); }
 console.log(`Moteur ${ver} telecharge : ${seen.size} fichiers dans ${out}`);
+// 5.42 : on garde le nouveau moteur et le precedent (comparaison du patch) ; les plus anciens (~23 Mo chacun) sont supprimes.
+if (avant && avant !== ver) try {
+  const { readdirSync, rmSync, statSync } = await import('node:fs'); let n = 0, o = 0;
+  const taille = d => { let t = 0; for (const f of readdirSync(d, { withFileTypes: true })) t += f.isDirectory() ? taille(path.join(d, f.name)) : statSync(path.join(d, f.name)).size; return t; };
+  for (const d of readdirSync(D('engine'), { withFileTypes: true })) if (d.isDirectory() && d.name !== ver && d.name !== avant && existsSync(D('engine', d.name, 'manifest.json'))) { o += taille(D('engine', d.name)); rmSync(D('engine', d.name), { recursive: true, force: true }); n++; }
+  if (n) console.log(`${n} ancien(s) moteur(s) supprime(s) (${(o / 1048576).toFixed(0)} Mo), ${avant} garde pour la comparaison`);
+} catch (e) { console.log('anciens moteurs gardes (' + e.message + ')'); }

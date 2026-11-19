@@ -2171,7 +2171,7 @@ refresh(); setInterval(refreshDoux, 1500); chargerCartes();
 // Calque par-dessus le panneau : projecteur sur l'element dont parle Kiko, etiquette, boite de dialogue.
 // Etapes « A toi » : on avance quand tu ouvres toi-meme l'onglet montre. Rien ne se lance, rien n'est clique a ta place.
 // Etat dans localStorage (kitsuGuide) : chapitres vus, version des nouveautes vues, options. Aucune animation hors du calque ouvert.
-const KG_VER = '5.41.0';
+const KG_VER = '5.42.0';
 function kgFox(ex, id) {
   id = id || 'kf' + Math.random().toString(36).slice(2, 7);
   const D = '#07080c', C = '#f4ede3', oeil = (x) => `<ellipse cx="${x}" cy="107" rx="7.5" ry="8.5" fill="${D}"/><circle cx="${x + 2.5}" cy="104" r="2.4" fill="#fff"/>`;
@@ -2236,7 +2236,10 @@ const KG = [
     { x: 'malin', p: 'guides', s: ['#kgList'], tag: 'Chapitres', t: "Les chapitres vus ont une coche. Après une mise à jour, je te montre <em>seulement ce qui a changé</em>." }] }
 ];
 // Nouveautes par version : le point rouge sur « ? » s'allume tant que celles de la version installee n'ont pas ete vues.
-const KG_NEWS = { '5.41.0': [
+const KG_NEWS = { '5.42.0': [
+  { x: 'malin', p: 'calculs', tag: 'Nouveau', t: "Le journal des calculs fait le ménage : à la fin d'un calcul complet, il retire les résultats qui n'ont servi ni à ce calcul ni au précédent, par exemple ceux d'une carte qui a pris des étoiles depuis." },
+  { x: 'neutre', p: 'calculs', t: "Sur ton journal Campagne du 18/11, la moitié des lignes ne servaient plus : 78 Mo deviennent 39 Mo, et le calcul en garde deux fois moins en mémoire." }],
+  '5.41.0': [
   { x: 'malin', p: 'campagne', tag: 'Nouveau', t: "Une carte garde 6 liens actifs au plus. Quand elle en a plus, le calcul Campagne essaie les choix sur les combats de son trio et te dit lesquels cocher." },
   { x: 'neutre', p: 'campagne', s: ['#c3etages'], t: "Tu les trouves sous <em>Le plan</em>, avec les 3★ de ton réglage puis du conseil. Ton réglage actuel part maintenant avec la sauvegarde." }],
   '5.40.0': [
