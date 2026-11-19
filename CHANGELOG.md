@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.43.1
+
+Tour de l'infini : ce que le panneau annonce correspond au travail réel du calcul.
+
+- **Avant** : la durée prévue comptait une montée par trio, même quand le journal en avait déjà la plupart (une relance après une nouvelle carte annonçait la même durée qu'un premier calcul). La tuile « Déjà en mémoire » montrait la taille du journal le plus récent sans vérifier qu'il servirait encore (patch du jeu, IA changée, autres niveaux). Pendant le calcul, la barre donnait 70 % à la 1re manche et 24 % aux suivantes quel que soit le travail, et ne bougeait qu'une fois par minute.
+- **Prévision** (`/api/tour/prevision?niveaux=`) : `tour.mjs` écrit `cache/tour-etat.json` (journal utilisé, moteur, IA, clé de chaque carte par mode de niveaux). Le serveur ne compte une reprise que si le moteur et l'IA sont les mêmes, et seulement pour les trios dont les 3 cartes ont la même clé (niveau, étoiles, liens, carte). Tuiles : montées à simuler, reprises du journal (ou la raison pour laquelle rien n'est repris), durée sur les seules montées à simuler, manches suivantes comprises (entonnoir du calcul précédent).
+- **Pendant le calcul** : `tour.mjs` annonce le travail prévu, puis pour chaque manche les montées à simuler et les reprises. La barre suit les montées vraiment simulées, avec « reste ≈ » à la vitesse mesurée ; mise à jour toutes les 30 s au plus.
 ## 5.43.0
 
 Campagne : ton trio, combat par combat.

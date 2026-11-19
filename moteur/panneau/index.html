@@ -1942,28 +1942,41 @@ function etageBarres(titre, sous, L) { // intervalle min..max, 10 % les plus bas
 const ennemiCarte = n => { const k = String(n).replace(/^Écho de\s+/, ''); return CARTES && PAR_NOM[k] ? pf(PAR_NOM[k]) : ''; };
 // Ce que fera le calcul de la Tour (avant le lancement) et ou il en est (pendant).
 async function twPrev() {
-  try { TW.prev = await api('/api/tour/prevision'); } catch { TW.prev = null; }
+  const niv = document.getElementById('o_twniv')?.value === '99' ? '99' : 'actuel';
+  try { TW.prev = await api('/api/tour/prevision?niveaux=' + niv); } catch { TW.prev = null; }
   const P = TW.prev; if (!P) return setH('twPrev', '');
   if (!P.cartes) return setH('twPrev', '<div class="muted" style="grid-column:1/-1">Importe d’abord ta sauvegarde (onglet Sauvegarde) : le calcul a besoin de tes cartes.</div>');
+  // 5.42.1 : la duree ne compte que les montees a simuler. Les reprises du journal ne coutent rien.
   // Vitesse : celle du dernier calcul complet sur ce PC, sinon environ 100 montees par seconde et par fil (mesure du 17/11/2026).
-  const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 100 * P.fils, s1 = P.trios / vit;
+  const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 100 * P.fils, n = x => Math.round(x).toLocaleString('fr-FR');
+  const ent = P.dernier?.entonnoir, suite = ent?.length ? ent.slice(0, -1).reduce((a, b) => a + (b >= P.dernier.trios ? P.trios : Math.min(b, P.trios)), 0) * P.aSimuler / Math.max(1, P.trios) : 0, s1 = (P.aSimuler + suite) / vit;
+  const raison = { patch: 'patch du jeu depuis : tout est refait', ia: 'IA changée depuis : tout est refait', autreMode: 'rien encore pour ces niveaux', vide: 'premier calcul sur ce PC' }[P.etatJournal];
   const tile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
   setH('twPrev', tile('Cartes', fmt(P.cartes), 'tes SSR, UR et LR')
-    + tile('Trios à tester', P.trios.toLocaleString('fr-FR'), 'toutes les combinaisons de 3')
-    + tile('Montées, 1re manche', P.trios.toLocaleString('fr-FR'), 'une par trio, jusqu’à la défaite')
-    + tile('Déjà en mémoire', P.journalOctets ? (P.journalOctets / 1048576).toFixed(1).replace('.', ',') + ' Mo' : 'rien', P.journalOctets ? 'ces montées ne sont pas refaites' : 'premier calcul sur ce PC')
-    + tile('Durée, 1re manche', s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), 'les manches suivantes sont bien plus courtes'));
+    + tile('Trios à tester', n(P.trios), 'toutes les combinaisons de 3')
+    + tile('Montées à simuler', n(P.aSimuler), '1re manche : une par trio absent du journal')
+    + tile('Reprises du journal', P.etatJournal === 'ok' ? n(P.reprises) : '0', P.etatJournal === 'ok' ? (P.reprises ? 'trios dont les 3 cartes n’ont pas bougé' : 'tes cartes ont changé : tout est refait') : raison)
+    + tile('Durée estimée', !P.aSimuler && !suite ? '< 1 min' : s1 < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s1)).replace(/ \d+ s$/, ''), P.dernier ? `à ${n(vit)} montées/s, manches suivantes comprises` : 'sans calcul précédent : 1re manche seule'));
 }
-// « manche 3/10 : 392084 -> 812 trios en course, 400000 montees simulees (1000/s) » et « manche 1 : 120000 / 392084 montees »
+// Lignes de tour.mjs (5.42.1) : « travail prevu : N montees a simuler », « manche k/N : X montees a simuler, Y reprises du journal »,
+// «   manche k : a / b montees (M au total), V montees/s », « manche k/N : A -> B trios en course, M montees simulees (V/s), R reprises du journal »
 function twProgres(L) {
-  let t = null, p = null, fin = null;
-  for (const l of L) { const a = l.match(/manche (\d+)\/(\d+) : (\d+) -> (\d+) trios en course.*\((\d+)\/s\)/); if (a) t = a; const b = l.match(/manche (\d+) : (\d+) \/ (\d+) montees/); if (b) p = b; if (/finale :|cartes seules :|collectifs /.test(l)) fin = l; }
+  let prevu = null, m = 0, vit = 0, k = 0, n = 10, aF = null, rep = null, fin = null, finie = 0;
+  for (const l of L) {
+    let a;
+    if ((a = l.match(/travail prevu : (\d+) montees/))) prevu = +a[1];
+    if ((a = l.match(/manche (\d+)\/(\d+) : (\d+) montees a simuler, (\d+) reprises/))) { k = +a[1]; n = +a[2]; aF = +a[3]; rep = +a[4]; }
+    if ((a = l.match(/manche (\d+)\/(\d+) : (\d+) \/ (\d+) montees \((\d+) au total, prevu (\d+)\), (\d+) montees\/s/))) { k = +a[1]; n = +a[2]; aF = +a[4]; m = +a[5]; prevu = +a[6]; vit = +a[7]; }
+    if ((a = l.match(/manche (\d+)\/(\d+) : \d+ -> (\d+) trios en course, (\d+) montees simulees \((\d+)\/s\)/))) { finie = +a[1]; n = +a[2]; if (finie > k) { k = finie; aF = rep = null; } m = +a[4]; vit = +a[5]; }
+    if (/finale :|cartes seules :|collectifs /.test(l)) fin = l;
+  }
   if (fin) return { pct: 96, txt: 'Finale, étages qui bloquent et collectifs.' };
-  if (!t && !p) return { pct: 2, txt: 'Préparation : moteur, trios, journal, puis chaque carte seule.' };
-  const k = t ? +t[1] : 0, n = t ? +t[2] : 10, enCours = p && (!t || +p[1] > k) ? p : null;
-  // La 1re manche fait presque tout le travail (tous les trios), les suivantes ne gardent que les meilleurs.
-  const pct = Math.min(94, Math.round(k ? 70 + 24 * (k - 1) / Math.max(1, n - 1) : 70 * (enCours ? +enCours[2] / +enCours[3] : 0)));
-  return { pct, txt: (t ? `Manche ${k}/${n} finie : ${(+t[4]).toLocaleString('fr-FR')} trios encore en course (sur ${(+t[3]).toLocaleString('fr-FR')}), ${(+t[5]).toLocaleString('fr-FR')} montées/s.` : '') + (enCours ? ` Manche ${enCours[1]} : ${(+enCours[2]).toLocaleString('fr-FR')} / ${(+enCours[3]).toLocaleString('fr-FR')} montées.` : '') };
+  if (prevu == null) return { pct: 2, txt: 'Préparation : moteur, trios, journal, puis chaque carte seule.' };
+  // La barre suit les montees vraiment simulees (rien a simuler : elle avance avec les manches).
+  const tot = Math.max(prevu, m), pct = Math.min(94, 3 + Math.round(91 * (prevu ? Math.min(1, m / prevu) : finie / n)));
+  const reste = vit > 0 && prevu > m ? (prevu - m) / vit : 0, nf = x => (+x).toLocaleString('fr-FR');
+  if (!tot) return { pct, txt: `Manche ${k}/${n} : tout vient du journal, aucune montée à simuler.` };
+  return { pct, txt: `Manche ${k}/${n}${aF != null ? ` : ${nf(aF)} montées à simuler${rep != null ? `, ${nf(rep)} reprises du journal` : ''}` : ' finie'}. ${nf(m)} / ${nf(tot)} montées simulées${vit ? `, ${nf(vit)}/s` : ''}${reste >= 60 ? `, reste ≈ ${dur(Math.round(reste)).replace(/ \d+ s$/, '')}` : ''}.` };
 }
 function twEtat() {
   const run = E?.job && !E.job.fin, moi = /^Tour de l'infini/.test(E?.job?.nom || '');
