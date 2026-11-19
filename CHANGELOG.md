@@ -4,7 +4,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.48.0
+## 5.50.0
 
 Campagne : un trio déjà trouvé n'est plus perdu d'un calcul à l'autre, et les combats déjà à 3★ dans ta partie ne sont plus cherchés par les spécialistes.
 
@@ -12,7 +12,7 @@ Campagne : un trio déjà trouvé n'est plus perdu d'un calcul à l'autre, et le
 - **Combats à 3★ dans ta partie** (`pve.stars`, envoyé par le script depuis la 5.45) : pas de spécialistes. Colonne `acquisJeu` dans `etages.combats`. `--sans-acquis-jeu` : spécialistes aussi sur ces combats.
 - **Mesures** (VM 4 fils, moteur B4t5msj4, 100 cartes, 161 700 trios, Cauchemar, 96 combats par difficulté, journal vide, budget spécialistes 30 min). Étoiles en jeu simulées : 3★ sur les 265 combats où le calcul précédent avait un trio à plus de 0 % (la sauvegarde du bench n'a pas `pve.stars`).
 
-| | Avant (5.47.0) | Après (5.48.0) |
+| | Avant (5.47.0) | Après (5.50.0) |
 |---|---|---|
 | Plancher | | 265 trios rejoués en 7 s, 207 à 64/64 |
 | Spécialistes | 29 combats, 305 s | 23 combats, 246 s |
@@ -21,6 +21,17 @@ Campagne : un trio déjà trouvé n'est plus perdu d'un calcul à l'autre, et le
 | Plan | 14 trios | 12 trios |
 
 Meilleur trio par combat : 283 combats identiques, 3 meilleurs grâce au plancher (+10 points en moyenne), 2 moins bons, tous deux déjà à 3★ dans la partie (spécialistes sautés, dont celui qui fait passer l'Extrême de 77 à 76).
+
+## 5.49.0
+
+Guide : la Tour devient un choix, la Campagne passe d'abord.
+
+- **Constat** (demande d'Adrien du 19/11) : le guide envoyait sans cesse vers la Tour alors qu'il restait des gemmes et de l'XP à prendre en Campagne Cauchemar N/D/E. Deux causes dans `guide()` : (1) quand le plan n'avait plus de 3★ sûre, la Tour était testée **avant** le farm d'XP des murs ; (2) l'étage prévu par le script privé arrivait arrondi (158,6 devenait 159), donc « prévision ≥ record + 1 » restait vrai avec un record de 158, alors que la médiane prévue était 156.
+- **Changement** :
+  - Ordre du guide : 3★ du plan, puis farm des murs, puis la Tour seulement s'il n'y a ni l'un ni l'autre (et pas pendant le calcul du farm).
+  - La Tour n'est plus proposée par défaut. Onglet Plan du script : case « Me proposer la Tour dans le guide » (clé `kitsu_ai_tourGuide`, décochée par défaut).
+  - Prévision lue sans arrondi (`_karTour` accepte une décimale, cible affichée à 0,1 près).
+  - Inchangé : une montée lancée par toi est suivie jusqu'au bout, et l'écran de compo de la Tour suit toujours le trio exact du privé quand tu y vas.
 
 ## 5.47.0
 

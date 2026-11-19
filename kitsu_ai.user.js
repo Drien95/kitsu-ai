@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.48.0
+// @version      5.50.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.48.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.50.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -628,7 +628,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.48.0',
+          __v: '5.50.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1228,9 +1228,15 @@
                   if (goView('tour', `Tour de l'infini : reprends ta montee en cours${flTw}`, 'twnav')) return;
                 }
                 // Plus aucune 3 etoiles facile : on rejoue le combat deja gagne qui donne le plus d'XP par energie
-                // aux cartes a faire monter (equipe cible), pour franchir les murs plus vite.
-                // Tour de l'infini (niveau de compte 25) : une montee si l'IA prevoit de depasser ton record.
-                const twA = !next && !T ? KitsuAI._towerAction(S, en) : null;
+                // aux cartes a faire monter (equipe cible), pour franchir les murs plus vite (5.48 : avant la Tour).
+                if (!next) {
+                  const F = lsGet('kitsu_ai_farm', null);
+                  if (F?.row && Date.now() - F.t < 3600000) { if (en >= (F.row.cout || 1)) { todo.push(F.row); next = F.row; } }
+                  else if (!KitsuAI._farmBusy && Date.now() - (window.__kitsuFarmTry || 0) > 120000 && !T) { window.__kitsuFarmTry = Date.now(); KitsuAI.farm().catch(e => health.err('farm : ' + e.message)); }
+                }
+                // Tour de l'infini (niveau de compte 25) : 5.48, au choix seulement (case « Me proposer la Tour » de l'onglet Plan,
+                // decochee par defaut) et apres la Campagne : ni 3 etoiles a prendre, ni farm utile pour les murs.
+                const twA = !next && !T && !KitsuAI._farmBusy ? KitsuAI._towerAction(S, en) : null;
                 if (twA) {
                   const pk = [...document.querySelectorAll('[data-tw="pickc"]')].filter(vis);
                   if (pk.length) {
@@ -1243,11 +1249,6 @@
                   const ft = [...document.querySelectorAll('[data-tw="fight"]')].find(b => vis(b) && !b.disabled); if (ft) return mark(ft, 'Tour : etage suivant', 'twfight');
                   const tp = [...document.querySelectorAll('[data-tw="pick"]')].find(b => vis(b) && !b.disabled); if (tp) return mark(tp, `Tour : nouvelle montee avec ${twA.team.map(short).join(', ')}`, 'twpick');
                   if (goView('tour', `Tour de l'infini : vise l'etage ~${twA.cible} (record ${twA.best})`, 'twnav')) return;
-                }
-                if (!next) {
-                  const F = lsGet('kitsu_ai_farm', null);
-                  if (F?.row && Date.now() - F.t < 3600000) { if (en >= (F.row.cout || 1)) { todo.push(F.row); next = F.row; } }
-                  else if (!KitsuAI._farmBusy && Date.now() - (window.__kitsuFarmTry || 0) > 120000 && !T) { window.__kitsuFarmTry = Date.now(); KitsuAI.farm().catch(e => health.err('farm : ' + e.message)); }
                 }
                 // Dialogues de l'Aventure : bouton suivant.
                 const dlg = [...document.querySelectorAll('[data-dl-skip]')].find(vis);
@@ -1810,9 +1811,13 @@
                 + top.map((r, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${r.nom}${r.boss ? ' (boss)' : ''} · ${r.etoiles}/3</span><span class="p">${Math.round(r.troisEtoiles * 100)} %</span><span class="k-sub">${r.equipe.map(short).join(', ')}</span><span class="k-bar"><b style="width:${Math.round(r.troisEtoiles * 100)}%"></b></span></div>`).join('')
                 + (P.bloquants.length ? `<div class="k-warn" style="margin-top:5px">Bloquants : ${P.bloquants.map(r => r.nom).join(', ')}</div>` : '')
                 + (P.avenir?.length ? '<div class="k-sec"><span>Prochains murs</span><span></span></div>' + P.avenir.slice(0, 3).map(r => `<div>${r.monde} « ${r.nom} » · ${Math.round(r.victoire * 100)} % · <span class="k-warn">${r.niveauxEnPlus ? `+${r.niveauxEnPlus} niveaux, ~${r.combatsDeFarm} farms` : 'hors de portée'}</span></div>`).join('') : '')
-                + (P.tour ? `<div style="margin-top:5px">Tour : ${P.tour.equipe.map(short).join(', ')}, étage ~${P.tour.etage}</div>` : '')
+                + (() => { const tw = KitsuAI._karTour() || P.tour, on = lsGet('kitsu_ai_tourGuide', false) === true, best = save().tower?.best || 0, et = tw ? String(Math.round(10 * tw.etage) / 10).replace('.', ',') : '';
+                  return `<div style="margin-top:6px;border-top:1px solid #262a33;padding-top:6px">${tw ? `Tour : ${tw.equipe.map(short).join(', ')}, étage ~${et}${best ? ` (record ${best})` : ''}` : 'Tour de l\'infini'}`
+                    + `<div id="kitsuTwOpt" style="display:flex;align-items:center;gap:8px;margin-top:5px;cursor:pointer"><span style="width:30px;height:16px;border-radius:9px;background:${on ? '#ff7a2f' : '#2a2d38'};border:1px solid ${on ? '#ff7a2f' : '#3a3f50'};position:relative;flex:none"><span style="position:absolute;top:2px;left:${on ? 16 : 2}px;width:10px;height:10px;border-radius:50%;background:${on ? '#111' : '#7d8494'}"></span></span><span>Me proposer la Tour dans le guide</span></div>`
+                    + `<div style="opacity:.6;margin-top:3px">Cochée : la Tour revient seulement après la Campagne, et seulement si la prévision dépasse vraiment ton record.</div></div>`; })()
                 + `<div class="k-foot"><span>Ensuite <b>${P.apresPlan} gemmes</b>, soit ${P.tirages10} tirage${P.tirages10 > 1 ? 's' : ''} x10</span><span>${P.banniere}</span></div>`;
               shownAt = Date.now();
+              const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; };
             }, 1000);
           },
 
@@ -2024,13 +2029,16 @@
           _karTour() {
             const v = document.documentElement.dataset.karTour; if (!v) return null;
             const [a, e] = v.split('|'), team = a.split(',').map(Number).filter(n => n > 0);
-            return team.length === 3 ? { equipe: team, etage: +e || 0, t: Date.now() } : null;
+            return team.length === 3 ? { equipe: team, etage: parseFloat(e) || 0, t: Date.now() } : null;
           },
+          // 5.48 : la Tour reste un choix. Proposee seulement si la case « Me proposer la Tour » (onglet Plan) est cochee,
+          // et si la prevision (sans arrondi) depasse le record d'au moins 1 etage.
           _towerAction(S = save(), en = 0) {
+            if (lsGet('kitsu_ai_tourGuide', false) !== true) return null;
             if ((S.acct?.lv || 1) < 25) return null;
             const tw = KitsuAI._karTour() || lsGet('kitsu_ai_tower', null), cost = G?.TOWER?.COST || 4, best = S.tower?.best || 0;
             if (!tw?.equipe?.length || en < cost || tw.etage < best + 1) return null;
-            return { team: tw.equipe, best, cible: Math.round(tw.etage) };
+            return { team: tw.equipe, best, cible: Math.round(10 * tw.etage) / 10 };
           },
           // Previsions : fins de bannieres et d'evenements, nouvelles cartes (sorties a 17 h), LR de la boutique,
           // gemmes a venir a ton rythme, Tour de l'infini.
