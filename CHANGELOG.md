@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.40.3
+
+Script : tes liens actifs (collectifs) partent avec la sauvegarde.
+
+- **Constat** (19/11) : dans le jeu, chaque carte garde 6 liens actifs au plus, et tu peux choisir lesquels (sinon le jeu prend les 6 plus gros %). Le script n'envoyait pas ce choix au launcher (`data/sauvegarde.json` sans `lk`) : tous les calculs jouaient le choix par défaut, pas le tien. Ça ne touche que les trios où une carte a plus de 6 liens actifs : 1 345 trios sur 562 475 de la collection testée (0,24 %), dont Kanki / Pain (Akatsuki) / Pain et les paires Gon + Killua.
+- **Correction** : la sauvegarde envoyée contient `lk` (tes choix, lus dans ta sauvegarde du jeu, sans rien y écrire). Le serveur la remplace aussi quand seuls tes liens changent. Sans liens choisis, l'empreinte de la collection ne change pas (pas de fausse alerte « ta collection a changé »).
+
 ## 5.40.2
 
 Script : le guide fait reprendre une montée de la Tour en cours avant le reste du plan.
