@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.53.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.54.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.54.0 | Choix d'équipe : le trio exact du script privé passe devant même si le classement du combat était en cache (calculé PC éteint ou avant le dernier calcul Campagne) |
 | 5.53.0 | Combat : plus aucun conseil orange quand le script privé donne le coup (ni au début de tes tours, ni au début du combat) ; le public reprend seul si le privé ne peut pas calculer |
 | 5.52.0 | Guide : le « + » de l'énergie s'entoure en vert avec ce que la recharge rapporte (gemmes des 10 prochains combats sûrs du plan, contre 15) ; le plan se recalcule quand tes étoiles ont changé |
 | 5.51.0 | Campagne : les combats déjà à 3★ dans ta partie ne sont plus jamais rejoués ; sous 100 combats Cauchemar restants, pas de course, chaque combat restant est cherché sur tous tes trios (30 combats restants : 334 s au lieu de 1 398 s) |
