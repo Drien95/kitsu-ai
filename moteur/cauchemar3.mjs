@@ -50,7 +50,11 @@ const PARTAGE_OK = PART_ON && !!WCX && !MIENNE && (PAQ === 16 && !arg('max-comba
 const WA = PARTAGE_OK ? WCX : WA_PC;
 // 5.41.2 : pourquoi ce calcul ne partage pas (affiche dans la Base commune, Campagne), null s'il partage.
 const COUPE = PARTAGE_OK ? null : arg('sans-partage') ? 'lance sans partage' : !PART_ON ? 'base commune coupee au lancement du calcul (Reglages)' : MIENNE ? 'ton IA est nettement meilleure que l IA commune : calcul avec la tienne' : !WCX ? 'IA commune absente' : 'reglages de test ou paquet non standard';
-const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r)).sort((a, b) => a - b);
+// 5.44 : raretes essayees (--raretes LR,UR,SSR, toutes par defaut ; codes du jeu M = LR, L = UR, E = SSR) et pause au bout d'un temps
+// de travail (--pause-apres minutes, 0 = jusqu'au bout) : le travail fait reste dans le journal, la relance reprend sans rien refaire.
+const RAR = { LR: 'M', UR: 'L', SSR: 'E' }, RARETES = String(arg('raretes', 'LR,UR,SSR')).split(',').filter(r => RAR[r]), CODES = RARETES.map(r => RAR[r]);
+const PAUSE = Math.max(0, +arg('pause-apres', 0) || 0);
+const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => CODES.includes(CH[id]?.r)).sort((a, b) => a - b);
 if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la sauvegarde exportee.'); process.exit(1); }
 
 // ---------- trios, combats, cles du journal ----------
@@ -160,8 +164,14 @@ async function jouer(items) { // items : { di, pi, seed, team, ck, t? } -> [n, s
     r.forEach((x, j) => { out[part[j][0]] = [x.n, x.s3]; J.set(part[j][1], x.n + ',' + x.s3 + ',' + x.st); simules += x.n; noter(items[part[j][0]].t, items[part[j][0]].di, items[part[j][0]].pi, items[part[j][0]].seed, x.st);
       const it = items[part[j][0]]; if (PARTAGE_OK && PART.envoyer && it.seed <= 3) { const cartes = it.team.map(carteLot); if (cleTrioDe(cartes) === it.ck) aEnvoyer.push({ cartes, di: it.di, pi: it.pi, clePaquet: paquets[it.di][it.pi].cle, graine: it.seed, n: x.n, s3: x.s3 }); } });
     J.flush(); versFile();
+    if (PAUSE && Date.now() - T0 > PAUSE * 60000) await pause();
   }
   return out;
+}
+
+async function pause() {
+  log(`pause apres ${PAUSE} min de travail : ${simules} combats simules gardes dans le journal, relance le calcul pour finir (rien n est refait)`);
+  eveil.fin(); await pool.close(); process.exit(0);
 }
 
 // ---------- course avec elimination ----------
@@ -312,7 +322,7 @@ if (!arg('sans-etages')) {
 }
 
 // ---------- resultats ----------
-const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, trios: T, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
+const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, raretes: RARETES, trios: T, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
   vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, mondes: MONDES, repartition,
   meilleurs: Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), equipeActuelle, maintenant, cartesCles, collectifs, etages };

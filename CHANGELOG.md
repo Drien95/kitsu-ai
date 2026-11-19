@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.44.0
+
+Campagne et Tour : avant de lancer, tu choisis et tu vois ce que coûtera le calcul.
+
+- **Cartes essayées** : LR, UR, SSR à cocher, avec le nombre de cartes et de trios. Une rareté décochée affiche son risque, lu dans ton dernier résultat : en Campagne, combien des trios du plan par combat en ont une et la part des combats qu'ils couvrent ; en Tour, combien des finalistes en ont une et si le meilleur trio en fait partie. Calculs : `--raretes LR,UR,SSR` (`cauchemar3.mjs`, `tour.mjs`), noté dans `raretes` du résultat.
+- **Temps de travail** : jusqu'au bout, 2 h puis pause, ou une nuit (8 h) puis pause (`--pause-apres` minutes). La pause arrive à la fin d'un lot (journal écrit), le résultat précédent reste affiché, la relance reprend sans rien refaire. Le panneau affiche « En pause ».
+- **Durée prévue** : 1er tour, tours suivants et finale (entonnoir du dernier calcul s'il avait les mêmes combats, sinon 1er tour = 70 % de la course, mesuré le 18/11), meilleur trio par combat, Campagne sous 100 % (durée par combat du dernier calcul), spécialistes. Heure de fin ou de pause, frise par étape. Tour : trios et reprises du journal recomptés sur les raretés cochées.
+- **Au-delà de 3 h prévues** : un récapitulatif avant de lancer (durée, heure de fin, ce qui raccourcit sans perte et avec risque).
+- Choix gardés dans le navigateur. Le spécialiste par combat reste un réglage à part.
+
 ## 5.43.2
 
 Campagne et Tour : les très grosses collections ne plantent plus faute de mémoire.

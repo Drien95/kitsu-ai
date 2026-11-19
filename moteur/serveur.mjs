@@ -71,6 +71,22 @@ async function noterModele() {
 // ---------- campagne : ce que coutera le calcul des 3 etoiles (affiche avant le lancement) ----------
 // Memes regles que cauchemar3.mjs : cartes SSR/UR/LR possedees, combats de la campagne (sans halloween) par difficulte.
 let COMBATS_DIFF = null;
+// 5.44 : cartes par rarete (codes du jeu M = LR, L = UR, E = SSR) et ce que chaque rarete pese dans le dernier resultat, pour le
+// choix des raretes avant le lancement. Campagne : trios du plan par combat qui en ont une et part des combats qu'ils couvrent.
+// Tour : finalistes qui en ont une, et le meilleur.
+const RAR_NOM = { M: 'LR', L: 'UR', E: 'SSR' };
+function parRarete(G, ids) { const n = { LR: 0, UR: 0, SSR: 0 }; for (const id of ids) { const r = RAR_NOM[G.CHAR_BY_ID[id]?.r]; if (r) n[r]++; } return n; }
+function poidsRaretes(G, d, tour) {
+  const rar = id => RAR_NOM[G.CHAR_BY_ID[id]?.r], nom = id => G.CHAR_BY_ID[id]?.n || String(id), out = {};
+  for (const r of ['LR', 'UR', 'SSR']) {
+    if (tour) { const L = d?.trios || []; if (!L.length) continue; const avec = L.filter(x => x.ids.some(id => rar(id) === r));
+      out[r] = { finalistes: avec.length, sur: L.length, meilleur: L[0].ids.some(id => rar(id) === r), ex: avec[0] ? { equipe: avec[0].ids.map(nom), etage: avec[0].etageMoyen } : null }; continue; }
+    const e = d?.etages; if (!e?.plan?.length) continue;
+    const total = e.combats?.length || e.plan.reduce((a, x) => a + x.combats, 0), avec = e.plan.filter(x => (e.trios[x.trio] || []).some(id => rar(id) === r));
+    out[r] = { trios: avec.length, sur: e.plan.length, part: total ? +(100 * avec.reduce((a, x) => a + x.combats, 0) / total).toFixed(1) : 0, ex: avec[0] ? e.trios[avec[0].trio].filter(id => rar(id) === r).map(nom) : null };
+  }
+  return out;
+}
 function prevision() {
   const G = ENG.G, sv = readJ(D('data', 'sauvegarde.json')), cartes = Object.keys(sv?.owned || {}).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r)).length;
   if (COMBATS_DIFF?.v !== VER) {
@@ -84,8 +100,10 @@ function prevision() {
   }
   let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^cauchemar3-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
   const d = readJ(D('resultats', 'cauchemar3.json'));
-  return { cartes, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
-    dernier: d ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.trios, combatsSimules: d.combatsSimules, cartes: d.cartes } : null };
+  const ids = Object.keys(sv?.owned || {}).map(Number).filter(id => RAR_NOM[G.CHAR_BY_ID[id]?.r]);
+  return { cartes, parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d, false), raretesDernier: d?.raretes || null, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
+    dernier: d ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.trios, combatsSimules: d.combatsSimules, cartes: d.cartes, entonnoir: d.entonnoir || null, combats: d.combats || null,
+      campSous100: d.etages?.specialistes?.campagneSous100 ?? null, minParCombat: d.etages?.specialistes?.minutesParCombat ?? null, dureeParCombat: d.etages?.duree ?? null } : null };
 }
 // Tour : meme principe (cartes SSR/UR/LR possedees, tous leurs trios), journal cache/tour-*.jsonl.
 // 5.42.1 : montees de 1re manche deja dans le journal, comptees comme tour.mjs les reprendra. Le journal ne sert que si le moteur
@@ -95,7 +113,7 @@ let SIGC = { v: null, f: null };
 function previsionTour(niv) {
   const G = ENG.G, sv = readJ(D('data', 'sauvegarde.json')), ids = Object.keys(sv?.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r)), cartes = ids.length;
   const C3 = k => k * (k - 1) * (k - 2) / 6, trios = C3(cartes), mode = niv === '99' ? '99' : 'actuel';
-  let journal = 0, reprises = 0, etat = 'vide';
+  let journal = 0, reprises = 0, etat = 'vide', repRarete = null;
   try {
     const e = readJ(D('cache', 'tour-etat.json')), fj = e?.fichier && D('cache', path.basename(e.fichier));
     if (fj && existsSync(fj)) {
@@ -105,13 +123,14 @@ function previsionTour(niv) {
       else {
         if (SIGC.v !== VER) SIGC = { v: VER, f: makeSigCarte(G, ENG.B) };
         const vu = new Set(e[mode].cles), lv = id => mode === '99' ? 99 : sv.lv?.[id]?.l || 1;
-        const k = ids.filter(id => { const l = sv.lk?.[id]; return vu.has(cleCarteTour({ id, lv: lv(id), stars: sv.stars?.[id] || 0, ...(l ? { lk: l } : {}) }, SIGC.f)); }).length;
+        const dans = ids.filter(id => { const l = sv.lk?.[id]; return vu.has(cleCarteTour({ id, lv: lv(id), stars: sv.stars?.[id] || 0, ...(l ? { lk: l } : {}) }, SIGC.f)); }), k = dans.length;
+        repRarete = parRarete(G, dans); // 5.44 : cartes reprises par rarete, pour recompter les reprises selon les raretes cochees
         reprises = C3(k); etat = 'ok';
       }
     }
   } catch {}
   const d = readJ(D('resultats', 'tour.json'));
-  return { cartes, trios, aSimuler: trios - reprises, reprises, etatJournal: etat, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal, record: sv?.tower?.best ?? null,
+  return { cartes, parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d?.methode === 'course' ? d : null, true), raretesDernier: d?.raretes || null, repRarete, trios, aSimuler: trios - reprises, reprises, etatJournal: etat, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal, record: sv?.tower?.best ?? null,
     dernier: d?.methode === 'course' ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.triosEssayes, montees: d.monteesSimulees, entonnoir: d.entonnoir } : null };
 }
 // ---------- reglages (onglet Reglages du panneau) ----------
@@ -195,6 +214,9 @@ async function infoIA() {
 }
 const logs = []; const say = m => { const l = `[${new Date().toLocaleTimeString('fr-FR')}] ${m}`; logs.push(l); if (logs.length > 300) logs.shift(); console.log(l); };
 // ---------- taches (une a la fois : elles utilisent tout le processeur) ----------
+// 5.44 : choix avant le lancement (Campagne et Tour) : raretes essayees et pause au bout d'un temps de travail (0 = jusqu'au bout).
+const choixCalcul = o => { const r = String(o.raretes || '').split(',').filter(x => ['LR', 'UR', 'SSR'].includes(x)), p = Math.max(0, Math.min(10080, Math.round(+o.pause) || 0));
+  return [...(r.length && r.length < 3 ? ['--raretes', r.join(',')] : []), ...(p ? ['--pause-apres', String(p)] : [])]; };
 const ACTIONS = {
   telecharger: { nom: 'Mettre a jour le moteur du jeu', cmd: ['telecharger.mjs'] },
   tout: { nom: 'Analyse complete', cmd: ['tout.mjs'], opts: o => [...(o.niveaux ? ['--niveaux', o.niveaux] : []), ...(o.tirages ? ['--tirages', String(o.tirages)] : []), ...(o.cartes ? ['--cartes', String(o.cartes)] : []), ...(o.max ? ['--max', String(o.max)] : [])] },
@@ -205,8 +227,8 @@ const ACTIONS = {
   imitation: { nom: "IA par imitation", cmd: ['distiller.mjs'], opts: o => ['--types', o.types || 'nm,boss', '--combats', String(o.combats || 160)] },
   // 5.30 : les trios du plan du calcul Campagne s'il existe (--trios plan), sinon les n meilleures equipes de la derniere analyse.
   equipes: { nom: 'Entrainement par equipe', cmd: ['entrainer.mjs'], opts: o => ['--types', 'aucun', '--par-equipe', String(o.n || 3), '--trios', 'plan', '--generations', String(o.generations || 25)] },
-  tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel'] },
-  cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes', '--budget-specialistes', String(o.specialistes == null ? 60 : Math.max(0, Math.min(1440, Math.round(+o.specialistes) || 0)))] },
+  tour: { nom: "Tour de l'infini", cmd: ['tour.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel', ...choixCalcul(o)] },
+  cauchemar3: { nom: 'Campagne : 3 etoiles', cmd: ['cauchemar3.mjs'], opts: o => ['--niveaux', o.niveaux === 'actuel' ? 'actuel' : '99', '--difficultes', o.difficultes === 'cauchemar' ? 'cauchemar' : 'toutes', '--budget-specialistes', String(o.specialistes == null ? 60 : Math.max(0, Math.min(1440, Math.round(+o.specialistes) || 0))), ...choixCalcul(o)] },
   diagnostic3: { nom: 'Campagne : pourquoi la 3e etoile saute', cmd: ['diagnostic3.mjs'] },
   raid: { nom: 'Raid : meilleur trio', cmd: ['raid.mjs'], opts: o => ['--niveaux', o.niveaux === '99' ? '99' : 'actuel', '--tirages', String(Math.max(2, Math.min(40, +o.tirages || 8)))] },
   comparerIA: { nom: "Comparer ton IA a l'IA commune", cmd: ['comparer-ia.mjs'], admin: true },
@@ -244,7 +266,7 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
   job = { id: Date.now(), action, nom: chaine ? `${chaine.nom} (${chaine.i + 1}/${chaine.etapes.length} : ${A.nom})` : A.nom, args: args.join(' '), debut: chaine ? chaine.debut : Date.now(), lignes: chaine ? [...prev, `=== ${A.nom} ===`] : [], fin: null, code: null, proc: p, chaine };
   const add = d => { for (const l of String(d).split(/\r?\n/)) if (l.trim()) { job.lignes.push(l); if (job.lignes.length > 2000) job.lignes.shift(); } };
   p.stdout.on('data', add); p.stderr.on('data', add);
-  p.on('close', async code => { if (apres && !(chaine && chaine.arretee)) { history.unshift({ nom: A.nom, debut: Date.now(), fin: Date.now(), code }); return apres(code); } job.fin = Date.now(); job.code = code; noterModele().catch(() => {}); history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); alerter('calcul', 'job-' + job.id, code === 0 ? `${job.nom} : termine` : `${job.nom} : arrete`, `En ${Math.round((job.fin - job.debut) / 60000)} min.`); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
+  p.on('close', async code => { if (apres && !(chaine && chaine.arretee)) { history.unshift({ nom: A.nom, debut: Date.now(), fin: Date.now(), code }); return apres(code); } job.fin = Date.now(); job.code = code; job.pause = code === 0 && job.lignes.slice(-20).some(l => /pause apres \d+ min/.test(l)); noterModele().catch(() => {}); history.unshift({ nom: job.nom, debut: job.debut, fin: job.fin, code }); history.length = Math.min(history.length, 20); alerter('calcul', 'job-' + job.id, code === 0 ? `${job.nom} : termine` : `${job.nom} : arrete`, `En ${Math.round((job.fin - job.debut) / 60000)} min.`); say(`${job.nom} : termine (${Math.round((job.fin - job.debut) / 1000)} s, code ${code})`);
     if (action === 'telecharger') { try { const v = readFileSync(D('engine', 'current.txt'), 'utf8').trim(); if (v !== VER) { say(`nouveau moteur ${v} : redemarre le panneau (KitsuAI.bat) pour l'utiliser dans le conseil en combat`); } } catch {} } });
   say(`${A.nom} : lance (${args.join(' ')})`);
   return job.id;
@@ -284,7 +306,7 @@ function etat() {
     conseil: { n: nConseil, dernier: lastConseil }, port: PORT,
     sauvegarde: sv ? { t: sv.t, script: sv.script, cartes: own.length, lr: own.filter(i => CH[i]?.r === 'M').length, ur: own.filter(i => CH[i]?.r === 'L').length, ssr: own.filter(i => CH[i]?.r === 'E').length, equipe: (sv.team || []).map(i => CH[i]?.n), guilde: sv.guild?.boss ? `${sv.guild.boss.name} niv ${sv.guild.boss.lv}` : null, compte: sv.acct?.lv } : null,
     poids: pw ? { t: pw.t, gains: pw.gains } : null,
-    job: job ? { id: job.id, nom: job.nom, args: job.args, debut: job.debut, fin: job.fin, code: job.code, lignes: job.lignes.slice(-400), chaine: job.chaine ? { etapes: job.chaine.etapes, i: job.chaine.i } : null } : null,
+    job: job ? { id: job.id, nom: job.nom, args: job.args, debut: job.debut, fin: job.fin, code: job.code, pause: !!job.pause, lignes: job.lignes.slice(-400), chaine: job.chaine ? { etapes: job.chaine.etapes, i: job.chaine.i } : null } : null,
     script: scriptInfo(), appVersion: process.env.KITSU_APP_VERSION || null, reglages: reglages(), alertes: alertes.slice(-20), calculConseille: calculConseille(), patchs: (readJc(D('data', 'patchs.json')) || []).slice(0, 10), jeu, sauvegardeAuto: sv?.auto || false,
     historique: history, resultats: res.slice(0, 40), journal: logs.slice(-60),
     dernier: readJc(D('resultats', 'dernier.json')),
