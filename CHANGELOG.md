@@ -15,6 +15,27 @@ Journal des calculs : il ne garde plus ce qui ne sert plus.
 - **Anciens moteurs du jeu** (`telecharger.mjs`) : au téléchargement d'une nouvelle version, seuls la nouvelle et la précédente (comparaison du patch) restent. Sur le PC d'Adrien : 3 anciennes versions, environ 23 Mo chacune.
 - Tests : 32 (3 nouveaux sur le journal).
 
+## 5.41.4
+
+Tour : le message « Tour bloquée » suit exactement la règle du jeu.
+
+- Lu dans le moteur du jeu (`towerFight`) : un combat d'Aventure ou d'événement ne bloque la Tour que pendant 20 minutes après son début (`fight.t`). Passé ce délai, le jeu laisse monter.
+- La 5.41.2 affichait « Tour bloquée » tant que le combat restait dans la sauvegarde, même après ces 20 minutes. Maintenant le guide revient sur « Combattre l'étage » dès que le jeu ne bloque plus, et le message indique ce délai.
+
+## 5.41.3
+
+Base commune : un calcul Campagne qui ne partage pas le dit, avec la raison.
+
+- Le partage est lu au lancement du calcul. Allumé pendant le calcul, il ne sert qu'au calcul suivant : la page Campagne montrait seulement « pas encore de calcul partagé », sans dire pourquoi.
+- Maintenant, la tuile « Dernier calcul » affiche « non partagé » et la raison (base coupée au lancement, ton IA plus forte que l'IA commune, réglages de test), et le journal de la Base commune garde une ligne « Calcul lancé sans partage ».
+
+## 5.41.2
+
+Script : le guide explique pourquoi la Tour refuse de combattre.
+
+- **Constat** (19/11) : en pleine montée (étage 64), « Combattre l'étage » répondait « Un combat est déjà en cours (Aventure ou événement) : termine-le ou abandonne-le avant de monter dans la Tour ». Un combat d'Aventure ou d'événement lancé pendant la montée reste dans ta sauvegarde (`fight`) et bloque la Tour ; le guide entourait quand même « Combattre l'étage ».
+- **Correction** : avec une montée en cours et un combat encore ouvert, le guide n'entoure plus rien dans la Tour et dit de terminer ou d'abandonner ce combat (avec son nom quand il le trouve). La montée est gardée.
+
 ## 5.41.1
 
 Calcul Campagne : la progression dit la vérité pendant les spécialistes, et les combats sans aucune 3★ passent en dernier.

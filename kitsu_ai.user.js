@@ -1216,6 +1216,9 @@
                 const runTw = S.tower?.run;
                 if (runTw && !T) {
                   const flTw = runTw.floor ? ` (etage ${runTw.floor})` : '';
+                  // 5.41.2 : un combat d'Aventure ou d'evenement lance (save.fight) bloque la Tour (« Un combat est deja en cours ») :
+                  // on le dit au lieu d'entourer « Combattre l'etage », sinon le clic echoue. La montee reste gardee.
+                  if (S.fight?.fid && !(Date.now() - (S.fight.t || 0) >= 12e5)) { let nf = ''; try { nf = G.findFight(S.fight.fid)?.t || ''; } catch {} return mark(null, `Tour bloquee : un combat${nf ? ` « ${nf} »` : ''} est encore ouvert en Aventure ou en evenement. Termine-le ou abandonne-le (sinon le jeu le libere seul 20 min apres son debut), puis reviens : ta montee${flTw} est gardee`, 'twbloque'); }
                   const ft = [...document.querySelectorAll('[data-tw="fight"]')].find(b => vis(b) && !b.disabled); if (ft) return mark(ft, `Tour : continue ta montee${flTw}`, 'twfight');
                   const ro = [...document.querySelectorAll('[data-tour-open]')].find(b => vis(b) && !b.disabled); if (ro) return mark(ro, `Tour : reprends ta montee en cours${flTw}`, 'twopen');
                   if (goView('tour', `Tour de l'infini : reprends ta montee en cours${flTw}`, 'twnav')) return;

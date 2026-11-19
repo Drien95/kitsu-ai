@@ -743,6 +743,9 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
 | 5.42.0 | Journal des calculs : à la fin d'un calcul complet, les résultats inutilisés par ce calcul et le précédent sont retirés (78 Mo vers 39 Mo mesuré), anciens journaux et anciens moteurs supprimés |
+| 5.41.4 | Script : le message « Tour bloquée » disparaît quand le jeu libère seul le combat resté ouvert (20 min après son début) |
+| 5.41.3 | Base commune : un calcul qui ne partage pas l'affiche avec la raison (tuile « Dernier calcul » et journal) |
+| 5.41.2 | Script : pendant une montée de la Tour, le guide signale un combat d'Aventure ou d'événement resté ouvert (qui bloque la Tour) au lieu d'entourer « Combattre l'étage » |
 | 5.41.1 | Campagne : progression honnête pendant les spécialistes (budget restant), combats à 0 % cherchés en dernier |
 | 5.41.0 | Campagne : les liens actifs à cocher pour les trios du plan dont une carte a plus de 6 liens, cherchés sur leurs combats |
 | 5.40.3 | Script : tes liens actifs choisis dans le jeu partent avec la sauvegarde, les calculs jouent ton vrai réglage |
