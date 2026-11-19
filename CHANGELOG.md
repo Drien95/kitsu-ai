@@ -4,6 +4,17 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.49.0
+
+Guide : la Tour devient un choix, la Campagne passe d'abord.
+
+- **Constat** (demande d'Adrien du 19/11) : le guide envoyait sans cesse vers la Tour alors qu'il restait des gemmes et de l'XP à prendre en Campagne Cauchemar N/D/E. Deux causes dans `guide()` : (1) quand le plan n'avait plus de 3★ sûre, la Tour était testée **avant** le farm d'XP des murs ; (2) l'étage prévu par le script privé arrivait arrondi (158,6 devenait 159), donc « prévision ≥ record + 1 » restait vrai avec un record de 158, alors que la médiane prévue était 156.
+- **Changement** :
+  - Ordre du guide : 3★ du plan, puis farm des murs, puis la Tour seulement s'il n'y a ni l'un ni l'autre (et pas pendant le calcul du farm).
+  - La Tour n'est plus proposée par défaut. Onglet Plan du script : case « Me proposer la Tour dans le guide » (clé `kitsu_ai_tourGuide`, décochée par défaut).
+  - Prévision lue sans arrondi (`_karTour` accepte une décimale, cible affichée à 0,1 près).
+  - Inchangé : une montée lancée par toi est suivie jusqu'au bout, et l'écran de compo de la Tour suit toujours le trio exact du privé quand tu y vas.
+
 ## 5.47.0
 
 Campagne : les spécialistes (meilleur trio par combat cherché sur tous les trios) vont deux fois plus vite.
