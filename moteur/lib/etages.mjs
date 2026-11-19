@@ -82,22 +82,44 @@ export async function parCombat(o) {
   for (const fi of durs) { const v = J.get(cleS(fi)); if (v) { specs.set(fi, JSON.parse(v)); repris++; } }
   const reste = durs.filter(fi => !specs.has(fi)), msCombat = []; let debutS = Date.now(), campFini = false;
   log(`par combat : ${sousSeuil} combats sous ${Math.round(seuil * 100)} % de 3 etoiles${campPlus ? ` et ${campPlus} combats de Campagne sous 100 %` : ''}, ${specs.size} deja cherches (journal), ${reste.length} a chercher sur tous les ${T} trios, budget ${Math.round(budget / 60e3)} min`);
+  // 5.47 : combats cherches par groupes de GS (8) : une seule tache par trio joue tous les combats du groupe qu'il n'a pas deja joues
+  // dans la course (memes combats, memes graines, memes etoiles). Mesure : 1 combat par tache 7 400 a 8 100 combats/s, 8 par tache
+  // 12 500 a 18 300 combats/s (4 fils), etoiles identiques. Le budget est verifie avant chaque groupe.
+  const GS = Math.max(1, o.groupe ?? 8), nb3 = (st, len, q, ns) => { let c = 0; for (let si = 0; si < ns; si++) if (st[si * len + q] === '3') c++; return c; };
+  // taches regroupees par trio : paires { t, g } -> une tache par trio avec ses combats ; retourne le nombre de 3 etoiles de chaque paire
+  const parTrio = async (paires, fs, seeds, taille) => {
+    const m = new Map(); paires.forEach((x, i) => (m.get(x.t) || m.set(x.t, []).get(x.t)).push(i));
+    const ts = [...m.keys()], r = await run(ts.map(t => ({ type: 'etoiles', team: equipeDe(t), fights: m.get(t).map(i => fs[paires[i].g]), seeds })), taille);
+    const out = new Array(paires.length); ts.forEach((t, j) => { const L = m.get(t); L.forEach((i, q) => { out[i] = nb3(r[j].st, L.length, q, seeds.length); }); }); return out;
+  };
   let k = 0;
-  for (const fi of reste) {
-    if (!camp(fi) && !campFini) { campFini = true; debutS = Date.now(); } // le budget compte a partir du Cauchemar
-    if (!camp(fi) && Date.now() - debutS >= budget) break;
-    const f = F[fi].f, cle = cleS(fi); k++;
-    const t0 = Date.now(), ok1 = [];
-    for (let a = 0; a < T; a += 50000) { const ts = []; for (let t = a; t < Math.min(T, a + 50000); t++) { const v = connu1(t, fi); if (v === 2) ok1.push(t); else if (!v) ts.push(t); }
-      const r = await run(ts.map(t => ({ type: 'etoiles', team: equipeDe(t), fights: [f], seeds: [1] })), 256); r.forEach((y, j) => { if (y.st === '3') ok1.push(ts[j]); }); }
-    ok1.sort((x, y) => x - y); // meme ordre qu'avant (trios dans l'ordre), pour garder les memes 20 000 premiers
-    const L1 = ok1.slice(0, 20000), r2 = await run(L1.map(t => ({ type: 'etoiles', team: equipeDe(t), fights: [f], seeds: [2, 3] })), 64);
-    const L2 = L1.map((t, j) => ({ t, s: 1 + [...r2[j].st].filter(c => c === '3').length })).sort((a, b) => b.s - a.s || a.t - b.t).slice(0, 20);
-    const r3 = await run(L2.map(x => ({ type: 'etoiles', team: equipeDe(x.t), fights: [f], seeds: seedsS })), 4);
-    const L3 = L2.map((x, j) => ({ ids: trios[x.t], s: x.s + [...r3[j].st].filter(c => c === '3').length, n: 3 + conf })).sort((a, b) => b.s - a.s).slice(0, 10);
-    specs.set(fi, L3); J.set(cle, JSON.stringify(L3)); J.flush();
-    msCombat.push(Date.now() - t0);
-    log(`  specialistes ${k}/${reste.length} : ${f} (${DIFF[F[fi].di][0]}), ${ok1.length} trios a 3 etoiles au 1er tirage, meilleur ${L3[0] ? Math.round(100 * L3[0].s / L3[0].n) + ' %' : 'aucun'} (avant ${Math.round(100 * meilleur[fi].p)} %), ${Math.round((Date.now() - t0) / 1000)} s`);
+  for (let i0 = 0; i0 < reste.length;) {
+    const fi0 = reste[i0];
+    if (!camp(fi0) && !campFini) { campFini = true; debutS = Date.now(); } // le budget compte a partir du Cauchemar
+    if (!camp(fi0) && Date.now() - debutS >= budget) break;
+    const grp = []; for (let i = i0; i < reste.length && grp.length < GS && camp(reste[i]) === camp(fi0); i++) grp.push(reste[i]);
+    i0 += grp.length;
+    const t0 = Date.now(), NG = grp.length, fs = grp.map(fi => F[fi].f), ok1 = grp.map(() => []);
+    for (let a = 0; a < T; a += 50000) {
+      const ts = [], gs = [];
+      for (let t = a; t < Math.min(T, a + 50000); t++) { const L = []; for (let g = 0; g < NG; g++) { const v = connu1(t, grp[g]); if (v === 2) ok1[g].push(t); else if (!v) L.push(g); } if (L.length) { ts.push(t); gs.push(L); } }
+      const r = await run(ts.map((t, j) => ({ type: 'etoiles', team: equipeDe(t), fights: gs[j].map(g => fs[g]), seeds: [1] })), Math.max(8, 256 / NG | 0));
+      r.forEach((y, j) => gs[j].forEach((g, q) => { if (y.st[q] === '3') ok1[g].push(ts[j]); }));
+    }
+    // meme ordre qu'avant (trios dans l'ordre), pour garder les memes 20 000 premiers
+    const L1 = ok1.map(L => L.sort((x, y) => x - y).slice(0, 20000)), p1 = L1.flatMap((L, g) => L.map(t => ({ t, g })));
+    const s2 = await parTrio(p1, fs, [2, 3], Math.max(8, 64 / NG | 0));
+    const L2 = grp.map(() => []); p1.forEach((x, i) => L2[x.g].push({ t: x.t, s: 1 + s2[i] }));
+    L2.forEach((L, g) => { L2[g] = L.sort((a, b) => b.s - a.s || a.t - b.t).slice(0, 20); });
+    const p2 = L2.flatMap((L, g) => L.map(x => ({ t: x.t, g, s: x.s }))), s3 = await parTrio(p2, fs, seedsS, 4);
+    const L3 = grp.map(() => []); p2.forEach((x, i) => L3[x.g].push({ ids: trios[x.t], s: x.s + s3[i], n: 3 + conf }));
+    const ms = (Date.now() - t0) / NG;
+    grp.forEach((fi, g) => {
+      const L = L3[g].sort((a, b) => b.s - a.s).slice(0, 10); k++;
+      specs.set(fi, L); J.set(cleS(fi), JSON.stringify(L)); msCombat.push(ms);
+      log(`  specialistes ${k}/${reste.length} : ${F[fi].f} (${DIFF[F[fi].di][0]}), ${ok1[g].length} trios a 3 etoiles au 1er tirage, meilleur ${L[0] ? Math.round(100 * L[0].s / L[0].n) + ' %' : 'aucun'} (avant ${Math.round(100 * meilleur[fi].p)} %), ${Math.round((Date.now() - t0) / 1000)} s`);
+    });
+    J.flush();
   }
   const restants = durs.filter(fi => !specs.has(fi)).length, msMoy = msCombat.length ? msCombat.reduce((a, b) => a + b, 0) / msCombat.length : simules ? 1.05 * T / (simules / ((Date.now() - T0) / 1000)) * 1000 : null; // sinon : estime a la vitesse de ce calcul
   const indexTrio = o.indexDe ? { get: k => o.indexDe(k.split('-').map(Number)) } : new Map(trios.map((t, i) => [t.join('-'), i])); // 5.42.1 : sans table de 7 M cles

@@ -4,6 +4,22 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.47.0
+
+Campagne : les spécialistes (meilleur trio par combat cherché sur tous les trios) vont deux fois plus vite.
+
+- **Constat** : sur ton calcul du 18/11, l'étape par combat a pris 11 430 s (budget de 3 h), à 0,65 min par combat ; 1 340 combats restaient à chercher. Chaque trio jouait un seul combat par tâche.
+- **Changement** (`lib/etages.mjs`) : les combats à chercher sont pris par groupes de 8. Une seule tâche par trio joue tous les combats du groupe qu'il n'a pas déjà joués dans la course, puis les tirages 2 et 3 et la confirmation sont regroupés de la même façon. Mêmes combats, mêmes graines, mêmes étoiles. Le budget est vérifié avant chaque groupe.
+- **Mesures** (VM 4 fils, moteur B4t5msj4) :
+
+| Essai | Avant | Après |
+|---|---|---|
+| Banc : 1 combat par tâche contre 8 (4 000 trios, 16 combats Cauchemar Extrême) | 8 146 combats/s | 18 260 combats/s, étoiles identiques |
+| Banc : 1 contre 4 et 16 (6 000 trios, 16 combats Campagne Difficile) | 7 667 et 7 423 combats/s | 12 536 et 13 258 combats/s, étoiles identiques |
+| Calcul complet, 100 cartes fortes, 29 combats sous 60 %, budget 30 min | 556 s (0,32 min par combat) | 275 s (0,16 min par combat), résultat identique (meilleurs trios des 288 combats, trios trouvés par les spécialistes, plan) |
+
+Avec le même budget, environ deux fois plus de combats sont cherchés à chaque calcul.
+
 ## 5.46.0
 
 Campagne : le 1er tour de la course ne fait plus jouer leur paquet complet aux trios sans espoir.

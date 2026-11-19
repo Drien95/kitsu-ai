@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.46.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.47.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.47.0 | Campagne : spécialistes 2 fois plus rapides (8 combats par tâche au lieu d'un), 556 s puis 275 s pour 29 combats, résultats identiques ; même budget, deux fois plus de combats cherchés |
 | 5.46.0 | Campagne : 1er tour de la course en deux moitiés, les trios sans espoir à mi-paquet ne jouent pas la 2e moitié ; cartes fortes 1 331 s puis 1 061 s (−20 %), cartes au hasard sans changement, résultats identiques |
 | 5.44.0 | Campagne et Tour : avant le lancement, choix des raretés essayées (LR, UR, SSR) avec ce que chacune pèse dans ton dernier résultat, temps de travail (jusqu'au bout, 2 h ou une nuit puis pause, reprise sans rien refaire), durée prévue, heure de fin et frise ; récapitulatif au-delà de 3 h |
 | 5.43.2 | Campagne et Tour : les très grosses collections (plusieurs millions de trios) ne plantent plus faute de mémoire (348 cartes : 83 Go demandés avant, 0,5 Go au départ après ; journal de 21 M lignes) |
