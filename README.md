@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.40.2**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.40.3**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.40.3 | Script : tes liens actifs choisis dans le jeu partent avec la sauvegarde, les calculs jouent ton vrai réglage |
 | 5.40.2 | Script : une montée de la Tour en cours passe avant le reste du plan, le guide entoure « Reprendre la montée » puis l'étage suivant |
 | 5.40.1 | Script : le guide dit quand il propose de rejouer un combat déjà fait pour l'XP, et repasse l'arc dans le bon mode (Normal compris) au lieu de répéter « fais défiler la carte » |
 | 5.40.0 | Launcher : visite guidée rejouable avec Kiko, le renard de KitsuAI (bouton « ? », page Outils > Guides, 9 chapitres, nouveautés par version) |

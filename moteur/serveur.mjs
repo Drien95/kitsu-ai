@@ -109,12 +109,13 @@ function verifierAlertes() {
 }
 setInterval(verifierAlertes, 30000);
 // Pourquoi relancer « Mettre a jour l'IA » : patch du jeu ou collection changee depuis la derniere analyse.
-const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), Object.entries(sv.lv || {}).map(([k, v]) => k + ':' + (v?.l || v)).sort(), Object.entries(sv.stars || {}).sort()]).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0) : 0;
+// 5.40.3 : les liens choisis (lk) comptent aussi ; sans lk, meme empreinte qu'avant (pas de fausse alerte « collection changee »).
+const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), Object.entries(sv.lv || {}).map(([k, v]) => k + ':' + (v?.l || v)).sort(), Object.entries(sv.stars || {}).sort(), ...(sv.lk && Object.keys(sv.lk).length ? [Object.entries(sv.lk).map(([k, v]) => k + ':' + [].concat(v || []).join('+')).sort()] : [])]).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0) : 0;
 function calculConseille() {
   const d = readJ(D('resultats', 'dernier.json')), sv = readJ(D('data', 'sauvegarde.json')), out = [];
   if (!d) { if (sv) out.push('aucune analyse complete pour ta collection'); return out; }
   if (d.version && d.version !== VER) out.push('le jeu a change depuis la derniere analyse');
-  if (sv && d.saveHash != null && d.saveHash !== hashSave(sv)) out.push('ta collection a change (cartes, niveaux ou etoiles)');
+  if (sv && d.saveHash != null && d.saveHash !== hashSave(sv)) out.push('ta collection a change (cartes, niveaux, etoiles ou liens)');
   const pw = readJ(D('data', 'poids.json')); if (pw?.t && Date.parse(d.date) < pw.t) out.push("l'IA a ete reentrainee depuis");
   return out;
 }
