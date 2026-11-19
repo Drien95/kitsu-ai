@@ -2,7 +2,7 @@
 
 | Fonction | Description |
 |---|---|
-| Guide pas à pas | Contour blanc sur le prochain clic utile : campagne, événements, Salle, guilde, Tour, quêtes, pass, albums, boutique, invocations, fenêtres de confirmation |
+| Guide pas à pas | Contour blanc sur le prochain clic utile : campagne (3★ puis farm des murs), événements, Salle, guilde, Tour (seulement si tu coches « Me proposer la Tour » dans l'onglet Plan, ou pour finir une montée lancée), quêtes, pass, albums, boutique, invocations, fenêtres de confirmation |
 | Panneau orange (combat) | Coup conseillé en grand, raison, coups classés ; cadre vert « Calcul du PC » si l'application tourne ; replié sur une ligne quand le script privé donne un coup exact |
 | Roadmap | Les priorités du moment, triées (gemmes, énergie, quêtes, guilde, bannières) |
 | Plan | Combats de campagne à faire, équipe et chances de 3 étoiles |
