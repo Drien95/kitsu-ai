@@ -4,7 +4,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.45.0
+## 5.46.0
 
 Campagne : le 1er tour de la course ne fait plus jouer leur paquet complet aux trios sans espoir.
 

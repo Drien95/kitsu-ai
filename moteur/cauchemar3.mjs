@@ -202,13 +202,13 @@ function eliminer(alive, pi) {
 }
 // 5.42.1 : lots de 60 000 paquets construits au fur et a mesure (avant : tous les paquets du tour d'un coup, soit 21 M objets
 // pour 7 M trios, plusieurs Go de memoire).
-// 5.45 : tour de course en deux moities (gros tours seulement). Tous les trios jouent la 1re moitie de leurs paquets N/D/E ;
+// 5.46 : tour de course en deux moities (gros tours seulement). Tous les trios jouent la 1re moitie de leurs paquets N/D/E ;
 // les mieux places a mi-chemin jouent la 2e moitie et donnent la barre de chaque objectif (Ke meilleure borne basse, paquets
 // complets : elle ne depasse jamais la barre que le tour complet aurait). Un trio dont la borne haute a mi-chemin (memes regles,
 // moitie des combats) est sous cette barre pour tous les objectifs qui eliminent est ecarte sans jouer la 2e moitie.
 // Les autres jouent la 2e moitie : leurs paquets complets sont identiques (graine par combat), journal et base commune inchanges.
 // Moitie jouee gardee au journal (cle du paquet + '|1/2') pour la reprise. Etat dans des tableaux de nombres (pas d'objet par
-// trio : 7 M trios = 21 M moities). --sans-demi : tour complet pour tous (avant 5.45).
+// trio : 7 M trios = 21 M moities). --sans-demi : tour complet pour tous (avant 5.46).
 const DEMI = !arg('sans-demi'), DEMI_MIN = +arg('demi-min', 3000), DEMI_BARRE = +arg('demi-barre', 2000);
 const objsTour = pi => pi < 4 ? [IMOY, 0] : OBJS.map((x, i) => x.e ? i : -1).filter(i => i >= 0);
 let demiEcartes = 0, demiEconomie = 0;
@@ -299,7 +299,7 @@ if (PARTAGE_OK) {
 // les finalistes jouent ensuite la Campagne avec les memes graines (memes resultats pour eux, moitie moins de combats pour les autres).
 let alive = [...Array(T).keys()]; const entonnoir = [];
 for (let pi = 0; pi < TOURS; pi++) {
-  const avant = alive.length, garde = await tour(alive, pi, 1, DIS_ELIM); if (garde) alive = garde; // 5.45 : sans les ecartes a mi-paquet
+  const avant = alive.length, garde = await tour(alive, pi, 1, DIS_ELIM); if (garde) alive = garde; // 5.46 : sans les ecartes a mi-paquet
   alive = eliminer(alive, pi); entonnoir.push(alive.length);
   const ecoule = (Date.now() - T0) / 1000, vit = simules / Math.max(1, ecoule);
   log(`tour ${pi + 1}/${TOURS} : ${avant} -> ${alive.length} trios en course, ${simules} combats simules (${Math.round(vit)}/s), ${repris} paquets repris du journal`);
