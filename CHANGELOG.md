@@ -4,7 +4,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.56.2
+## 5.56.3
 
 Guide, nouvel écran d'invocation du jeu (moteur `DFG3HI-s`) : le même encadré blanc que partout ailleurs.
 
@@ -12,6 +12,14 @@ Guide, nouvel écran d'invocation du jeu (moteur `DFG3HI-s`) : le même encadré
 - **Maintenant** : seuls les boutons visibles comptent. Réserve pleine : encadré blanc sur « Multi-invocation ×10 ». Moins de 10 : « Invoquer ×1 ». Jamais un bouton payant en gemmes ni une multi offerte (ticket) pour les invocations gratuites.
 - Nouvelle animation d'invocation : encadré sur « Passer » (`.iv31-skip`, touche Espace), au lieu d'un conseil d'Aventure caché dessous.
 - Résultats d'un tirage en gemmes, ou réserve gratuite vide : encadré sur « Fermer ».
+
+## 5.56.2
+
+Script : après un nouveau calcul Campagne, l'écran d'équipe montre bien ses trios.
+
+- **Cause** : le classement des trios d'un combat est gardé dans le navigateur (25 derniers combats, `kitsu_ai_teams`). Depuis la 5.54, le trio exact du privé est redemandé au PC à chaque écran d'équipe, mais pas les trios du calcul Campagne public : si le calcul avait trouvé un nouveau meilleur trio pour ce combat, l'ancien classement restait affiché.
+- **Maintenant** : à chaque écran d'équipe (PC allumé), si un trio du calcul Campagne ou le trio exact manque au classement gardé, le classement est refait avec lui ; sinon le marquage « calcul » est mis à jour.
+- Monter de version vide aussi ce cache une fois.
 
 ## 5.56.1
 
