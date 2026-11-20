@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.55.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.56.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.56.0 | Base commune : les lots d'une ancienne version du jeu ne mangent plus le quota du jour (ils sont effacés de la file), lots de 60 000 résultats au lieu de 20 000 (un calcul complet tient dans le quota), message d'envoi juste |
 | 5.55.0 | Guide : le « + » de l'énergie reprend l'encadré blanc des autres indications, sans calcul ni étiquette (demande d'Adrien) ; le recalcul du plan de la 5.52 est gardé |
 | 5.54.0 | Choix d'équipe : le trio exact du script privé passe devant même si le classement du combat était en cache (calculé PC éteint ou avant le dernier calcul Campagne) |
 | 5.53.0 | Combat : plus aucun conseil orange quand le script privé donne le coup (ni au début de tes tours, ni au début du combat) ; le public reprend seul si le privé ne peut pas calculer |

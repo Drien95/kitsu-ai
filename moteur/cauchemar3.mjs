@@ -111,7 +111,7 @@ let aEnvoyer = [], envoyes = 0, recus = 0;
 const versionPartage = { sigG, wKey, moteur: String(version) };
 function versFile(tout = false) {
   if (!PARTAGE_OK || !PART.envoyer) { aEnvoyer = []; return; }
-  while (aEnvoyer.length >= 20000 || (tout && aEnvoyer.length)) { const part = aEnvoyer.splice(0, 20000); PARTAGE.mettreEnFile(PARTAGE.construireLot(versionPartage, part)); envoyes += part.length; }
+  while (aEnvoyer.length >= PARTAGE.LIGNES_PAR_LOT || (tout && aEnvoyer.length)) { const part = aEnvoyer.splice(0, PARTAGE.LIGNES_PAR_LOT); PARTAGE.mettreEnFile(PARTAGE.construireLot(versionPartage, part)); envoyes += part.length; }
 }
 // Rejoue des lignes du lot d'un autre joueur (controle). null si ce PC ne peut pas : carte ou combats differents (autre version).
 async function rejouerLignes(lot, lignes) {
@@ -299,7 +299,7 @@ const eveil = garderEveille(), T0 = Date.now(); let dernierLog = Date.now();
 log(`moteur ${version} (signature combat ${sigG}), ${IDS.length} cartes, ${T} trios, niveaux ${NIV === '99' ? '99' : 'actuels'}, combats ${NCOMB.join(' / ')} (${DIFF.map(d => d[0]).join(' / ')}), ${pool.n} fils, journal ${J.taille()} paquets${eveil.ok ? ', PC garde eveille' : ''}`);
 if (PARTAGE_OK) {
   log(`partage : IA commune ${IAC ? (IAC.source === 'serveur' ? 'du serveur' : 'du serveur (copie locale)') : 'livree avec l appli'}${JSON.stringify(WCX) === JSON.stringify(WA_PC) ? ' (la tienne)' : ' (differente de la tienne pour ce calcul)'}, ${PART.utiliser ? 'base utilisee' : 'base non utilisee'}, ${PART.envoyer ? 'envoi actif' : 'pas d envoi'}`);
-  try { const n = await PARTAGE.viderFile(PART, log); if (n) log(`partage : ${n} lots en attente envoyes`); } catch (e) { log('partage : envoi impossible (' + e.message + ')'); }
+  if (PART.envoyer) try { await PARTAGE.viderFile(PART, versionPartage, log); } catch (e) { log('partage : envoi impossible (' + e.message + ')'); }
   if (PART.utiliser) try {
     const mien = new Map(IDS.map(id => [id, cleCarte(id)]));
     await PARTAGE.telecharger(PART, versionPartage, { cleCarteLocale: id => mien.get(id) || null, log,
@@ -447,7 +447,7 @@ const out = { version, signatureCombat: sigG, date: new Date().toISOString(), ni
 // Base commune : envoi de ce qui reste, puis quelques controles du travail des autres.
 if (PARTAGE_OK) {
   versFile(true);
-  if (PART.envoyer) try { const n = await PARTAGE.viderFile(PART, log); log(`partage : ${envoyes} resultats mis en file, ${n} lots envoyes`); } catch (e) { log('partage : envoi reporte (' + e.message + ')'); }
+  if (PART.envoyer) try { log(`partage : ${envoyes} resultats de ce calcul mis en file`); await PARTAGE.viderFile(PART, versionPartage, log); } catch (e) { log('partage : envoi reporte (' + e.message + ')'); }
   if (PART.verifier) try { await PARTAGE.controler(PART, versionPartage, rejouerLignes, { max: PARTAGE.identite().admin && PART.controler ? 40 : 2, log }); } catch (e) { log('partage : controles reportes (' + e.message + ')'); }
   if (PARTAGE.identite().admin && PART.controler) try { await PARTAGE.regrouper(PART, { log }); } catch (e) { log('partage : regroupement reporte (' + e.message + ')'); }
 }

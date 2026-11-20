@@ -1262,10 +1262,10 @@ function ptCamp() {
 }
 // Quand ca bouge : uniquement pendant un calcul Campagne lance sur ce PC. Journal tenu par lib/partage.mjs (noter).
 function ptActivite(j, R) {
-  const etapes = [R.utiliser ? 'au début, ton PC récupère les résultats vérifiés pour tes cartes' : null, R.envoyer ? 'pendant le calcul, il range tes résultats par lots de 20 000 ; à la fin, il les envoie (ce qui dépasse le quota du jour part au calcul suivant)' : null, R.verifier ? 'à la fin, il contrôle 2 lots des autres (quelques secondes)' : null].filter(Boolean);
+  const etapes = [R.utiliser ? 'au début, ton PC récupère les résultats vérifiés pour tes cartes' : null, R.envoyer ? 'pendant le calcul, il range tes résultats par lots de 60 000 ; à la fin, il les envoie (ce qui dépasse le quota du jour part au calcul suivant)' : null, R.verifier ? 'à la fin, il contrôle 2 lots des autres (quelques secondes)' : null].filter(Boolean);
   const mo = o => o >= 1e5 ? `, ${nbFr(Math.round(o / 1e5) / 10)} Mo téléchargés` : '';
   const txt = x => x.type === 'recu' ? `Récupéré : ${fmt(x.lignes)} résultats pour tes cartes, dans ${fmt(x.lots)} lot${x.lots > 1 ? 's' : ''} vérifié${x.lots > 1 ? 's' : ''}${mo(x.octets)}.`
-    : x.type === 'envoi' ? `Envoyé : ${fmt(x.lots)} lot${x.lots > 1 ? 's' : ''} (${fmt(x.lignes)} résultats)${x.attente ? `, ${fmt(x.attente)} en attente` : ''}${x.raison ? ` (${esc(x.raison)})` : ''}.`
+    : x.type === 'envoi' ? `Envoyé : ${fmt(x.lots)} lot${x.lots > 1 ? 's' : ''} (${fmt(x.lignes)} résultats)${x.attente ? `, ${fmt(x.attente)} en attente` : ''}${x.perimes ? `, ${fmt(x.perimes)} d’une ancienne version effacés` : ''}${x.raison ? ` (${esc(x.raison)})` : ''}.`
     : x.type === 'controle' ? `Contrôle d’un lot d’un autre joueur (${x.lignes} résultats rejoués) : ${esc(x.quoi)}.`
     : x.type === 'coupe' ? `Calcul lancé sans partage : ${esc(x.quoi || '')}.`
     : x.type === 'regroupe' ? `Regroupé ${fmt(x.lots)} lots vérifiés en un paquet de ${fmt(x.lignes)} résultats.`

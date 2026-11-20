@@ -4,6 +4,17 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.56.0
+
+Base commune : le quota du jour n'est plus mangé par des lots que personne ne pourra lire, et le message d'envoi dit ce qui s'est vraiment passé.
+
+- **Cause du quota plein** (mesuré sur le PC d'Adrien le 20/11) : la file d'envoi gardait 189 lots du calcul du 18/11 (moteur `B4t5msj4`, signature `1gz16357hta`). Le jeu a été mis à jour depuis (moteur `DFG3HI-s`, signature `8hxan3wwks`). Au calcul du 20/11, ces vieux lots sont partis en premier : 80 envoyés (le quota de 80 lots par jour de l'ID), 109 encore en file. Le manifeste est filtré par version : ces 80 lots ne seront jamais lus ni contrôlés par personne, et les résultats du calcul du jour seraient restés derrière eux.
+- **Lots périmés effacés** : avant d'envoyer, `viderFile` efface de la file les lots d'une autre version du jeu ou de l'IA commune (`{ sigG, wKey }` du calcul en cours) au lieu de les envoyer. Le nombre effacé est écrit dans le calcul et dans le journal de la base commune.
+- **Lots de 60 000 résultats** (`LIGNES_PAR_LOT`, le maximum que le serveur accepte déjà, rien à redéployer) au lieu de 20 000. Mesuré sur les vrais lots du 18/11 : 20 000 résultats = 69 à 76 Ko, 60 000 = 210 à 216 Ko (limite 1,9 Mo). Le calcul complet du 18/11 (3,9 millions de résultats) fait 65 lots au lieu de 195 : il tient dans un seul jour de quota (80) au lieu de trois.
+- **Message juste** : avant, « envoi reporte (429 quota du jour atteint) » s'écrivait au moment du refus, puis « 80 lots en attente envoyes » juste après, ce qui semblait se contredire. Maintenant une seule ligne de bilan : « 80 lots envoyes (1600000 resultats), 109 gardes en file : quota du jour atteint pour cet ID, nouvel essai au prochain calcul lance apres 01 h 00 » (le serveur compte les jours à minuit UTC). Un envoi qui échoue arrête la file au premier refus au lieu de réessayer chaque lot (30 s d'attente chacun sans internet).
+- **Envoi coupé** : la file n'est plus envoyée au début d'un calcul quand « envoyer » est décoché.
+- Tests de la base commune : 20 (2 nouveaux : file avec un lot périmé et quota atteint, lot de 60 000 résultats accepté).
+
 ## 5.55.0
 
 Guide : le « + » de l'énergie est entouré comme les autres indications, sans calcul.

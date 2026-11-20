@@ -219,6 +219,32 @@ await test('Campagne : ton IA seulement si la derniere comparaison la dit nettem
   assert.equal(iaPersoMeilleure(cmp('meilleure'), m, { nm: [4] }), false, 'IA commune changee (publiee) depuis');
 });
 
+await test('file d envoi : lots d une ancienne version effaces, quota atteint dit une seule fois, apres le compte', async () => {
+  const E = randomBytes(32).toString('hex'); comme(E); const its = uniques(items(400, 300)), logs = [];
+  P.mettreEnFile(P.construireLot({ ...V, sigG: 'ancien1' }, its.slice(0, 50))); // jeu mis a jour depuis : plus lisible par personne
+  for (let k = 0; k < 5; k++) P.mettreEnFile(P.construireLot(V, its.slice(k * 10, k * 10 + 60)));
+  assert.equal(P.enFile(), 6);
+  const b = await P.viderFile(REG, V, m => logs.push(m));
+  assert.deepEqual([b.perimes, b.envoyes, b.attente], [1, 3, 2], 'quota des nouveaux IDs (3 dans le test) : 3 envoyes, 2 gardes');
+  assert.match(b.raison, /^429/); assert.equal(P.enFile(), 2);
+  assert.equal(logs.length, 2, logs.join(' | '));
+  assert.match(logs[0], /1 lots d une ancienne version/);
+  assert.match(logs[1], /^partage : 3 lots envoyes \(180 resultats\), 2 gardes en file : quota du jour atteint pour cet ID, nouvel essai au prochain calcul lance apres \d\d h \d\d$/);
+  assert.equal(P.journalPartage()[0].perimes, 1);
+  // Plus rien d ancien, quota toujours atteint : aucun envoi, un seul message, les 2 lots restent.
+  logs.length = 0; const c = await P.viderFile(REG, V, m => logs.push(m)); assert.deepEqual([c.envoyes, c.attente], [0, 2]); assert.equal(logs.length, 1);
+  assert.equal(P.prochainJourQuota(Date.UTC(2026, 10, 20, 17, 46)).getTime(), Date.UTC(2026, 10, 21), 'le quota repart a minuit UTC');
+});
+
+await test('lot de 60 000 resultats (taille d envoi du calcul) accepte par la base, sous 1,9 Mo', async () => {
+  assert.equal(P.LIGNES_PAR_LOT, 60000);
+  const trios = []; for (let a = 1; a <= 161 && trios.length < P.LIGNES_PAR_LOT; a++) for (let b = a + 1; b <= 161 && trios.length < P.LIGNES_PAR_LOT; b++) for (let c = b + 1; c <= 161 && trios.length < P.LIGNES_PAR_LOT; c++) trios.push([a, b, c]); // 161 cartes comme le PC d Adrien
+  const its = trios.map(([a, b, c], i) => ({ cartes: [carte(a), carte(b), carte(c)], di: i % 3, pi: i % 50, clePaquet: 'p' + (i % 3) + 'x' + (i % 50), graine: 1, n: 16, s3: i % 17 }));
+  const lot = P.construireLot(V, its); assert.equal(verifierLot(lot), null); assert.equal(lot.l.length, 60000);
+  const r = await envoyer(randomBytes(32).toString('hex'), lot); assert.equal(r.s, 200, JSON.stringify(r.j));
+  assert.ok(gzipSync(JSON.stringify(lot)).length < 1.9e6);
+});
+
 await test('comparaison des controles', async () => {
   const lot = { l: [[0, 0, 1, 16, 4], [0, 0, 2, 16, 5]] };
   assert.equal(ecarts(lot, [0, 1], [[16, 4], [16, 5]]), 0); assert.equal(ecarts(lot, [0, 1], [[16, 4], [16, 6]]), 1); assert.equal(ecarts(lot, [0, 1], [[16, 4]]), 2); assert.equal(ecarts(lot, [0, 1], 'x'), 2);
