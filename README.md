@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.56.1**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.56.2**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.56.2 | Script : un classement d'équipes gardé en mémoire est refait quand un nouveau calcul Campagne donne un autre trio pour ce combat |
 | 5.56.1 | Campagne, « Ton trio, combat par combat » : les combats déjà à 3★ dans ta partie ne sont plus comptés « à calculer » (le calcul ne les rejoue plus depuis 5.51), ils s'affichent « 3★ en jeu » |
 | 5.56.0 | Base commune : les lots d'une ancienne version du jeu ne mangent plus le quota du jour (ils sont effacés de la file), lots de 60 000 résultats au lieu de 20 000 (un calcul complet tient dans le quota), message d'envoi juste |
 | 5.55.0 | Guide : le « + » de l'énergie reprend l'encadré blanc des autres indications, sans calcul ni étiquette (demande d'Adrien) ; le recalcul du plan de la 5.52 est gardé |
