@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.56.3
+// @version      5.56.4
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.56.3') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.56.4') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -636,7 +636,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.56.3',
+          __v: '5.56.4',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1495,7 +1495,15 @@
                 if (en <= 0) {
                   if (planVieux && !todo.length) return mark(null, 'energie vide : plan en cours de mise a jour (tu as gagne des etoiles depuis), la recharge s\'affiche juste apres', 'wait-refill');
                   // 5.55 : encadre blanc du guide sur le « + », comme les autres indications (recharge : 15 gemmes, regle du jeu).
-                  if ((S.ki || 0) >= 15 && todo.some(r => !r.farm)) return mark(qv('[data-en-refill]'), 'energie vide : clique sur « + » a cote de la jauge d\'energie pour recharger (15 gemmes)', 'refill');
+                  if ((S.ki || 0) >= 15 && todo.some(r => !r.farm)) {
+                    // 5.56.4 : « + » vraiment affiche (jauge de l'Aventure .en-plus, bouton .pp-refill, ou celui de la barre du haut s'il est montre).
+                    // Ailleurs (Bannieres...), le « + » de la barre du haut (.hd-en-plus) est cache : on entoure la pastille d'energie, qui ouvre l'Aventure.
+                    const plus = [...document.querySelectorAll('[data-en-refill]')].find(e => vis(e) && !e.disabled && +getComputedStyle(e).opacity > 0.2 && e.getBoundingClientRect().width > 6);
+                    if (plus) return mark(plus, 'energie vide : clique sur « + » pour recharger (15 gemmes)', 'refill');
+                    const pastille = qv('#enPill');
+                    if (pastille) return mark(pastille, 'energie vide : clique sur l\'energie en haut, puis sur « + » pour recharger (15 gemmes)', 'refill-nav');
+                    return mark(null, 'energie vide : ouvre l\'Aventure et clique sur « + » a cote de la jauge pour recharger (15 gemmes)', 'refill-nav');
+                  }
                   const pulls = lsGet(LS.pulls, null);
                   if (econActions(S, 0).some(a => a.id === 'pull')) {
                     if (!/invocation|boosters/.test(location.hash)) return mark(qv('a[data-view="boosters"]'), `invoque x10 sur ${pulls.banners[0].banniere} : ouvre Bannieres`, 'nav-b');
