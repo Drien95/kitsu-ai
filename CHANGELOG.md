@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.56.2
+
+Guide, nouvel écran d'invocation du jeu (moteur `DFG3HI-s`) : le même encadré blanc que partout ailleurs.
+
+- **Cause** (vu par Adrien le 20/11) : avec la bannière permanente « Invocation Shonen » à 10/10, aucun encadré. L'écran de résultats d'une invocation reste dans la page une fois fermé (caché) avec ses boutons `[data-reopen]` : le guide croyait encore être sur cet écran et ignorait le bouton « Multi-invocation ×10 » de la bannière.
+- **Maintenant** : seuls les boutons visibles comptent. Réserve pleine : encadré blanc sur « Multi-invocation ×10 ». Moins de 10 : « Invoquer ×1 ». Jamais un bouton payant en gemmes ni une multi offerte (ticket) pour les invocations gratuites.
+- Nouvelle animation d'invocation : encadré sur « Passer » (`.iv31-skip`, touche Espace), au lieu d'un conseil d'Aventure caché dessous.
+- Résultats d'un tirage en gemmes, ou réserve gratuite vide : encadré sur « Fermer ».
+
 ## 5.56.1
 
 Campagne, panneau « Ton trio, combat par combat » : les « à calculer » ne comptent plus les combats déjà gagnés à 3 étoiles.

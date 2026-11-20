@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.56.1
+// @version      5.56.2
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.56.1') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.56.2') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -636,7 +636,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.56.1',
+          __v: '5.56.2',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1174,12 +1174,14 @@
                 if ([...document.querySelectorAll('h2,h3,b,strong,p')].some(e => /Petite v[ée]rification/i.test(e.textContent || '') && vis(e))) return mark(null, 'verification du jeu : coche la case toi-meme, puis continue', 'botcheck');
                 { const sk = [...document.querySelectorAll('#skipAll')].find(vis); if (sk) return mark(sk, 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)', 'skipall'); const h = document.getElementById('tpHelp'); if (vis(h) && /Touche/i.test(h.innerText || '')) { const c = [...document.querySelectorAll('.tp-card')].find(vis); if (c) return mark(c, 'touche la carte pour la retourner (ou « Tout passer »)', 'tpcard'); } }
                 // Animations et fenetres a passer : invocation (Passer, puis toucher), carte gagnee, popups, installation.
-                for (const [sel, txt] of [['#skipAll', 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)'], ['#tpPack', 'booster : glisse la souris sur les pointilles pour l\'ouvrir'], ['.wk-skip', 'invocation : clique sur « Passer »'], ['.rr-tap', 'touche l\'ecran pour continuer'], ['.rw-hint,.rw-card', 'carte obtenue : clique dessus (ou a cote) pour continuer'], ['[data-pop-close]', 'ferme cette fenetre (croix en haut a droite)'], ['[data-pwa-later]', 'fenetre « installer l\'appli » : clique sur la croix']]) {
+                for (const [sel, txt] of [['#skipAll', 'invocation : clique sur « Tout passer » (ou touche la carte pour la retourner)'], ['#tpPack', 'booster : glisse la souris sur les pointilles pour l\'ouvrir'], ['.wk-skip', 'invocation : clique sur « Passer »'], ['.iv31-skip', 'invocation : clique sur « Passer » (ou touche Espace)'], ['.rr-tap', 'touche l\'ecran pour continuer'], ['.rw-hint,.rw-card', 'carte obtenue : clique dessus (ou a cote) pour continuer'], ['[data-pop-close]', 'ferme cette fenetre (croix en haut a droite)'], ['[data-pwa-later]', 'fenetre « installer l\'appli » : clique sur la croix']]) {
                   const e = [...document.querySelectorAll(sel)].find(vis);
                   if (e) return mark(e, txt, 'ov' + sel);
                 }
-                // Resultats d'invocation sans invocation gratuite restante : Fermer.
-                { const fe = [...document.querySelectorAll('[data-close-op=""]')].find(vis); if (fe && packsNow(save()).v === 0) return mark(fe, 'invocations terminees : clique sur « Fermer »', 'opclose'); }
+                // Resultats d'invocation sans invocation gratuite a enchainer (plus de reserve, ou tirage payant en gemmes) : Fermer.
+                { const fe = [...document.querySelectorAll('[data-close-op=""]')].find(vis);
+                  const libre = [...document.querySelectorAll('[data-reopen]')].some(e => vis(e) && !e.disabled && !e.dataset.ticket && !/◆/.test(e.textContent || ''));
+                  if (fe && !libre) return mark(fe, 'invocations terminees : clique sur « Fermer »', 'opclose'); }
                 // Fiche de carte (Collection) avec parchemins d'XP : bonne carte ? plus gros parchemin, Max utile, Utiliser.
                 { const use = [...document.querySelectorAll('[data-sc-use]')].find(vis);
                   if (use && /^sc/.test(lastKey)) {
@@ -1374,7 +1376,10 @@
                     if (!/shonen/i.test(location.hash) && sh) return mark(sh, evA.txt + ' : choisis la banniere Shonen', 'packs-ban');
                     // x10 seulement s'il est actif (10 invocations disponibles), sinon x1 a repeter.
                     // Ecran de resultats d'invocation : ses propres boutons [data-reopen] (les [data-open] de la banniere sont dessous).
-                    const pickB = n => [...document.querySelectorAll(`[data-reopen="${n}"]`)].find(e => vis(e) && !e.disabled) || [...document.querySelectorAll(`[data-open="${n}"]`)].find(e => vis(e) && !e.disabled && !document.querySelector('[data-reopen]'));
+                    // 5.56.2 : l'ecran de resultats reste dans la page une fois ferme (cache) : seuls ses boutons VISIBLES comptent.
+                    // Invocations gratuites seulement : ni ticket (multi offerte, LR), ni cout en gemmes (◆).
+                    const free = e => vis(e) && !e.disabled && !e.dataset.ticket && !/◆/.test(e.textContent || '');
+                    const pickB = n => [...document.querySelectorAll(`[data-reopen="${n}"]`)].find(free) || ([...document.querySelectorAll('[data-reopen]')].some(vis) ? null : [...document.querySelectorAll(`[data-open="${n}"]`)].find(free));
                     const x10 = pickB(10), x1 = pickB(1);
                     if (x10) return mark(x10, evA.txt + ' : multi-invocation x10', 'packs-open10');
                     if (x1) return mark(x1, evA.txt + ' : clique sur « Invoquer x1 » (une par une, le x10 demande 10 invocations)', 'packs-open1');
