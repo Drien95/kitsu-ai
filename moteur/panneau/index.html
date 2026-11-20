@@ -412,7 +412,7 @@
   .tc-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; } .tc-top .seg { margin-bottom: 0; }
   .tc-mondes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; scrollbar-width: thin; }
   .tc-mo { flex: 0 0 auto; min-width: 118px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 8px 10px 9px; cursor: pointer; }
-  .tc-mo b { display: block; font-size: 12.5px; white-space: nowrap; } .tc-mo span { color: var(--mute); font-size: 11px; font-weight: 700; } .tc-mo span.nv { color: var(--gold); }
+  .tc-mo b { display: block; font-size: 12.5px; white-space: nowrap; } .tc-mo span { color: var(--mute); font-size: 11px; font-weight: 700; } .tc-mo span.nv { color: var(--gold); } .tc-mo span.jeu { color: var(--ok); }
   .tc-mo .b3 { display: flex; gap: 3px; margin-top: 6px; } .tc-mo .b3 i { flex: 1; height: 4px; border-radius: 4px; background: var(--line2); position: relative; overflow: hidden; }
   .tc-mo .b3 i em { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
   .tc-mo.on { border-color: var(--acc); background: rgba(255,75,62,.08); box-shadow: 0 0 0 1px rgba(255,75,62,.2); }
@@ -1797,6 +1797,8 @@ function campCmp(i) { const L = CP.j?.meilleurs?.[CP.obj] || [], k = L[i]?.ids.j
 const TC = { g: '', m: '', f: 'tous', d: 0, open: null, n: 'cible', cache: null };
 const TC_G = { cau: ['normal', 'difficile', 'extreme'], camp: ['campNormal', 'campDifficile', 'campExtreme'] };
 const TC_BIT = ['normal', 'difficile', 'extreme', 'campNormal', 'campDifficile', 'campExtreme']; // ordre du masque de /api/campagne/prevision
+// 5.56.1 : suffixe du combat par difficulte (meme ordre que DIFF de cauchemar3.mjs), pour lire pve.stars de la sauvegarde.
+const TC_SUF = { normal: '@n', difficile: '@hn', extreme: '@xn', campNormal: '', campDifficile: '@h', campExtreme: '@x' };
 const TC_N = { normal: ['Cauchemar Normal', CC.cn], difficile: ['Cauchemar Difficile', CC.cd], extreme: ['Cauchemar Extrême', CC.ce], campNormal: ['Normal', CC.N], campDifficile: ['Difficile', CC.D], campExtreme: ['Extrême', CC.E] };
 function tcSet(k, v) { TC[k] = v; if (k === 'g' || k === 'm') TC.open = null; tcRender(); }
 function tcOuvre(ev, fd) { if (ev.target.closest('.pf')) return; TC.open = TC.open === fd ? null : fd; tcRender(); }
@@ -1824,6 +1826,8 @@ function tcRender() {
   const lv = id => COL.j?.lv?.[id] || 1, pret = t => e.trios[t].every(id => lv(id) >= 99);
   if (!TC.g || !TC_G[TC.g].some(dn => D.diffs.has(dn))) TC.g = TC_G.cau.some(dn => D.diffs.has(dn)) ? 'cau' : 'camp';
   const actuel = au99 && lvOk && TC.n === 'pret', exact = window.CAMP_EXACT || null, cs = TC_G[TC.g];
+  // 5.56.1 : combat deja a 3 etoiles dans ta partie (pve.stars) : le calcul ne le rejoue plus (5.51), il n'est donc pas « a calculer ».
+  const pvJ = COL.j?.pve || null, valide = (fd, dn) => !!pvJ && (pvJ[fd + TC_SUF[dn]] || 0) >= 3, aCalc = (fd, dn) => D.diffs.has(dn) && existe(fd, dn) && !valide(fd, dn);
   const existe = (fd, dn) => { const x = D.info[fd]; return x && x.mask >= 0 ? !!(x.mask & 1 << TC_BIT.indexOf(dn)) : !!D.rows[fd]?.[dn]; };
   // trios a egalite du meilleur (objectif 99), ou meilleur trio deja pret (niveaux actuels)
   const egauxC = c => c[2] < 0 ? [] : [...new Set([c[2], ...(c[9] || []).filter(a => a[1] >= c[3]).map(a => a[0])])];
@@ -1834,7 +1838,7 @@ function tcRender() {
   const BASES = {}, baseDe = dn => BASES[dn] ||= base(TC.m, dn);
   const cellule = (fd, dn) => {
     if (!D.diffs.has(dn)) return { z: 'nc' };
-    const c = D.rows[fd]?.[dn]; if (!c) return { z: existe(fd, dn) ? 'neuf' : 'abs' };
+    const c = D.rows[fd]?.[dn]; if (!c) return { z: !existe(fd, dn) ? 'abs' : valide(fd, dn) ? 'jeu' : 'neuf' };
     const x = exact?.[c[0]]; if (x?.ids?.length === 3) return { ex: x, c };
     if (c[2] < 0) return { z: 'aucun', c };
     const eg = egaux(c); if (!eg.length) return { z: 'pret', c };
@@ -1846,27 +1850,30 @@ function tcRender() {
   const nomsI = ids => ids.map(id => carte(id).n.replace(/\s*\(.*\)/, '').split(' ')[0]).join(' / '), noms = t => nomsI(e.trios[t]);
   const pcl = p => p >= sl ? 'ok' : p > 0 ? 'mid' : 'zero', pct = p => `<span class="tc-pc ${pcl(p)}">${p} %</span>`;
   // mondes : barres = combats a 3 etoiles surs, par difficulte du groupe ; « a calculer » = combats du jeu absents du calcul
-  const neufs = m => combatsDe(m).filter(fd => cs.some(dn => D.diffs.has(dn) && !D.rows[fd]?.[dn] && existe(fd, dn))).length;
+  const neufs = m => combatsDe(m).filter(fd => cs.some(dn => !D.rows[fd]?.[dn] && aCalc(fd, dn))).length;
+  const enJeu = m => combatsDe(m).filter(fd => cs.some(dn => !D.rows[fd]?.[dn] && D.diffs.has(dn) && existe(fd, dn) && valide(fd, dn))).length;
   const visibles = D.mondes.filter(m => m.f.some(fd => cs.some(dn => D.rows[fd]?.[dn] || (D.diffs.has(dn) && existe(fd, dn)))));
   if (!visibles.some(m => m.id === TC.m)) TC.m = (visibles.find(m => m.f.some(fd => cs.some(dn => D.rows[fd]?.[dn]))) || visibles[0])?.id || '';
   const mondesH = visibles.map(m => {
     const L = m.f.filter(fd => cs.some(dn => D.rows[fd]?.[dn])), nv = neufs(m.id), nom = esc(m.nom.replace('’s Bizarre Adventure', ''));
+    const nj = enJeu(m.id), jeuH = nj ? `<span class="jeu" title="Combats déjà à 3★ dans ta partie : plus jamais rejoués par le calcul"> · ${nj} déjà 3★</span>` : '';
+    if (!L.length && !nv) return `<div class="tc-mo${TC.m === m.id ? ' on' : ''}" onclick="tcSet('m','${esc(m.id)}')"><b>${nom}</b><span>${nj} combats déjà à 3★ en jeu</span><div class="b3"><i></i><i></i><i></i></div></div>`;
     if (!L.length) return `<div class="tc-mo neuf${TC.m === m.id ? ' on' : ''}" onclick="tcSet('m','${esc(m.id)}')" title="Monde absent du dernier calcul : relance la Campagne"><b>+ ${nom}</b><span class="nv">nouveau · ${nv} à calculer</span><div class="b3"><i></i><i></i><i></i></div></div>`;
     const ok = cs.map(dn => L.filter(fd => ok3(D.rows[fd]?.[dn])).length);
-    return `<div class="tc-mo${TC.m === m.id ? ' on' : ''}" onclick="tcSet('m','${esc(m.id)}')"><b>${nom}</b><span>${L.length} combats</span>${nv ? `<span class="nv"> · +${nv} à calculer</span>` : ''}<div class="b3">${cs.map((dn, i) => `<i title="${TC_N[dn][0]} : ${ok[i]} / ${L.length} à 3★ sûrs"><em style="width:${100 * ok[i] / L.length}%;background:${TC_N[dn][1]}"></em></i>`).join('')}</div></div>`;
+    return `<div class="tc-mo${TC.m === m.id ? ' on' : ''}" onclick="tcSet('m','${esc(m.id)}')"><b>${nom}</b><span>${L.length} combats</span>${jeuH}${nv ? `<span class="nv"> · +${nv} à calculer</span>` : ''}<div class="b3">${cs.map((dn, i) => `<i title="${TC_N[dn][0]} : ${ok[i]} / ${L.length} à 3★ sûrs"><em style="width:${100 * ok[i] / L.length}%;background:${TC_N[dn][1]}"></em></i>`).join('')}</div></div>`;
   }).join('');
   // lignes du monde choisi
   const tous = combatsDe(TC.m).filter(fd => cs.some(dn => D.rows[fd]?.[dn] || (D.diffs.has(dn) && existe(fd, dn))));
   let L = tous;
   if (TC.f === 'chg') L = L.filter(fd => cs.some(dn => { const x = cellule(fd, dn); return x.ex || x.z === 'neuf' || x.z === 'pret' || (x.t != null && !x.base); }));
-  if (TC.f === 'durs') L = L.filter(fd => cs.some(dn => { const c = D.rows[fd]?.[dn]; return c ? !ok3(c) : D.diffs.has(dn) && existe(fd, dn); }));
+  if (TC.f === 'durs') L = L.filter(fd => cs.some(dn => { const c = D.rows[fd]?.[dn]; return c ? !ok3(c) : aCalc(fd, dn); }));
   const v = i => i === TC.d ? ' v' : '', nomMonde = D.mondes.find(m => m.id === TC.m)?.nom || TC.m;
   let h = `<div class="tc-hd tc-cb"><span class="k" style="color:var(--mute)">Combat</span><small class="muted" style="font-size:11.5px">${esc(nomMonde)}</small></div>`;
   h += cs.map((dn, i) => {
     if (!D.diffs.has(dn)) return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><small class="muted">pas dans ce calcul (lance-le avec les 6 difficultés)</small></div>`;
     const b = baseDe(dn), n = tous.filter(fd => D.rows[fd]?.[dn]).length, ok = tous.filter(fd => ok3(D.rows[fd]?.[dn])).length;
-    if (!n) return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><small class="muted"><b style="color:var(--gold)">${tous.filter(fd => existe(fd, dn)).length}</b> combats à calculer</small></div>`;
-    return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><div class="bs">${b.t >= 0 ? tri(b.t) : ''}<small>${b.t >= 0 ? `Trio de base sur <b>${b.n}</b> / ${n}<br>` : `${actuel ? 'Aucun trio prêt ici' : 'Aucun trio à 3★'}<br>`}<b>${ok}</b> combats à 3★ sûrs</small></div></div>`;
+    if (!n) return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><small class="muted">${(k => k ? `<b style="color:var(--gold)">${k}</b> combats à calculer` : 'tous déjà à 3★ en jeu')(tous.filter(fd => aCalc(fd, dn)).length)}</small></div>`;
+    return `<div class="tc-hd tc-col${v(i)}"><span class="k" style="color:${TC_N[dn][1]}">${TC_N[dn][0]}</span><div class="bs">${b.t >= 0 ? tri(b.t) : ''}<small>${b.t >= 0 ? `Trio de base sur <b>${b.n}</b> / ${n}<br>` : `${actuel ? 'Aucun trio prêt ici' : 'Aucun trio à 3★'}<br>`}<b>${ok}</b> combats à 3★ sûrs${(k => k ? `<br><b>${k}</b> déjà 3★ en jeu` : '')(tous.filter(fd => !D.rows[fd]?.[dn] && existe(fd, dn) && valide(fd, dn)).length)}</small></div></div>`;
   }).join('');
   for (const fd of L) {
     const inf = D.info[fd] || {}, open = TC.open === fd;
@@ -1874,6 +1881,7 @@ function tcRender() {
     h += cs.map((dn, i) => {
       const x = cellule(fd, dn), cl = `tc-cell tc-col${v(i)}`;
       if (x.z === 'nc' || x.z === 'abs') return `<div class="${cl}"><span class="tc-pc zero">-</span></div>`;
+      if (x.z === 'jeu') return `<div class="${cl}"><span class="tc-cw"><span><span class="tc-pc ok">3★ en jeu</span></span><span class="tc-now">déjà validé dans ta partie, plus rejoué</span></span></div>`;
       if (x.z === 'neuf') return `<div class="${cl} neuf"><span class="tc-cw"><span><span class="tc-pc zero" style="color:var(--gold)">à calculer</span></span><span class="tc-now">absent du dernier calcul : relance la Campagne</span></span></div>`;
       if (x.z === 'aucun') return `<div class="${cl}"><span class="tc-pc zero">aucun 3★ trouvé</span></div>`;
       if (x.z === 'pret') return `<div class="${cl} chg"><span class="tc-cw"><span><span class="tc-pc zero">${D.avecPret && x.c[10] === null ? 'aucun trio prêt' : 'pas encore calculé'}</span></span><span class="tc-now">au 99 : ${esc(noms(x.c[2]))} <b>${x.c[3]} %</b></span></span></div>`;
@@ -1884,7 +1892,7 @@ function tcRender() {
     }).join('') + '</div>';
     if (open) h += `<div class="tc-det"><div class="tc-cb" style="color:var(--mute);cursor:default">${esc(nomMonde)} · combat ${inf.i != null ? inf.i + 1 : '?'}<br>Le hasard est tiré au lancement du combat : le % est la part des essais finis en 3★ (${e.tirages} tirages par trio).</div>${cs.map((dn, i) => {
       const c = D.rows[fd]?.[dn], cl = `tc-col${v(i)}`;
-      if (!c) return `<div class="${cl}">${D.diffs.has(dn) && existe(fd, dn) ? 'Combat absent du dernier calcul : il sera joué au prochain calcul de la Campagne.' : 'Pas de combat ici.'}</div>`;
+      if (!c) return `<div class="${cl}">${D.diffs.has(dn) && existe(fd, dn) && valide(fd, dn) ? 'Déjà 3★ dans ta partie : le calcul ne le rejoue plus.' : D.diffs.has(dn) && existe(fd, dn) ? 'Combat absent du dernier calcul : il sera joué au prochain calcul de la Campagne.' : 'Pas de combat ici.'}</div>`;
       const dg = DG.get(c[0] + '|' + c[1]), cause = dg ? `<div style="color:${DIAG_C[dg[2]] || 'var(--mute)'}">${esc(DIAG_N[dg[2]] || '')}</div>` : '';
       if (c[2] < 0) return `<div class="${cl}">Aucun trio n'a fait 3★ ici, sur aucun tirage.<br>Script seul : <b>${c[7]} %</b>${cause}</div>`;
       const eg = egauxC(c), ensuite = (c[9] || []).filter(a => a[1] < c[3]).slice(0, 2), bp = lvOk ? bestP(c) : null;
