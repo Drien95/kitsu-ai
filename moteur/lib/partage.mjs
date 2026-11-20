@@ -58,17 +58,40 @@ export async function envoyerLot(reg, lot) {
   return r.json();
 }
 // File d'envoi gardee sur le disque : un envoi rate (pas d'internet, quota du jour) repart au calcul suivant.
+// 5.56 : lots de 60 000 resultats (le maximum accepte par le serveur, LIGNES_LOT) au lieu de 20 000 : un calcul Campagne
+// complet (3,9 millions de resultats le 18/11) tient en 65 lots, sous le quota de 80 lots par jour, au lieu de 195.
+export const LIGNES_PAR_LOT = 60000;
 const FILE = () => D('cache', 'partage', 'a-envoyer');
 export function mettreEnFile(lot) { mkdirSync(FILE(), { recursive: true }); const b = gzipSync(JSON.stringify(lot)); writeFileSync(path.join(FILE(), createHash('sha256').update(b).digest('hex').slice(0, 20) + '.json.gz'), b); }
-export async function viderFile(reg, log = () => {}) {
-  if (!existsSync(FILE())) return 0; let n = 0, lignes = 0, raison = '';
-  for (const f of readdirSync(FILE())) {
-    const p = path.join(FILE(), f);
-    try { const lot = JSON.parse(gunzipSync(readFileSync(p))); await envoyerLot(reg, lot); unlinkSync(p); n++; lignes += lot.l.length; }
-    catch (e) { log(`partage : envoi reporte (${e.message})`); raison = e.message; if (/^4(29|03)/.test(e.message)) break; if (/^400/.test(e.message)) unlinkSync(p); }
+// Heure locale du prochain jour de quota (le serveur compte les jours en temps universel : minuit UTC).
+export const prochainJourQuota = (t = Date.now()) => new Date((Math.floor(t / 86400e3) + 1) * 86400e3);
+const hhmm = d => String(d.getHours()).padStart(2, '0') + ' h ' + String(d.getMinutes()).padStart(2, '0');
+// version = { sigG, wKey } du calcul en cours : un lot en file d'une autre version (jeu mis a jour, autre IA commune) ne
+// pourra jamais etre lu ni controle par personne (le manifeste est filtre par version) ; il est efface au lieu d'user le
+// quota du jour. Un seul message de bilan, ecrit apres les envois : envoyes, gardes en file, raison et prochain essai.
+export async function viderFile(reg, version, log = () => {}) {
+  if (typeof version === 'function') { log = version; version = null; }
+  const b = { envoyes: 0, lignes: 0, perimes: 0, refuses: 0, attente: 0, raison: '' };
+  if (!existsSync(FILE())) return b;
+  for (const f of readdirSync(FILE()).filter(f => f.endsWith('.json.gz'))) {
+    const p = path.join(FILE(), f); let lot;
+    try { lot = JSON.parse(gunzipSync(readFileSync(p))); } catch { try { unlinkSync(p); } catch {} b.refuses++; continue; }
+    if (version && (lot.sigG !== version.sigG || lot.wKey !== version.wKey)) { try { unlinkSync(p); } catch {} b.perimes++; continue; }
+    if (b.raison) continue; // quota atteint ou base injoignable : les lots restants sont gardes (seuls les perimes sont encore tries)
+    try { await envoyerLot(reg, lot); unlinkSync(p); b.envoyes++; b.lignes += lot.l.length; }
+    catch (e) { if (/^400/.test(e.message) || /^lot invalide/.test(e.message)) { unlinkSync(p); b.refuses++; } else b.raison = e.message; }
   }
-  if (n || raison) noter('envoi', { lots: n, lignes, attente: enFile(), ...(raison ? { raison: /^429/.test(raison) ? 'quota du jour' : /^403/.test(raison) ? 'ID ecarte' : raison.slice(0, 80) } : {}) });
-  return n;
+  b.attente = enFile();
+  const quota = /^429/.test(b.raison), ecarte = /^403/.test(b.raison);
+  if (b.perimes) log(`partage : ${b.perimes} lots d une ancienne version (jeu ou IA commune) effaces de la file : plus personne ne peut les lire`);
+  if (b.refuses) log(`partage : ${b.refuses} lots refuses par la base (illisibles), effaces`);
+  if (b.envoyes || b.raison) {
+    const suite = !b.raison ? '' : quota ? ` : ${b.raison.replace(/^429 /, '')}, nouvel essai au prochain calcul lance apres ${hhmm(prochainJourQuota())}`
+      : ecarte ? ' : ID ecarte par la base' : ` : base injoignable (${b.raison.slice(0, 80)}), nouvel essai au prochain calcul`;
+    log(`partage : ${b.envoyes} lots envoyes (${b.lignes} resultats)${b.attente ? `, ${b.attente} gardes en file` : ''}${suite}`);
+  }
+  if (b.envoyes || b.raison || b.perimes) noter('envoi', { lots: b.envoyes, lignes: b.lignes, attente: b.attente, ...(b.perimes ? { perimes: b.perimes } : {}), ...(b.raison ? { raison: quota ? 'quota du jour' : ecarte ? 'ID ecarte' : b.raison.slice(0, 80) } : {}) });
+  return b;
 }
 
 // ---------- recuperer la base ----------

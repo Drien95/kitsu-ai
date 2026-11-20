@@ -26,7 +26,7 @@ Le serveur ne décompresse jamais un lot (offre gratuite : 10 ms de calcul par r
 
 ## Place
 
-Un lot de 20 000 résultats fait environ 90 Ko compressé, un calcul complet environ 25 lots. Une base D1 gratuite (500 Mo) tient donc environ 5 000 lots, soit 200 calculs complets. Les lots d'un ID écarté sont effacés. Le PC validateur regroupe les lots vérifiés d'un même ID en paquets d'environ 300 000 résultats (fusion sans doublon, moins de 1,8 Mo compressé). Au-delà, une 2e base D1 gratuite (10 par compte).
+Depuis la 5.56, un lot fait 60 000 résultats (le maximum accepté, `LIGNES_LOT`), environ 210 Ko compressé (mesuré sur les lots réels du 18/11 : 20 000 résultats = 69 à 76 Ko). Le calcul Campagne complet du 18/11 (161 cartes) a produit 3,9 millions de résultats, soit 65 lots de 60 000 (195 lots de 20 000 avant), environ 14 Mo compressés. Une base D1 gratuite (500 Mo) tient donc environ 35 calculs complets. Les lots d'un ID écarté sont effacés. Le PC validateur regroupe les lots vérifiés d'un même ID en paquets d'environ 300 000 résultats (fusion sans doublon, moins de 1,8 Mo compressé). Au-delà, une 2e base D1 gratuite (10 par compte).
 
 ## Essai sans Cloudflare
 
