@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.56.4
+
+Guide : l'encadré blanc de la recharge d'énergie apparaît aussi hors de l'Aventure.
+
+- **Cause** (moteur du jeu DFG3HI-s, 20/11) : la barre du haut a un « + » de recharge (`.hd-en-plus[data-en-refill]` dans `#enPill`), mais il n'est pas affiché. Sur la page Bannières, le guide ne trouvait aucun « + » visible et n'affichait que le texte, sans encadré.
+- **Correction** : le guide entoure le « + » seulement s'il est vraiment visible (taille et opacité, pas seulement présent). Sinon il entoure la pastille d'énergie en haut, qui ouvre l'Aventure, puis le « + » de la jauge (`.en-plus`).
+
 ## 5.56.3
 
 Guide, nouvel écran d'invocation du jeu (moteur `DFG3HI-s`) : le même encadré blanc que partout ailleurs.
