@@ -4,7 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.56.1
+## 5.56.2
+
+Script : après un nouveau calcul Campagne, l'écran d'équipe montre bien ses trios.
+
+- **Cause** : le classement des trios d'un combat est gardé dans le navigateur (25 derniers combats, `kitsu_ai_teams`). Depuis la 5.54, le trio exact du privé est redemandé au PC à chaque écran d'équipe, mais pas les trios du calcul Campagne public : si le calcul avait trouvé un nouveau meilleur trio pour ce combat, l'ancien classement restait affiché.
+- **Maintenant** : à chaque écran d'équipe (PC allumé), si un trio du calcul Campagne ou le trio exact manque au classement gardé, le classement est refait avec lui ; sinon le marquage « calcul » est mis à jour.
+- Monter de version vide aussi ce cache une fois.
+
+
 
 Campagne, panneau « Ton trio, combat par combat » : les « à calculer » ne comptent plus les combats déjà gagnés à 3 étoiles.
 

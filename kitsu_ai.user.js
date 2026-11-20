@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.56.1
+// @version      5.56.2
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.56.1') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.56.2') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -636,7 +636,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.56.1',
+          __v: '5.56.2',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1965,7 +1965,9 @@
               const res = cache[key].res, x = localPC.ok && !base ? await this._exactPC(fid, S) : null;
               if (!x) return res;
               const kOf = r => r.t.slice().sort((a, b) => a - b).join('-');
-              if (!x.exact || res.some(r => kOf(r) === x.exact.k)) { for (const r of res) { if (x.exact && kOf(r) === x.exact.k) r.exact = x.exact.p; else delete r.exact; } return res; }
+              // 5.56.2 : apres un nouveau calcul Campagne, ses trios pour ce combat doivent etre dans le classement ; sinon il est refait.
+              const tous = (x.trios || []).every(ids => res.some(r => kOf(r) === ids.join('-')));
+              if (tous && (!x.exact || res.some(r => kOf(r) === x.exact.k))) { const calc = new Set((x.trios || []).map(ids => ids.join('-'))); for (const r of res) { if (x.exact && kOf(r) === x.exact.k) r.exact = x.exact.p; else delete r.exact; if (calc.has(kOf(r))) r.calc = 1; else delete r.calc; } return res; }
             }
             const pol = smartPol(this.W), seeds = [1, 2, 3, 4, 5, 6, 7, 8];
             const trc = lsGet('kitsu_ai_training', null), tr0 = [...(trc?.objectif?.equipe || []), ...(trc?.cartes || []).slice(0, 2).map(c => c.id)].filter(id => S.owned?.[id]);
