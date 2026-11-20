@@ -4,7 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.56.0
+## 5.56.1
+
+Campagne, panneau « Ton trio, combat par combat » : les « à calculer » ne comptent plus les combats déjà gagnés à 3 étoiles.
+
+- **Cause** (vu par Adrien le 20/11) : depuis la 5.51, les combats déjà à 3★ dans ta partie (`pve.stars` de la sauvegarde) ne sont plus joués par le calcul, donc ils ne sont pas dans `cauchemar3.json`. Le panneau comptait tout combat du jeu absent du calcul comme « à calculer : relance la Campagne ». Après le calcul du 20/11, Dragon Ball Z affichait « +33 à calculer » (172 combats, dont 139 calculés en Cauchemar Normal) : relancer la Campagne n'y changeait rien.
+- **Maintenant** : un combat à 3★ dans ta partie s'affiche « 3★ en jeu, déjà validé dans ta partie, plus rejoué ». Le monde affiche « N déjà 3★ » en vert, et « +N à calculer » ne compte plus que les combats vraiment absents (nouveau monde, nouvelle difficulté). En-tête de colonne : « N déjà 3★ en jeu ». Le filtre « Sous 60 % » ne les montre plus.
+- Rien ne change dans le calcul.
+
+
 
 Base commune : le quota du jour n'est plus mangé par des lots que personne ne pourra lire, et le message d'envoi dit ce qui s'est vraiment passé.
 
