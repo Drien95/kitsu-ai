@@ -1227,8 +1227,8 @@
                 }
                 const S = save(), P = lsGet('kitsu_ai_plan', null);
                 const E0 = lsGet('kitsu_ai_events', null); if ((!E0 || Date.now() - E0.t > 6 * 3600000 || Object.keys(S.ev?.clear || {}).some(k => E0.combats && !E0.combats.find(r => r.id === k)?.fait)) && !KitsuAI._evBusy && !T && Date.now() - (window.__kitsuEvTry || 0) > 60000) { window.__kitsuEvTry = Date.now(); KitsuAI.events().catch(e => health.err('evenements : ' + e.message)); }
-                if (!P && !prepScreen()) { mark(null, 'calcul du plan... ouvre l\'onglet Jouer'); return; }
                 let en = S.energy?.v ?? 0; try { en = G.energy(S, Date.now()).v; } catch {}
+                if (!P && !prepScreen() && en > 0) { mark(null, 'calcul du plan... ouvre l\'onglet Jouer'); return; }
                 const todo = (P?.combats || []).filter(r => worthNow(r, S))
                   .sort((a, b) => b.troisEtoiles - a.troisEtoiles || (b.gemmesEsperees / (b.cout || 1)) - (a.gemmesEsperees / (a.cout || 1)) || b.xp - a.xp);
                 // 5.52 : plan calcule avant tes derniers combats (etoiles differentes) : on le recalcule. Le plan ne garde que le combat
@@ -1493,9 +1493,9 @@
                 }
                 // Energie vide : recharger si rentable, sinon attendre
                 if (en <= 0) {
-                  if (planVieux && !todo.length) return mark(null, 'energie vide : plan en cours de mise a jour (tu as gagne des etoiles depuis), la recharge s\'affiche juste apres', 'wait-refill');
-                  // 5.55 : encadre blanc du guide sur le « + », comme les autres indications (recharge : 15 gemmes, regle du jeu).
-                  if ((S.ki || 0) >= 15 && todo.some(r => !r.farm)) {
+                  // 5.56.5 : energie vide et 15 gemmes ou plus : encadre blanc sur le « + » tout de suite, sans attendre ni consulter le plan
+                  // (demande d'Adrien : aucun calcul). Avant, un plan en cours de recalcul ou sans combat sur bloquait l'encadre.
+                  if ((S.ki || 0) >= 15) {
                     // 5.56.4 : « + » vraiment affiche (jauge de l'Aventure .en-plus, bouton .pp-refill, ou celui de la barre du haut s'il est montre).
                     // Ailleurs (Bannieres...), le « + » de la barre du haut (.hd-en-plus) est cache : on entoure la pastille d'energie, qui ouvre l'Aventure.
                     const plus = [...document.querySelectorAll('[data-en-refill]')].find(e => vis(e) && !e.disabled && +getComputedStyle(e).opacity > 0.2 && e.getBoundingClientRect().width > 6);

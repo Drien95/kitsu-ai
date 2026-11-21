@@ -12,6 +12,12 @@ Base commune : les lots déjà en file sont regroupés avant l'envoi.
 - **Correction** : avant d'envoyer, `viderFile` fusionne les petits lots d'une même version (`fusionner`, sans doublon) en lots de 60 000 au plus, un groupe à la fois en mémoire (au plus 60 000 résultats chargés). Pour ces 116 lots : 39 lots, donc tout part en un seul jour de quota. Une ligne « N petits lots regroupés en M lots » dans le calcul.
 - Panneau, tuile « Dernier calcul » : « mis en file d'envoi » au lieu de « envoyés » (le nombre compte ce que le calcul a rangé, pas ce que la base a reçu).
 - Tests de la base commune : 21 (nouveau : 7 lots de 20 000 regroupés en 3 lots, tous envoyés).
+## 5.56.5
+
+Guide : l'encadré blanc de recharge ne dépend plus du plan.
+
+- **Cause** : énergie vide sur l'Aventure, « + » visible, 268 gemmes, et le guide affichait « plan en cours de mise à jour… la recharge s'affiche juste après » sans encadré. Le repère attendait un plan à jour contenant un combat sûr (5.52 à 5.56.4), et un plan absent bloquait aussi tout le guide (« calcul du plan… »).
+- **Correction** : énergie vide et 15 gemmes ou plus, le guide entoure tout de suite le « + » (ou la pastille d'énergie hors de l'Aventure), sans consulter le plan. Le message d'attente du plan est retiré, et un plan absent ne bloque plus le guide quand l'énergie est vide. Le recalcul du plan continue en arrière-plan pour les combats.
 
 ## 5.56.4
 
