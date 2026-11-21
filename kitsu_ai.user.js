@@ -65,6 +65,8 @@
         // du lag du script prive). Lecture seule, quelques microsecondes par pause.
         const PERF = window.__kitsuPerf = window.__kitsuPerf || {};
         const perfAdd = (qui, d) => { const b = PERF[qui] ??= { ms: 0, n: 0, max: 0 }; b.ms = Math.round(b.ms + d); b.n++; if (d > b.max) b.max = Math.round(d); };
+        // 5.57 : temps d'une boucle quand l'onglet est cache (PERF['<qui>:onglet-cache']), pour mesurer ce que coute de les garder actives.
+        const siCache = (qui, f) => (...a) => { if (!document.hidden) return f(...a); const t = performance.now(); try { return f(...a); } finally { perfAdd(qui + ':onglet-cache', performance.now() - t); } };
         let idleT = 0, idleQui = '', idleSeq = 0;
         // Fin du bloc : a la prochaine pause, ou des que la tache en cours rend la main (message envoye a soi-meme).
         const idleFin = new MessageChannel(); idleFin.port1.onmessage = e => { if (idleT && e.data === idleSeq) { perfAdd(idleQui, performance.now() - idleT); idleT = 0; } };
@@ -1096,7 +1098,7 @@
             });
             clearInterval(window.__kitsuDockT);
             const dockPas = () => {
-              if (document.hidden) return; // onglet cache : rien a afficher (le conseil, lui, continue : voir live())
+              // 5.57 : le dock tourne aussi onglet cache (demande d'Adrien du 21/11)
               adopt();
               const rel = {}; for (const [k, , id] of tabs) { const el = document.getElementById(id); rel[k] = !!el && el.style.display !== 'none' && (!!el.firstElementChild || el.textContent.trim() !== ''); }
               d.querySelectorAll('.kd-tab').forEach(t => { t.classList.toggle('rel', rel[t.dataset.kd]); t.classList.toggle('on', d.dataset.tab === t.dataset.kd); });
@@ -1117,7 +1119,7 @@
               try { KitsuAI.goalTick(); } catch {}
               accents(d); accents(document.getElementById('kitsuGuide')); accents(document.getElementById('kitsuToast')); accents(document.getElementById('kitsuBadge'));
             };
-            window.__kitsuDockT = setInterval(dockPas, 400);
+            window.__kitsuDockT = setInterval(siCache('dock', dockPas), 400);
             // 5.57 : au retour sur l'onglet, le dock se remet a jour tout de suite (sans attendre un minuteur ralenti par le navigateur).
             document.removeEventListener('visibilitychange', window.__kitsuDockVis);
             window.__kitsuDockVis = () => { if (!document.hidden) dockPas(); };
@@ -1170,8 +1172,8 @@
               return mark(null, txt, key);
             };
             const snooze = (id, min) => { const sz = lsGet('kitsu_ai_snooze', {}); sz[id] = Date.now() + min * 60000; lsSet('kitsu_ai_snooze', sz); };
-            window.__kitsuGuideT = setInterval(() => {
-              if (document.hidden) return;
+            window.__kitsuGuideT = setInterval(siCache('guide', () => {
+              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               try {
                 const T = liveBattle();
                 if (T && !T.over) { clr(); pill.innerHTML = '<span class="k-gd">Guide</span>combat en cours : suis le panneau KitsuAI'; return; }
@@ -1560,7 +1562,7 @@
                 if (wb) return mark(wb, `ouvre ${wname(next.id)} pour « ${next.nom} »`, 'world' + next.id);
                 return goView('adventure', `ouvre Aventure pour « ${next.nom} »`, 'nav-adv') || mark(null, `fais defiler jusqu'au monde ${wname(next.id)} pour « ${next.nom} »`, 'nav-w');
               } catch (e) { pill.textContent = 'Guide : ' + e.message; health.err('guide : ' + e.message); }
-            }, 500);
+            }), 500);
             return 'guide actif';
           },
 
@@ -1841,7 +1843,7 @@
             const brancher = () => { const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; horsCarte = 0; }; };
             clearInterval(window.__kitsuPlanT);
             window.__kitsuPlanT = setInterval(async () => {
-              if (document.hidden) return;
+              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               const onMap = /adventure/.test(location.hash) && !liveBattle() && !prepScreen();
               if (!onMap) {
                 pn.style.display = 'block'; shownAt = 0;
@@ -2184,8 +2186,8 @@
             const { team: tb } = ui(), seeds = [1, 2, 3, 4, 5, 6, 7, 8];
             let lastSig = '', job = null;
             clearInterval(window.__kitsuTeamT);
-            window.__kitsuTeamT = setInterval(() => {
-              if (document.hidden) return;
+            window.__kitsuTeamT = setInterval(siCache('equipe', () => {
+              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               const W = prepScreen();
               if (!W) { tb.style.display = 'none'; lastSig = ''; job = null; return; }
               const team = (W.team || []).map(x => typeof x === 'object' ? x?.id : x).filter(Boolean).map(Number);
@@ -2235,7 +2237,7 @@
                   + `<div style="margin-top:4px;opacity:.55;font-size:11px">Classement : 3 etoiles d'abord (32 simulations), puis les cartes a faire monter${tie > 1 ? ` · ${tie} trios a egalite` : ''}</div>`;
               };
               setTimeout(chunk, 0);
-            }, 300);
+            }), 300);
           },
 
           // Valeur des bannieres actives : victoires gagnees (frontiere + boss) si tu obtiens chaque carte vedette.
@@ -2287,7 +2289,7 @@
             let busy = false, shown = false;
             clearInterval(window.__kitsuPullT);
             window.__kitsuPullT = setInterval(async () => {
-              if (document.hidden) return;
+              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               if (!/boosters|invocation/.test(location.hash)) { pb.style.display = 'none'; shown = false; return; }
               if (shown || busy) return;
               pb.style.display = 'block';
@@ -2463,7 +2465,7 @@
             clearInterval(window.__kitsuRaidT);
             window.__kitsuRaidT = setInterval(async () => {
               const v = document.getElementById('view-raids');
-              if (document.hidden || !v || !v.offsetParent) { cacher(); return; }
+              if (!v || !v.offsetParent) { cacher(); return; }
               if (busy) return; busy = true;
               try {
                 if (!rid && Date.now() - ridT > 10000) { ridT = Date.now(); const a = await fetch('/api/raids', H()); if (a.ok) rid = (await a.json()).active || ''; }

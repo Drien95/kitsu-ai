@@ -6,10 +6,10 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ## 5.57.0
 
-Le conseil de combat continue onglet caché.
+Le script continue onglet caché : conseil de combat, guide, plan, écran d'équipe, invocations, dock et raids.
 
 - **Cause** : depuis 5.18 (allègement du script), le conseiller de combat s'arrêtait dès que l'onglet était caché (`document.hidden`). Un tour qui commençait pendant que l'onglet était caché n'était calculé qu'au retour sur l'onglet.
-- **Correction** : onglet caché, le conseil est calculé comme d'habitude (une fois par tour, dans le worker, puis par le PC). Seuls les contours et l'étiquette « CIBLE », qui mesurent la page, attendent que l'onglet soit visible. Au retour sur l'onglet, le conseiller et le dock font un passage tout de suite. Le guide, le plan, l'écran d'équipe et les invocations restent à l'arrêt onglet caché.
+- **Correction** : onglet caché, le conseil est calculé comme d'habitude (une fois par tour, dans le worker, puis par le PC). Seuls les contours et l'étiquette « CIBLE », qui mesurent la page, attendent que l'onglet soit visible. Au retour sur l'onglet, le conseiller et le dock font un passage tout de suite. Le guide, le plan, l'écran d'équipe, les invocations, le dock et les raids tournent aussi onglet caché (demande d'Adrien du 21/11).
 - Le navigateur ralentit lui-même le minuteur onglet caché : mesuré dans Chromium 1243, 1 passage par seconde, puis 1 par minute après 5 min. Rien n'est ajouté pour le contourner.
 - Mesure (Chromium, page de test qui reproduit la boucle du conseiller, nouveau tour pendant que l'onglet est caché, calcul de 60 ms dans un worker) :
 
@@ -20,7 +20,7 @@ Le conseil de combat continue onglet caché.
 | Passages onglet caché, 390 s | 66 | 66 (le navigateur décide) |
 | Temps de script de la page onglet caché, 390 s | 2,5 ms | 2,8 ms |
 
-- Le coût réel dans le jeu est maintenant mesuré : `window.__kitsuPerf['conseil:onglet-cache']` (temps passé par le conseiller onglet caché), envoyé avec la mesure du lag.
+- Le coût réel dans le jeu est maintenant mesuré, envoyé avec la mesure du lag : `window.__kitsuPerf['conseil:onglet-cache']`, `dock:onglet-cache`, `guide:onglet-cache`, `equipe:onglet-cache` (temps passé onglet caché) ; le plan et les invocations ont déjà leurs compteurs `idle:*`.
 
 ## 5.56.4
 
