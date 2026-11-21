@@ -4,6 +4,15 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.57.0
+
+Base commune : les lots déjà en file sont regroupés avant l'envoi.
+
+- **Cause** : la 5.56 fait des lots de 60 000 résultats, mais seulement pour les calculs suivants. Les 116 lots de 20 000 rangés par le calcul du 20/11 (2 318 928 résultats, encore en 5.55) seraient partis tels quels : 80 le premier jour (quota de l'ID), 36 le lendemain.
+- **Correction** : avant d'envoyer, `viderFile` fusionne les petits lots d'une même version (`fusionner`, sans doublon) en lots de 60 000 au plus, un groupe à la fois en mémoire (au plus 60 000 résultats chargés). Pour ces 116 lots : 39 lots, donc tout part en un seul jour de quota. Une ligne « N petits lots regroupés en M lots » dans le calcul.
+- Panneau, tuile « Dernier calcul » : « mis en file d'envoi » au lieu de « envoyés » (le nombre compte ce que le calcul a rangé, pas ce que la base a reçu).
+- Tests de la base commune : 21 (nouveau : 7 lots de 20 000 regroupés en 3 lots, tous envoyés).
+
 ## 5.56.4
 
 Guide : l'encadré blanc de la recharge d'énergie apparaît aussi hors de l'Aventure.

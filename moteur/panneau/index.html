@@ -1257,7 +1257,7 @@ function ptCamp() {
     + tile('Joueurs', fmt(j.etat?.joueurs || 0), 'IDs qui ont déjà envoyé des résultats')
     + tile('Ton apport', fmt(apport), !R.envoyer ? '« Partager mes calculs » est coupé' : j.base?.connu ? `${fmt(mien('verifie').lignes || 0)} vérifiés · crédit ${j.base.cred}` : 'rien envoyé pour l’instant', j.base?.ecarte ? 'bad' : '')
     + tile('En attente d’envoi', fmt(j.enFile) + ' lot' + (j.enFile > 1 ? 's' : ''), 'partiront au prochain calcul', j.enFile ? 'warn' : '')
-    + tile('Dernier calcul', d ? fmt(d.recus) : d0?.coupe ? 'non partagé' : '-', d ? `résultats repris de la base, ${fmt(d.envoyes)} envoyés` : d0?.coupe ? esc(d0.coupe.replace('coupee', 'coupée').replace('Reglages', 'Réglages')) + '. Relance un calcul pour partager.' : 'pas encore de calcul partagé', d0?.coupe ? 'warn' : '')
+    + tile('Dernier calcul', d ? fmt(d.recus) : d0?.coupe ? 'non partagé' : '-', d ? `résultats repris de la base, ${fmt(d.envoyes)} mis en file d’envoi` : d0?.coupe ? esc(d0.coupe.replace('coupee', 'coupée').replace('Reglages', 'Réglages')) + '. Relance un calcul pour partager.' : 'pas encore de calcul partagé', d0?.coupe ? 'warn' : '')
     + `</div>${ptActivite(j, R)}${j.base?.ecarte ? '<div class="note" style="margin-top:12px">Ton ID a été écarté après un contrôle : tes envois ne sont plus acceptés. Tu peux toujours utiliser la base.</div>' : ''}`);
 }
 // Quand ca bouge : uniquement pendant un calcul Campagne lance sur ce PC. Journal tenu par lib/partage.mjs (noter).

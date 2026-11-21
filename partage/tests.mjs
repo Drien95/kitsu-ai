@@ -224,16 +224,29 @@ await test('file d envoi : lots d une ancienne version effaces, quota atteint di
   P.mettreEnFile(P.construireLot({ ...V, sigG: 'ancien1' }, its.slice(0, 50))); // jeu mis a jour depuis : plus lisible par personne
   for (let k = 0; k < 5; k++) P.mettreEnFile(P.construireLot(V, its.slice(k * 10, k * 10 + 60)));
   assert.equal(P.enFile(), 6);
+  await envoyer(E, P.construireLot(V, its.slice(200, 210))); await envoyer(E, P.construireLot(V, its.slice(210, 220))); // 2 lots sur 3 du quota des nouveaux IDs (test)
   const b = await P.viderFile(REG, V, m => logs.push(m));
-  assert.deepEqual([b.perimes, b.envoyes, b.attente], [1, 3, 2], 'quota des nouveaux IDs (3 dans le test) : 3 envoyes, 2 gardes');
-  assert.match(b.raison, /^429/); assert.equal(P.enFile(), 2);
-  assert.equal(logs.length, 2, logs.join(' | '));
-  assert.match(logs[0], /1 lots d une ancienne version/);
-  assert.match(logs[1], /^partage : 3 lots envoyes \(180 resultats\), 2 gardes en file : quota du jour atteint pour cet ID, nouvel essai au prochain calcul lance apres \d\d h \d\d$/);
+  assert.deepEqual([b.perimes, b.regroupes, b.apres, b.envoyes, b.lignes, b.attente], [1, 5, 1, 1, 100, 0], JSON.stringify(b));
+  assert.equal(logs.length, 3, logs.join(' | ')); assert.match(logs[1], /1 lots d une ancienne version/); assert.match(logs[2], /^partage : 1 lots envoyes \(100 resultats\)$/);
   assert.equal(P.journalPartage()[0].perimes, 1);
-  // Plus rien d ancien, quota toujours atteint : aucun envoi, un seul message, les 2 lots restent.
-  logs.length = 0; const c = await P.viderFile(REG, V, m => logs.push(m)); assert.deepEqual([c.envoyes, c.attente], [0, 2]); assert.equal(logs.length, 1);
+  // Quota atteint : rien n est envoye, un seul message de bilan, ecrit apres le compte, avec l heure du prochain essai.
+  logs.length = 0; P.mettreEnFile(P.construireLot(V, its.slice(110, 130))); P.mettreEnFile(P.construireLot(V, its.slice(130, 150)));
+  const c = await P.viderFile(REG, V, m => logs.push(m)); assert.deepEqual([c.envoyes, c.attente], [0, 1]); assert.match(c.raison, /^429/);
+  assert.match(logs.at(-1), /^partage : 0 lots envoyes \(0 resultats\), 1 gardes en file : quota du jour atteint pour cet ID, nouvel essai au prochain calcul lance apres \d\d h \d\d$/);
+  assert.ok(!logs.some(x => /reporte/.test(x)));
   assert.equal(P.prochainJourQuota(Date.UTC(2026, 10, 20, 17, 46)).getTime(), Date.UTC(2026, 10, 21), 'le quota repart a minuit UTC');
+});
+
+await test('file d envoi : petits lots de la meme version regroupes en lots de 60 000 avant l envoi', async () => {
+  const E = randomBytes(32).toString('hex'); comme(E); const logs = [];
+  for (const f of (existsSync(path.join(DATA, 'cache', 'partage', 'a-envoyer')) ? readdirSync(path.join(DATA, 'cache', 'partage', 'a-envoyer')) : [])) (await import('node:fs')).unlinkSync(path.join(DATA, 'cache', 'partage', 'a-envoyer', f));
+  // 7 lots de 20 000 resultats (taille d avant la 5.56) : 140 000 resultats, soit 3 lots de 60 000 au plus.
+  const its = Array.from({ length: 140000 }, (_, i) => ({ cartes: [carte(1 + (i % 150)), carte(152 + (i % 3)), carte(160)], di: i % 3, pi: Math.floor(i / 450) % 2000, clePaquet: 'k' + (i % 3) + 'x' + (Math.floor(i / 450) % 2000), graine: 1 + (Math.floor(i / 150) % 3), n: 16, s3: i % 17 }));
+  for (let k = 0; k < 7; k++) P.mettreEnFile(P.construireLot(V, its.slice(k * 20000, (k + 1) * 20000)));
+  assert.equal(P.enFile(), 7);
+  const b = await P.viderFile(REG, V, m => logs.push(m));
+  assert.deepEqual([b.regroupes, b.apres, b.envoyes, b.lignes, b.attente], [6, 2, 3, 140000, 0], JSON.stringify(b) + logs.join(' | '));
+  assert.match(logs[0], /6 petits lots de la file regroupes en 2 lots/);
 });
 
 await test('lot de 60 000 resultats (taille d envoi du calcul) accepte par la base, sous 1,9 Mo', async () => {

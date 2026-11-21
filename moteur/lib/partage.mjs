@@ -71,18 +71,31 @@ const hhmm = d => String(d.getHours()).padStart(2, '0') + ' h ' + String(d.getMi
 // quota du jour. Un seul message de bilan, ecrit apres les envois : envoyes, gardes en file, raison et prochain essai.
 export async function viderFile(reg, version, log = () => {}) {
   if (typeof version === 'function') { log = version; version = null; }
-  const b = { envoyes: 0, lignes: 0, perimes: 0, refuses: 0, attente: 0, raison: '' };
+  const b = { envoyes: 0, lignes: 0, perimes: 0, refuses: 0, regroupes: 0, apres: 0, attente: 0, raison: '' };
   if (!existsSync(FILE())) return b;
+  const lire = p => { try { return JSON.parse(gunzipSync(readFileSync(p))); } catch { try { unlinkSync(p); } catch {} b.refuses++; return null; } };
+  // 1. Tri et regroupement (5.57) : les petits lots de la meme version (20 000 resultats avant la 5.56, fin de calcul)
+  // sont fusionnes en lots de LIGNES_PAR_LOT, un groupe a la fois en memoire. Moins de lots = plus de resultats par quota.
+  let groupe = [], nG = 0;
+  const fermer = () => { if (groupe.length > 1) { mettreEnFile(fusionner(groupe.map(x => x.lot))); for (const x of groupe) try { unlinkSync(x.p); } catch {} b.regroupes += groupe.length; b.apres++; } groupe = []; nG = 0; };
   for (const f of readdirSync(FILE()).filter(f => f.endsWith('.json.gz'))) {
-    const p = path.join(FILE(), f); let lot;
-    try { lot = JSON.parse(gunzipSync(readFileSync(p))); } catch { try { unlinkSync(p); } catch {} b.refuses++; continue; }
+    const p = path.join(FILE(), f), lot = lire(p); if (!lot) continue;
     if (version && (lot.sigG !== version.sigG || lot.wKey !== version.wKey)) { try { unlinkSync(p); } catch {} b.perimes++; continue; }
-    if (b.raison) continue; // quota atteint ou base injoignable : les lots restants sont gardes (seuls les perimes sont encore tries)
+    if (lot.l.length >= LIGNES_PAR_LOT) continue;
+    if (groupe.length && (nG + lot.l.length > LIGNES_PAR_LOT || groupe[0].lot.sigG !== lot.sigG || groupe[0].lot.wKey !== lot.wKey)) fermer();
+    groupe.push({ p, lot }); nG += lot.l.length;
+  }
+  fermer();
+  // 2. Envoi.
+  for (const f of readdirSync(FILE()).filter(f => f.endsWith('.json.gz'))) {
+    const p = path.join(FILE(), f); if (b.raison) break; // quota atteint ou base injoignable : les lots restants sont gardes
+    const lot = lire(p); if (!lot) continue;
     try { await envoyerLot(reg, lot); unlinkSync(p); b.envoyes++; b.lignes += lot.l.length; }
     catch (e) { if (/^400/.test(e.message) || /^lot invalide/.test(e.message)) { unlinkSync(p); b.refuses++; } else b.raison = e.message; }
   }
   b.attente = enFile();
   const quota = /^429/.test(b.raison), ecarte = /^403/.test(b.raison);
+  if (b.regroupes) log(`partage : ${b.regroupes} petits lots de la file regroupes en ${b.apres} lots de ${LIGNES_PAR_LOT} resultats au plus`);
   if (b.perimes) log(`partage : ${b.perimes} lots d une ancienne version (jeu ou IA commune) effaces de la file : plus personne ne peut les lire`);
   if (b.refuses) log(`partage : ${b.refuses} lots refuses par la base (illisibles), effaces`);
   if (b.envoyes || b.raison) {
@@ -90,7 +103,7 @@ export async function viderFile(reg, version, log = () => {}) {
       : ecarte ? ' : ID ecarte par la base' : ` : base injoignable (${b.raison.slice(0, 80)}), nouvel essai au prochain calcul`;
     log(`partage : ${b.envoyes} lots envoyes (${b.lignes} resultats)${b.attente ? `, ${b.attente} gardes en file` : ''}${suite}`);
   }
-  if (b.envoyes || b.raison || b.perimes) noter('envoi', { lots: b.envoyes, lignes: b.lignes, attente: b.attente, ...(b.perimes ? { perimes: b.perimes } : {}), ...(b.raison ? { raison: quota ? 'quota du jour' : ecarte ? 'ID ecarte' : b.raison.slice(0, 80) } : {}) });
+  if (b.envoyes || b.raison || b.perimes || b.regroupes) noter('envoi', { lots: b.envoyes, lignes: b.lignes, attente: b.attente, ...(b.perimes ? { perimes: b.perimes } : {}), ...(b.regroupes ? { regroupes: b.regroupes } : {}), ...(b.raison ? { raison: quota ? 'quota du jour' : ecarte ? 'ID ecarte' : b.raison.slice(0, 80) } : {}) });
   return b;
 }
 
