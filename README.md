@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.56.4**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.56.5**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.56.5 | Journal des calculs : un patch du jeu qui ajoute des collectifs ne fait plus rejouer les cartes dont les collectifs n'ont pas changé (le numéro des collectifs n'entre plus dans la signature d'une carte ; patch du 20/11 : 167 cartes à rejouer au lieu de 599)
 | 5.56.4 | Guide : énergie vide hors de l'Aventure (Bannières...), l'encadré blanc va sur la pastille d'énergie en haut (le « + » de la barre du haut est caché depuis la mise à jour du jeu du 20/11), puis sur le « + » de l'Aventure |
 | 5.56.3 | Guide, nouvel écran d'invocation (banniere permanente « Invocation Shonen ») : encadré blanc sur « Multi-invocation ×10 » quand la réserve est pleine, sur « Passer » de la nouvelle animation, et sur « Fermer » après un tirage en gemmes |
 | 5.56.2 | Script : un classement d'équipes gardé en mémoire est refait quand un nouveau calcul Campagne donne un autre trio pour ce combat |
