@@ -743,6 +743,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
 | 5.58.0 | Onglet du jeu caché : le conseil de combat, le guide, le plan, l'écran d'équipe, les invocations, le dock et les raids continuent ; le conseil est prêt dès le retour sur l'onglet (contours remis tout de suite). |
+| 5.57.0 | Base commune : les petits lots déjà en file (20 000 résultats, d'avant la 5.56) sont regroupés en lots de 60 000 avant l'envoi : 3 fois plus de résultats par jour de quota |
 | 5.56.5 | Guide : énergie vide et 15 gemmes ou plus, encadré blanc sur le « + » tout de suite, sans dépendre du plan (un plan en recalcul ne bloque plus l'encadré) |
 | 5.56.4 | Guide : énergie vide hors de l'Aventure (Bannières...), l'encadré blanc va sur la pastille d'énergie en haut (le « + » de la barre du haut est caché depuis la mise à jour du jeu du 20/11), puis sur le « + » de l'Aventure |
 | 5.56.3 | Guide, nouvel écran d'invocation (banniere permanente « Invocation Shonen ») : encadré blanc sur « Multi-invocation ×10 » quand la réserve est pleine, sur « Passer » de la nouvelle animation, et sur « Fermer » après un tirage en gemmes |

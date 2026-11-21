@@ -22,6 +22,14 @@ Le script continue onglet caché : conseil de combat, guide, plan, écran d'équ
 
 - Le coût réel dans le jeu est maintenant mesuré, envoyé avec la mesure du lag : `window.__kitsuPerf['conseil:onglet-cache']`, `dock:onglet-cache`, `guide:onglet-cache`, `equipe:onglet-cache` (temps passé onglet caché) ; le plan et les invocations ont déjà leurs compteurs `idle:*`.
 
+## 5.57.0
+
+Base commune : les lots déjà en file sont regroupés avant l'envoi.
+
+- **Cause** : la 5.56 fait des lots de 60 000 résultats, mais seulement pour les calculs suivants. Les 116 lots de 20 000 rangés par le calcul du 20/11 (2 318 928 résultats, encore en 5.55) seraient partis tels quels : 80 le premier jour (quota de l'ID), 36 le lendemain.
+- **Correction** : avant d'envoyer, `viderFile` fusionne les petits lots d'une même version (`fusionner`, sans doublon) en lots de 60 000 au plus, un groupe à la fois en mémoire (au plus 60 000 résultats chargés). Pour ces 116 lots : 39 lots, donc tout part en un seul jour de quota. Une ligne « N petits lots regroupés en M lots » dans le calcul.
+- Panneau, tuile « Dernier calcul » : « mis en file d'envoi » au lieu de « envoyés » (le nombre compte ce que le calcul a rangé, pas ce que la base a reçu).
+- Tests de la base commune : 21 (nouveau : 7 lots de 20 000 regroupés en 3 lots, tous envoyés).
 ## 5.56.5
 
 Guide : l'encadré blanc de recharge ne dépend plus du plan.
