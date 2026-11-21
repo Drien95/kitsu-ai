@@ -4,7 +4,7 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
-## 5.57.0
+## 5.58.0
 
 Le script continue onglet caché : conseil de combat, guide, plan, écran d'équipe, invocations, dock et raids.
 
@@ -13,7 +13,7 @@ Le script continue onglet caché : conseil de combat, guide, plan, écran d'équ
 - Le navigateur ralentit lui-même le minuteur onglet caché : mesuré dans Chromium 1243, 1 passage par seconde, puis 1 par minute après 5 min. Rien n'est ajouté pour le contourner.
 - Mesure (Chromium, page de test qui reproduit la boucle du conseiller, nouveau tour pendant que l'onglet est caché, calcul de 60 ms dans un worker) :
 
-| | 5.56.4 | 5.57.0 |
+| | 5.56.5 | 5.58.0 |
 |---|---|---|
 | Conseil prêt au retour sur l'onglet | non | oui |
 | Délai retour vers conseil affiché | 61 à 64 ms (+ le calcul du PC, 700 ms) | 0 ms |
@@ -21,6 +21,13 @@ Le script continue onglet caché : conseil de combat, guide, plan, écran d'équ
 | Temps de script de la page onglet caché, 390 s | 2,5 ms | 2,8 ms |
 
 - Le coût réel dans le jeu est maintenant mesuré, envoyé avec la mesure du lag : `window.__kitsuPerf['conseil:onglet-cache']`, `dock:onglet-cache`, `guide:onglet-cache`, `equipe:onglet-cache` (temps passé onglet caché) ; le plan et les invocations ont déjà leurs compteurs `idle:*`.
+
+## 5.56.5
+
+Guide : l'encadré blanc de recharge ne dépend plus du plan.
+
+- **Cause** : énergie vide sur l'Aventure, « + » visible, 268 gemmes, et le guide affichait « plan en cours de mise à jour… la recharge s'affiche juste après » sans encadré. Le repère attendait un plan à jour contenant un combat sûr (5.52 à 5.56.4), et un plan absent bloquait aussi tout le guide (« calcul du plan… »).
+- **Correction** : énergie vide et 15 gemmes ou plus, le guide entoure tout de suite le « + » (ou la pastille d'énergie hors de l'Aventure), sans consulter le plan. Le message d'attente du plan est retiré, et un plan absent ne bloque plus le guide quand l'énergie est vide. Le recalcul du plan continue en arrière-plan pour les combats.
 
 ## 5.56.4
 

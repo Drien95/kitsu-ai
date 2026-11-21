@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.57.0
+// @version      5.58.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.57.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.58.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -65,7 +65,7 @@
         // du lag du script prive). Lecture seule, quelques microsecondes par pause.
         const PERF = window.__kitsuPerf = window.__kitsuPerf || {};
         const perfAdd = (qui, d) => { const b = PERF[qui] ??= { ms: 0, n: 0, max: 0 }; b.ms = Math.round(b.ms + d); b.n++; if (d > b.max) b.max = Math.round(d); };
-        // 5.57 : temps d'une boucle quand l'onglet est cache (PERF['<qui>:onglet-cache']), pour mesurer ce que coute de les garder actives.
+        // 5.58 : temps d'une boucle quand l'onglet est cache (PERF['<qui>:onglet-cache']), pour mesurer ce que coute de les garder actives.
         const siCache = (qui, f) => (...a) => { if (!document.hidden) return f(...a); const t = performance.now(); try { return f(...a); } finally { perfAdd(qui + ':onglet-cache', performance.now() - t); } };
         let idleT = 0, idleQui = '', idleSeq = 0;
         // Fin du bloc : a la prochaine pause, ou des que la tache en cours rend la main (message envoye a soi-meme).
@@ -638,7 +638,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.57.0',
+          __v: '5.58.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1098,7 +1098,7 @@
             });
             clearInterval(window.__kitsuDockT);
             const dockPas = () => {
-              // 5.57 : le dock tourne aussi onglet cache (demande d'Adrien du 21/11)
+              // 5.58 : le dock tourne aussi onglet cache (demande d'Adrien du 21/11)
               adopt();
               const rel = {}; for (const [k, , id] of tabs) { const el = document.getElementById(id); rel[k] = !!el && el.style.display !== 'none' && (!!el.firstElementChild || el.textContent.trim() !== ''); }
               d.querySelectorAll('.kd-tab').forEach(t => { t.classList.toggle('rel', rel[t.dataset.kd]); t.classList.toggle('on', d.dataset.tab === t.dataset.kd); });
@@ -1120,7 +1120,7 @@
               accents(d); accents(document.getElementById('kitsuGuide')); accents(document.getElementById('kitsuToast')); accents(document.getElementById('kitsuBadge'));
             };
             window.__kitsuDockT = setInterval(siCache('dock', dockPas), 400);
-            // 5.57 : au retour sur l'onglet, le dock se remet a jour tout de suite (sans attendre un minuteur ralenti par le navigateur).
+            // 5.58 : au retour sur l'onglet, le dock se remet a jour tout de suite (sans attendre un minuteur ralenti par le navigateur).
             document.removeEventListener('visibilitychange', window.__kitsuDockVis);
             window.__kitsuDockVis = () => { if (!document.hidden) dockPas(); };
             document.addEventListener('visibilitychange', window.__kitsuDockVis);
@@ -1173,7 +1173,7 @@
             };
             const snooze = (id, min) => { const sz = lsGet('kitsu_ai_snooze', {}); sz[id] = Date.now() + min * 60000; lsSet('kitsu_ai_snooze', sz); };
             window.__kitsuGuideT = setInterval(siCache('guide', () => {
-              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               try {
                 const T = liveBattle();
                 if (T && !T.over) { clr(); pill.innerHTML = '<span class="k-gd">Guide</span>combat en cours : suis le panneau KitsuAI'; return; }
@@ -1234,8 +1234,8 @@
                 }
                 const S = save(), P = lsGet('kitsu_ai_plan', null);
                 const E0 = lsGet('kitsu_ai_events', null); if ((!E0 || Date.now() - E0.t > 6 * 3600000 || Object.keys(S.ev?.clear || {}).some(k => E0.combats && !E0.combats.find(r => r.id === k)?.fait)) && !KitsuAI._evBusy && !T && Date.now() - (window.__kitsuEvTry || 0) > 60000) { window.__kitsuEvTry = Date.now(); KitsuAI.events().catch(e => health.err('evenements : ' + e.message)); }
-                if (!P && !prepScreen()) { mark(null, 'calcul du plan... ouvre l\'onglet Jouer'); return; }
                 let en = S.energy?.v ?? 0; try { en = G.energy(S, Date.now()).v; } catch {}
+                if (!P && !prepScreen() && en > 0) { mark(null, 'calcul du plan... ouvre l\'onglet Jouer'); return; }
                 const todo = (P?.combats || []).filter(r => worthNow(r, S))
                   .sort((a, b) => b.troisEtoiles - a.troisEtoiles || (b.gemmesEsperees / (b.cout || 1)) - (a.gemmesEsperees / (a.cout || 1)) || b.xp - a.xp);
                 // 5.52 : plan calcule avant tes derniers combats (etoiles differentes) : on le recalcule. Le plan ne garde que le combat
@@ -1500,9 +1500,9 @@
                 }
                 // Energie vide : recharger si rentable, sinon attendre
                 if (en <= 0) {
-                  if (planVieux && !todo.length) return mark(null, 'energie vide : plan en cours de mise a jour (tu as gagne des etoiles depuis), la recharge s\'affiche juste apres', 'wait-refill');
-                  // 5.55 : encadre blanc du guide sur le « + », comme les autres indications (recharge : 15 gemmes, regle du jeu).
-                  if ((S.ki || 0) >= 15 && todo.some(r => !r.farm)) {
+                  // 5.56.5 : energie vide et 15 gemmes ou plus : encadre blanc sur le « + » tout de suite, sans attendre ni consulter le plan
+                  // (demande d'Adrien : aucun calcul). Avant, un plan en cours de recalcul ou sans combat sur bloquait l'encadre.
+                  if ((S.ki || 0) >= 15) {
                     // 5.56.4 : « + » vraiment affiche (jauge de l'Aventure .en-plus, bouton .pp-refill, ou celui de la barre du haut s'il est montre).
                     // Ailleurs (Bannieres...), le « + » de la barre du haut (.hd-en-plus) est cache : on entoure la pastille d'energie, qui ouvre l'Aventure.
                     const plus = [...document.querySelectorAll('[data-en-refill]')].find(e => vis(e) && !e.disabled && +getComputedStyle(e).opacity > 0.2 && e.getBoundingClientRect().width > 6);
@@ -1843,7 +1843,7 @@
             const brancher = () => { const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; horsCarte = 0; }; };
             clearInterval(window.__kitsuPlanT);
             window.__kitsuPlanT = setInterval(async () => {
-              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               const onMap = /adventure/.test(location.hash) && !liveBattle() && !prepScreen();
               if (!onMap) {
                 pn.style.display = 'block'; shownAt = 0;
@@ -1897,7 +1897,7 @@
             let last = '', cur = null, wasOver = true, attente = 0;
             clearInterval(window.__kitsuAdvT);
             let tick = 0;
-            // 5.57 : onglet cache, le conseil continue d'etre calcule (il est pret au retour) ; seuls les contours et l'etiquette CIBLE,
+            // 5.58 : onglet cache, le conseil continue d'etre calcule (il est pret au retour) ; seuls les contours et l'etiquette CIBLE,
             // qui mesurent la page (getBoundingClientRect force une mise en page), attendent que l'onglet soit visible.
             // Le navigateur ralentit lui-meme ce minuteur quand l'onglet est cache (1 fois par seconde, puis 1 fois par minute apres 5 min) :
             // au retour sur l'onglet, un tick est fait tout de suite (force : sans attendre le pas de 600 ms hors combat).
@@ -2187,7 +2187,7 @@
             let lastSig = '', job = null;
             clearInterval(window.__kitsuTeamT);
             window.__kitsuTeamT = setInterval(siCache('equipe', () => {
-              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               const W = prepScreen();
               if (!W) { tb.style.display = 'none'; lastSig = ''; job = null; return; }
               const team = (W.team || []).map(x => typeof x === 'object' ? x?.id : x).filter(Boolean).map(Number);
@@ -2289,7 +2289,7 @@
             let busy = false, shown = false;
             clearInterval(window.__kitsuPullT);
             window.__kitsuPullT = setInterval(async () => {
-              // 5.57 : tourne aussi onglet cache (demande d'Adrien du 21/11)
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               if (!/boosters|invocation/.test(location.hash)) { pb.style.display = 'none'; shown = false; return; }
               if (shown || busy) return;
               pb.style.display = 'block';
