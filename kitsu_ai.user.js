@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.57.0
+// @version      5.58.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.57.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.58.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -65,6 +65,8 @@
         // du lag du script prive). Lecture seule, quelques microsecondes par pause.
         const PERF = window.__kitsuPerf = window.__kitsuPerf || {};
         const perfAdd = (qui, d) => { const b = PERF[qui] ??= { ms: 0, n: 0, max: 0 }; b.ms = Math.round(b.ms + d); b.n++; if (d > b.max) b.max = Math.round(d); };
+        // 5.58 : temps d'une boucle quand l'onglet est cache (PERF['<qui>:onglet-cache']), pour mesurer ce que coute de les garder actives.
+        const siCache = (qui, f) => (...a) => { if (!document.hidden) return f(...a); const t = performance.now(); try { return f(...a); } finally { perfAdd(qui + ':onglet-cache', performance.now() - t); } };
         let idleT = 0, idleQui = '', idleSeq = 0;
         // Fin du bloc : a la prochaine pause, ou des que la tache en cours rend la main (message envoye a soi-meme).
         const idleFin = new MessageChannel(); idleFin.port1.onmessage = e => { if (idleT && e.data === idleSeq) { perfAdd(idleQui, performance.now() - idleT); idleT = 0; } };
@@ -636,7 +638,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.57.0',
+          __v: '5.58.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1095,8 +1097,8 @@
               window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
             });
             clearInterval(window.__kitsuDockT);
-            window.__kitsuDockT = setInterval(() => {
-              if (document.hidden) return; // onglet cache : rien a afficher
+            const dockPas = () => {
+              // 5.58 : le dock tourne aussi onglet cache (demande d'Adrien du 21/11)
               adopt();
               const rel = {}; for (const [k, , id] of tabs) { const el = document.getElementById(id); rel[k] = !!el && el.style.display !== 'none' && (!!el.firstElementChild || el.textContent.trim() !== ''); }
               d.querySelectorAll('.kd-tab').forEach(t => { t.classList.toggle('rel', rel[t.dataset.kd]); t.classList.toggle('on', d.dataset.tab === t.dataset.kd); });
@@ -1116,7 +1118,12 @@
               const pcOn = !!localPC.ok; if (pcEl._v !== pcOn) { pcEl._v = pcOn; pcEl.classList.toggle('on', pcOn); pcEl.title = pcOn ? 'Moteur du PC connecté' : 'Moteur du PC absent'; }
               try { KitsuAI.goalTick(); } catch {}
               accents(d); accents(document.getElementById('kitsuGuide')); accents(document.getElementById('kitsuToast')); accents(document.getElementById('kitsuBadge'));
-            }, 400);
+            };
+            window.__kitsuDockT = setInterval(siCache('dock', dockPas), 400);
+            // 5.58 : au retour sur l'onglet, le dock se remet a jour tout de suite (sans attendre un minuteur ralenti par le navigateur).
+            document.removeEventListener('visibilitychange', window.__kitsuDockVis);
+            window.__kitsuDockVis = () => { if (!document.hidden) dockPas(); };
+            document.addEventListener('visibilitychange', window.__kitsuDockVis);
           },
 
           // ---------- Guide pas a pas ----------
@@ -1165,8 +1172,8 @@
               return mark(null, txt, key);
             };
             const snooze = (id, min) => { const sz = lsGet('kitsu_ai_snooze', {}); sz[id] = Date.now() + min * 60000; lsSet('kitsu_ai_snooze', sz); };
-            window.__kitsuGuideT = setInterval(() => {
-              if (document.hidden) return;
+            window.__kitsuGuideT = setInterval(siCache('guide', () => {
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               try {
                 const T = liveBattle();
                 if (T && !T.over) { clr(); pill.innerHTML = '<span class="k-gd">Guide</span>combat en cours : suis le panneau KitsuAI'; return; }
@@ -1555,7 +1562,7 @@
                 if (wb) return mark(wb, `ouvre ${wname(next.id)} pour « ${next.nom} »`, 'world' + next.id);
                 return goView('adventure', `ouvre Aventure pour « ${next.nom} »`, 'nav-adv') || mark(null, `fais defiler jusqu'au monde ${wname(next.id)} pour « ${next.nom} »`, 'nav-w');
               } catch (e) { pill.textContent = 'Guide : ' + e.message; health.err('guide : ' + e.message); }
-            }, 500);
+            }), 500);
             return 'guide actif';
           },
 
@@ -1836,7 +1843,7 @@
             const brancher = () => { const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; horsCarte = 0; }; };
             clearInterval(window.__kitsuPlanT);
             window.__kitsuPlanT = setInterval(async () => {
-              if (document.hidden) return;
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               const onMap = /adventure/.test(location.hash) && !liveBattle() && !prepScreen();
               if (!onMap) {
                 pn.style.display = 'block'; shownAt = 0;
@@ -1890,13 +1897,17 @@
             let last = '', cur = null, wasOver = true, attente = 0;
             clearInterval(window.__kitsuAdvT);
             let tick = 0;
-            window.__kitsuAdvT = setInterval(() => {
+            // 5.58 : onglet cache, le conseil continue d'etre calcule (il est pret au retour) ; seuls les contours et l'etiquette CIBLE,
+            // qui mesurent la page (getBoundingClientRect force une mise en page), attendent que l'onglet soit visible.
+            // Le navigateur ralentit lui-meme ce minuteur quand l'onglet est cache (1 fois par seconde, puis 1 fois par minute apres 5 min) :
+            // au retour sur l'onglet, un tick est fait tout de suite (force : sans attendre le pas de 600 ms hors combat).
+            const pas = force => {
+              const t0 = document.hidden ? performance.now() : 0;
               try {
                 // Hors combat : on ne cherche un combat que toutes les 600 ms (4 ticks) et on ne nettoie qu'une fois, a la fin du combat (5.18).
-                if (wasOver && (++tick & 3)) return;
+                if (wasOver && !force && (++tick & 3)) return;
                 const T = liveBattle();
                 if (!T || T.over) { if (!wasOver) { if (T && T.over) logEnd(T); box.style.display = 'none'; last = ''; cur = null; window.__kitsuCoup = null; window.__kitsuAvis = null; clearMarks(badge); } attente = 0; if (document.documentElement.dataset.kitsuPublic != null) delete document.documentElement.dataset.kitsuPublic; wasOver = true; return; }
-                if (document.hidden) return;
                 // 5.53 : debut d'un combat que le script prive sait calculer (Tour, ou combat a graine connue) : on n'affiche rien le
                 // temps que le prive le prenne (data-kar-avis) ou dise qu'il ne peut pas (data-kar-libre). S'il ne dit rien en 2,5 s, le public s'affiche.
                 const h = document.documentElement;
@@ -1905,7 +1916,7 @@
                 if (!attente && h.dataset.kitsuPublic == null) h.dataset.kitsuPublic = '';
                 wasOver = false; box.style.display = 'block';
                 const st = T.st, a = T.active;
-                if (cur) {
+                if (cur && !document.hidden) {
                   // Toutes les 150 ms : on ne retouche les contours que s'ils ont change (retirer puis remettre un halo force le navigateur a tout redessiner).
                   const want = [[unitEl(cur.me), 'kitsu-me'], [document.querySelector(`button.act[data-act="${cur.kind}"]`), 'kitsu-btn']];
                   if (cur.tgt) want.push([unitEl(cur.tgt), 'kitsu-tgt']); else if (cur.all) B.foes(st, a || st.units[0]).forEach(e => want.push([unitEl(e.key), 'kitsu-all']));
@@ -1962,7 +1973,12 @@
                   }
                 } catch (e) { box.textContent = 'Conseiller : ' + e.message; health.err('conseiller : ' + e.message); } });
               } catch (e) { box.textContent = 'Conseiller : ' + e.message; health.err('conseiller : ' + e.message); }
-            }, 150);
+              finally { if (t0) perfAdd('conseil:onglet-cache', performance.now() - t0); }
+            };
+            window.__kitsuAdvT = setInterval(pas, 150);
+            document.removeEventListener('visibilitychange', window.__kitsuAdvVis);
+            window.__kitsuAdvVis = () => { if (!document.hidden) pas(true); };
+            document.addEventListener('visibilitychange', window.__kitsuAdvVis);
           },
 
           // Ecran "Choisis tes cartes" : 120 trios de tes 10 meilleures cartes, simules contre ce combat.
@@ -2170,8 +2186,8 @@
             const { team: tb } = ui(), seeds = [1, 2, 3, 4, 5, 6, 7, 8];
             let lastSig = '', job = null;
             clearInterval(window.__kitsuTeamT);
-            window.__kitsuTeamT = setInterval(() => {
-              if (document.hidden) return;
+            window.__kitsuTeamT = setInterval(siCache('equipe', () => {
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               const W = prepScreen();
               if (!W) { tb.style.display = 'none'; lastSig = ''; job = null; return; }
               const team = (W.team || []).map(x => typeof x === 'object' ? x?.id : x).filter(Boolean).map(Number);
@@ -2221,7 +2237,7 @@
                   + `<div style="margin-top:4px;opacity:.55;font-size:11px">Classement : 3 etoiles d'abord (32 simulations), puis les cartes a faire monter${tie > 1 ? ` · ${tie} trios a egalite` : ''}</div>`;
               };
               setTimeout(chunk, 0);
-            }, 300);
+            }), 300);
           },
 
           // Valeur des bannieres actives : victoires gagnees (frontiere + boss) si tu obtiens chaque carte vedette.
@@ -2273,7 +2289,7 @@
             let busy = false, shown = false;
             clearInterval(window.__kitsuPullT);
             window.__kitsuPullT = setInterval(async () => {
-              if (document.hidden) return;
+              // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
               if (!/boosters|invocation/.test(location.hash)) { pb.style.display = 'none'; shown = false; return; }
               if (shown || busy) return;
               pb.style.display = 'block';
@@ -2449,7 +2465,7 @@
             clearInterval(window.__kitsuRaidT);
             window.__kitsuRaidT = setInterval(async () => {
               const v = document.getElementById('view-raids');
-              if (document.hidden || !v || !v.offsetParent) { cacher(); return; }
+              if (!v || !v.offsetParent) { cacher(); return; }
               if (busy) return; busy = true;
               try {
                 if (!rid && Date.now() - ridT > 10000) { ridT = Date.now(); const a = await fetch('/api/raids', H()); if (a.ok) rid = (await a.json()).active || ''; }
@@ -2471,6 +2487,7 @@
           stop() {
             clearInterval(window.__kitsuAdvT); clearInterval(window.__kitsuRaidT); clearInterval(window.__kitsuTeamT); clearInterval(window.__kitsuPullT); clearInterval(window.__kitsuRwT); clearInterval(window.__kitsuPlanT); clearInterval(window.__kitsuGuideT); clearInterval(window.__kitsuDockT); clearInterval(window.__kitsuHealthT); clearInterval(window.__kitsuEnT); worker && worker.terminate && worker.terminate(); clearInterval(window.__kitsuHealthT);
             ['kitsuAdv', 'kitsuRaid', 'kitsuRaidCss', 'kitsuTeam', 'kitsuPull', 'kitsuPlan', 'kitsuRoad', 'kitsuGuide', 'kitsuGuideCss', 'kitsuToast', 'kitsuBadge', 'kitsuAdvCss', 'kitsuDock', 'kitsuDockCss', 'kitsuHealth', 'kitsuGoal'].forEach(id => document.getElementById(id)?.remove());
+            document.removeEventListener('visibilitychange', window.__kitsuAdvVis); document.removeEventListener('visibilitychange', window.__kitsuDockVis);
             clearMarks();
             return 'KitsuAI arrete';
           },
