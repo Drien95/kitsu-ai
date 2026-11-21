@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.56.5
+
+Guide : l'encadré blanc de recharge ne dépend plus du plan.
+
+- **Cause** : énergie vide sur l'Aventure, « + » visible, 268 gemmes, et le guide affichait « plan en cours de mise à jour… la recharge s'affiche juste après » sans encadré. Le repère attendait un plan à jour contenant un combat sûr (5.52 à 5.56.4), et un plan absent bloquait aussi tout le guide (« calcul du plan… »).
+- **Correction** : énergie vide et 15 gemmes ou plus, le guide entoure tout de suite le « + » (ou la pastille d'énergie hors de l'Aventure), sans consulter le plan. Le message d'attente du plan est retiré, et un plan absent ne bloque plus le guide quand l'énergie est vide. Le recalcul du plan continue en arrière-plan pour les combats.
+
 ## 5.56.4
 
 Guide : l'encadré blanc de la recharge d'énergie apparaît aussi hors de l'Aventure.
