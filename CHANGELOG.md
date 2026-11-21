@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.60.1
+
+Journal des calculs (Campagne, Tour, Tour privée) : moins de cartes rejouées après un patch du jeu.
+
+- **Cause** (comparaison des moteurs `B4t5msj4` et `DFG3HI-s`, 21/11) : la signature d'une carte contenait le numéro `i` de chacun de ses collectifs. Le jeu renumérote tous les collectifs quand il en insère de nouveaux : 599 cartes semblaient changées, alors que seules 167 avaient vraiment un collectif ajouté, retiré ou modifié (stats et kits : seul Killua (Godspeed) a changé).
+- **Correction** : le numéro n'entre plus dans la signature. L'ordre des collectifs d'une carte est gardé (ils sont rangés par numéro), car le jeu s'en sert pour départager deux collectifs de même % dans le choix des 6 actifs (`G.linkOrder`).
+- Effet unique : les signatures des cartes qui ont des collectifs changent une fois avec cette version, donc le prochain calcul rejoue tout, puis les patches suivants profitent du correctif. Les lots partagés de la Campagne calculés avant la 5.60.1 ne sont plus repris.
+- Un patch qui modifie le code de combat (comme `tauntOf` le 20/11) fait toujours tout rejouer : c'est voulu.
+- Nouveau test : collectifs renumérotés = même signature ; contenu ou ordre changé = autre signature.
+
 ## 5.60.0
 
 Launcher : moins de chiffres (audit et maquettes validés par Adrien le 22/11). Avant, le gros chiffre de chaque mode était celui du public, le privé était plus bas avec d'autres trios, et chaque page montrait des chiffres différents pour le même mode.

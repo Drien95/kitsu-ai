@@ -49,6 +49,14 @@ console.log(JSON.stringify({ memo: memoCollectifs || null, out })); process.kill
 }
 const { h53 } = await import('./lib/journal.mjs');
 t('journal : cle stable et distincte', h53('abc') === h53('abc') && h53('abc') !== h53('abd'));
+// 5.60.1 : signature d'une carte insensible a la renumerotation des collectifs (champ `i`), sensible a leur contenu et a leur ordre.
+{
+  const { makeSigCarte } = await import('./lib/journal.mjs');
+  const c = (G.LINKS || []).flatMap(l => l.ids).find(id => (G.LINKS || []).filter(l => l.ids.includes(id)).length >= 2), sig = L => makeSigCarte({ ...G, LINKS: L }, B)(c);
+  const L0 = G.LINKS || [], mien = L0.filter(l => l.ids.includes(c)), [x, y] = mien;
+  const renum = L0.map(l => ({ ...l, i: (l.i ?? 0) + 1000 })), pct = L0.map(l => l === x ? { ...l, pct: l.pct + 1 } : l), inv = L0.map(l => l === x ? { ...x, i: y.i } : l === y ? { ...y, i: x.i } : l);
+  t('journal : collectifs renumerotes = meme signature de carte, contenu ou ordre change = autre signature', c != null && sig(L0) === sig(renum) && sig(L0) !== sig(pct) && sig(L0) !== sig(inv), String(c));
+}
 // 5.42 : generations du journal ; compacter() garde les lignes servies par l'un des 2 derniers calculs complets.
 {
   const { ouvrirJournal, nettoyerAnciens } = await import('./lib/journal.mjs'), fsm = await import('node:fs'), os = await import('node:os'), pth = await import('node:path');
