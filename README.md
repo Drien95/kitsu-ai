@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.58.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.59.0**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.59.0 | Case « Focus Campagne par difficulté » (onglet Plan du moment) : le guide finit toutes les Normal, puis Difficile, Extrême, puis Cauchemar N, D, E ; une difficulté qui n'a plus que des murs est passée. |
 | 5.58.0 | Onglet du jeu caché : le conseil de combat, le guide, le plan, l'écran d'équipe, les invocations, le dock et les raids continuent ; le conseil est prêt dès le retour sur l'onglet (contours remis tout de suite). |
 | 5.57.0 | Base commune : les petits lots déjà en file (20 000 résultats, d'avant la 5.56) sont regroupés en lots de 60 000 avant l'envoi : 3 fois plus de résultats par jour de quota |
 | 5.56.5 | Guide : énergie vide et 15 gemmes ou plus, encadré blanc sur le « + » tout de suite, sans dépendre du plan (un plan en recalcul ne bloque plus l'encadré) |
