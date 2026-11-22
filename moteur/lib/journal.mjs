@@ -34,11 +34,15 @@ export function signatureCombat(G, B, S, W) {
 }
 
 // Signature d'une carte : ses stats, son kit et les collectifs ou elle apparait.
+// 5.60.1 : le numero `i` d'un collectif n'entre plus dans la signature. Le jeu renumerote tous les collectifs quand il en
+// insere de nouveaux (patch DFG3HI-s : 599 cartes invalidees, 167 vraiment changees). Seul compte l'ordre de ses collectifs,
+// car `i` departage deux collectifs de meme % dans le choix des 6 actifs (G.linkOrder) : ils sont donc ranges par `i`.
+export const collectifSansNumero = l => { const { i, ...reste } = l; return JSON.stringify(reste); };
 export function makeSigCarte(G, B) {
   const memo = new Map();
   return id => {
     if (!memo.has(id)) {
-      const links = (G.LINKS || []).filter(l => l.ids.includes(id)).map(l => JSON.stringify(l)).sort().join('|');
+      const links = (G.LINKS || []).filter(l => l.ids.includes(id)).sort((a, b) => (a.i ?? 0) - (b.i ?? 0)).map(collectifSansNumero).join('|');
       memo.set(id, h53(JSON.stringify(G.CHAR_BY_ID[id] || {}) + '#' + JSON.stringify(B.KITS?.[id] || {}) + '#' + links));
     }
     return memo.get(id);
