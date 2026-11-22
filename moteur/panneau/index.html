@@ -500,6 +500,49 @@
   @media (max-width: 900px) { .cm-grid { grid-template-columns: 1fr; } .cm-tot { margin-left: 0; text-align: left; } .cm-cells { grid-template-columns: repeat(auto-fill, 8px); } .cm-cells i { width: 8px; height: 8px; }
     .seg .lab { padding: 6px 8px; font-size: 10px; } .cm-top .seg a { padding: 6px 8px; font-size: 11px; } .tw-wrap, .lv-wrap { grid-template-columns: 1fr; } .lv-fr { height: 140px; gap: 4px; } .lv-col .m { display: none; } .lv-col .n { font-size: 9.5px; }
     .kk-toast { left: 10px; right: 10px; bottom: 78px; width: auto; } }
+  /* 5.60 : moins de chiffres. En grand le fait en jeu, a cote le prevu (bleu = prive, gris = public), le reste replie dans Details. */
+  .sy-src { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; background: rgba(7,8,12,.7); border: 1px solid var(--line2); vertical-align: 2px; margin-left: 6px; font-style: normal; }
+  .sy-src.p { color: #8cc4ff; } .sy-src.o { color: var(--mute); }
+  .sy-g4 { grid-template-columns: repeat(4, 1fr); } #p-accueil .sy-g4 .mode { min-height: 250px; }
+  .mode .s b { font-weight: 800; } .mode .s b.pv { color: #8cc4ff; }
+  .sy-duo { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; }
+  .sy-duo .k { font-size: 11px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: var(--mute); }
+  .sy-duo .a .v { font: 400 64px/1 var(--head); font-style: italic; margin-top: 6px; } .sy-duo .a .v small { font-size: 26px; color: var(--mute); margin-left: 6px; }
+  .sy-duo .b { padding-left: 22px; border-left: 1px solid var(--line2); padding-bottom: 6px; }
+  .sy-duo .b .v { font: 400 34px/1 var(--head); font-style: italic; margin-top: 6px; color: #8cc4ff; } .sy-duo .b .v.o { color: #f4ede3; } .sy-duo .b .v small { font-size: 18px; color: var(--mute); margin-left: 4px; }
+  .sy-duo .pfs { margin-left: auto; display: flex; gap: 8px; }
+  .sy-todo { margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--line2); display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .sy-todo b { font-size: 14px; } .sy-todo .x { color: var(--mute); font-size: 12.5px; } .sy-todo button { margin-left: auto; }
+  .sy-pub { margin-top: 14px; font-size: 12px; color: var(--mute); }
+  .sy-pub > summary { cursor: pointer; color: var(--acc2); font-weight: 700; list-style: none; } .sy-pub > summary::-webkit-details-marker { display: none; }
+  .sy-pub > summary::before { content: "+ "; } .sy-pub[open] > summary::before { content: "\2212 "; } .sy-pub > div { margin-top: 6px; }
+  .sy-det { margin-top: 18px; background: linear-gradient(180deg, rgba(255,255,255,.025), transparent 40%), var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; }
+  .sy-det > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; font: 400 26px/1.1 var(--head); font-style: italic; text-transform: uppercase; letter-spacing: .4px; }
+  .sy-det > summary::-webkit-details-marker { display: none; } .sy-det > summary::before { content: "/"; color: var(--acc); font-style: normal; }
+  .sy-det > summary::after { content: "+"; margin-left: 10px; color: var(--mute); font-style: normal; } .sy-det[open] > summary::after { content: "\2212"; }
+  .sy-det > summary .r { margin-left: auto; font: 600 13px var(--body); text-transform: none; font-style: normal; color: var(--mute); }
+  .sy-acts { display: flex; gap: 12px; margin: 16px 0 0; flex-wrap: wrap; align-items: center; } .sy-acts .muted { font-size: 12.5px; }
+  .sy-plie { display: none; margin-top: 16px; } .sy-plie.on { display: block; }
+  .sy-steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+  .sy-steps li { display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); counter-increment: s; } .sy-steps li:last-child { border-bottom: 0; }
+  .sy-steps li::before { content: counter(s); font: 400 26px/1 var(--head); font-style: italic; color: var(--acc); width: 22px; flex: none; }
+  .sy-steps li .x { color: var(--mute); font-size: 12.5px; } .sy-steps li button { margin-left: auto; white-space: nowrap; }
+  .sy-diff { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .sy-diff .c { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: rgba(255,255,255,.015); }
+  .sy-diff .sy-duo { margin-top: 10px; gap: 16px; } .sy-diff .sy-duo .a .v { font-size: 46px; } .sy-diff .sy-duo .b { padding-left: 14px; } .sy-diff .sy-duo .b .v { font-size: 26px; }
+  .sy-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; margin-top: 12px; position: relative; }
+  .sy-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; } .sy-bar i.pv { background: rgba(140,196,255,.35); } .sy-bar i.pv.o { background: rgba(244,237,227,.18); } .sy-bar i.fj { background: linear-gradient(90deg, var(--acc), var(--gold)); }
+  .sy-leg { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--mute); margin-top: 12px; } .sy-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .sy-w { width: 100%; border-collapse: collapse; }
+  .sy-w td, .sy-w th { padding: 9px 10px; border-bottom: 1px solid var(--line); font-size: 13px; text-align: left; }
+  .sy-w th { font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--mute); } .sy-w td.n, .sy-w th.n { text-align: right; white-space: nowrap; }
+  .sy-w td.pv { color: #8cc4ff; } .sy-w .sy-bar { margin: 0; height: 6px; min-width: 120px; } .sy-w button { padding: 6px 10px; font-size: 11px; }
+  .sy-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); } .sy-row:last-child { border-bottom: 0; }
+  .sy-row .x { color: var(--mute); font-size: 12.5px; } .sy-row .r { margin-left: auto; text-align: right; }
+  .pill.on { border-color: currentColor; } .pill[onclick] { cursor: pointer; }
+  @media (max-width: 1100px) { .sy-g4 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px) { .sy-diff { grid-template-columns: 1fr; } .sy-duo .b { border-left: 0; padding-left: 0; } .sy-duo .a .v { font-size: 52px; } .sy-duo .pfs { margin-left: 0; } .sy-w .hide { display: none; } .sy-todo button { margin-left: 0; } .sy-det { padding: 14px 16px; } .sy-det > summary { font-size: 22px; } .sy-det > summary .r { display: none; } .sy-steps li { flex-wrap: wrap; } .sy-steps li > div { flex: 1; min-width: 0; } .sy-steps li button { margin-left: 36px; } }
+  @media (max-width: 520px) { .sy-g4 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -520,7 +563,7 @@
     <div class="grp">Analyses</div>
     <a href="#calculs" data-p="calculs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Calculs</span></a>
     <a href="#modele" data-p="modele"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="17" r="2.5"/><path d="M8 7.5l2.8 7.6M16.4 7.4l-3.2 7.8M8 7h8"/></svg><span>Le modèle</span></a>
-    <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Cartes et conseils</span></a>
+    <a href="#resultats" data-p="resultats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Progresser</span></a>
     <div class="grp">Outils</div>
     <a href="#regles" data-p="regles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M8 7h8M8 11h6"/></svg>Règles et effets</a>
     <a href="#script" data-p="script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg><span>Script</span><span class="b" id="nbScript"></span></a>
@@ -540,20 +583,19 @@
     <div id="bandeaux"></div>
     <div class="eyebrow">KitsuAI · panneau local</div>
     <h1>Tableau de bord</h1>
-    <p class="lead">Où tu en es dans chaque mode, et ce qu'il reste à faire. Rien ne se lance tout seul.</p>
-    <div class="grid g3" id="dbModes"></div>
-    <div class="sp"></div>
-    <div class="card md-mini" id="dbModele" onclick="go('modele')" style="display:none"></div>
+    <p class="lead">En grand : ce que tu as fait en jeu. En dessous : ce que prévoit ton script. Clique un mode pour le détail.</p>
+    <div class="grid g4 sy-g4" id="dbModes"></div>
     <div class="sp"></div>
     <div class="grid g2">
       <div class="card"><h2>À faire</h2><div id="dbTodo"></div></div>
       <div class="card hot">
         <h2>Mettre à jour l'IA <span class="r"><button class="stop" id="stop" onclick="arreter()" disabled>Arrêter</button></span></h2>
-        <div class="steps" id="steps"></div>
+        <p class="muted" style="margin:0 0 16px;font-size:13px">Moteur du jeu, entraînement, analyse, Tour, équipes, conseils de cartes. Rien ne se lance tout seul.</p>
         <button class="big" id="btnTout" onclick="lancer('complet')">Mettre à jour l'IA</button>
         <div class="prog" id="prog"><i></i></div>
         <div class="last" id="lastline">Prêt.</div>
         <div class="muted" style="font-size:12px"><span id="jobh">Aucune tâche en cours.</span> · La Campagne 3★ et la Tour se lancent depuis leur onglet.</div>
+        <details class="sy-pub"><summary>Voir les 6 étapes</summary><div class="steps" id="steps"></div></details>
       </div>
     </div>
   </section>
@@ -562,18 +604,21 @@
   <section class="page" id="p-tour">
     <div class="eyebrow">Modes de jeu</div>
     <h1>Tour de l'infini</h1>
-    <p class="lead">Le trio qui monte le plus haut. Tous les trios de tes cartes SSR, UR et LR montent sur les vrais étages (les PV sont gardés d'un étage à l'autre), les plus faibles sont écartés manche après manche, puis les meilleurs refont 30 montées. Aussi : les étages où tes montées s'arrêtent et les collectifs à cocher.</p>
-    <div class="card hot">
+    <p class="lead">Ton record, le trio à jouer, et ce qu'il te manque pour aller plus haut.</p>
+    <div id="twSy"></div>
+    <div class="sy-acts"><button class="ghost" id="twCalcBtn" onclick="syPlie('twCalc')">Lancer le calcul…</button><div id="twJob" class="muted"></div></div>
+    <div class="card hot sy-plie" id="twCalc">
+      <p class="muted" style="margin:0 0 14px;font-size:13px">Tous les trios de tes cartes SSR, UR et LR montent sur les vrais étages (les PV sont gardés d'un étage à l'autre), les plus faibles sont écartés manche après manche, puis les meilleurs refont 30 montées.</p>
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="planche('#p-tour', 'tw-planche')">Exporter la planche PNG</button></span></h2>
       <div class="row"><label>Niveaux <select id="o_twniv" onchange="twPrev()"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99 (potentiel)</option></select></label></div>
       <div class="opt"><div class="lab">Cartes essayées</div><div><div class="row" id="twrar"></div><div class="risk" id="twriskRar"></div></div></div>
       <div class="opt"><div class="lab">Temps de travail</div><div><div class="seg" id="twtps"><a data-t="0" onclick="chxTps('tw',0)">Jusqu'au bout</a><a data-t="2" onclick="chxTps('tw',2)">2 h puis pause</a><a data-t="8" onclick="chxTps('tw',8)">Une nuit (8 h) puis pause</a></div><div class="risk" id="twriskTps"></div></div></div>
       <div id="twPrev" class="grid g5" style="margin-top:18px"></div>
       <div class="row lance" style="margin-top:16px"><span class="muted" style="font-size:12px;flex:1">Le PC reste éveillé, tu peux jouer pendant ce temps. Une pause ou un arrêt n'efface rien : la reprise repart du journal, les montées déjà faites ne sont pas refaites.</span><button data-act="tour">Lancer le calcul</button></div>
-      <div id="twJob" class="muted" style="margin:8px 0 0"></div>
     </div>
-    <div class="sp"></div>
+    <details class="sy-det" id="twDet"><summary>Détails <span class="r">meilleurs trios, étages qui bloquent, collectifs, graphiques, méthode</span></summary>
     <div id="twBody"><div class="skel"></div></div>
+    </details>
   </section>
 
   <!-- ===================== RAIDS ===================== -->
@@ -699,9 +744,12 @@
   <!-- ===================== RESULTATS ===================== -->
   <section class="page" id="p-resultats">
     <div class="eyebrow">Analyses</div>
-    <h1>Cartes et conseils</h1>
-    <div class="chips2"><a onclick="document.getElementById('planxp').scrollIntoView({behavior:'smooth'})">Plan d'XP et bannière</a><a onclick="document.getElementById('tabsNiv').scrollIntoView({behavior:'smooth'})">Meilleurs trios</a><a onclick="document.getElementById('tabsCons').scrollIntoView({behavior:'smooth'})">Collectifs, duos, marché</a><a onclick="document.getElementById('files').scrollIntoView({behavior:'smooth'})">Fichiers</a></div>
-    <div id="planxp"><div class="card"><div class="muted">Plan d'XP et bannière : chargement...</div></div></div>
+    <h1>Progresser</h1>
+    <p class="lead">Où mettre ton XP et tes gemmes maintenant. Trois réponses, dans l'ordre.</p>
+    <div id="syProg"><div class="card"><div class="muted">Chargement…</div></div></div>
+    <details class="sy-det" id="resDet"><summary>Détails <span class="r">classement complet, meilleurs trios, collectifs, fichiers</span></summary>
+    <div class="sp"></div>
+    <div id="planxp"></div>
     <div class="sp"></div>
     <p class="lead" id="resinfo">Les 10 meilleurs trios par catégorie.</p>
     <div class="sub" id="tabsNiv"></div>
@@ -716,6 +764,7 @@
       <h2>Fichiers <span class="r"><button class="ghost" onclick="dossier('resultats')">Ouvrir le dossier</button></span></h2>
       <div class="files" id="files"></div>
     </div>
+    </details>
   </section>
 
   <!-- ===================== CAMPAGNE ===================== -->
@@ -755,8 +804,11 @@
   <section class="page" id="p-campagne">
     <div class="eyebrow">Modes de jeu</div>
     <h1>Campagne</h1>
-    <p class="lead">Le meilleur trio pour les 3 étoiles, en Campagne et en Cauchemar, chacun en Normal, Difficile et Extrême. Tous les trios de tes cartes SSR, UR et LR sont essayés.</p>
-    <div class="card hot">
+    <p class="lead">Cauchemar en 3★ : ce que tu as fait, ce que ton script prévoit, et où jouer ensuite.</p>
+    <div id="c3Sy"></div>
+    <div class="sy-acts"><button class="ghost" id="c3CalcBtn" onclick="syPlie('c3Calc')">Lancer le calcul…</button><div id="c3job" class="muted"></div></div>
+    <div class="card hot sy-plie" id="c3Calc">
+      <p class="muted" style="margin:0 0 14px;font-size:13px">Le meilleur trio pour les 3 étoiles, en Campagne et en Cauchemar, chacun en Normal, Difficile et Extrême. Tous les trios de tes cartes SSR, UR et LR sont essayés.</p>
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="campPlanche()">Exporter la planche PNG</button></span></h2>
       <div class="row">
         <label>Niveaux <select id="o_c3niv" onchange="campPrev()"><option value="99">Toutes au niveau 99 (potentiel)</option><option value="actuel">Tes niveaux actuels</option></select></label>
@@ -768,8 +820,8 @@
       <div id="c3prev" class="grid g5" style="margin-top:18px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
       <div class="frise" id="c3frise"></div><div class="frleg" id="c3leg"></div>
       <div class="row lance" style="margin-top:16px"><span class="muted" style="font-size:12px;flex:1">Le PC reste éveillé, tu peux jouer pendant ce temps. Une pause ou un arrêt n'efface rien : la reprise repart du journal, les combats déjà joués ne sont pas refaits.</span><button data-act="cauchemar3">Lancer le calcul</button></div>
-      <div id="c3job" class="muted" style="margin:8px 0 0"></div>
     </div>
+    <details class="sy-det" id="c3Det"><summary>Détails <span class="r">trio combat par combat, carte des mondes, plan, collectifs, graphiques</span></summary>
     <div class="sp"></div>
     <div class="card" id="c3base">
       <h2>Base commune <span class="r"><button class="ghost" onclick="go('reglages');setTimeout(()=>$('r_partage').scrollIntoView({behavior:'smooth'}),50)">Réglages du partage</button></span></h2>
@@ -779,6 +831,7 @@
     <div id="c3Ext"></div><!-- place pour une extension locale (window.campApres, 5.28) -->
     <div id="c3tabs"></div>
     <div id="c3body"></div>
+    </details>
   </section>
 
   <!-- ===================== SCRIPT ===================== -->
@@ -1089,7 +1142,7 @@ async function refresh() {
   // resultats
   hp('files').innerHTML = E.resultats.map(f => `<div><span>${esc(f.f)}</span><span class="muted" style="flex:0;white-space:nowrap">${quand(f.t)}</span><a onclick="voir('${esc(f.f)}')">Voir</a></div>`).join('') || '<div class="muted">Aucun fichier.</div>';
   renderRes();
-  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'raid') rdRender(); if (pa === 'sauvegarde') colRender(); if (pa === 'resultats') planCharger(); mdMaj();
+  sideRender(run); dashRender(); vedette(); const pa = pageAct(); if (pa === 'event') evRender(); if (pa === 'tour') twRender(); if (pa === 'raid') rdRender(); if (pa === 'sauvegarde') colRender(); if (pa === 'resultats') planCharger(); mdMaj(); syMaj();
 }
 let consTab = 'collectifs';
 function renderCons() {
@@ -1503,7 +1556,7 @@ const nbFr = x => String(x).replace('.', ','), xpFr = x => Math.round(x).toLocal
 const PXMODE = { campagne: 'Lance « Campagne » dans Calculs', tour: 'Lance « Tour de l’infini » dans Calculs', raid: 'Lance le calcul dans Raids' };
 function planRender() {
   const j = PX.j; if (!j) return;
-  if (j.err) return setH('planxp', `<div class="card"><h2>Plan d'XP et bannière</h2><div class="muted">${esc(j.err)}</div></div>`);
+  if (j.err) { setH('planxp', ''); return setH('syProg', `<div class="card"><h2>Progresser</h2><div class="muted">${esc(j.err)}</div></div>`); }
   const M = Object.fromEntries(j.modes.map(m => [m.cle, m])), ord = ['campagne', 'tour', 'arene', 'raid'];
   const ph = ids => (ids || []).slice(0, 3).map(id => carte(id).img).filter(Boolean).map(u => `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`).join('');
   const val = m => m.cle === 'campagne' ? `${nbFr(m.pct)} %` : m.unite === '%' ? `${nbFr(m.now)} %` : `${nbFr(Math.round(m.now))} <small>/ ${nbFr(Math.round(m.max))}</small>`;
@@ -1517,27 +1570,30 @@ function planRender() {
   let h = `<div class="card"><h2>Vers le modèle parfait <span class="r">ton score : ${nbFr(j.score)} / 100</span></h2><div class="grid g4 px-modes">${ord.map(modeH).join('')}</div>
     <p class="muted" style="font-size:12px;margin:12px 0 0">Score = moyenne des modes (Campagne, Tour et Arène pèsent pareil, le Raid moitié), chacun en % de ce que ta collection peut faire au niveau 99. Calculé à partir de tes derniers résultats, sans nouveau calcul.${M.campagne?.approx ? ' Chiffres Campagne approximatifs : relance le calcul Campagne, il garde maintenant tous les trios sûrs de chaque combat.' : ''}</p></div>`;
   const c1 = j.cartes[0];
-  if (c1) {
-    const id = j.cible.id, autres = c1.ids.filter(x => x !== id), xpFait = Math.max(0, 1 - c1.xp / (c1.ids.length * 617434));
-    const trio = Object.values(c1.gains).find(g => g.trio)?.trio;
-    h += `<div class="sp"></div><div class="card hot"><h2>Prochaine carte à monter <span class="r">+${nbFr(c1.points)} points · ${nbFr(c1.parCent)} pour 100 000 XP</span></h2>
-      <div class="hero" style="padding:4px 0 0">${c1.ids.map(x => pf(x, 'xl')).join('')}<div class="txt"><div class="k">Monte jusqu'au niveau 99</div><div class="bigv">${esc(c1.noms.join(' + '))}</div>
-      <div class="s">Niveau ${c1.niveaux.join(' et ')} · encore <b style="color:var(--txt)">${xpFr(c1.xp)} XP</b>, soit environ ${Math.ceil(c1.xp / 10000)} grands parchemins.${autres.length ? ` Elles ne servent qu'ensemble : le script donne d'abord les parchemins à ${esc(carte(id).n)}.` : ''}</div>
-      <div class="px-lv"><i style="width:${Math.round(100 * xpFait)}%"></i></div>
-      <div class="px-gm">${ord.filter(k => M[k]).map(k => { const g = c1.gains[k]; return `<div class="${g ? 'up' : 'z'}"><span>${nomM(k)}${g && g.source !== 'public' ? `<em class="px-src">${g.source === 'exact' ? 'exact' : 'privé'}</em>` : ''}</span><b>${g ? (k === 'campagne' ? `+${g.v} combat${g.v > 1 ? 's' : ''}` : `+${nbFr(g.v)} ${esc(g.unite)}`) : '+0'}</b></div>`; }).join('')}</div>
-      ${trio ? `<div class="muted" style="font-size:12px;margin-top:10px">Trio visé : ${esc(trio.map(x => carte(x).n).join(' / '))}.${M.tour?.trio && c1.gains.tour ? ` En attendant, la Tour garde ${esc(M.tour.trio.map(x => carte(x).n).join(' / '))} (${nbFr(Math.round(M.tour.now))}).` : ''}</div>` : ''}</div></div></div>`;
-    h += `<div class="sp"></div><div class="card"><h2>Classement <span class="r">points gagnés pour 100 000 XP</span></h2><table><tr><th>#</th><th>À monter au 99</th><th>Ce que ça débloque</th><th class="n">XP</th><th class="n">Points</th><th class="n">/ 100 000 XP</th></tr>`
+  if (c1) h += `<div class="sp"></div><div class="card"><h2>Classement des cartes à monter <span class="r">points gagnés pour 100 000 XP</span></h2><table><tr><th>#</th><th>À monter au 99</th><th>Ce que ça débloque</th><th class="n">XP</th><th class="n">Points</th><th class="n">/ 100 000 XP</th></tr>`
       + j.cartes.map((c, i) => `<tr><td>${i + 1}</td><td>${equipeHTML(c.ids, 1)}<div class="muted" style="font-size:11px">niv. ${c.niveaux.join(', ')}</div></td><td>${Object.entries(c.gains).map(([k, g]) => `${nomM(k)} ${gTxt(k, g)}`).join(' · ')}</td><td class="n">${xpFr(c.xp)}</td><td class="n">+${nbFr(c.points)}</td><td class="n${i ? '' : ' okc'}">${nbFr(c.parCent)}</td></tr>`).join('')
       + `</table><p class="muted" style="font-size:12px;margin:10px 0 0">Une carte qui ne sert qu'avec une autre est proposée en groupe, avec l'XP de toutes.</p></div>`;
-  } else h += `<div class="sp"></div><div class="card"><h2>Prochaine carte à monter</h2><div class="muted">${j.modes.length ? 'Aucune carte à monter ne fait progresser un mode : tes trios utiles sont déjà au niveau 99.' : 'Lance d’abord un calcul (Campagne, Tour ou Raid).'}</div></div>`;
-  const bans = j.bannieres || [], gt = j.guetter || [];
-  const banH = b => `<div class="card"><h2>Bannière ${esc(b.serie)} <span class="r">${b.pity ? 'pity ' + esc(b.pity) + ' · ' : ''}${b.fin ? 'jusqu’au ' + new Date(b.fin).toLocaleDateString('fr-FR') : ''}</span></h2>
-    <div class="px-verdict"><div class="big ${b.verdict === 'tirer' ? 'okc' : b.verdict === 'garder' ? 'badc' : 'muted'}">${b.verdict === 'tirer' ? 'Ça vaut tes gemmes' : b.verdict === 'garder' ? 'Garde tes gemmes' : 'Pas encore calculée'}</div>
-    <div class="muted" style="flex:1;min-width:220px">${b.verdict === 'tirer' ? `Utile : ${esc(b.utiles.join(', '))}.${b.xpDerriere ? ` Prévois ${xpFr(b.xpDerriere)} XP pour l'amener au 99.` : ''}` : b.verdict === 'garder' ? 'Aucune carte de cette bannière n’améliore un de tes modes.' : 'Lance « Conseils de cartes » (Tirage) dans Calculs.'}</div></div>
-    ${b.cartes.length ? `<table style="margin-top:12px"><tr><th>Carte</th><th class="n">Campagne</th><th class="n">Tour</th><th class="n">Arène</th></tr>${b.cartes.slice(0, b.verdict === 'tirer' ? 6 : 3).map(c => `<tr><td>${carteHTML(c.id)}</td>${['campagne', 'tour', 'arene'].map(k => `<td class="n">${c[k] == null ? '<span class="muted">-</span>' : c[k] > 0 ? `<span class="okc">+${nbFr(c[k])}</span>` : '0'}</td>`).join('')}</tr>`).join('')}</table>` : ''}</div>`;
-  const gtH = gt.length ? `<div class="card"><h2>À guetter <span class="r">ce qui ferait le plus avancer</span></h2>${gt.map(g => `<div class="chg">${g.ids ? `<div class="tm">${g.ids.map(x => pf(x)).join('')}</div>` : ''}<div style="flex:1"><b>${esc(g.titre)}</b><br><span class="muted">${esc(g.texte || '')}</span></div>${g.points != null ? `<span class="up">+${nbFr(g.points)}</span>` : ''}</div>`).join('')}</div>` : '';
-  h += `<div class="sp"></div><div class="grid g2">${bans.length ? bans.map(banH).join('') : `<div class="card"><h2>Bannières ouvertes</h2><div class="muted">Ouvre le jeu avec le script : il envoie les bannières ouvertes au PC.</div></div>`}${gtH}</div>`;
   setH('planxp', h);
+  // 5.60 : Progresser, trois reponses dans l'ordre : la carte a monter, les bannieres, a guetter.
+  const T = syTour();
+  let p = '';
+  if (c1) {
+    const id = j.cible?.id ?? c1.ids[0], xpFait = Math.max(0, 1 - c1.xp / (c1.ids.length * 617434)), sans = ord.filter(k => M[k] && !c1.gains[k]).map(nomM);
+    const ligne = ([k, g]) => { const src = g.source && g.source !== 'public', av = k === 'tour' && T?.now != null ? T.now : M[k]?.now;
+      const quoi = k === 'campagne' ? `Campagne : +${g.v} combat${g.v > 1 ? 's' : ''} en 3★ prévu${g.v > 1 ? 's' : ''}` : av != null && M[k]?.unite !== '%' ? `${nomM(k)} : ${nbE(av)} à ${nbE(av + g.v)} ${esc(g.unite)} prévus` : `${nomM(k)} : +${nbFr(g.v)} ${esc(g.unite)}`;
+      return `<div class="sy-row"><div><b>${quoi}</b> ${syTag(src)}${g.trio ? `<div class="x">Trio : ${esc(syNoms(g.trio))}.${k === 'tour' && T?.nowIds && T.now < av + g.v ? ` En attendant, joue ${esc(syNoms(T.nowIds))}.` : ''}</div>` : ''}</div></div>`; };
+    p += `<div class="card hot"><h2>1. Monte ${esc(c1.noms.join(' et '))} au niveau 99</h2>
+      <div class="hero" style="padding:6px 0 0">${c1.ids.map(x => pf(x, 'xl')).join('')}<div class="txt" style="flex:1"><div class="bigv">${esc(c1.noms.join(' + '))}</div>
+      <div class="s">Niveau ${c1.niveaux.join(' et ')}. Encore <b style="color:var(--txt)">${xpFr(c1.xp)} XP</b>, environ ${Math.ceil(c1.xp / 10000)} grands parchemins.${c1.ids.length > 1 ? ` Elles ne servent qu'ensemble : le script donne d'abord les parchemins à ${esc(carte(id).n)}.` : ''}</div>
+      <div class="px-lv"><i style="width:${Math.round(100 * xpFait)}%"></i></div>
+      <div style="margin-top:10px">${Object.entries(c1.gains).map(ligne).join('')}${sans.length ? `<div class="sy-row"><div class="x">${sans.join(', ')} : rien de plus avec ${c1.ids.length > 1 ? 'ces cartes' : 'cette carte'}.</div></div>` : ''}</div></div></div></div>`;
+  } else p += `<div class="card"><h2>1. Carte à monter</h2><div class="muted">${j.modes.length ? 'Aucune carte à monter ne fait progresser un mode : tes trios utiles sont déjà au niveau 99.' : 'Lance d’abord un calcul (Campagne, Tour ou Raid).'}</div></div>`;
+  const bans = j.bannieres || [], gt = (j.guetter || []).slice(0, 3), aCalc = bans.some(b => b.verdict !== 'tirer' && b.verdict !== 'garder');
+  const banL = b => `<div class="sy-row"><div><b>${esc(b.serie)}</b><div class="x">${b.pity ? 'pity ' + esc(b.pity) : ''}${b.pity && b.fin ? ' · ' : ''}${b.fin ? 'jusqu’au ' + new Date(b.fin).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : ''}</div></div><div class="r">${b.verdict === 'tirer' ? `<b class="okc">Invoque</b><div class="x">${esc((b.utiles || []).join(', '))}</div>` : b.verdict === 'garder' ? '<b class="badc">Garde tes gemmes</b>' : '<span class="muted" style="font-size:12px">pas encore calculé</span>'}</div></div>`;
+  p += `<div class="sp"></div><div class="grid g2"><div class="card"><h2>2. Bannières</h2>${bans.length ? bans.map(banL).join('') : '<div class="muted">Ouvre le jeu avec le script : il envoie les bannières ouvertes au PC.</div>'}
+    ${aCalc ? `<div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button data-act="conseils" onclick="lancer('conseils')">Calculer : invoquer ou garder ?</button><span class="muted" style="font-size:12px">Conseils de cartes · une réponse par bannière</span></div>` : ''}</div>
+    <div class="card"><h2>3. À guetter</h2>${gt.length ? gt.map(g => `<div class="sy-row">${g.ids ? g.ids.map(x => pf(x)).join('') : ''}<div><b>${esc(g.titre)}</b><div class="x">${esc(g.texte || '')}</div></div></div>`).join('') : '<div class="muted">Rien à guetter pour l’instant.</div>'}</div></div>`;
+  setH('syProg', p);
 }
 addEventListener('hashchange', () => { if (location.hash === '#resultats') planCharger(true); });
 addEventListener('hashchange', () => { if (location.hash === '#regles' && !RG.j) rgCharger(); });
@@ -1847,7 +1903,7 @@ function tcRender() {
   const ok3 = c => c && (exact?.[c[0]]?.p ?? pDe(c)) >= sl;
   const pfL = id => { const h = pf(id); if (!lvOk) return h; const l = lv(id); return h.replace('<span class="ini">', `<span class="lv${l >= 99 ? ' ok' : ''}" title="niveau ${l}">${l}</span><span class="ini">`); };
   const triI = ids => `<span class="tc-tri">${ids.map(pfL).join('')}</span>`, tri = t => triI(e.trios[t]);
-  const nomsI = ids => ids.map(id => carte(id).n.replace(/\s*\(.*\)/, '').split(' ')[0]).join(' / '), noms = t => nomsI(e.trios[t]);
+  const nomsI = ids => ids.map(id => carte(id).n.replace(/\s*\(.*\)/, '').split(' ')[0]).join(' / '), noms = t => e.trios[t] ? nomsI(e.trios[t]) : 'aucun trio sûr';
   const pcl = p => p >= sl ? 'ok' : p > 0 ? 'mid' : 'zero', pct = p => `<span class="tc-pc ${pcl(p)}">${p} %</span>`;
   // mondes : barres = combats a 3 etoiles surs, par difficulte du groupe ; « a calculer » = combats du jeu absents du calcul
   const neufs = m => combatsDe(m).filter(fd => cs.some(dn => !D.rows[fd]?.[dn] && aCalc(fd, dn))).length;
@@ -1956,7 +2012,7 @@ function campRender() {
   const col = j.collectifs || [];
   h += `<div class="card"><h2>Collectifs conseillés <span class="r">quand une carte en a plus de 6</span></h2>${col.length ? col.map(c => `<div class="c3c"><div class="muted c3s">${esc(c.equipe.join(' / '))}</div>${c.cartes.map(x => `<div><b>${esc(x.carte)}</b> · ${x.possibles} possibles · ${fmt(x.avant)} % vers ${fmt(x.apres)} % ${x.utile ? '<span class="okc">à changer</span>' : '<span class="muted">garder les actuels</span>'}${x.utile ? `<div class="muted c3s">${x.conseil.map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`).join('') : '<div class="muted">Aucune carte des 5 meilleurs trios n’a plus de 6 collectifs possibles : les choix du jeu suffisent.</div>'}</div></div><div class="sp"></div>`;
   h += `<div class="card"><h2>Méthode</h2><div class="muted">Tous les trios de tes cartes SSR, UR et LR (${(j.trios || 0).toLocaleString('fr-FR')}) jouent les ${nC.toLocaleString('fr-FR')} combats avec l'IA de KitsuAI. Course par manches : un trio est retiré seulement quand il est nettement derrière en Cauchemar (z ${'>'} 3). ${nDiff() > 3 ? "La Campagne est jouée par les mêmes trios mais ne retire personne (beaucoup y font 100 %) : son classement est celui des finalistes du Cauchemar. " : ''}Les finalistes rejouent tout avec d'autres tirages. Un combat est arrêté dès que les 3 étoiles sont perdues : même résultat, 1,8 fois plus vite. Le journal garde chaque paquet de combats : il n'est refait que si le jeu, une carte, ses niveaux, ses étoiles, ses collectifs ou l'IA changent.<br>Moteur ${esc(j.version)} · signature ${esc(j.signatureCombat)} · ${quand(j.date)}</div></div>`;
-  setH('c3body', h); tcRender(); cmRender();
+  setH('c3body', h); tcRender(); cmRender(); syCampRender();
   if (typeof window.campApres === 'function') try { window.campApres(j); } catch {}
   if (b0 && CARTES) { const cv = $('c3share'), cle = CP.obj + b0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle; carteSouvenir(cv, b0, 'Meilleur trio · ' + objNom); } }
 }
@@ -1965,7 +2021,7 @@ addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.
 campCharger();
 
 // ---------- refonte 5.13 : navigation, fond, mise a jour, tableau de bord, Tour, evenements, collection, fiche, recherche ----------
-const PAGES = { regles: ['Outils', 'Règles et effets'], guides: ['Outils', 'Guides'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Cartes et conseils'], modele: ['Analyses', 'Le modèle'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
+const PAGES = { regles: ['Outils', 'Règles et effets'], guides: ['Outils', 'Guides'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Progresser'], modele: ['Analyses', 'Le modèle'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
 const NAV_DE = { nouveautes: 'journal' };
 const pageAct = () => (location.hash || '#accueil').slice(1);
 function route() {
@@ -1977,7 +2033,7 @@ function route() {
   const t = PAGES[p] || ['', p]; $('crumb').innerHTML = (t[0] ? esc(t[0]) + ' · ' : '') + `<b>${esc(t[1])}</b>`;
   document.body.classList.remove('menu'); vedette(); pageVue(p);
 }
-function pageVue(p) { if (p === 'modele') mdRender(); if (p === 'accueil' && !MD.j) mdCharger(); if (p === 'tour') twRender(); if (p === 'raid') rdRender(); if (p === 'event') evRender(); if (p === 'sauvegarde') { if (!COL.j && !COL.charge) colCharger(); else colRender(); } }
+function pageVue(p) { if (p === 'campagne') syCampRender(); if (p === 'tour') syTourRender(); if (p === 'modele') mdRender(); if (p === 'accueil' && !MD.j) mdCharger(); if (p === 'tour') twRender(); if (p === 'raid') rdRender(); if (p === 'event') evRender(); if (p === 'sauvegarde') { if (!COL.j && !COL.charge) colCharger(); else colRender(); } }
 const menu = () => document.body.classList.toggle('menu');
 function fermer() { document.body.classList.remove('menu'); $('drawer').classList.remove('on'); $('kbar').classList.remove('on'); $('veil').classList.remove('on'); }
 const voile = () => $('veil').classList.add('on');
@@ -2028,9 +2084,12 @@ function sideRender(run) {
   if (!j) { $('sjT').textContent = 'Aucune tâche'; $('sjS').textContent = 'Prêt.'; $('sjP').className = 'prog'; }
   else { const el = Math.round(((j.fin || Date.now()) - j.debut) / 1000), L = j.lignes.filter(l => l.trim()); $('sjT').textContent = j.nom; $('sjP').className = 'prog' + (run ? ' run' : ''); $('sjP').firstElementChild.style.width = run ? '' : (j.code === 0 ? '100%' : '0'); $('sjS').textContent = run ? dur(el) + ' · ' + (L.filter(l => !/top 10 /.test(l)).pop() || '…').replace(/^\[\s*\d+ s\]\s*/, '') : (j.code === 0 ? 'Terminée en ' : 'Arrêtée après ') + dur(el); }
   const b0 = CP.j?.meilleurs?.[CP.j?.meilleurs?.Les6 ? 'Les6' : 'Moyenne']?.[0], t0 = TW.j?.trios?.[0], sc = E.script || {}, vu = sc.vu;
-  const C3 = dbCampagne(), G3 = C3 && (C3.avecCau ? C3.cau : C3.camp); $('nbCamp').textContent = C3 ? C3.ok(G3) + '/' + C3.n(G3) : b0 ? fmt(b0.troisEtoiles) + ' %' : ''; $('nbCamp').className = 'b g'; $('nbCamp').style.display = C3 || b0 ? '' : 'none';
-  const tX = window.DB_PRIVE?.tour; $('nbTour').textContent = tX ? 'ét. ' + Math.round(tX.etage) : t0 ? 'ét. ' + Math.round(t0.etageMoyen) : ''; $('nbTour').className = 'b o'; $('nbTour').style.display = tX || t0 ? '' : 'none';
-  const r0 = RD.j?.classement?.[0], vr = r0?.par?.['bons-3']?.victoire; $('nbRaid').textContent = r0 ? Math.round(vr ?? r0.note) + ' %' : ''; $('nbRaid').className = 'b g'; $('nbRaid').style.display = r0 ? '' : 'none';
+  // 5.60 : le meme chiffre que le tableau de bord. Campagne : fait en jeu / prevu ; Tour : record en jeu ; Raids : gagnes / joues.
+  const badge = (id, t, c) => { $(id).textContent = t || ''; $(id).className = 'b ' + c; $(id).style.display = t ? '' : 'none'; };
+  const C3 = syCamp(), T3 = syTour(), R3 = syRaid();
+  badge('nbCamp', C3 ? nbE(C3.fait) + ' / ' + nbE(C3.prevu) : b0 ? fmt(b0.troisEtoiles) + ' %' : '', 'g');
+  badge('nbTour', T3?.rec != null ? String(T3.rec) : T3?.prevu != null ? 'ét. ' + Math.round(T3.prevu) : t0 ? 'ét. ' + Math.round(t0.etageMoyen) : '', 'o');
+  badge('nbRaid', R3.joues ? R3.gagnes + '/' + R3.joues : '', 'g');
   const ok = vu && vu.v === sc.version && Date.now() - vu.t < 180000; $('nbScript').textContent = ok ? 'OK' : vu ? 'veille' : '!'; $('nbScript').className = 'b ' + (ok ? 'g' : 'o');
   if (SCRV.v !== (sc.version || null) || SCRV.vu !== (vu?.v || null)) { SCRV = { v: sc.version || null, vu: vu?.v || null }; majSide(MAJDISPO); }
   const nv = (E.alertes || []).filter(a => a.id > (+localStorage.getItem('kitsuAlertesVues') || 0)).length; $('nbJour').style.display = nv ? '' : 'none'; $('nbJour').textContent = nv;
@@ -2040,41 +2099,159 @@ function sideRender(run) {
 const imgsTrio = ids => eqList(ids).map(x => carte(x).img).filter(Boolean).map(u => `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`).join('');
 // Le script prive peut remplir window.DB_PRIVE = { tour: { etage, ids, equipe }, arene: { pc, ids, gain } } puis rappeler dashRender().
 const jourMois = t => new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-function dbCampagne() {
-  const e = CP.j?.etages, R = e?.resume || []; if (!R.length) return null;
-  const d = k => R.find(r => r.difficulte === k) || {}, cau = ['normal', 'difficile', 'extreme'].map(d), camp = ['campNormal', 'campDifficile', 'campExtreme'].map(d);
-  const ok = a => a.reduce((s, r) => s + (r.troisEtoilesSur || 0), 0), n = a => a.reduce((s, r) => s + (r.combats || 0), 0);
-  return { e, cau, camp, ok, n, avecCau: n(cau) > 0, sans: R.reduce((s, r) => s + (r.impossibles || 0), 0) };
-}
 function dashRender() {
   if (!E) return;
-  const X = window.DB_PRIVE || {}, C = dbCampagne();
-  const carteMode = (href, cls, tag, ids, t, v, sub, pills = '') => `<a class="mode${cls ? ' ' + cls : ''}" href="#${href}">${ids && CARTES ? `<div class="ph">${imgsTrio(ids)}</div>` : ''}<span class="tag">${tag}</span><div class="t">${t}</div><div class="v">${v}</div><div class="s">${sub}</div>${pills}</a>`;
-  const L = [];
-  if (C) {
-    const b0 = CP.j.meilleurs?.Les6?.[0] || CP.j.meilleurs?.Moyenne?.[0], G = C.avecCau ? C.cau : C.camp;
-    const pills = (C.avecCau ? C.cau.map((r, i) => r.combats ? `<span class="pill ${'nde'[i]}">${['Normal', 'Difficile', 'Extrême'][i]} ${r.troisEtoilesSur ?? 0}</span>` : '').join('') : '') + (C.avecCau && C.n(C.camp) ? `<span class="pill">Campagne ${C.ok(C.camp)}/${C.n(C.camp)}</span>` : '');
-    L.push(carteMode('campagne', '', '3 étoiles', b0?.ids, C.avecCau ? 'Cauchemar' : 'Campagne', `${C.ok(G)}<small>/ ${C.n(G)}</small>`, `combats gagnés à 3★, un trio par combat · ${quand(C.e.date || CP.j.date)}`, `<div class="pills">${pills}</div>`));
-  } else L.push(carteMode('campagne', 'soon', 'à calculer', null, 'Campagne', '-', 'Lance le calcul des 3 étoiles'));
-  const t0 = TW.j?.trios?.[0], tx = X.tour, tt = tx || t0;
-  if (tt) L.push(carteMode('tour', '', tx ? 'départage exact' : 'étage moyen', tt.ids, "Tour de l'infini", 'Étage ' + (tx ? fmt(tx.etage) : fmt(t0.etageMoyen)), esc(eqList(tt.equipe).map(court).join(' / ')) + (!tx && t0.max ? ` · record ${t0.max}` : '')));
-  else L.push(carteMode('tour', 'soon', 'à calculer', null, "Tour de l'infini", '-', 'Lance le calcul de la Tour'));
-  const r0 = RD.j?.classement?.[0];
-  if (r0) L.push(carteMode('raid', '', 'raids gagnés', r0.ids, 'Raids', `${fmt(r0.par?.['bons-3']?.victoire ?? r0.note)} %`, esc(r0.equipe.map(court).join(' / ')) + ' · coéquipiers bons, à 3', `<div class="pills">${(RD.j.groupes || []).map((g, i) => `<span class="pill ${'edn'[i]}">${esc(g.nom.replace(/^Co[eé]quipiers /, ''))} ${fmt(r0.par?.[g.id + '-3']?.victoire ?? 0)} %</span>`).join('')}</div>`));
-  else L.push(carteMode('raid', 'soon', 'à calculer', null, 'Raids', '-', 'Lance le calcul du meilleur trio de raid'));
-  const ext = !!document.querySelector('#nav a[data-p="arene"]'), ar = X.arene;
-  if (ar) L.push(carteMode('arene', '', 'privé', ar.ids, 'Arène', `${fmt(ar.pc)} %`, 'de victoires contre les fantômes' + (ar.gain ? ' · ' + esc(ar.gain) : '')));
+  // 5.60 : les 4 modes au meme format. En grand le fait en jeu, en dessous le prevu (bleu = prive, gris = public).
+  const carteMode = (href, cls, tag, ids, t, v, sub) => `<a class="mode${cls ? ' ' + cls : ''}" href="#${href}">${ids && CARTES ? `<div class="ph">${imgsTrio(ids)}</div>` : ''}<span class="tag">${tag}</span><div class="t">${t}</div><div class="v">${v}</div><div class="s">${sub}</div></a>`;
+  const prevu = (p, v, ids, plus = '') => `prévu ${p ? 'avec ton privé' : 'par le public'} : <b${p ? ' class="pv"' : ''}>${v}</b>${plus}${ids ? '<br>' + esc(eqList(ids).map(x => court(carte(x).n)).join(' / ')) : ''}`;
+  const L = [], C = syCamp(), T = syTour(), R = syRaid(), A = syArene(), ext = syExt();
+  if (C) L.push(carteMode('campagne', '', '3★ faits en jeu', CP.j?.meilleurs?.Moyenne?.[0]?.ids || null, 'Cauchemar', `${nbE(C.fait)}<small>/ ${nbE(C.total)}</small>`, prevu(C.prive, nbE(C.prevu), null)));
+  else L.push(carteMode('campagne', 'soon', '3★ faits en jeu', null, 'Cauchemar', '…', SY.charge || !SY.t ? 'lecture de ta sauvegarde' : 'ouvre le jeu avec le script'));
+  if (T) L.push(carteMode('tour', '', 'ton record en jeu', T.ids, "Tour de l'infini", T.rec ?? '?', T.prevu != null ? prevu(T.prive, fmt(T.prevu), T.ids) : 'Lance le calcul de la Tour'));
+  else L.push(carteMode('tour', 'soon', 'ton record en jeu', null, "Tour de l'infini", '…', 'Lance le calcul de la Tour'));
+  L.push(carteMode('raid', R.joues || R.prevu != null ? '' : 'soon', 'gagnés en jeu' + (R.der ? ', ' + jourMois(R.der) : ''), R.ids, 'Raids', R.joues ? `${R.gagnes}<small>/ ${R.joues}</small>` : '-', R.prevu != null ? prevu(false, fmt(R.prevu) + ' %', R.ids, ' à 3') : 'Lance le calcul du meilleur trio de raid'));
+  if (A) L.push(carteMode('arene', '', 'victoires en jeu', A.ids, 'Arène', '?', prevu(A.prive, fmt(A.prevu) + ' %', A.ids)));
   else L.push(carteMode(ext ? 'arene' : 'arene0', 'soon', ext ? 'privé' : 'PvP', null, 'Arène', ext ? '…' : 'Sans conseil', ext ? 'lecture des résultats' : 'mode joueur contre joueur'));
   setH('dbModes', L.join(''));
-  // ce qu'il reste a faire : rien ne se lance tout seul
-  const T = [], s = E.sauvegarde, todo = (c, b, t, btn, act) => `<div class="dbt"><span class="d" style="background:var(--${c})"></span><div class="x"><b>${b}</b>${t ? ' <span>· ' + t + '</span>' : ''}</div>${btn ? `<button class="ghost" onclick="${act}">${btn}</button>` : ''}</div>`;
-  if (!s) T.push(todo('acc', 'Aucune sauvegarde', 'importe-la depuis le jeu', 'Importer', "go('sauvegarde')"));
-  else if (Date.now() - s.t > 864e5) T.push(todo('warn', 'Sauvegarde du ' + jourMois(s.t), 'réimporte-la depuis le jeu', 'Importer', "go('sauvegarde')"));
-  if ((E.calculConseille || []).length) T.push(todo('warn', 'Analyse complète du ' + (E.dernier ? jourMois(E.dernier.date) : '-'), 'à relancer', "Mettre à jour l'IA", "lancer('complet')"));
-  if (C?.sans) T.push(todo('acc', C.sans + ' combats sans 3★', 'aucun trio trouvé', 'Voir', "go('campagne')"));
-  if (C?.e.specialistes?.restants) T.push(todo('warn', 'Spécialistes à finir', C.e.specialistes.restants + ' combats à chercher', 'Campagne', "go('campagne')"));
-  setH('dbTodo', T.join('') || todo('ok', 'Tout est à jour', ''));
+  // a faire, dans l'ordre : rien ne se lance tout seul
+  const T2 = [], s = E.sauvegarde, li = (b, x, btn, act) => `<li><div><b>${b}</b>${x ? `<div class="x">${x}</div>` : ''}</div>${btn ? `<button class="ghost" onclick="${act}">${btn}</button>` : ''}</li>`;
+  if (!s) T2.push(li('Aucune sauvegarde', 'importe-la depuis le jeu', 'Importer', "go('sauvegarde')"));
+  else if (Date.now() - s.t > 864e5) T2.push(li('Sauvegarde du ' + jourMois(s.t), 'réimporte-la depuis le jeu', 'Importer', "go('sauvegarde')"));
+  const c1 = PX.j?.cartes?.[0], g1 = c1 && Object.entries(c1.gains).map(([k, g]) => k === 'tour' && T?.now != null ? `ta Tour passe de ${nbE(T.now)} à ${nbE(T.now + g.v)} prévus` : `${{ campagne: 'Campagne', arene: 'Arène', raid: 'Raid' }[k] || k} +${fmt(g.v)} ${esc(g.unite || (k === 'campagne' ? 'combats' : ''))}`).join(', ');
+  if (c1) T2.push(li(`Monte ${esc(c1.noms.join(' et '))} au 99`, `${g1} (niveau ${c1.niveaux.join(' et ')}, encore ${xpFr(c1.xp)} XP)`, 'Progresser', "go('resultats')"));
+  const r = C && SY_D.find(([d]) => C.d[d].prevu > C.d[d].fait);
+  if (r) T2.push(li(`Cauchemar ${r[1]} : ${nbE(C.d[r[0]].prevu - C.d[r[0]].fait)} combats prévus en 3★ pas encore faits`, 'ton trio, combat par combat, monde par monde', 'Campagne', "go('campagne')"));
+  if ((E.calculConseille || []).length) T2.push(li('Tes cartes ont changé depuis le ' + (E.dernier ? jourMois(E.dernier.date) : '-'), 'les trios conseillés peuvent avoir bougé', "Mettre à jour l'IA", "lancer('complet')"));
+  const sp = CP.j?.etages?.specialistes?.restants; if (sp) T2.push(li('Spécialistes à finir', sp + ' combats à chercher', 'Campagne', "go('campagne')"));
+  setH('dbTodo', T2.length ? `<ol class="sy-steps">${T2.join('')}</ol>` : '<div class="dbt"><span class="d" style="background:var(--ok)"></span><div class="x"><b>Tout est à jour</b></div></div>');
 }
+
+// ---------- 5.60 : moins de chiffres ----------
+// Un seul chiffre par mode, le meme partout (tableau de bord, barre laterale, page du mode) : en grand ce que tu as FAIT EN JEU,
+// a cote ce que PREVOIT ton script. Le prive passe devant le public quand il repond (plan d'XP avec sa part privee, conseil exact
+// de la Campagne), sinon le public, toujours marque d'ou vient le chiffre. Le reste des pages est replie dans « Détails ».
+const SY = { prev: null, ex: undefined, t: 0, charge: false, d: 'normal' };
+const SY_D = [['normal', 'Normal', 'n', '@n'], ['difficile', 'Difficile', 'd', '@hn'], ['extreme', 'Extrême', 'e', '@xn']];
+const syTag = p => `<span class="sy-src ${p ? 'p' : 'o'}">${p ? 'privé' : 'public'}</span>`;
+const nbE = x => Math.round(x).toLocaleString('fr-FR');
+const syNoms = ids => (ids || []).map(id => carte(id).n).join(' / ');
+const syExt = () => !!document.querySelector('#nav a[data-p="arene"]');
+function syPlie(id) { const el = $(id); if (!el) return; el.classList.toggle('on'); if (el.classList.contains('on')) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+async function syCharger(force) {
+  if (SY.charge || (!force && Date.now() - SY.t < 60000)) return; SY.charge = true; SY.t = Date.now();
+  await Promise.all([
+    api('/api/campagne/prevision').then(x => SY.prev = x).catch(() => null),
+    force || !PX.j ? api('/api/plan').then(j => PX.j = j).catch(() => null) : null,
+    !COL.j && !COL.charge ? colCharger() : null,
+    !RD.j && !RD.charge ? rdCharger() : null,
+    !TW.j && !TW.charge ? api('/api/resultat?f=tour.json').then(j => { if (!TW.j) TW.j = j; }).catch(() => null) : null,
+    syExt() && SY.ex === undefined ? api('/arene/campagne-exact').then(syExact).catch(() => { SY.ex = null; }) : null]);
+  SY.charge = false; PX.t = Date.now(); syTout();
+}
+// Rechargement seulement quand un resultat ou la sauvegarde change (le panneau demande l'etat toutes les 1,5 s).
+function syMaj() {
+  if (!E) return; const k = (E.resultats || []).map(f => f.f + f.t).join() + '|' + (E.sauvegarde?.t || '');
+  if (k === SY.k) return; const premier = !SY.k; SY.k = k;
+  if (!premier) { COL.j = null; SY.ex = undefined; if (SY.cx) { window.CAMP_EXACT = undefined; SY.cx = false; } }
+  SY.t = 0; syCharger(true);
+}
+// Conseil exact du script prive (campagne-exact.json, lu par sa route) : tous ses trios par combat, et window.CAMP_EXACT pour la vue
+// « trio combat par combat » (son meilleur trio y passe devant le public). Sans le script prive : rien, le public reste.
+function syExact(x) {
+  if (!x?.combats?.length) { SY.ex = null; return; }
+  const m = new Map();
+  for (const c of x.combats) { const L = [c.exact, ...(c.autres || [])].filter(y => y?.trio?.length === 3).map(y => [y.trio, +y.troisEtoiles || 0]); if (L.length) m.set(String(c.combat), L); }
+  SY.ex = { niveaux: x.niveaux || null, m };
+  if (!window.CAMP_EXACT) { const o = {}; for (const [k, L] of m) { const b = L.reduce((a, y) => y[1] > a[1] ? y : a); if (b[1] > 0) o[k] = { ids: b[0], p: b[1] }; } window.CAMP_EXACT = o; SY.cx = true; if (CP.j) tcRender(); }
+}
+// Campagne Cauchemar, par difficulte et par monde : fait en jeu (sauvegarde), prevu = fait + combats ou un trio de tes cartes depasse
+// le seuil des 3 etoiles (memes regles que le plan prive : au calcul « 99 », seulement les trios deja au 99). Total = combats du jeu.
+function syCamp() {
+  const pv = SY.prev, col = COL.j; if (!pv?.combats || !col) return null;
+  const j = CP.j, e = j?.etages, st = col.pve || {}, sl = e?.seuil ?? 60, a99 = j?.niveaux === '99';
+  const ok = ids => ids.every(id => col.owned?.[id] && (!a99 || (col.lv?.[id] || 1) >= 99));
+  const ex = SY.ex && j && (!SY.ex.niveaux || SY.ex.niveaux === j.niveaux) ? SY.ex.m : null;
+  const iA = e?.colonnes?.indexOf('autres') ?? -1, dn = j?.difficultes || [], pred = new Map();
+  for (const c of e?.combats || []) {
+    const fd = c[0]; let pub = false, priv = false;
+    const T = [[c[2], c[3]], [c[4], c[5]], ...(iA >= 0 ? c[iA] || [] : [])];
+    for (const [t, p] of T) if (t >= 0 && e.trios[t] && p >= sl && ok(e.trios[t])) { pub = true; break; }
+    if (ex) for (const [ids, p] of ex.get(fd) || []) if (p >= sl && ok(ids)) { priv = true; break; }
+    pred.set(fd, { pub, priv: pub || priv, d: dn[c[1]] });
+  }
+  const R = { prive: !!ex, date: e?.date || j?.date || null, d: {} };
+  for (const [d] of SY_D) R.d[d] = { total: pv.combats[d] || 0, fait: 0, prevu: 0, pub: 0, mondes: [] };
+  const bit = { normal: 0, difficile: 1, extreme: 2 };
+  for (const w of pv.carte || []) {
+    const mw = {}; for (const [d] of SY_D) mw[d] = { id: w.id, nom: w.nom, total: 0, fait: 0, prevu: 0, pub: 0 };
+    for (const [fb, , , , mask] of w.f) for (const [d, , , suf] of SY_D) {
+      if (mask != null && mask >= 0 && !(mask >> bit[d] & 1)) continue;
+      const fd = fb + suf, fait = (st[fd] || 0) >= 3, p = pred.get(fd), o = mw[d];
+      o.total++; if (fait) o.fait++; if (fait || p?.priv) o.prevu++; if (fait || p?.pub) o.pub++;
+    }
+    for (const [d] of SY_D) if (mw[d].total) { R.d[d].mondes.push(mw[d]); for (const k of ['fait', 'prevu', 'pub']) R.d[d][k] += mw[d][k]; }
+  }
+  // sans la carte des mondes du jeu : le fait en jeu seul, compte dans la sauvegarde
+  if (!(pv.carte || []).length) for (const [d] of SY_D) { R.d[d].fait = pv.valides?.[d] || 0; R.d[d].prevu = R.d[d].pub = R.d[d].fait; }
+  const tot = k => SY_D.reduce((a, [d]) => a + R.d[d][k], 0);
+  Object.assign(R, { fait: tot('fait'), prevu: tot('prevu'), pub: tot('pub'), total: tot('total') });
+  return R;
+}
+const syModes = () => Object.fromEntries((PX.j?.modes || []).map(m => [m.cle, m]));
+// Tour : record en jeu ; prevu = meilleur trio possible (plan d'XP, sa part privee d'abord) ; en attendant, le trio a tes niveaux.
+function syTour() {
+  const m = syModes().tour, t0 = TW.j?.trios?.[0], rec = COL.j?.tour ?? null, c1 = (PX.j?.cartes || []).find(c => c.gains?.tour);
+  const pub = t0 ? { v: t0.etageMoyen, ids: t0.ids || eqList(t0.equipe), niveaux: TW.j.niveaux } : null;
+  if (!m && !pub) return rec == null ? null : { rec };
+  if (!m) return { rec, prive: false, prevu: pub.v, ids: pub.ids, pub: null };
+  const prive = m.source !== 'public', haut = c1 ? m.now + c1.gains.tour.v : m.now;
+  return { rec, prive, prevu: Math.max(haut, m.now), ids: c1?.gains.tour.trio || m.trio, max: m.max, now: m.now, nowIds: m.trio, carte: c1 || null, pub: prive ? pub : null };
+}
+function syRaid() {
+  const H = (RD.h || []).filter(r => r.joueurs > 0), g = H.filter(r => r.gagne).length, r0 = RD.j?.classement?.[0];
+  return { joues: H.length, gagnes: g, der: H[0]?.t || null, prevu: r0 ? r0.par?.['bons-3']?.victoire ?? r0.note : null, ids: r0?.ids || null };
+}
+function syArene() { const m = syModes().arene; return m ? { prevu: m.now, ids: m.trio, prive: m.source !== 'public' } : null; }
+function syTout() { if (!E) return; sideRender(E.job && !E.job.fin); dashRender(); const p = pageAct(); if (p === 'campagne') syCampRender(); if (p === 'tour') syTourRender(); if (p === 'resultats') planRender(); }
+
+// ---- page Tour : un seul cadre ----
+function syTourRender() {
+  if (!$('twSy')) return; const T = syTour();
+  if (!T) return setH('twSy', `<div class="card hot"><div class="muted">${SY.charge || !SY.t ? 'Chargement…' : 'Pas encore de calcul de la Tour : ouvre « Lancer le calcul… ».'}</div></div>`);
+  const ids = T.ids || [], img = imgsTrio(ids), c = T.carte;
+  const att = c && T.nowIds && T.now < T.prevu ? `<div class="sy-todo"><div><b>Monte ${esc(c.noms.join(' et '))} au 99 (niveau ${c.niveaux.join(' et ')})</b><div class="x">En attendant, joue ${esc(syNoms(T.nowIds))} : ${nbE(T.now)} prévus.</div></div><button class="ghost" onclick="go('resultats')">Voir dans Progresser</button></div>` : '';
+  setH('twSy', `<div class="card hot hero" style="padding:24px">${img ? `<div class="bgimg">${img}</div>` : ''}<div class="txt" style="flex:1">
+    <div class="sy-duo"><div class="a"><div class="k" style="color:var(--acc)">Ton record en jeu</div><div class="v">${T.rec ?? '?'}</div></div>
+    ${T.prevu != null ? `<div class="b"><div class="k">Prévu ${T.prive ? 'avec ton privé' : 'par le script'} ${syTag(T.prive)}</div><div class="v${T.prive ? '' : ' o'}">${fmt(T.prevu)}</div><div class="muted" style="font-size:12px;margin-top:6px">${esc(syNoms(ids))}${c ? ', tout au 99' : ''}</div></div>` : ''}
+    <div class="pfs">${ids.map(x => pf(x, 'big')).join('')}</div></div>
+    ${att}
+    ${T.pub ? `<details class="sy-pub"><summary>Voir le public</summary><div>Le script public (règle apprise) prévoit ${fmt(T.pub.v)} avec ${esc(syNoms(T.pub.ids))}${T.pub.niveaux === '99' ? ', tout au 99' : ''}. Il ne joue pas quand ton privé conseille.</div></details>` : ''}
+    ${T.rec == null ? '<p class="muted" style="font-size:12px;margin:12px 0 0">Record en jeu inconnu : ouvre le jeu avec le script pour envoyer ta sauvegarde.</p>' : ''}
+  </div></div>`);
+}
+
+// ---- page Campagne : 3 difficultes, puis monde par monde ----
+function syCampRender() {
+  if (!$('c3Sy')) return; const C = syCamp();
+  if (!C) return setH('c3Sy', `<div class="card hot"><div class="muted">${SY.charge || !SY.t ? 'Chargement…' : 'Ouvre le jeu avec le script (ou importe ta sauvegarde) pour voir tes 3★.'}</div></div>`);
+  const P = C.prive, bar = (o, w) => `<div class="sy-bar"${w ? '' : ''}><i class="pv${P ? '' : ' o'}" style="width:${o.total ? 100 * o.prevu / o.total : 0}%"></i><i class="fj" style="width:${o.total ? 100 * o.fait / o.total : 0}%"></i></div>`;
+  const carteD = ([d, nom, pil]) => { const o = C.d[d]; return `<div class="c"><span class="pill ${pil}">${nom}</span><div class="sy-duo"><div class="a"><div class="k">fait en jeu</div><div class="v">${nbE(o.fait)}</div></div><div class="b"><div class="k">prévu ${syTag(P)}</div><div class="v${P ? '' : ' o'}">${nbE(o.prevu)}<small>/ ${nbE(o.total)}</small></div></div></div>${bar(o)}</div>`; };
+  const r = SY_D.find(([d]) => C.d[d].prevu > C.d[d].fait), o = r && C.d[r[0]];
+  const top = o ? o.mondes.map(w => [w.nom, w.prevu - w.fait]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 3) : [];
+  let h = `<div class="card hot"><h2>Cauchemar 3★</h2><div class="sy-diff">${SY_D.map(carteD).join('')}</div>
+    <div class="sy-leg"><span><i style="background:linear-gradient(90deg,var(--acc),var(--gold))"></i>fait en jeu</span><span><i style="background:${P ? 'rgba(140,196,255,.35)' : 'rgba(244,237,227,.18)'}"></i>prévu ${P ? 'avec ton privé (règle apprise et conseil exact réunis, combat par combat)' : 'par le script public'}</span></div>
+    ${o ? `<div class="sy-todo"><div><b>Joue le Cauchemar ${r[1]} : ${nbE(o.prevu - o.fait)} combats prévus en 3★ t'attendent</b><div class="x">${top.length ? 'Le plus gros reste : ' + top.map(([n, k]) => `${esc(n)} (${k})`).join(', ') + '. ' : ''}Le script te met le bon trio sur l'écran d'équipe.</div></div></div>` : ''}
+    ${P && C.pub !== C.prevu ? `<details class="sy-pub"><summary>Voir le public</summary><div>Règle apprise seule : ${SY_D.map(([d]) => nbE(C.d[d].pub)).join(' / ')} prévus (Normal / Difficile / Extrême).</div></details>` : ''}
+    ${C.date ? `<p class="muted" style="font-size:12px;margin:12px 0 0">Prévu d'après le calcul du ${quand(C.date)}. Les combats déjà faits en 3★ dans ta partie comptent comme prévus.</p>` : ''}</div>`;
+  const d = C.d[SY.d] ? SY.d : 'normal', D = C.d[d], nomD = SY_D.find(x => x[0] === d)[1];
+  h += `<div class="sp"></div><div class="card"><h2>Cauchemar ${nomD}, monde par monde <span class="r">${SY_D.map(([k, , p]) => `<span class="pill ${p}${k === d ? ' on' : ''}" style="${k === d ? '' : 'opacity:.5'}" onclick="SY.d='${k}';syCampRender()">${p.toUpperCase()}</span>`).join(' ')}</span></h2>
+    <table class="sy-w"><tr><th>Monde</th><th class="n">Fait</th><th class="n">Prévu</th><th class="n hide">Combats</th><th class="hide"></th><th></th></tr>
+    ${D.mondes.map(w => `<tr><td>${esc(w.nom)}</td><td class="n"><b>${w.fait}</b></td><td class="n${P ? ' pv' : ''}">${w.prevu}</td><td class="n hide">${w.total}</td><td class="hide">${bar(w)}</td><td class="n">${CP.j?.etages ? `<button class="ghost" onclick="syJouer('${esc(w.id)}')">Jouer</button>` : ''}</td></tr>`).join('')}</table>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">« Jouer » ouvre ton trio combat par combat pour ce monde.</p></div>`;
+  setH('c3Sy', h);
+}
+function syJouer(m) { const det = $('c3Det'); if (det) det.open = true; TC.g = 'cau'; TC.m = m; TC.d = Math.max(0, SY_D.findIndex(x => x[0] === SY.d)); TC.open = null; if (!CP.j) return; if ($('tcBox')) tcRender(); else campRender(); setTimeout(() => $('tcBox')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); }
+addEventListener('hashchange', () => { const p = pageAct(); if (p === 'accueil' || p === 'campagne' || p === 'tour' || p === 'resultats') syCharger(p === 'resultats'); });
 
 // ---------- Tour de l'infini (resultats/tour.json, sinon l'analyse complete) ----------
 const TW = { j: null, fin: undefined, charge: false };
@@ -2164,7 +2341,7 @@ function twRender() {
   const col = j?.collectifs || m?.tour?.collectifs || [];
   h += `<div class="card"><h2>Collectifs pour la Tour <span class="r">meilleur trio</span></h2>${col.map(c => `<div class="floor">${pf(c.id || c.carte)}<div style="flex:1;min-width:0"><b>${esc(c.carte)}</b> <span class="muted c3s">${c.possibles ? c.possibles + ' possibles' : ''}</span><div class="muted c3s">${c.utile === false ? 'garde les tiens (pas de gain net)' : (c.conseil || []).map(esc).join(', ')}</div></div>${c.avant != null && c.apres != null ? `<span class="pill ${c.utile === false ? '' : 'n'}" title="étage moyen avant et après${c.utile === false ? ' (écart dans la marge d’erreur)' : ''}">${fmt(c.avant)} vers ${fmt(c.apres)}</span>` : ''}</div>`).join('') || '<div class="muted">Aucune carte du trio n’a plus de 6 collectifs possibles.</div>'}</div>`;
   if (tr.length > 1) h += `<div class="sp"></div><div class="card"><h2>Les meilleurs trios <span class="r">finale : ${tr[0].fl?.length || 30} montées chacun</span></h2><table class="c3t"><tr><th>#</th><th>Trio</th><th>Étage moyen</th><th>Pire</th><th>9 sur 10</th><th>Médiane</th><th>Record</th></tr>${tr.slice(0, 10).map((l, i) => `<tr${i ? '' : ' class="c3top"'}><td>${i + 1}</td><td>${equipeHTML(l.ids || l.equipe, 1)}</td><td><b>${fmt(l.etageMoyen)}</b>${l.marge ? ` <span class="muted">± ${fmt(l.marge)}</span>` : ''}</td><td>${l.min ?? l.etageMin ?? '-'}</td><td>${l.p10 ?? '-'}</td><td>${l.mediane ?? '-'}</td><td>${l.max ?? '-'}</td></tr>`).join('')}</table><p class="muted" style="font-size:12px;margin:10px 0 0">Étage moyen : moyenne des montées simulées, chacune jusqu’à la première défaite. « 9 sur 10 » : 9 montées sur 10 vont au moins jusque-là. La marge (±) est l’erreur possible sur la moyenne.</p></div>`;
-  LAB = 'CAMPAGNE'; setH('twBody', h);
+  LAB = 'CAMPAGNE'; setH('twBody', h); syTourRender();
   if (typeof window.twApres === 'function') try { window.twApres(j); } catch {}
   if (j && CARTES) { const cv = $('twshare'), cle = t0.ids.join('-') + j.date; if (cv && cv.dataset.k !== cle) { cv.dataset.k = cle;
     carteSouvenir(cv, { ids: t0.ids, equipe: eqList(t0.equipe) }, 'Meilleur trio · Tour de l’infini', false, { lab: 'TOUR DE L’INFINI', val: 'Étage ' + fmt(t0.etageMoyen), sous: 'étage moyen atteint en simulation', pills: [t0.p10 ? [`9 fois sur 10 : ${t0.p10}+`, CC.E] : null, t0.max ? [`record ${t0.max}`, CC.gold] : null].filter(Boolean), pied: `${nivTxt[0].toUpperCase() + nivTxt.slice(1)} · ${(j.triosEssayes || 0).toLocaleString('fr-FR')} trios essayés · ${new Date(j.date).toLocaleDateString('fr-FR')}` }); } }
@@ -2478,22 +2655,22 @@ const KG = [
     { x: 'joie', p: 'accueil', t: "Salut ! Je suis <em>Kiko</em>. KitsuAI simule des milliers de combats sur ton PC pour te dire <em>quoi jouer</em>." },
     { x: 'serieux', p: 'accueil', t: "Une règle avant tout : il ne joue <em>jamais</em> à ta place. Il calcule, il montre, <em>c'est toi qui cliques</em>." },
     { x: 'neutre', p: 'accueil', s: ['#nav', '.burger'], tag: 'Le menu', t: "Le menu range tout : les <em>modes de jeu</em>, les <em>analyses</em> et les <em>outils</em>.", m: "Le menu est ici. En bas, les raccourcis vers les pages que tu ouvres le plus." },
-    { x: 'neutre', p: 'accueil', s: ['#dbModes'], tag: 'Où tu en es', t: "Où tu en es dans chaque mode, en un coup d'œil. Un clic ouvre le mode." },
+    { x: 'neutre', p: 'accueil', s: ['#dbModes'], tag: 'Où tu en es', t: "Chaque mode en un coup d'œil : en grand ce que tu as <em>fait en jeu</em>, en dessous ce que prévoit ton script. Un clic ouvre le mode." },
     { x: 'malin', p: 'accueil', s: ['#dbTodo'], c: 1, tag: 'À faire', t: "Ici, ce qui mérite ton attention <em>maintenant</em>. Quand c'est vide, tout est à jour." }] },
   { id: 'sauvegarde', n: 'Ta sauvegarde', d: 'Envoyer tes cartes au logiciel.', e: [
     { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="sauvegarde"]'], ms: ['.burger'], w: 'sauvegarde', tag: 'Clique ici', t: "Tout part de tes cartes. Clique sur <em>Sauvegarde</em>.", m: "Tout part de tes cartes. Ouvre le menu puis <em>Sauvegarde</em>." },
     { x: 'joie', p: 'sauvegarde', s: ['#drop'], c: 1, tag: 'Glisse le fichier', t: "Dans le jeu : dock KitsuAI, onglet <em>Santé</em>, <em>Exporter pour le moteur local</em>. Puis glisse <em>sauvegarde.json</em> ici. Aucun jeton de connexion n'est exporté." }] },
   { id: 'maj', n: "Mettre à jour l'IA", d: 'Le bouton qui relance tout, quand tu le décides.', e: [
     { x: 'neutre', p: 'accueil', s: ['#btnTout'], c: 1, tag: "Mettre à jour l'IA", t: "Ce bouton enchaîne tout : moteur du jeu, entraînement, analyses, conseils. <em>Un clic, tout suit.</em>" },
-    { x: 'serieux', p: 'accueil', s: ['#bandeaux .banner.calc', '#steps', '#btnTout'], tag: 'Calcul conseillé', t: "Rien ne se lance tout seul. Quand tes cartes changent, un bandeau <em>Calcul conseillé</em> apparaît en haut, et tu choisis le moment." },
+    { x: 'serieux', p: 'accueil', s: ['#bandeaux .banner.calc', '#btnTout'], tag: 'Calcul conseillé', t: "Rien ne se lance tout seul. Quand tes cartes changent, un bandeau <em>Calcul conseillé</em> apparaît en haut, et tu choisis le moment." },
     { x: 'neutre', p: 'accueil', s: ['#sideJob', '#lastline'], tag: 'En cours', t: "Le calcul en cours s'affiche ici. Tu peux l'<em>arrêter</em> quand tu veux, la reprise repart du journal." }] },
   { id: 'campagne', n: 'Campagne', d: 'Le meilleur trio pour chaque combat, en 3★.', e: [
     { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="campagne"]', '#tabbar a[data-t="campagne"]'], w: 'campagne', tag: 'Clique ici', t: "Passons à la <em>Campagne</em>. Clique dessus." },
-    { x: 'joie', p: 'campagne', s: ['#c3body > *', '#c3tabs'], tag: 'Meilleur trio', t: "Pour chaque combat, le trio qui fait le plus de <em>3 étoiles</em>, en Campagne et en Cauchemar <span style=\"color:#2fd27a\">N</span>, <span style=\"color:#f5a524\">D</span> et <span style=\"color:#ff4b3e\">E</span>." },
-    { x: 'serieux', p: 'campagne', s: ['#p-campagne .card.hot'], tag: 'Lancer', t: "Ce calcul est long : c'est <em>toi</em> qui le lances. Les combats déjà joués sont gardés et ne sont pas refaits." }] },
+    { x: 'joie', p: 'campagne', s: ['#c3Sy'], tag: 'Fait et prévu', t: "Tes <em>3 étoiles</em> faites en jeu, et ce que ton script prévoit, en Cauchemar <span style=\"color:#2fd27a\">N</span>, <span style=\"color:#f5a524\">D</span> et <span style=\"color:#ff4b3e\">E</span>." },
+    { x: 'serieux', p: 'campagne', s: ['#c3CalcBtn'], tag: 'Lancer', t: "Le trio de chaque combat est dans <em>Détails</em>. Ce calcul est long : c'est <em>toi</em> qui le lances. Les combats déjà joués sont gardés et ne sont pas refaits." }] },
   { id: 'tour', n: "Tour de l'infini", d: "Jusqu'où ton trio monte, et où il bloque.", e: [
-    { x: 'neutre', p: 'tour', s: ['#twBody > *', '#p-tour .card.hot'], tag: 'Ton meilleur trio', t: "La Tour : jusqu'à quel étage ton meilleur trio monte, en moyenne et en record." },
-    { x: 'surpris', p: 'tour', s: ['#twBody'], tag: 'Les murs', t: "Et surtout <em>où il bloque</em> : l'étage, les ennemis, et la part des montées qui s'y arrêtent." }] },
+    { x: 'neutre', p: 'tour', s: ['#twSy'], tag: 'Ton record', t: "La Tour : ton <em>record en jeu</em>, l'étage que ton script prévoit, et le trio à jouer." },
+    { x: 'surpris', p: 'tour', s: ['#twDet'], tag: 'Les murs', t: "Dans <em>Détails</em>, surtout <em>où il bloque</em> : l'étage, les ennemis, et la part des montées qui s'y arrêtent." }] },
   { id: 'arene', n: 'Arène', d: 'La partie privée, qui reste sur ton PC.', prive: 1, e: [
     { x: 'malin', p: 'accueil', s: ['#nav a[data-p^="arene"]'], tag: 'Privé', t: "Tout ce qui porte le badge <span class=\"pv\">privé</span> reste sur ton PC. Jamais publié, jamais partagé." }] },
   { id: 'script', n: 'Le script dans le jeu', d: 'Les contours et le panneau sur kitsu.games.', e: [
