@@ -2,7 +2,7 @@
 
 Conseiller et guide complet pour **KITSU** (kitsu.games), le jeu de cartes anime au tour par tour.
 
-Version documentée : **5.60.1**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
+Version documentée : **5.60.2**. Historique détaillé : `CHANGELOG.md`. Dépôt public : https://github.com/Drien95/kitsu-ai (copie locale : `C:\Project\PROJECT_KITSU`).
 
 ## Télécharger
 
@@ -742,6 +742,7 @@ Ouvrir la console (F12) sur kitsu.games :
 | 5.21.0 | Plan d'XP et de bannière unique : toutes tes montées et tes gemmes pesées sur la Campagne Cauchemar, la Tour, le Raid (et l'Arène avec le script privé), coût en XP compris ; score « modèle parfait » sur 100 ; le script donne les parchemins à la carte n°1 |
 | 5.22.0 | Base commune (coupée par défaut) : les calculs Campagne peuvent être partagés entre joueurs, chaque résultat est rejoué par un autre PC avant d'être utilisé, ton calcul saute ce que les autres ont déjà résolu avec tes cartes ; IA commune publiée (`poids-communs.json`) ; serveur Cloudflare gratuit dans `partage/` |
 | 5.22.1 | Base commune : les lots sont stockés dans D1 (gratuit, sans carte bancaire) au lieu de R2, qui exige un moyen de paiement |
+| 5.60.2 | Campagne et Tour : le bloc « Lancer le calcul » et toutes ses options redeviennent visibles, juste sous le cadre du haut. |
 | 5.60.1 | Journal des calculs : un patch du jeu qui ajoute des collectifs ne fait plus rejouer les cartes dont les collectifs n'ont pas changé (le numéro des collectifs n'entre plus dans la signature d'une carte ; patch du 20/11 : 167 cartes à rejouer au lieu de 599) |
 | 5.60.0 | Launcher simplifié : un chiffre par mode, en grand le fait en jeu, à côté le prévu (privé s'il répond, sinon public). « Cartes et conseils » devient « Progresser ». Tour et Campagne : un cadre en haut, le reste replié dans Détails. |
 | 5.59.1 | Farm d'XP : plus de cartes déjà au 99 quand une carte à monter tient la place, combat rejoué dans sa difficulté la plus facile, message qui nomme les cartes qui gagnent l'XP. Pendant le calcul du plan, le guide attend au lieu de proposer un farm. |

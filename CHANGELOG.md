@@ -4,6 +4,13 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.60.2
+
+Retour d'Adrien sur la 5.60.0 (22/11) : le gros bloc pour lancer le calcul, avec toutes ses options, lui manquait en Campagne et en Tour.
+
+- Campagne et Tour : le bloc « Lancer le calcul » (niveaux, difficultés, spécialistes, cartes essayées, temps de travail, estimation, bouton) est de nouveau ouvert et visible, juste sous le cadre du haut. Le bouton « Lancer le calcul… » qui le repliait est retiré.
+- Campagne : le tableau « monde par monde » passe sous ce bloc. Le reste de la page reste dans Détails.
+
 ## 5.60.1
 
 Journal des calculs (Campagne, Tour, Tour privée) : moins de cartes rejouées après un patch du jeu.
