@@ -4,6 +4,18 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.60.0
+
+Launcher : moins de chiffres (audit et maquettes validés par Adrien le 22/11). Avant, le gros chiffre de chaque mode était celui du public, le privé était plus bas avec d'autres trios, et chaque page montrait des chiffres différents pour le même mode.
+
+- Un chiffre par mode, le même partout (tableau de bord, barre latérale, page du mode) : en grand ce que tu as fait en jeu (sauvegarde), à côté ce que prévoit ton script, marqué « privé » (bleu) ou « public » (gris). Le privé passe devant quand il répond.
+- Tableau de bord : 4 cases au même format (Cauchemar 3★, record de Tour, raids gagnés, Arène) et une liste « À faire » numérotée. Les 6 étapes de « Mettre à jour l'IA » sont repliées.
+- « Cartes et conseils » devient « Progresser » : 1. la carte à monter et ce qu'elle débloque, 2. les bannières, 3. à guetter. Classement complet, meilleurs trios, collectifs et fichiers dans Détails.
+- Tour : un cadre, record en jeu en grand, étage prévu à côté, la carte à monter et le trio à jouer en attendant ; le public replié.
+- Campagne : Cauchemar N, D, E en fait en jeu contre prévu, puis monde par monde (« Jouer » ouvre le trio combat par combat). Réglages du calcul derrière « Lancer le calcul… », le reste dans Détails.
+- Correction : le total Cauchemar oubliait les combats déjà faits en 3★ en jeu (plus simulés). Le total vient maintenant des combats du jeu (2 130 par difficulté).
+- Le conseil exact privé de la Campagne, s'il existe, est aussi montré dans la vue « trio combat par combat » (le crochet `CAMP_EXACT` n'était jamais rempli).
+
 ## 5.59.1
 
 Correction du farm d'XP Campagne (signalé par Adrien le 22/11 : « rejoue Le dernier coup… équipe Illumi Zoldyck, Shanks, Kanki »).
