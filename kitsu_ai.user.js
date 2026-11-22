@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.58.0
+// @version      5.59.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.58.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.59.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -516,6 +516,18 @@
         const liveWorlds = (now = Date.now()) => G.ALL_WORLDS.filter(w => !worldClosed(w, now));
         const fightClosed = id => worldClosed({ id: String(id).split('-')[0] });
         const worthNow = (r, S) => { const st = S.pve?.stars?.[r.id] || 0; return !fightClosed(r.id) && r.victoire >= 0.9 && st < 3 && (st === 0 || (r.troisEtoiles >= 0.9 && realMiss(r.id) === 0)); };
+        // 5.59 : focus Campagne par difficulte (case de l'onglet Plan, cle kitsu_ai_focusDiff, decochee par defaut) : Normal, Difficile,
+        // Extreme, puis Cauchemar Normal, Difficile, Extreme. Le guide ne garde que la 1re difficulte qui a encore un combat sur a jouer
+        // (worthNow) ; une difficulte ou il ne reste que des murs est passee, ses murs reviennent des qu'ils deviennent surs. Aucun calcul en plus.
+        const DIFF_SUF = ['', '@h', '@x', '@n', '@hn', '@xn'], DIFF_NOM = ['Normal', 'Difficile', 'Extrême', 'Cauchemar N', 'Cauchemar D', 'Cauchemar E'];
+        const diffIdx = id => { const m = /@(h|x)?(n)?$/.exec(String(id)); return m ? (m[1] === 'h' ? 1 : m[1] === 'x' ? 2 : 0) + (m[2] ? 3 : 0) : 0; };
+        const focusOn = () => lsGet('kitsu_ai_focusDiff', false) === true;
+        const focusStep = (rows, S) => { const ok = (rows || []).filter(r => worthNow(r, S)); return ok.length ? Math.min(...ok.map(r => diffIdx(r.id))) : -1; };
+        const focusRows = (rows, S) => { if (!focusOn()) return rows; const k = focusStep(rows, S); return k < 0 ? rows : rows.filter(r => diffIdx(r.id) === k); };
+        // Combats sortis a 3 etoiles par difficulte (lecture de la sauvegarde, sans simulation).
+        const diffCompte = (S, now = Date.now()) => { const st = S.pve?.stars || {}, out = DIFF_SUF.map(() => ({ trois: 0, total: 0 }));
+          for (const w of liveWorlds(now)) for (const f of w.fights) { let rel = true; try { rel = G.fightOpen(f, now); } catch {} if (!rel) continue; DIFF_SUF.forEach((x, i) => { out[i].total++; if ((st[f.id + x] || 0) >= 3) out[i].trois++; }); }
+          return out; };
         // 5.52 : empreinte des etoiles de l'Aventure. Le plan la garde : s'il ne correspond plus a ta partie (combats joues depuis),
         // le guide le recalcule au lieu de conclure qu'il n'y a plus rien a faire.
         const starsKey = S => { const st = S.pve?.stars || {}; let n = 0, t = 0; for (const k in st) { n++; t += st[k] || 0; } return n + ':' + t; };
@@ -638,7 +650,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.58.0',
+          __v: '5.59.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1236,7 +1248,7 @@
                 const E0 = lsGet('kitsu_ai_events', null); if ((!E0 || Date.now() - E0.t > 6 * 3600000 || Object.keys(S.ev?.clear || {}).some(k => E0.combats && !E0.combats.find(r => r.id === k)?.fait)) && !KitsuAI._evBusy && !T && Date.now() - (window.__kitsuEvTry || 0) > 60000) { window.__kitsuEvTry = Date.now(); KitsuAI.events().catch(e => health.err('evenements : ' + e.message)); }
                 let en = S.energy?.v ?? 0; try { en = G.energy(S, Date.now()).v; } catch {}
                 if (!P && !prepScreen() && en > 0) { mark(null, 'calcul du plan... ouvre l\'onglet Jouer'); return; }
-                const todo = (P?.combats || []).filter(r => worthNow(r, S))
+                const todo = focusRows((P?.combats || []).filter(r => worthNow(r, S)), S)
                   .sort((a, b) => b.troisEtoiles - a.troisEtoiles || (b.gemmesEsperees / (b.cout || 1)) - (a.gemmesEsperees / (a.cout || 1)) || b.xp - a.xp);
                 // 5.52 : plan calcule avant tes derniers combats (etoiles differentes) : on le recalcule. Le plan ne garde que le combat
                 // suivant de chaque arc ; une fois ceux-la faits, un plan ancien semble vide alors que les combats d'apres sont ouverts.
@@ -1657,7 +1669,7 @@
             let P = lsGet('kitsu_ai_plan', null);
             if (!P || P.cle !== starsKey(S)) P = await this.plan();
             else if (Date.now() - P.t > 10 * 60000) setTimeout(() => this.plan().catch(() => {}), 3000);
-            const todo = P.combats.filter(r => worthNow(r, S));
+            const todo = focusRows(P.combats.filter(r => worthNow(r, S)), S);
             const later = P.combats.filter(r => r.victoire >= 0.9 && (S.pve?.stars?.[r.id] || 0) > 0 && (S.pve?.stars?.[r.id] || 0) < 3 && (r.troisEtoiles < 0.9 || realMiss(r.id) > 0));
             if (later.length) add(8, `A reprendre plus tard pour la 3e etoile (pas assez sur aujourd'hui) : ${later.slice(0, 4).map(r => `${r.nom} (${S.pve.stars[r.id]}/3, 3 etoiles ${Math.round(r.troisEtoiles * 100)} %${realMiss(r.id) ? `, rate ${realMiss(r.id)} fois aujourd'hui` : ''})`).join(' ; ')}`);
             if (en > 0 && todo.length) add(3, `Joue ${Math.min(en, todo.length)} combat${en > 1 ? 's' : ''} (${en}/${enMax} energie) : ${todo.slice(0, Math.min(en, 4)).map(r => `${r.nom} avec ${r.equipe.map(short).join(', ')}`).join(' ; ')}`);
@@ -1834,13 +1846,22 @@
             const { pull: pb } = ui();
             let pn = document.getElementById('kitsuPlan');
             if (!pn) { pn = document.createElement('div'); pn.id = 'kitsuPlan'; pn.className = 'kitsu-panel'; pn.style.cssText = 'bottom:90px;font-size:12px'; document.body.appendChild(pn); }
+            // 5.59 : case « Focus Campagne par difficulte » et bandeau des 6 etapes (combats sortis a 3 etoiles / total).
+            const sw = on => `<span style="width:30px;height:16px;border-radius:9px;background:${on ? '#ff7a2f' : '#2a2d38'};border:1px solid ${on ? '#ff7a2f' : '#3a3f50'};position:relative;flex:none"><span style="position:absolute;top:2px;left:${on ? 16 : 2}px;width:10px;height:10px;border-radius:50%;background:${on ? '#111' : '#7d8494'}"></span></span>`;
+            const fcOpt = () => { const on = focusOn();
+                  return `<div style="margin-top:6px;border-top:1px solid #262a33;padding-top:6px"><div id="kitsuFcOpt" style="display:flex;align-items:center;gap:8px;cursor:pointer">${sw(on)}<span>Focus Campagne par difficulté</span></div>`
+                    + `<div style="opacity:.6;margin-top:3px">${on ? 'Une difficulté est passée quand il n\'y reste que des murs ; ils reviennent dès qu\'ils sont sûrs.' : 'Cochée : toutes les Normal d\'abord, puis Difficile, Extrême, puis Cauchemar N, D, E.'}</div></div>`; };
+            const fcSteps = (P, S) => { const c = diffCompte(S), k = focusStep(P?.combats, S);
+                  return `<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin:7px 0 2px">` + c.map((x, i) => { const done = x.total && x.trois >= x.total, cur = i === k, bd = cur ? '#ff7a2f' : done ? '#24563a' : '#2c3040', bg = cur ? '#2a1a10' : done ? '#122219' : '#151821', col = cur ? '#ff7a2f' : done ? '#3ccf7a' : '#e7e9ee';
+                    return `<div title="${DIFF_NOM[i]} : ${x.trois}/${x.total} à 3 étoiles${!done && k > i ? ' (il ne reste que des murs)' : ''}" style="border:1px solid ${bd};background:${bg};border-radius:4px;padding:3px 1px;text-align:center;font-size:10px;line-height:1.25;color:#8a91a0${i > 2 ? ';font-style:italic' : ''}"><b style="display:block;font-size:11px;color:${col}">${DIFF_NOM[i].replace('Cauchemar ', 'C. ')}</b>${x.trois}/${x.total}</div>`; }).join('') + '</div>'; };
             // 5.49.1 : case « Me proposer la Tour », visible dans l'onglet Plan partout (pas seulement sur la carte de l'Aventure).
             const twOpt = P => { const tw = KitsuAI._karTour() || P?.tour, on = lsGet('kitsu_ai_tourGuide', false) === true, best = save().tower?.best || 0, et = tw ? String(Math.round(10 * tw.etage) / 10).replace('.', ',') : '';
                   return `<div style="margin-top:6px;border-top:1px solid #262a33;padding-top:6px">${tw ? `Tour : ${tw.equipe.map(short).join(', ')}, étage ~${et}${best ? ` (record ${best})` : ''}` : 'Tour de l\'infini'}`
                     + `<div id="kitsuTwOpt" style="display:flex;align-items:center;gap:8px;margin-top:5px;cursor:pointer"><span style="width:30px;height:16px;border-radius:9px;background:${on ? '#ff7a2f' : '#2a2d38'};border:1px solid ${on ? '#ff7a2f' : '#3a3f50'};position:relative;flex:none"><span style="position:absolute;top:2px;left:${on ? 16 : 2}px;width:10px;height:10px;border-radius:50%;background:${on ? '#111' : '#7d8494'}"></span></span><span>Me proposer la Tour dans le guide</span></div>`
                     + `<div style="opacity:.6;margin-top:3px">Cochée : la Tour revient seulement après la Campagne, et seulement si la prévision dépasse vraiment ton record.</div></div>`; };
             let busy = false, shownAt = 0, horsCarte = 0;
-            const brancher = () => { const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; horsCarte = 0; }; };
+            const brancher = () => { const opt = document.getElementById('kitsuTwOpt'); if (opt) opt.onclick = () => { lsSet('kitsu_ai_tourGuide', lsGet('kitsu_ai_tourGuide', false) !== true); shownAt = 0; horsCarte = 0; };
+              const fc = document.getElementById('kitsuFcOpt'); if (fc) fc.onclick = () => { lsSet('kitsu_ai_focusDiff', !focusOn()); shownAt = 0; horsCarte = 0; }; };
             clearInterval(window.__kitsuPlanT);
             window.__kitsuPlanT = setInterval(async () => {
               // 5.58 : tourne aussi onglet cache (demande d'Adrien du 21/11)
@@ -1848,7 +1869,7 @@
               if (!onMap) {
                 pn.style.display = 'block'; shownAt = 0;
                 if (Date.now() - horsCarte < 5000 && pn.innerHTML) return;
-                pn.innerHTML = '<div class="k-ttl">Plan du moment</div><div style="opacity:.7">Les combats du plan s\'affichent sur la carte de l\'Aventure.</div>' + twOpt(lsGet('kitsu_ai_plan', null));
+                pn.innerHTML = '<div class="k-ttl">Plan du moment</div><div style="opacity:.7">Les combats du plan s\'affichent sur la carte de l\'Aventure.</div>' + fcOpt() + twOpt(lsGet('kitsu_ai_plan', null));
                 horsCarte = Date.now(); brancher(); return;
               }
               horsCarte = 0;
@@ -1857,14 +1878,14 @@
               let P = lsGet('kitsu_ai_plan', null);
               if (P && Date.now() - shownAt < 60000 && pn.innerHTML) return;
               if (!P || Date.now() - P.t > 10 * 60000 || P.cle !== starsKey(save())) { busy = true; pn.innerHTML = '<div class="k-ttl">Plan du moment</div><div style="opacity:.7">Calcul...</div>'; try { P = await this.plan(); } catch (e) { pn.textContent = 'Plan : ' + e.message; busy = false; return; } busy = false; }
-              const top = P.combats.filter(r => r.gemmesEsperees > 0).slice(0, 6);
-              pn.innerHTML = `<div class="k-ttl">Plan du moment</div><div class="k-move" style="font-size:20px">+${P.gemmesAPrendre} gemmes <i>à prendre</i></div>`
+              const S0 = save(), fcK = focusOn() ? focusStep(P.combats, S0) : -2, top = focusRows(P.combats.filter(r => r.gemmesEsperees > 0), S0).slice(0, 6);
+              pn.innerHTML = `<div class="k-ttl">Plan du moment${fcK > -2 ? ' · Focus' : ''}</div>` + (fcK > -2 ? `<div class="k-move" style="font-size:20px">${fcK >= 0 ? `Étape ${DIFF_NOM[fcK]}` : 'Focus : rien de sûr à jouer'}</div>` + fcSteps(P, S0) : `<div class="k-move" style="font-size:20px">+${P.gemmesAPrendre} gemmes <i>à prendre</i></div>`)
                 + `<div class="k-chips"><span class="k-chip">Gemmes ${P.gemmes}</span><span class="k-chip">Énergie ${P.energie}</span><span class="k-chip">${P.energieNecessaire} énergie nécessaire</span>${P.minutesEnergie ? `<span class="k-chip">~${P.minutesEnergie} min de recharge</span>` : ''}</div>`
                 + (top.length ? '<div class="k-sec"><span>Combats</span><span>3 étoiles</span></div>' : '')
                 + top.map((r, i) => `<div class="k-row${i ? ' k-dim' : ''}"><span class="n">${i + 1}</span><span class="l">${r.nom}${r.boss ? ' (boss)' : ''} · ${r.etoiles}/3</span><span class="p">${Math.round(r.troisEtoiles * 100)} %</span><span class="k-sub">${r.equipe.map(short).join(', ')}</span><span class="k-bar"><b style="width:${Math.round(r.troisEtoiles * 100)}%"></b></span></div>`).join('')
                 + (P.bloquants.length ? `<div class="k-warn" style="margin-top:5px">Bloquants : ${P.bloquants.map(r => r.nom).join(', ')}</div>` : '')
                 + (P.avenir?.length ? '<div class="k-sec"><span>Prochains murs</span><span></span></div>' + P.avenir.slice(0, 3).map(r => `<div>${r.monde} « ${r.nom} » · ${Math.round(r.victoire * 100)} % · <span class="k-warn">${r.niveauxEnPlus ? `+${r.niveauxEnPlus} niveaux, ~${r.combatsDeFarm} farms` : 'hors de portée'}</span></div>`).join('') : '')
-                + twOpt(P)
+                + fcOpt() + twOpt(P)
                 + `<div class="k-foot"><span>Ensuite <b>${P.apresPlan} gemmes</b>, soit ${P.tirages10} tirage${P.tirages10 > 1 ? 's' : ''} x10</span><span>${P.banniere}</span></div>`;
               shownAt = Date.now();
               brancher();

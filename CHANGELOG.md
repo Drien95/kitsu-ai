@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.59.0
+
+Nouvelle case « Focus Campagne par difficulté » dans l'onglet Plan du moment du script (demande d'Adrien du 22/11).
+
+- Décochée par défaut : rien ne change.
+- Cochée : le guide, la feuille de route et la liste du plan ne proposent que la difficulté en cours, dans l'ordre Normal, Difficile, Extrême, puis Cauchemar Normal, Cauchemar Difficile, Cauchemar Extrême.
+- Une difficulté où il ne reste que des murs (combats pas sûrs) est passée : ses murs reviennent dès qu'ils deviennent sûrs. Le farm, la recharge d'énergie et une montée de Tour déjà lancée gardent leur place.
+- Bandeau des 6 étapes : combats sortis à 3 étoiles sur le total, lus dans la sauvegarde. Aucune simulation ni calcul en plus ; un combat à 3 étoiles n'est jamais reproposé.
+- Clé du navigateur : `kitsu_ai_focusDiff`.
+
 ## 5.58.0
 
 Le script continue onglet caché : conseil de combat, guide, plan, écran d'équipe, invocations, dock et raids.
