@@ -521,8 +521,6 @@
   .sy-det > summary::-webkit-details-marker { display: none; } .sy-det > summary::before { content: "/"; color: var(--acc); font-style: normal; }
   .sy-det > summary::after { content: "+"; margin-left: 10px; color: var(--mute); font-style: normal; } .sy-det[open] > summary::after { content: "\2212"; }
   .sy-det > summary .r { margin-left: auto; font: 600 13px var(--body); text-transform: none; font-style: normal; color: var(--mute); }
-  .sy-acts { display: flex; gap: 12px; margin: 16px 0 0; flex-wrap: wrap; align-items: center; } .sy-acts .muted { font-size: 12.5px; }
-  .sy-plie { display: none; margin-top: 16px; } .sy-plie.on { display: block; }
   .sy-steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
   .sy-steps li { display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); counter-increment: s; } .sy-steps li:last-child { border-bottom: 0; }
   .sy-steps li::before { content: counter(s); font: 400 26px/1 var(--head); font-style: italic; color: var(--acc); width: 22px; flex: none; }
@@ -606,15 +604,16 @@
     <h1>Tour de l'infini</h1>
     <p class="lead">Ton record, le trio à jouer, et ce qu'il te manque pour aller plus haut.</p>
     <div id="twSy"></div>
-    <div class="sy-acts"><button class="ghost" id="twCalcBtn" onclick="syPlie('twCalc')">Lancer le calcul…</button><div id="twJob" class="muted"></div></div>
-    <div class="card hot sy-plie" id="twCalc">
-      <p class="muted" style="margin:0 0 14px;font-size:13px">Tous les trios de tes cartes SSR, UR et LR montent sur les vrais étages (les PV sont gardés d'un étage à l'autre), les plus faibles sont écartés manche après manche, puis les meilleurs refont 30 montées.</p>
+    <div class="sp"></div>
+    <div class="card hot" id="twCalc">
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="planche('#p-tour', 'tw-planche')">Exporter la planche PNG</button></span></h2>
+      <p class="muted" style="margin:0 0 14px;font-size:13px">Tous les trios de tes cartes SSR, UR et LR montent sur les vrais étages (les PV sont gardés d'un étage à l'autre), les plus faibles sont écartés manche après manche, puis les meilleurs refont 30 montées.</p>
       <div class="row"><label>Niveaux <select id="o_twniv" onchange="twPrev()"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99 (potentiel)</option></select></label></div>
       <div class="opt"><div class="lab">Cartes essayées</div><div><div class="row" id="twrar"></div><div class="risk" id="twriskRar"></div></div></div>
       <div class="opt"><div class="lab">Temps de travail</div><div><div class="seg" id="twtps"><a data-t="0" onclick="chxTps('tw',0)">Jusqu'au bout</a><a data-t="2" onclick="chxTps('tw',2)">2 h puis pause</a><a data-t="8" onclick="chxTps('tw',8)">Une nuit (8 h) puis pause</a></div><div class="risk" id="twriskTps"></div></div></div>
       <div id="twPrev" class="grid g5" style="margin-top:18px"></div>
       <div class="row lance" style="margin-top:16px"><span class="muted" style="font-size:12px;flex:1">Le PC reste éveillé, tu peux jouer pendant ce temps. Une pause ou un arrêt n'efface rien : la reprise repart du journal, les montées déjà faites ne sont pas refaites.</span><button data-act="tour">Lancer le calcul</button></div>
+      <div id="twJob" class="muted" style="margin:8px 0 0"></div>
     </div>
     <details class="sy-det" id="twDet"><summary>Détails <span class="r">meilleurs trios, étages qui bloquent, collectifs, graphiques, méthode</span></summary>
     <div id="twBody"><div class="skel"></div></div>
@@ -806,10 +805,10 @@
     <h1>Campagne</h1>
     <p class="lead">Cauchemar en 3★ : ce que tu as fait, ce que ton script prévoit, et où jouer ensuite.</p>
     <div id="c3Sy"></div>
-    <div class="sy-acts"><button class="ghost" id="c3CalcBtn" onclick="syPlie('c3Calc')">Lancer le calcul…</button><div id="c3job" class="muted"></div></div>
-    <div class="card hot sy-plie" id="c3Calc">
-      <p class="muted" style="margin:0 0 14px;font-size:13px">Le meilleur trio pour les 3 étoiles, en Campagne et en Cauchemar, chacun en Normal, Difficile et Extrême. Tous les trios de tes cartes SSR, UR et LR sont essayés.</p>
+    <div class="sp"></div>
+    <div class="card hot" id="c3Calc">
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="campPlanche()">Exporter la planche PNG</button></span></h2>
+      <p class="muted" style="margin:0 0 14px;font-size:13px">Le meilleur trio pour les 3 étoiles, en Campagne et en Cauchemar, chacun en Normal, Difficile et Extrême. Tous les trios de tes cartes SSR, UR et LR sont essayés.</p>
       <div class="row">
         <label>Niveaux <select id="o_c3niv" onchange="campPrev()"><option value="99">Toutes au niveau 99 (potentiel)</option><option value="actuel">Tes niveaux actuels</option></select></label>
         <label>Difficultés <select id="o_c3dif" onchange="campPrev()"><option value="toutes">Les 6 (Campagne et Cauchemar)</option><option value="cauchemar">Cauchemar seulement (plus rapide)</option></select></label>
@@ -820,7 +819,9 @@
       <div id="c3prev" class="grid g5" style="margin-top:18px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
       <div class="frise" id="c3frise"></div><div class="frleg" id="c3leg"></div>
       <div class="row lance" style="margin-top:16px"><span class="muted" style="font-size:12px;flex:1">Le PC reste éveillé, tu peux jouer pendant ce temps. Une pause ou un arrêt n'efface rien : la reprise repart du journal, les combats déjà joués ne sont pas refaits.</span><button data-act="cauchemar3">Lancer le calcul</button></div>
+      <div id="c3job" class="muted" style="margin:8px 0 0"></div>
     </div>
+    <div id="c3Mondes"></div>
     <details class="sy-det" id="c3Det"><summary>Détails <span class="r">trio combat par combat, carte des mondes, plan, collectifs, graphiques</span></summary>
     <div class="sp"></div>
     <div class="card" id="c3base">
@@ -2136,7 +2137,6 @@ const syTag = p => `<span class="sy-src ${p ? 'p' : 'o'}">${p ? 'privé' : 'publ
 const nbE = x => Math.round(x).toLocaleString('fr-FR');
 const syNoms = ids => (ids || []).map(id => carte(id).n).join(' / ');
 const syExt = () => !!document.querySelector('#nav a[data-p="arene"]');
-function syPlie(id) { const el = $(id); if (!el) return; el.classList.toggle('on'); if (el.classList.contains('on')) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
 async function syCharger(force) {
   if (SY.charge || (!force && Date.now() - SY.t < 60000)) return; SY.charge = true; SY.t = Date.now();
   await Promise.all([
@@ -2244,11 +2244,12 @@ function syCampRender() {
     ${P && C.pub !== C.prevu ? `<details class="sy-pub"><summary>Voir le public</summary><div>Règle apprise seule : ${SY_D.map(([d]) => nbE(C.d[d].pub)).join(' / ')} prévus (Normal / Difficile / Extrême).</div></details>` : ''}
     ${C.date ? `<p class="muted" style="font-size:12px;margin:12px 0 0">Prévu d'après le calcul du ${quand(C.date)}. Les combats déjà faits en 3★ dans ta partie comptent comme prévus.</p>` : ''}</div>`;
   const d = C.d[SY.d] ? SY.d : 'normal', D = C.d[d], nomD = SY_D.find(x => x[0] === d)[1];
-  h += `<div class="sp"></div><div class="card"><h2>Cauchemar ${nomD}, monde par monde <span class="r">${SY_D.map(([k, , p]) => `<span class="pill ${p}${k === d ? ' on' : ''}" style="${k === d ? '' : 'opacity:.5'}" onclick="SY.d='${k}';syCampRender()">${p.toUpperCase()}</span>`).join(' ')}</span></h2>
+  setH('c3Sy', h);
+  h = `<div class="sp"></div><div class="card"><h2>Cauchemar ${nomD}, monde par monde <span class="r">${SY_D.map(([k, , p]) => `<span class="pill ${p}${k === d ? ' on' : ''}" style="${k === d ? '' : 'opacity:.5'}" onclick="SY.d='${k}';syCampRender()">${p.toUpperCase()}</span>`).join(' ')}</span></h2>
     <table class="sy-w"><tr><th>Monde</th><th class="n">Fait</th><th class="n">Prévu</th><th class="n hide">Combats</th><th class="hide"></th><th></th></tr>
     ${D.mondes.map(w => `<tr><td>${esc(w.nom)}</td><td class="n"><b>${w.fait}</b></td><td class="n${P ? ' pv' : ''}">${w.prevu}</td><td class="n hide">${w.total}</td><td class="hide">${bar(w)}</td><td class="n">${CP.j?.etages ? `<button class="ghost" onclick="syJouer('${esc(w.id)}')">Jouer</button>` : ''}</td></tr>`).join('')}</table>
     <p class="muted" style="font-size:12px;margin:10px 0 0">« Jouer » ouvre ton trio combat par combat pour ce monde.</p></div>`;
-  setH('c3Sy', h);
+  setH('c3Mondes', h);
 }
 function syJouer(m) { const det = $('c3Det'); if (det) det.open = true; TC.g = 'cau'; TC.m = m; TC.d = Math.max(0, SY_D.findIndex(x => x[0] === SY.d)); TC.open = null; if (!CP.j) return; if ($('tcBox')) tcRender(); else campRender(); setTimeout(() => $('tcBox')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); }
 addEventListener('hashchange', () => { const p = pageAct(); if (p === 'accueil' || p === 'campagne' || p === 'tour' || p === 'resultats') syCharger(p === 'resultats'); });
@@ -2667,7 +2668,7 @@ const KG = [
   { id: 'campagne', n: 'Campagne', d: 'Le meilleur trio pour chaque combat, en 3★.', e: [
     { x: 'neutre', p: 'accueil', s: ['#nav a[data-p="campagne"]', '#tabbar a[data-t="campagne"]'], w: 'campagne', tag: 'Clique ici', t: "Passons à la <em>Campagne</em>. Clique dessus." },
     { x: 'joie', p: 'campagne', s: ['#c3Sy'], tag: 'Fait et prévu', t: "Tes <em>3 étoiles</em> faites en jeu, et ce que ton script prévoit, en Cauchemar <span style=\"color:#2fd27a\">N</span>, <span style=\"color:#f5a524\">D</span> et <span style=\"color:#ff4b3e\">E</span>." },
-    { x: 'serieux', p: 'campagne', s: ['#c3CalcBtn'], tag: 'Lancer', t: "Le trio de chaque combat est dans <em>Détails</em>. Ce calcul est long : c'est <em>toi</em> qui le lances. Les combats déjà joués sont gardés et ne sont pas refaits." }] },
+    { x: 'serieux', p: 'campagne', s: ['#c3Calc'], tag: 'Lancer', t: "Le trio de chaque combat est dans <em>Détails</em>. Ce calcul est long : c'est <em>toi</em> qui le lances. Les combats déjà joués sont gardés et ne sont pas refaits." }] },
   { id: 'tour', n: "Tour de l'infini", d: "Jusqu'où ton trio monte, et où il bloque.", e: [
     { x: 'neutre', p: 'tour', s: ['#twSy'], tag: 'Ton record', t: "La Tour : ton <em>record en jeu</em>, l'étage que ton script prévoit, et le trio à jouer." },
     { x: 'surpris', p: 'tour', s: ['#twDet'], tag: 'Les murs', t: "Dans <em>Détails</em>, surtout <em>où il bloque</em> : l'étage, les ennemis, et la part des montées qui s'y arrêtent." }] },
