@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.59.1
+
+Correction du farm d'XP Campagne (signalé par Adrien le 22/11 : « rejoue Le dernier coup… équipe Illumi Zoldyck, Shanks, Kanki »).
+
+- Cartes au 99 : le farm ne comptait que les cartes du plan d'XP. Avec une seule carte du plan (Illumi, niv. 47), les 2 autres places allaient aux cartes les plus fortes, Shanks 99 et Kanki 99, qui ne gagnent plus rien. Toute carte sous le 99 compte maintenant ; celles du plan gardent leur poids et passent devant. Trios essayés : jusqu'à 8 cartes à monter entre elles, complétées par tes 3 plus fortes (164 trios, autant qu'avant). Mesure sur la sauvegarde du 22/11 16 h 27 : avant, Illumi + Shanks + Kanki (1 carte monte) ; après, Illumi + Edgar Valtinas + Mamoru Endou (2 cartes montent, victoire 100 %, 3 étoiles 100 % sur 8 tirages).
+- Une équipe dont aucune carte ne gagne d'XP n'est plus jamais proposée.
+- L'XP et l'énergie d'un combat sont les mêmes dans les 6 difficultés (0 écart mesuré sur les 30 combats les plus rentables) : chaque combat est rejoué dans sa difficulté la plus facile déjà à 3 étoiles, et le farm essaie 10 combats différents (avant : 2 par difficulté, souvent le même combat en plus dur).
+- Message : « +9654 XP pour Illumi, Edgar » au lieu de « +9654 XP à chaque carte ».
+- « Plus de combat facile » à tort : à 16 h 27 le plan était en cours de calcul (vide ou calculé avant tes derniers combats) ; le guide a pris ce vide pour « plus rien à jouer » et lancé le farm. À 16 h 28 le plan fini avait 104 combats sûrs, dont 7 combats Normal à 100 % de 3 étoiles. Maintenant, tant que le plan n'est pas à jour, le guide affiche « calcul du plan… » au lieu du farm, de la Tour ou de « plus de combat facile ».
+
 ## 5.59.0
 
 Nouvelle case « Focus Campagne par difficulté » dans l'onglet Plan du moment du script (demande d'Adrien du 22/11).

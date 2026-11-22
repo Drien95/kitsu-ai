@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.59.0
+// @version      5.59.1
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.59.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.59.1') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -491,6 +491,9 @@
           return w;
         };
         const xpScore = (t, w = xpWeights()) => t.reduce((a, id) => a + (w[id] || 0), 0);
+        // 5.59.1 : texte du farm. Seules les cartes sous le 99 gagnent l'XP : on les nomme (avant : « +9654 XP a chaque carte »
+        // alors que 2 des 3 cartes etaient deja au 99).
+        const farmXpTxt = r => { const m = r.montent || r.equipe.filter(id => (save().lv?.[id]?.l || 1) < 99); return m.length ? `+${r.xp} XP pour ${m.map(short).join(', ')}` : `aucune carte de l'equipe ne gagne d'XP (toutes au 99)`; };
         // Actions d'economie du moment, par ordre de rentabilite :
         // energie x25 de la boutique (1,2 gemme/energie), puis invocation x10 en gardant 15 gemmes pour une recharge.
         const econActions = (S, nTodo) => {
@@ -650,7 +653,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.59.0',
+          __v: '5.59.1',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1269,14 +1272,19 @@
                 }
                 // Plus aucune 3 etoiles facile : on rejoue le combat deja gagne qui donne le plus d'XP par energie
                 // aux cartes a faire monter (equipe cible), pour franchir les murs plus vite (5.48 : avant la Tour).
-                if (!next) {
+                // 5.59.1 : plan absent (efface a la mise a jour du script) ou calcule avant tes derniers combats : sa liste peut etre vide
+                // alors que des combats faciles sont ouverts. Mesure du 22/11 : farm propose a 16 h 27 (« Le dernier coup », plan en cours de
+                // calcul), puis a 16 h 28 le plan fini avait 104 combats surs, dont 7 combats Normal a 100 % de 3 etoiles. On attend le plan.
+                const attentePlan = !next && (!P || planVieux);
+                if (attentePlan && !KitsuAI._planP && Date.now() - (window.__kitsuPlanTry || 0) > 30000) { window.__kitsuPlanTry = Date.now(); KitsuAI.plan().catch(e => health.err('plan : ' + e.message)); }
+                if (!next && !attentePlan) {
                   const F = lsGet('kitsu_ai_farm', null);
                   if (F?.row && Date.now() - F.t < 3600000) { if (en >= (F.row.cout || 1)) { todo.push(F.row); next = F.row; } }
                   else if (!KitsuAI._farmBusy && Date.now() - (window.__kitsuFarmTry || 0) > 120000 && !T) { window.__kitsuFarmTry = Date.now(); KitsuAI.farm().catch(e => health.err('farm : ' + e.message)); }
                 }
                 // Tour de l'infini (niveau de compte 25) : 5.48, au choix seulement (case « Me proposer la Tour » de l'onglet Plan,
                 // decochee par defaut) et apres la Campagne : ni 3 etoiles a prendre, ni farm utile pour les murs.
-                const twA = !next && !T && !KitsuAI._farmBusy ? KitsuAI._towerAction(S, en) : null;
+                const twA = !next && !attentePlan && !T && !KitsuAI._farmBusy ? KitsuAI._towerAction(S, en) : null;
                 if (twA) {
                   const pk = [...document.querySelectorAll('[data-tw="pickc"]')].filter(vis);
                   if (pk.length) {
@@ -1302,7 +1310,7 @@
                   const lastF = T?.f?.id; if (lastF && (S.pve?.stars?.[lastF] || 0) > 0 && (S.pve?.stars?.[lastF] || 0) < 3 && realMiss(lastF) > 0) return mark(rClose, `pas 3 etoiles : stop sur ce combat pour aujourd'hui (la 3e etoile ne vaut qu'1 gemme). Retour a la carte${next ? ` pour « ${next.nom} »` : ''}`, 'res-miss');
                   if (evN) return mark(rClose, `retour a la carte, puis ${evN.txt}`, 'res-ev');
                   const rr = [...document.querySelectorAll('[data-result-retry]')].find(vis);
-                  if (next?.farm && rr && T?.f?.id === next.id) return mark(rr, `rejoue « ${next.nom} » pour l'XP (+${next.xp} XP par carte)`, 'res-farm');
+                  if (next?.farm && rr && T?.f?.id === next.id) return mark(rr, `rejoue « ${next.nom} » pour l'XP (${farmXpTxt(next)})`, 'res-farm');
                   if (next && rn && rn.dataset.resultNext === next.id) return mark(rn, `combat suivant : « ${next.nom} » (3 etoiles ${Math.round(next.troisEtoiles * 100)} %)`, 'res-next');
                   return mark(rClose, next ? `retour a la carte pour « ${next.nom} »` : 'retour a la carte', 'res-close');
                 }
@@ -1530,6 +1538,7 @@
                   }
                   return mark(null, 'energie vide : reviens dans ~10 min (1 energie toutes les 10 min)');
                 }
+                if (!next && attentePlan) return mark(null, 'calcul du plan... (tes etoiles ont change, le guide reprend dans un instant)');
                 if (!next) return mark(null, 'plus de combat facile disponible : voir la roadmap');
                 lsSet('kitsu_ai_lastTeam', next.equipe);
                 // Navigation vers l'etape conseillee.
@@ -1550,7 +1559,7 @@
                   const here = todo.filter(r => worldOf(r.id) === curWorld);
                   for (const r of here) {
                     const n = visNode(r.id);
-                    if (n) return mark(n, r.farm ? `rejoue « ${r.nom} » pour l'XP : +${r.xp} XP a chaque carte, ${r.cout} energie (equipe : ${r.equipe.map(short).join(', ')})` : `lance « ${r.nom} » (${r.etoiles}/3 etoiles, 3 etoiles ${Math.round(r.troisEtoiles * 100)} %)`, 'node' + r.id);
+                    if (n) return mark(n, r.farm ? `rejoue « ${r.nom} » pour l'XP : ${farmXpTxt(r)}, ${r.cout} energie (equipe : ${r.equipe.map(short).join(', ')})` : `lance « ${r.nom} » (${r.etoiles}/3 etoiles, 3 etoiles ${Math.round(r.troisEtoiles * 100)} %)`, 'node' + r.id);
                     // 5.40.1 : aussi pour un combat en Normal (sans « @ ») : un combat de farm deja fait peut etre en Normal alors que
                     // l'arc est affiche en Difficile ou en Cauchemar ; avant, le guide ne proposait jamais de repasser l'arc en Normal
                     // et redisait en boucle « fais defiler la carte ».
@@ -1564,7 +1573,7 @@
                   if (here.length) {
                     const r = here[0], base = G.findFight(r.id.split('@')[0]);
                     // Combat de farm : deja a 3 etoiles, on le rejoue pour l'XP. Le dire, sinon on croit que le guide n'a pas vu la victoire.
-                    const quoi = r.farm ? `rejouer « ${r.nom} » pour l'XP (deja a 3 etoiles, +${r.xp} XP par carte, mode ${modeTxt(r.id)})` : `« ${r.nom} » (mode ${modeTxt(r.id)})`;
+                    const quoi = r.farm ? `rejouer « ${r.nom} » pour l'XP (deja a 3 etoiles, ${farmXpTxt(r)}, mode ${modeTxt(r.id)})` : `« ${r.nom} » (mode ${modeTxt(r.id)})`;
                     return mark(null, `fais defiler la carte jusqu'a l'arc « ${base?.arc || '?'} » pour ${quoi}`, 'scroll' + r.id);
                   }
                   const back = [...document.querySelectorAll('[data-back-worlds]')].find(vis);
@@ -2004,15 +2013,16 @@
 
           // Ecran "Choisis tes cartes" : 120 trios de tes 10 meilleures cartes, simules contre ce combat.
           // Classement des trios pour un combat : en cache (par combat et niveaux de tes cartes), calcule par petits morceaux.
-          _teamKey(fid, S, base) { return fid + '|' + (base ? base.join('.') + '|' : '') + (lsGet('kitsu_ai_training', null)?.objectif?.equipe || []).join('.') + '|' + pool(10, S).map(id => id + ':' + Math.floor((S.lv?.[id]?.l || 1) / 3) + ':' + (S.stars?.[id] || 0)).join(','); },
+          _teamKey(fid, S, base, liste) { return fid + '|' + (base ? base.join('.') + '|' : '') + (liste ? 'L' + liste.length + ':' + [...new Set(liste.flat())].sort((a, b) => a - b).map(id => id + ':' + Math.floor((S.lv?.[id]?.l || 1) / 3)).join(',') + '|' : '') + (lsGet('kitsu_ai_training', null)?.objectif?.equipe || []).join('.') + '|' + pool(10, S).map(id => id + ':' + Math.floor((S.lv?.[id]?.l || 1) / 3) + ':' + (S.stars?.[id] || 0)).join(','); },
           // base (5.37, farm) : cartes dont on essaie tous les trios, a la place de tes 10 plus fortes.
-          async _rankTeams(fid, S = save(), base = null) {
-            const key = this._teamKey(fid, S, base), cache = lsGet('kitsu_ai_teams', {});
+          // liste (5.59.1, farm) : trios precis a classer, a la place de tous les trios de base.
+          async _rankTeams(fid, S = save(), base = null, liste = null) {
+            const key = this._teamKey(fid, S, base, liste), cache = lsGet('kitsu_ai_teams', {});
             // 5.54 : un classement en cache (calcule PC eteint, ou avant le dernier calcul Campagne exact) gardait le trio du public
             // alors que le script prive avait un trio exact jouable. Le trio exact est donc redemande au PC a chaque ecran d'equipe :
             // s'il est deja classe, on met a jour son marquage ; sinon le classement est refait avec lui. PC muet : cache tel quel.
             if (cache[key]) {
-              const res = cache[key].res, x = localPC.ok && !base ? await this._exactPC(fid, S) : null;
+              const res = cache[key].res, x = localPC.ok && !base && !liste ? await this._exactPC(fid, S) : null;
               if (!x) return res;
               const kOf = r => r.t.slice().sort((a, b) => a - b).join('-');
               // 5.56.2 : apres un nouveau calcul Campagne, ses trios pour ce combat doivent etre dans le classement ; sinon il est refait.
@@ -2022,7 +2032,7 @@
             const pol = smartPol(this.W), seeds = [1, 2, 3, 4, 5, 6, 7, 8];
             const trc = lsGet('kitsu_ai_training', null), tr0 = [...(trc?.objectif?.equipe || []), ...(trc?.cartes || []).slice(0, 2).map(c => c.id)].filter(id => S.owned?.[id]);
             const xw0 = xpWeights(), focusT = (trc?.objectif?.equipe || []).filter(id => S.owned?.[id]);
-            const list = trios(base || [...new Set([...pool(10, S), ...tr0])]);
+            const list = liste ? liste.map(t => t.slice()) : trios(base || [...new Set([...pool(10, S), ...tr0])]);
             // Trios du calcul Campagne du PC (meilleur trio de ce combat parmi TOUS tes trios, et trio du plan) : ajoutes a la liste,
             // puis classes comme les autres a tes niveaux actuels.
             const calc = new Set(); let exact = null;
@@ -2058,26 +2068,38 @@
             if (this._farmBusy) return null; this._farmBusy = true;
             try {
               const S = save(), xw = xpWeights(), MODE = { h: 'Difficile', x: 'Extreme', n: 'Cauchemar', hn: 'Cauchemar Difficile', xn: 'Cauchemar Extreme' };
-              const rows = Object.keys(S.pve?.stars || {}).filter(id => S.pve.stars[id] >= 3 && !id.startsWith('ev-')).map(id => { const f = G.findFight(id); if (!f) return null; let xp = 0, c = 1; try { xp = G.fightXp(f); c = G.fightCost(f) || 1; } catch {} return { id, f, xp, c }; })
-                .filter(Boolean).sort((a, b) => b.xp / b.c - a.xp / a.c);
-              // 5.37 : les 2 combats les plus rentables de chaque difficulte (Normal ... Cauchemar Extreme), pas seulement les plus durs :
-              // une carte basse ne tient pas en Cauchemar, mais monte en Normal ou Difficile. 10 combats au plus.
-              const parMode = {}; for (const r of rows) { const k = r.id.split('@')[1] || ''; if ((parMode[k] ??= []).length < 2) parMode[k].push(r); }
-              const essais = Object.values(parMode).flat().sort((a, b) => b.xp / b.c - a.xp / a.c).slice(0, 10);
-              // Trios essayes : tes 6 cartes les plus fortes et les 5 cartes a faire monter les plus utiles (plan d'XP, prochains murs).
-              const aMonter = Object.entries(xw).filter(([id, v]) => v > 0 && S.owned?.[id] && (S.lv?.[id]?.l || 1) < 99).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => +id);
-              const base = [...new Set([...pool(6, S), ...aMonter])].sort((a, b) => a - b);
-              // 5.39 : le farm rejoue des combats deja a 3 etoiles, les etoiles n'y rapportent plus rien. Regle du jeu (lue dans le moteur) :
-              // a la victoire, chaque carte gagne l'XP du combat, la moitie si elle est K.O. ; rien en cas de defaite. Il suffit donc de
-              // gagner (95 %). Avant, il fallait aussi 3 etoiles a 90 % : une carte basse (K.O. souvent) n'etait jamais prise.
-              // XP utile d'un trio = cartes a monter ponderees x (1 sans K.O., 0,5 avec) ; « 3 etoiles » sert d'estimation basse du sans K.O.
-              const gainXp = x => xpScore(x.t, xw) * (0.5 + 0.5 * x.s3);
+              // 5.59.1 : l'XP et l'energie d'un combat sont les memes dans les 6 difficultes (mesure du 22/11 : 0 ecart sur les 30
+              // combats les plus rentables). Le farm rejoue donc chaque combat dans sa difficulte la plus facile deja a 3 etoiles, et
+              // essaie 10 combats differents (avant : 2 par difficulte, souvent le meme combat en plus dur).
+              const parBase = {};
+              for (const id of Object.keys(S.pve?.stars || {})) {
+                if (S.pve.stars[id] < 3 || id.startsWith('ev-') || fightClosed(id)) continue;
+                const b = id.split('@')[0]; if (parBase[b] && diffIdx(parBase[b]) <= diffIdx(id)) continue; parBase[b] = id;
+              }
+              const essais = Object.values(parBase).map(id => { const f = G.findFight(id); if (!f) return null; let xp = 0, c = 1; try { xp = G.fightXp(f); c = G.fightCost(f) || 1; } catch {} return { id, f, xp, c }; })
+                .filter(Boolean).sort((a, b) => b.xp / b.c - a.xp / a.c).slice(0, 10);
+              // 5.59.1 : une carte au 99 ne gagne plus rien. Avant, seules les cartes du plan d'XP comptaient : avec une seule carte du
+              // plan, les 2 autres places allaient a des cartes 99 (Illumi + Shanks 99 + Kanki 99 sur « Le dernier coup », alors que
+              // Edgar 92 + Subaru 73 + Hisoka 55 y gagnent a 100 %). Toute carte sous le 99 compte maintenant 1 ; celles du plan gardent
+              // leur poids (2 a 5) et passent devant. Trios essayes : cartes a monter entre elles, puis completees par tes 3 plus fortes.
+              const lvF = id => S.lv?.[id]?.l || 1;
+              const aMonter = Object.entries(xw).filter(([id, v]) => v > 0 && S.owned?.[id] && lvF(id) < 99).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => +id);
+              const autres = Object.keys(S.owned || {}).map(Number).filter(id => window.CHAR_BY_ID?.[id] && lvF(id) > 1 && lvF(id) < 99 && !aMonter.includes(id)).sort((a, b) => lvF(b) - lvF(a)).slice(0, 8 - aMonter.length);
+              const bas = [...aMonter, ...autres], forts = pool(6, S).filter(id => !bas.includes(id)).slice(0, 3);
+              const listeFarm = [];
+              for (let i = 0; i < bas.length; i++) for (let j = i + 1; j < bas.length; j++) { for (let k = j + 1; k < bas.length; k++) listeFarm.push([bas[i], bas[j], bas[k]]); for (const f of forts) listeFarm.push([bas[i], bas[j], f]); }
+              for (const b of bas) for (let i = 0; i < forts.length; i++) for (let j = i + 1; j < forts.length; j++) listeFarm.push([b, forts[i], forts[j]]);
+              if (!bas.length) listeFarm.push(forts.slice(0, 3));
+              const gXp = id => lvF(id) >= 99 ? 0 : Math.max(1, xw[id] || 0);
+              // A la victoire, chaque carte gagne l'XP du combat, la moitie si elle est K.O. ; rien en cas de defaite (regle du jeu).
+              // Il suffit donc de gagner (95 %) ; « 3 etoiles » sert d'estimation basse du sans K.O.
+              const gainXp = x => x.t.reduce((a, id) => a + gXp(id), 0) * (0.5 + 0.5 * x.s3);
               let row = null, meilleur = -1;
               for (const r of essais) {
-                const res = await this._rankTeams(r.id, S, base);
+                const res = await this._rankTeams(r.id, S, null, listeFarm);
                 const ok = res.filter(x => x.w >= 0.95).sort((a, b) => gainXp(b) - gainXp(a) || b.w - a.w || b.s3 - a.s3)[0];
-                const v = ok ? (gainXp(ok) || 0.01) * r.xp / r.c : -1;
-                if (v > meilleur) { meilleur = v; const suf = r.id.split('@')[1]; row = { id: r.id, nom: r.f.t + (suf ? ` (${MODE[suf] || suf})` : ''), equipe: ok.t, troisEtoiles: ok.s3, victoire: ok.w, etoiles: 3, xp: r.xp, cout: r.c, gemmesEsperees: 0, farm: true }; }
+                const v = ok ? gainXp(ok) * r.xp / r.c : -1;
+                if (v > 0 && v > meilleur) { meilleur = v; const suf = r.id.split('@')[1]; row = { id: r.id, nom: r.f.t + (suf ? ` (${MODE[suf] || suf})` : ''), equipe: ok.t, montent: ok.t.filter(id => lvF(id) < 99), troisEtoiles: ok.s3, victoire: ok.w, etoiles: 3, xp: r.xp, cout: r.c, gemmesEsperees: 0, farm: true }; }
                 await idle();
               }
               lsSet('kitsu_ai_farm', { t: Date.now(), row });
