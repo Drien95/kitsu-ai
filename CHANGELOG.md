@@ -11,6 +11,7 @@ Marché, rush niveau 100 et boost (règles du moteur V2 lues le 28/11).
 - **Marché** (Cartes et conseils, onglet Marché) : ventes, enchères et échanges. Pour chaque carte, le lot le moins cher en Ki, le gain dans ton meilleur trio, le gain pour 1 000 Ki et un conseil : acheter si le prix ne dépasse pas le pity d'une bannière (LR garantie pour 2 500 Ki). L'export envoie le prix, le mode, les étoiles et la fin de chaque lot.
 - **Rush niveau 100** (Guide du palier) : XP de compte qu'il reste (règle `acctNeed`, l'export envoie l'XP du niveau en cours), XP par énergie de chaque source (Cauchemar, Campagne, montée de Tour jusqu'à ton étage), jours au rythme de l'énergie (+1 toutes les 10 min), XP pour revenir au 100 après la Transcendance suivante, boutique du jour (25 énergie pour 30 Ki).
 - **Quoi booster** (Guide du palier) : cartes de tes trios Campagne, Tour et plan d'XP à éveiller (7 étoiles et niveau 99 après une Transcendance), essences de leur classe (SSR 40, UR 60, LR 100, MR 300), ce qu'il leur manque. 130 essences par semaine au plus.
+- **Ta collection** (Sauvegarde) : filtre et tri par classe V2 (MR, LR-X, LR, UR-X, UR, SSR-X, SSR), classe affichée sous la carte pour les MR et les X.
 - **Plan d'XP du palier** : XP à gagner en combat, avec le multiplicateur d'XP des cartes du palier (x1, x1,5, x2…).
 - **Tests** : `tests-puissance.mjs` passe à 32 tests.
 

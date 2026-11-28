@@ -904,7 +904,7 @@
     <div class="sp"></div>
     <div class="card"><h2>Ta collection <span class="r" id="colN"></span></h2>
       <div class="search"><input type="search" id="colQ" placeholder="Rechercher une carte, une série…" oninput="colRender()">
-        <select id="colR" onchange="colRender()"><option value="hautes">Rareté : SSR, UR, LR</option><option value="">Rareté : toutes</option><option>LR</option><option>UR</option><option>SSR</option><option>SR</option><option>R</option><option>N</option></select>
+        <select id="colR" onchange="colRender()"><option value="hautes">Rareté : SSR, UR, LR</option><option value="">Rareté : toutes</option><option>MR</option><option>LR-X</option><option>LR</option><option>UR-X</option><option>UR</option><option>SSR-X</option><option>SSR</option><option>SR</option><option>R</option><option>N</option></select>
         <select id="colS" onchange="colRender()"><option value="">Série : toutes</option></select>
         <select id="colT" onchange="colRender()"><option value="pw">Trier : puissance</option><option value="lv">Trier : niveau</option><option value="r">Trier : rareté</option><option value="n">Trier : nom</option></select>
         <label><input type="checkbox" id="colM" onchange="colRender()"> Dans mes meilleurs trios</label><label><input type="checkbox" id="colB" onchange="colRender()"> Niveau &lt; 60</label></div>
@@ -1054,7 +1054,7 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 // ---------- cartes : portraits, raretes, icones ----------
 let CARTES = null, PAR_NOM = {}, CARTES_S = {};
 async function chargerCartes() { try { const r = await api('/api/cartes'); CARTES = r.c; CARTES_S = r.s || {}; PAR_NOM = {}; for (const [id, c] of Object.entries(CARTES)) if (!(c[0] in PAR_NOM)) PAR_NOM[c[0]] = id; HC.clear(); refresh(); if (CP.j) campRender(); } catch { setTimeout(chargerCartes, 5000); } }
-const carte = x => { const id = typeof x === 'number' || /^\d+$/.test(String(x)) ? String(x) : PAR_NOM[x]; const c = CARTES?.[id]; return c ? { id, n: c[0], r: c[1], img: c[2], s: c[3], sid: c[4], pw: c[5], atk: c[6], def: c[7], spd: c[8], crit: c[9] } : { n: String(x ?? '?'), r: '', img: '' }; };
+const carte = x => { const id = typeof x === 'number' || /^\d+$/.test(String(x)) ? String(x) : PAR_NOM[x]; const c = CARTES?.[id]; return c ? { id, n: c[0], r: c[1], img: c[2], s: c[3], sid: c[4], pw: c[5], atk: c[6], def: c[7], spd: c[8], crit: c[9], k: c[10] || c[1] } : { n: String(x ?? '?'), r: '', k: '', img: '' }; };
 function pf(x, big) {
   const c = carte(x), ini = c.n.replace(/\(.*\)/, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
   const t = big === true ? ' big' : big ? ' ' + big : '';
@@ -2474,7 +2474,7 @@ function evRender() {
 // ---------- collection (Sauvegarde) ----------
 const COL = { j: null, charge: false }; let colMax = 120;
 async function colCharger() { COL.charge = true; try { COL.j = await api('/api/collection'); } catch { COL.j = null; } COL.charge = false; colRender(); if (CP.j) { tcRender(); cmRender(); } }
-const RORD = { LR: 6, UR: 5, SSR: 4, SR: 3, R: 2, N: 1 }, sansAcc = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const RORD = { LR: 6, UR: 5, SSR: 4, SR: 3, R: 2, N: 1 }, KORD = { MR: 9, 'LR-X': 8, LR: 7, 'UR-X': 6, UR: 5, 'SSR-X': 4.5, SSR: 4, SR: 3, R: 2, N: 1 }, sansAcc = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 function mesTrios() { const s = new Set(), M = E?.dernier?.modes; for (const m of Object.values(M || {})) for (const c of Object.values(m)) for (const x of (c.top || []).slice(0, 5)) eqList(x.ids || []).forEach(i => s.add(String(i))); for (const L of Object.values(CP.j?.meilleurs || {})) for (const x of L.slice(0, 5)) x.ids.forEach(i => s.add(String(i))); for (const x of (TW.j?.trios || []).slice(0, 5)) x.ids.forEach(i => s.add(String(i))); return s; }
 function colRender() {
   if (pageAct() !== 'sauvegarde') return;
@@ -2482,10 +2482,10 @@ function colRender() {
   const ids = Object.keys(J.owned).filter(id => CARTES[id]), ser = $('colS');
   if (ser.options.length <= 1) { const S = [...new Set(ids.map(id => carte(id).s).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')); ser.innerHTML = '<option value="">Série : toutes</option>' + S.map(n => `<option>${esc(n)}</option>`).join(''); }
   const q = sansAcc($('colQ').value.trim()), r = $('colR').value, s = ser.value, t = $('colT').value, mt = $('colM').checked ? mesTrios() : null, bas = $('colB').checked;
-  let L = ids.map(id => ({ id, c: carte(id), lv: J.lv[id] || 1, st: J.stars[id] || 0 })).filter(x => (!q || sansAcc(x.c.n + ' ' + x.c.s).includes(q)) && (r === 'hautes' ? RORD[x.c.r] >= 4 : !r || x.c.r === r) && (!s || x.c.s === s) && (!mt || mt.has(x.id)) && (!bas || x.lv < 60));
-  const tri = { pw: (a, b) => (b.c.pw || 0) - (a.c.pw || 0) || RORD[b.c.r] - RORD[a.c.r], lv: (a, b) => b.lv - a.lv, r: (a, b) => RORD[b.c.r] - RORD[a.c.r] || b.lv - a.lv, n: (a, b) => a.c.n.localeCompare(b.c.n, 'fr') }[t];
+  let L = ids.map(id => ({ id, c: carte(id), lv: J.lv[id] || 1, st: J.stars[id] || 0 })).filter(x => (!q || sansAcc(x.c.n + ' ' + x.c.s).includes(q)) && (r === 'hautes' ? RORD[x.c.r] >= 4 : !r || x.c.k === r) && (!s || x.c.s === s) && (!mt || mt.has(x.id)) && (!bas || x.lv < 60));
+  const tri = { pw: (a, b) => (b.c.pw || 0) - (a.c.pw || 0) || RORD[b.c.r] - RORD[a.c.r], lv: (a, b) => b.lv - a.lv, r: (a, b) => (KORD[b.c.k] || 0) - (KORD[a.c.k] || 0) || b.lv - a.lv, n: (a, b) => a.c.n.localeCompare(b.c.n, 'fr') }[t];
   L.sort(tri); $('colN').textContent = `${ids.length} cartes · ${L.length} affichées${L.length > colMax ? ` (les ${colMax} premières)` : ''}`;
-  setH('coll', L.slice(0, colMax).map(x => `<div class="it">${pf(x.id)}<span>${esc(court(x.c.n))}</span><small>niv ${x.lv}${x.st ? ' · ' + '★'.repeat(Math.min(7, x.st)) : ''}</small></div>`).join('') || '<div class="muted" style="grid-column:1/-1">Aucune carte ne correspond.</div>');
+  setH('coll', L.slice(0, colMax).map(x => `<div class="it">${pf(x.id)}<span>${esc(court(x.c.n))}</span><small>${x.c.k && x.c.k !== x.c.r ? esc(x.c.k) + ' · ' : ''}niv ${x.lv}${x.st ? ' · ' + '★'.repeat(Math.min(7, x.st)) : ''}</small></div>`).join('') || '<div class="muted" style="grid-column:1/-1">Aucune carte ne correspond.</div>');
   $('colPlus').style.display = L.length > colMax ? '' : 'none';
 }
 
