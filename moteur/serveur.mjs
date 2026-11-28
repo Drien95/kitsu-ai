@@ -260,6 +260,12 @@ function puissanceTable(G, sv, ids) {
     return { palier: L0.reel, plafond: L0.plafond, paliers };
   } catch { return null; }
 }
+// 5.65 : lots du marche a acheter (calcul conseils.mjs, partie marche) pour le guide du script : gain dans ton meilleur trio,
+// prix au plus le pity d'une banniere (LR garantie pour 2 500 Ki).
+function marcheConseil() {
+  try { const M = readJ(D('resultats', 'conseils-ia.json'))?.marche; if (!M?.lots) return [];
+    const max = M.pity?.ki || 2500; return M.lots.filter(l => l.prix != null && l.gain > 0.5 && l.prix <= max).slice(0, 5).map(l => ({ id: l.id, prix: l.prix, gain: l.gain, mode: l.mode })); } catch { return []; }
+}
 function puissanceInfo(raretes) {
   const G = ENG?.G, sv = readJ(D('data', 'sauvegarde.json')); if (!G || !sv?.owned) return { err: 'moteur ou sauvegarde absents' };
   const choix = raretesChoisies(raretes);
@@ -417,7 +423,7 @@ http.createServer(async (req, res) => {
     }
     // Carte qui recoit les parchemins d'XP, pour le script (le moteur du jeu n'est pas charge pour ca : noms lus dans la page).
     // suite (5.37) : 6 premieres montees du plan global (Campagne, Tour, Raid, Arene en prive), dans son ordre : poids d'XP du farm.
-    if (u.pathname === '/plan' && req.method === 'GET') { const p = await planCalcule(ENG?.G || null); return send(res, 200, p.err ? p : { t: p.t, score: p.score, cible: p.cible && { id: p.cible.id, niveau: p.cible.niveau, xp: p.cible.xp, raison: p.cible.raison }, suite: (p.cartes || []).slice(0, 6).map(c => c.ids) }, 'application/json', CORS); }
+    if (u.pathname === '/plan' && req.method === 'GET') { const p = await planCalcule(ENG?.G || null); return send(res, 200, p.err ? p : { t: p.t, score: p.score, cible: p.cible && { id: p.cible.id, niveau: p.cible.niveau, xp: p.cible.xp, raison: p.cible.raison }, suite: (p.cartes || []).slice(0, 6).map(c => c.ids), marche: marcheConseil() }, 'application/json', CORS); }
     if (u.pathname === '/raid' && req.method === 'POST') return send(res, 200, await raidConseil(JSON.parse(await body(req))), 'application/json', CORS);
     if (u.pathname === '/conseil' && req.method === 'POST') {
       const q = JSON.parse(await body(req));
@@ -463,7 +469,7 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/raids') return send(res, 200, readJ(D('data', 'raids.json')) || []);
       if (u.pathname === '/api/carte-stats') return send(res, 200, carteStats(u.searchParams.get('id'), u.searchParams.get('trio')));
       if (u.pathname === '/api/fiche') { if (FICHE.v !== VER) FICHE = { v: VER, j: fiche(ENG.G, ENG.B) }; return send(res, 200, { version: VER, ...FICHE.j }); }
-      if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
+      if (u.pathname === '/api/cartes') { if (CARTES.v !== VER) { const RL = { C: 'N', U: 'R', R: 'SR', E: 'SSR', L: 'UR', M: 'LR' }; CARTES = { v: VER, c: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).map(x => [x.id, [x.n, RL[x.r] || x.r, x.img ? (/^https:\/\//.test(x.img) ? x.img : 'https://kitsu.games/' + x.img.replace(/^\/+/, '')) : '', x.series?.name || '', x.series?.id || 0, x.pw || 0, x.atk || 0, x.def || 0, x.spd0 || 0, x.crit0 || 0, classeRarete(x) || RL[x.r] || x.r]])), s: Object.fromEntries(Object.values(ENG.G.CHAR_BY_ID).filter(x => x.series?.id).map(x => [x.series.id, [x.series.name || '', /^https:\/\//.test(x.series.banner || '') ? x.series.banner : '', x.series.color || '']])) }; } return send(res, 200, CARTES, 'application/json', { 'Cache-Control': 'max-age=3600' }); }
       if (u.pathname === '/api/poids-historique') { const p = readJ(D('data', 'poids.json')); return send(res, 200, { actuel: p ? { regles: p.t || null, gains: p.gains || {}, equipes: Object.keys(p.equipes || {}).length, imitation: !!p.distillation, restaure: p.restaure || null } : null, copies: listerPoids() }); }
       if (u.pathname === '/api/poids-restaurer' && req.method === 'POST') { if (job && !job.fin) return send(res, 409, { err: 'attends la fin du calcul en cours' }); const { f } = JSON.parse(await body(req)); try { restaurerPoids(f); } catch (e) { return send(res, 400, { err: e.message }); } say('reglages de l\'IA restaures (' + f + ')'); return send(res, 200, { ok: true }); }
       if (u.pathname === '/api/patch-vu' && req.method === 'POST') { const f = D('data', 'patchs.json'), all = readJ(f) || []; all.forEach(p => p.vu = true); writeFileSync(f, JSON.stringify(all)); return send(res, 200, { ok: true }); }
