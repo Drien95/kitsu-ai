@@ -146,6 +146,41 @@ if (PARTS.includes('duos')) {
   out.duos = Object.values(pairs).map(p => { const s = p.vs.sort((a, b) => b - a), meilleur = s[0], m2 = s.reduce((a, b) => a + b, 0) / s.length; return { duo: `${nom(p.a)} + ${nom(p.b)}`, ids: [p.a, p.b], moyenne: pct(m2 / 1.5), meilleur: pct(meilleur / 1.5), synergie: +(100 * (m2 - (solo[p.a] + solo[p.b]) / 2) / 1.5).toFixed(1), troisieme: nom(sc.filter(x => x.t.includes(p.a) && x.t.includes(p.b)).sort((a, b) => b.v - a.v)[0].t.find(id => id !== p.a && id !== p.b)), troisiemeId: sc.filter(x => x.t.includes(p.a) && x.t.includes(p.b)).sort((a, b) => b.v - a.v)[0].t.find(id => id !== p.a && id !== p.b) }; }).sort((a, b) => b.synergie - a.synergie).slice(0, 15);
   log(`duos : ${tr.length} trios de ${pick.length} cartes, meilleure synergie ${out.duos[0]?.duo} (+${out.duos[0]?.synergie})`);
 }
+// ---------- 5. Souvenirs (5.63) ----------
+// Apres une Transcendance, 7 jours de bannieres Souvenirs (G.MEMORY_BANNERS). Regle du jeu : la MR sort a 0,01 % par carte
+// (MEMORY_MR_RATE est en pourcent), une LR, UR ou SSR sur deux vient du pool de la banniere, pity 50 (+1 par x10, x10 = 50 Ki)
+// donne une LR du pool, jamais la MR. Les bannieres sont donc classees par la meilleure LR du pool, la MR est montree a part.
+// Chaque carte des bannieres (MR, LR, UR) est mesuree comme pour les bannieres ouvertes : meilleur trio avec elle au niveau 99
+// (ou une etoile de plus si tu l'as deja), sous le plafond du palier vise (--transcendance, 1 par defaut depuis le panneau).
+if (PARTS.includes('souvenirs')) {
+  const MB = Array.isArray(G.MEMORY_BANNERS) ? G.MEMORY_BANNERS : [];
+  const byName = n => Object.values(CH).find(c => c.n === n)?.id;
+  const baseTeam = TEAMS[0], base = baseTeam ? (await evalTeams([mk(baseTeam)]))[0] : { v: 0, s2: 0, s3: 0 };
+  const top8 = [...new Set(TEAMS.flat())].concat(own.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def))).filter((x, i, a) => a.indexOf(x) === i).slice(0, 8);
+  if (LIM.actif) top8.push(...own.filter(id => CH[id].r !== 'M' && !top8.includes(id)).sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 4));
+  const pairs = []; for (let a = 0; a < top8.length; a++) for (let b = a + 1; b < top8.length; b++) pairs.push([top8[a], top8[b]]);
+  const rar = c => c.appearanceRarity === 'MR' ? 'MR' : c.appearanceRarity === 'LR-X' ? 'LR-X' : R[c.r] || c.r;
+  const bannieres = [];
+  for (const b of MB) {
+    const noms0 = [...new Set([...(b.pool?.MR || []), ...(b.pool?.M || []), ...(b.pool?.L || [])])];
+    const cartes = noms0.map(n => ({ n, id: byName(n) })).filter(x => x.id && CH[x.id]);
+    const lignes = [];
+    for (const c of cartes) {
+      const deja = !!SAVE.owned?.[c.id]; let best = null;
+      if (deja) { const t = TEAMS.find(t => t.includes(c.id)); if (t) { const r = (await evalTeams([mk(t, { stars: { [c.id]: stOf(c.id) + 1 } })]))[0]; best = { t, ...r }; } }
+      else { const cand = pairs.filter(p => !p.includes(c.id)).map(p => [c.id, ...p]).filter(okT); if (cand.length) { const q = await evalTeams(cand.map(t => mk(t, { lv: { [c.id]: 99 } })), QUICK, [1]); const k = q.map((r, i) => ({ i, v: r.v })).sort((x, y) => y.v - x.v)[0]; const t = cand[k.i]; const r = (await evalTeams([mk(t, { lv: { [c.id]: 99 } })]))[0]; best = { t, ...r }; } }
+      lignes.push({ carte: c.n, id: c.id, rarete: rar(CH[c.id]), cout: LIM.actif ? LIM.cout([c.id]) : null, possedee: deja, ids: best?.t || null, equipe: best ? noms(best.t) : null, s3: best ? pct(best.s3) : null, gain: best ? +(100 * (best.v - base.v)).toFixed(1) : null });
+    }
+    lignes.sort((x, y) => (y.gain ?? -1e9) - (x.gain ?? -1e9));
+    const mr = lignes.filter(l => l.rarete === 'MR');
+    const lr = lignes.filter(l => l.rarete !== 'MR' && CH[l.id]?.r === 'M');
+    bannieres.push({ serie: b.series, mr: mr.map(l => l.carte), meilleure: lignes[0] || null, meilleureLR: lr[0] || null, meilleureMR: mr[0] || null, cartes: lignes });
+    log(`souvenirs ${b.series} : MR ${mr.map(l => `${l.carte} ${l.gain ?? 'hors limite'}`).join(', ') || 'aucune trouvee'} ; meilleure carte ${lignes[0]?.carte} (${lignes[0]?.gain})`);
+  }
+  bannieres.sort((x, y) => (y.meilleureLR?.gain ?? -1e9) - (x.meilleureLR?.gain ?? -1e9));
+  out.souvenirs = { palier: LIM.rb, plafond: LIM.actif ? LIM.plafond : null, date: new Date().toISOString(), reference: baseTeam ? { ids: baseTeam, equipe: noms(baseTeam), s3: pct(base.s3) } : null, combats: BENCH.length, tauxMR: G.MEMORY_MR_RATE ?? 0.01, pity: 50, coutX10: 50, jours: G.MEMORY_DURATION ? Math.round(G.MEMORY_DURATION / 86400000) || 7 : 7, bannieres };
+  if (!MB.length) log('souvenirs : aucune banniere Souvenirs dans ce moteur du jeu');
+}
 let ancien = {}; try { ancien = readJ(D('resultats', 'conseils-ia.json')) || {}; } catch {}
 ecrire('conseils-ia.json', { ...ancien, ...out });
 log('termine, resultats dans resultats/conseils-ia.json'); await pool.close(); process.exit(0);

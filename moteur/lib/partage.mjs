@@ -8,7 +8,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import path from 'node:path';
 import { dir as D } from './chemins.mjs';
-import { FORMAT, LIMITES, verifierLot, cleTrioDe, cartesDuLot, decoderCartes, ecarts, fusionner } from './partage-format.mjs';
+import { FORMAT, LIMITES, verifierLot, cleTrioDe, cleCarteDe, cartesDuLot, decoderCartes, ecarts, fusionner } from './partage-format.mjs';
 import { iaValide } from './ia-commune.mjs';
 
 export const URL_DEFAUT = 'https://kitsu-partage.kitsu-partage-whag.workers.dev';
@@ -139,7 +139,7 @@ export async function telecharger(reg, { sigG, wKey }, { cleCarteLocale, onLigne
     octets += r.octets; const lot = ouvrir(r.brut);
     if (!lot || verifierLot(lot) || lot.sigG !== sigG || lot.wKey !== wKey) continue;
     lots++;
-    const ok = lot.t.map(tr => tr.every(c => cleCarteLocale(c[0]) === `${c[0]}:${c[1]}:${c[2]}:${c[3].join('+')}:${c[4]}`) ? cleTrioDe(tr) : null);
+    const ok = lot.t.map(tr => tr.every(c => cleCarteLocale(c[0]) === cleCarteDe(c)) ? cleTrioDe(tr) : null); // 5.63 : Eveil compris
     for (const [ti, pj, g, n, s3] of lot.l) if (ok[ti]) { lignes++; onLigne({ ck: ok[ti], di: lot.p[pj][0], pi: lot.p[pj][1], clePaquet: lot.p[pj][2], graine: g, n, s3 }); }
   }
   noter('recu', { lots, lignes, octets });

@@ -3,7 +3,9 @@
 // il est lu par JSON.parse puis verifie champ par champ, rien n'est jamais execute.
 //
 // { f: 1, sigG, wKey, moteur, paq,
-//   t: [ [[id, niveau, etoiles, [collectifs], sigCarte] x 3], ... ]   trios
+//   t: [ [[id, niveau, etoiles, [collectifs], sigCarte, eveil?] x 3], ... ]   trios
+//      eveil (5.63, facultatif) : 'a<Eveil du compte>' et 'e' si la carte est eveillee (V2), ex. 'a2e' ; niveau jusqu'a 100.
+//      Une carte sans Eveil garde 5 champs : les lots sans carte eveillee restent lisibles par les versions d'avant.
 //   p: [ [difficulte, paquet, clePaquet], ... ]                         paquets de combats
 //   l: [ [trio, paquet, graine, combats, troisEtoiles], ... ] }         resultats (indices dans t et p)
 
@@ -12,7 +14,7 @@ export const FORMAT = 1;
 // avec celle que le serveur en ligne annonce et propose « Mettre a jour le serveur » quand elles different.
 export const VERSION_SERVEUR = 4;
 export const LIMITES = { trios: 60000, paquets: 2000, lignes: 400000, octets: 40e6, graineMax: 3, paq: 16, collectifs: 6 };
-const RE_SIG = /^[0-9a-z]{1,14}$/, RE_TXT = /^[^\u0000-\u001f]{1,64}$/;
+const RE_EV = /^a[1-9][0-9]?e?$/, RE_SIG = /^[0-9a-z]{1,14}$/, RE_TXT = /^[^\u0000-\u001f]{1,64}$/;
 const ent = (x, a, b) => Number.isInteger(x) && x >= a && x <= b;
 
 // Renvoie null si le lot est valide, sinon la raison du refus.
@@ -27,9 +29,10 @@ export function verifierLot(o) {
   for (const tr of o.t) {
     if (!Array.isArray(tr) || tr.length !== 3) return 'trio';
     for (const c of tr) {
-      if (!Array.isArray(c) || c.length !== 5) return 'carte';
+      if (!Array.isArray(c) || (c.length !== 5 && c.length !== 6)) return 'carte';
       const [id, lv, st, lk, sig] = c;
-      if (!ent(id, 1, 1e7) || !ent(lv, 1, 99) || !ent(st, 0, 20) || !Array.isArray(lk) || lk.length > LIMITES.collectifs || typeof sig !== 'string' || !RE_SIG.test(sig)) return 'carte';
+      if (c.length === 6 && (typeof c[5] !== 'string' || !RE_EV.test(c[5]))) return 'eveil';
+      if (!ent(id, 1, 1e7) || !ent(lv, 1, c.length === 6 ? 100 : 99) || !ent(st, 0, 20) || !Array.isArray(lk) || lk.length > LIMITES.collectifs || typeof sig !== 'string' || !RE_SIG.test(sig)) return 'carte';
       for (const x of lk) if (typeof x !== 'string' || !RE_TXT.test(x)) return 'collectif';
     }
     if (new Set(tr.map(c => c[0])).size !== 3) return 'trio en double';
@@ -46,7 +49,10 @@ export function verifierLot(o) {
 }
 
 // Cle d'une carte, identique a celle du journal (cauchemar3.mjs : cleCarte).
-export const cleCarteDe = ([id, lv, st, lk, sig]) => `${id}:${lv}:${st}:${(lk || []).join('+')}:${sig}`;
+export const cleCarteDe = ([id, lv, st, lk, sig, ev]) => `${id}:${lv}:${st}:${(lk || []).join('+')}:${sig}${ev ? ':' + ev : ''}`;
+// Eveil d'une carte de lot -> champs de l'equipe pour setupBattle (aw, awakened).
+export const eveilDeCarte = ev => { const m = /^a([0-9]+)(e?)$/.exec(ev || ''); return m ? { aw: +m[1], ...(m[2] ? { awakened: true } : {}) } : {}; };
+export const avecEveil = tr => tr.some(c => c.length === 6);
 export const cleTrioDe = tr => tr.map(cleCarteDe).sort().join(',');
 
 // Indices de lignes tires au hasard (sans remise) pour un controle.

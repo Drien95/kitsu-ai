@@ -4,7 +4,7 @@
 import { limitePuissance, eveilDe, transcendancesDe } from './lib/puissance.mjs';
 let ok = 0, ko = 0; const t = (nom, c, info = '') => { if (c) { ok++; console.log('  OK   ' + nom); } else { ko++; console.log('  ECHEC ' + nom + (info ? ' : ' + info : '')); } };
 const CH = {}; let id = 1; const ajoute = (r, o = {}, n = 6) => Array.from({ length: n }, () => { CH[id] = { id, r, ...o }; return id++; });
-const SSR = ajoute('E'), UR = ajoute('L'), LR = ajoute('M'), MR = ajoute('M', { appearanceRarity: 'MR' }), LRX = ajoute('M', { appearanceRarity: 'LR-X' }), URX = ajoute('L', { awakenX: true });
+const SSR = ajoute('E'), UR = ajoute('L'), LR = ajoute('M'), MR = ajoute('M', { appearanceRarity: 'MR' }), LRX = ajoute('M', { appearanceRarity: 'LR-X' }), URX = ajoute('L', { awakenX: true }), SSRX = ajoute('E', { awakenX: true });
 const base = { E: 5, L: 8, M: 12 }, X = { E: 7, L: 11, M: 15 };
 const cardPower = i => { const c = CH[i]; return !c ? 0 : c.appearanceRarity === 'MR' ? 16 : c.appearanceRarity === 'LR-X' || c.awakenX ? X[c.r] : base[c.r]; };
 let appels = 0;
@@ -34,4 +34,30 @@ t('--sans-limite : tout accepte', !limitePuissance(G, {}, { sansLimite: true }).
 const E = eveilDe({ eveil: { aw: 2, cartes: [LR[0]] } }), E0 = eveilDe({});
 t('Eveil : aw et awakened sur une carte eveillee, niveau 100', JSON.stringify(E.champs(LR[0])) === '{"aw":2,"awakened":true}' && E.niveauMax(LR[0]) === 100 && E.niveauMax(LR[1]) === 99);
 t('Eveil : rien sans Eveil (cles de journal inchangees)', JSON.stringify(E0.champs(LR[0])) === '{}' && E0.cle(LR[0]) === '' && E0.niveauMax(LR[0]) === 99);
+{ const c = L0.compter(P); let k = 0; for (let a = 0; a < P.length; a++) for (let b = a + 1; b < P.length; b++) for (let d = b + 1; d < P.length; d++) if (teamPowerSum([P[a], P[b], P[d]]) <= 28) k++;
+  t('compteur : trios acceptes et total exacts sans enumeration', c.total === n && c.ok === k, `${c.ok}/${c.total} attendu ${k}/${n}`); }
+// 5.63 : guide d'un palier (sans simulation) : compositions, trios autorises, resultats du bon palier seulement.
+{ const { guidePalier } = await import('./lib/guide.mjs');
+  const S = { owned: Object.fromEntries(P.map(i => [i, 1])), rb: { n: 0 }, kiSpent: 4000 };
+  const fic = { 'cauchemar3.json': { puissance: { transcendances: 0, triosTotal: 7140 }, trios: 10, etages: { resume: [{ difficulte: 'normal', combats: 10, troisEtoilesSur: 4 }], plan: [], trios: [] } },
+    'cauchemar3-p1.json': { puissance: { transcendances: 1, triosTotal: 7140 }, trios: 20, etages: { resume: [{ difficulte: 'normal', combats: 10, troisEtoilesSur: 7 }], plan: [], trios: [] } },
+    'tour.json': { trios: [{ ids: [1, 2, 3], etageMoyen: 50 }] } };
+  const g0 = guidePalier({ G, S, n: 0, R: f => fic[f] || null }), g1 = guidePalier({ G, S, n: 1, R: f => fic[f] || null });
+  t('guide : plafond et compositions du palier', g0.plafond === 28 && g0.compositions.filter(c => c.ok).length === 29 && g0.compositions.length === 84, `${g0.compositions.filter(c => c.ok).length}/${g0.compositions.length}`);
+  t('guide : trios autorises = compteur', g0.trios.autorises === L0.compter(P).ok && g0.trios.total === n);
+  t('guide : Tour d avant la V2 ignoree, Campagne du palier lue', g0.tour === null && g0.campagne?.difficultes[0].surs === 4 && g0.manque.includes('tour'));
+  t('guide : palier suivant compare (+3 combats surs)', g0.suivant?.palier === 1 && g0.suivant.campagne?.plus === 3 && g1.campagne?.difficultes[0].surs === 7);
+  t('guide : remboursement 25 % des Ki depenses', g0.transcendance.gemmesRendues === 1000);
+}
+// 5.63 : base commune, cartes eveillees (6e champ de la carte d'un lot).
+{ const { verifierLot, cleCarteDe, eveilDeCarte, avecEveil } = await import('./lib/partage-format.mjs');
+  const lot = c => ({ f: 1, sigG: 'abc', wKey: 'def', moteur: 'Cd_T-y95', paq: 16, t: [c], p: [[0, 0, 'k1']], l: [[0, 0, 1, 16, 9]] });
+  const c5 = [[1, 99, 0, [], 's1'], [2, 99, 0, [], 's2'], [3, 99, 0, [], 's3']], c6 = [[1, 100, 0, [], 's1', 'a2e'], [2, 99, 0, [], 's2', 'a2'], [3, 99, 0, [], 's3']];
+  t('lot sans Eveil toujours accepte', verifierLot(lot(c5)) === null);
+  t('lot avec cartes eveillees (niveau 100) accepte', verifierLot(lot(c6)) === null, verifierLot(lot(c6)));
+  t('Eveil mal forme refuse', verifierLot(lot([[1, 99, 0, [], 's1', 'x'], ...c5.slice(1)])) === 'eveil' && verifierLot(lot([[1, 100, 0, [], 's1'], ...c5.slice(1)])) === 'carte');
+  const E2 = eveilDe({ eveil: { aw: 2, cartes: [1] } });
+  t('cle de carte du lot = cle du calcul (Eveil compris)', cleCarteDe([1, 100, 0, [], 's1', E2.cle(1)]) === '1:100:0::s1:a2e' && cleCarteDe(c5[0]) === '1:99:0::s1');
+  t('Eveil du lot rendu a l equipe', JSON.stringify(eveilDeCarte('a2e')) === '{"aw":2,"awakened":true}' && JSON.stringify(eveilDeCarte(undefined)) === '{}' && avecEveil(c6) && !avecEveil(c5));
+}
 console.log(`\n${ok} reussi(s), ${ko} echec(s)`); process.exit(ko ? 1 : 0);
