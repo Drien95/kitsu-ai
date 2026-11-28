@@ -11,7 +11,7 @@ import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
 
 const { G, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
 // 5.62 : limite de puissance (V2) sur les trios et Eveil (aw / awakened, niveau 100) sur les cartes.
-const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE);
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE, G, LIM);
 const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? id => EV.niveauMax(id) : lvOf, MIN = +arg('min-niveau', 60);
 const nom = id => CH[id]?.n || String(id);
 let IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => CH[id] && !CH[id].raidExclusive && ['M', 'L', 'E'].includes(CH[id].r) && (NIV === '99' || lvOf(id) >= MIN));

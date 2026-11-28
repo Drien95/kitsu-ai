@@ -37,7 +37,7 @@ const OBJS = [{ k: 'Normal', d: [0], e: 1 }, { k: 'Difficile', d: [1], e: 1 }, {
   ...(TOUTES ? [{ k: 'CampNormal', d: [3] }, { k: 'CampDifficile', d: [4] }, { k: 'CampExtreme', d: [5] }, { k: 'Les6', d: [0, 1, 2, 3, 4, 5] }] : [])], OBJ = OBJS.map(o => o.k), IMOY = 3;
 const DIS_TOUTES = DIFF.map((_, i) => i), DIS_ELIM = DIS_TOUTES.filter(i => i < 3), DIS_CAMP = DIS_TOUTES.filter(i => i >= 3);
 // 5.62 : Eveil (V2) : une carte eveillee monte au niveau 100 et joue avec aw / awakened (lus par setupBattle).
-const EV = eveilDe(SAVE);
+const EV = eveilDe(SAVE, G, limitePuissance(G, SAVE)); // 5.64 : Eveil du compte du palier calcule
 const LV = id => NIV === '99' ? EV.niveauMax(id) : (SAVE.lv?.[id]?.l || 1), ET = id => SAVE.stars?.[id] || 0, LK = id => SAVE.lk?.[id] || null;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // Partage des calculs (Reglages > Partage, coupe par defaut) : seulement avec les reglages standard du calcul,

@@ -25,7 +25,7 @@ let W = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')).W : (SAVE.W?.nm ? 
 W = { ...W_DEFAUT, ...W };
 const lv = id => SAVE.lv?.[id]?.l || 99, st = id => SAVE.stars?.[id] || 0;
 // 5.62 : Eveil (V2) sur chaque carte, et seulement des equipes que la limite de puissance accepte.
-const EV = eveilDe(SAVE), LIM = limitePuissance(G, SAVE);
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE, G, LIM);
 const mkT = t => t.map(id => ({ id, lv: lv(id), stars: st(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}), ...EV.champs(id) })); // avec les collectifs choisis
 // Equipes : les meilleures de la derniere analyse complete, sinon l'equipe actuelle.
 const dp = D('resultats', 'dernier.json');

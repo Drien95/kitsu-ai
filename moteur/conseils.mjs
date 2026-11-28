@@ -14,7 +14,7 @@ const PARTS = String(arg('parties', 'collectifs,xp,tirage,duos,marche')).split('
 const sets = fightSets(G, B), BENCH = [...shuffle(sets.nmMulti, 3).slice(0, 70), ...shuffle(sets.nmBoss, 4).slice(0, 50)], QUICK = BENCH.filter((_, i) => i % 3 === 0);
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // 5.62 : limite de puissance (V2) sur tous les trios essayes, Eveil (aw / awakened) sur chaque carte.
-const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE), okT = t => LIM.ok(t);
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE, G, LIM), okT = t => LIM.ok(t);
 const mk = (ids, o = {}) => ids.map(id => ({ id, lv: o.lv?.[id] ?? lvOf(id), stars: o.stars?.[id] ?? stOf(id), ...((o.lk?.[id] || SAVE.lk?.[id]) ? { lk: o.lk?.[id] || SAVE.lk[id] } : {}), ...EV.champs(id) }));
 const W = WA;
 const evalTeams = async (teams, fl = BENCH, seeds = [1, 2]) => { const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), W, { stop2: true }, 12); const per = fl.length; return teams.map((_, k) => { const x = r.slice(k * per, (k + 1) * per), n = x.reduce((a, y) => a + y.n, 0); const s2 = x.reduce((a, y) => a + y.s2, 0) / n, s3 = x.reduce((a, y) => a + y.s3, 0) / n; return { s2, s3, v: s3 + 0.25 * s2 }; }); };
