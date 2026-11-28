@@ -34,6 +34,8 @@ t('--sans-limite : tout accepte', !limitePuissance(G, {}, { sansLimite: true }).
 const E = eveilDe({ eveil: { aw: 2, cartes: [LR[0]] } }), E0 = eveilDe({});
 t('Eveil : aw et awakened sur une carte eveillee, niveau 100', JSON.stringify(E.champs(LR[0])) === '{"aw":2,"awakened":true}' && E.niveauMax(LR[0]) === 100 && E.niveauMax(LR[1]) === 99);
 t('Eveil : rien sans Eveil (cles de journal inchangees)', JSON.stringify(E0.champs(LR[0])) === '{}' && E0.cle(LR[0]) === '' && E0.niveauMax(LR[0]) === 99);
+{ const Gw = { ...G, withAwOf: (S, t) => t.map(x => ({ ...x, aw: Math.min(5, S.rb?.n || 0) })) }, S = { rb: { n: 0 }, owned: { [LR[0]]: 1 }, eveil: { aw: 0, cartes: [] } };
+  t('palier choisi : Eveil du compte du palier (5.64)', eveilDe(S, Gw, { force: true, rb: 2 }).aw === 2 && eveilDe(S, Gw, { force: false, rb: 0 }).aw === 0 && eveilDe(S, null, { force: true, rb: 2 }).aw === 0); }
 { const c = L0.compter(P); let k = 0; for (let a = 0; a < P.length; a++) for (let b = a + 1; b < P.length; b++) for (let d = b + 1; d < P.length; d++) if (teamPowerSum([P[a], P[b], P[d]]) <= 28) k++;
   t('compteur : trios acceptes et total exacts sans enumeration', c.total === n && c.ok === k, `${c.ok}/${c.total} attendu ${k}/${n}`); }
 // 5.63 : guide d'un palier (sans simulation) : compositions, trios autorises, resultats du bon palier seulement.

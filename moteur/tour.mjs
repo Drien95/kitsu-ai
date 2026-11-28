@@ -20,7 +20,7 @@ import { limitePuissance, decrireLimite, eveilDe, nomResultat, classeRarete, rar
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
 // 5.62 : Eveil (V2) : carte eveillee au niveau 100 en mode 99, aw / awakened dans l'equipe ; limite de puissance sur les trios.
-const EV = eveilDe(SAVE), LIM = limitePuissance(G, SAVE);
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE, G, LIM); // 5.64 : Eveil du compte du palier calcule
 const FT = nomResultat('tour', LIM), AUTRE_PALIER = FT !== 'tour.json'; // 5.63 : autre palier = tour-pN.json
 const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? id => EV.niveauMax(id) : lvOf;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');

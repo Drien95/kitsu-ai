@@ -4,6 +4,11 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.64.1
+
+- **Bonus de Transcendance au palier choisi** : un calcul « comme si » (autre palier) joue avec l'Éveil du compte de ce palier (bonus de combat des Transcendances, lu dans le jeu par `G.withAwOf`), et plus avec celui de ta sauvegarde. Campagne, Tour, conseils, raid, entraînement et analyse complète.
+- **Tests** : `tests-puissance.mjs` passe à 30 tests.
+
 ## 5.64.0
 
 Choix des raretés par classe de la V2.

@@ -37,7 +37,7 @@ const shuffle = (a, s = 7) => { a = a.slice(); for (let i = a.length - 1; i > 0;
 // ---------- evaluation avec cache ----------
 let LVF = null; // fonction niveau (actuel ou 99)
 // 5.62 : limite de puissance (V2) sur tous les trios, Eveil (aw / awakened, niveau 100) sur chaque carte.
-const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE), okT = t => LIM.ok(t);
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE, G, LIM), okT = t => LIM.ok(t);
 const mkTeam = (t, lk = {}) => t.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LVF(id), stars: SAVE.stars?.[id] || 0, ...(l ? { lk: l } : {}), ...EV.champs(id) }; }); // avec les collectifs choisis
 const tkey = t => t.map(id => id + ':' + LVF(id) + ':' + (SAVE.stars?.[id] || 0) + ':' + (SAVE.lk?.[id] || []).join('+') + (EV.cle(id) ? ':' + EV.cle(id) : '')).sort().join(',');
 async function evalUnit(cat, teams, chunkIdx, fl, seed) {
