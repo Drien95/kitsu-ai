@@ -12,7 +12,8 @@ Choix des raretés par classe de la V2.
 - **Trios autorisés sur total** : comptés pour chaque choix de classes et chaque palier, exactement (plafond de puissance du palier).
 - **Risques** : « Sans MR », « Sans LR-X »… dit ce que la classe pesait dans ton dernier calcul.
 - **Ligne de commande** : `--raretes MR,LR-X,LR,UR-X,UR,SSR-X,SSR` ; l'ancien `--raretes LR,UR,SSR` garde son sens (LR = MR, LR-X et LR, etc.). Un ancien choix enregistré dans le panneau s'étend de la même façon.
-- **Tests** : `tests-puissance.mjs` passe à 29 tests.
+- **Bonus de Transcendance au palier choisi** : un calcul « comme si » (autre palier) joue avec l'Éveil du compte de ce palier (bonus de combat des Transcendances, lu dans le jeu par `G.withAwOf`), et plus avec celui de ta sauvegarde. Campagne, Tour, conseils, raid, entraînement et analyse complète.
+- **Tests** : `tests-puissance.mjs` passe à 30 tests.
 
 ## 5.63.0
 

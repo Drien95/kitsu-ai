@@ -54,8 +54,15 @@ export const decrireLimite = L => L.actif ? `limite de puissance ${L.plafond} po
 
 // 5.62 : Eveil (V2). Le script envoie dans la sauvegarde `eveil` = { aw: niveau d'Eveil du compte, cartes: [ids eveillees] },
 // calcule dans le jeu par G.withAwOf. setupBattle lit `aw` et `awakened` sur chaque carte de l'equipe (+10 %, niveau 100).
-export function eveilDe(S) {
-  const aw = +S?.eveil?.aw || 0, ev = new Set((S?.eveil?.cartes || []).map(Number));
+// 5.64 : calcul d'un autre palier (--transcendance N) : l'Eveil du compte (bonus de combat des Transcendances) est celui du
+// palier N, lu dans le jeu (G.withAwOf sur la sauvegarde avec N Transcendances). Les cartes eveillees restent les tiennes.
+export function awDuPalier(G, S, n) {
+  try { if (typeof G?.withAwOf !== 'function') return null; const id = +Object.keys(S?.owned || {})[0] || +Object.keys(G.CHAR_BY_ID || {})[0];
+    const t = G.withAwOf({ ...(S || {}), rb: { ...(S?.rb || {}), n } }, [{ id }]); return +t?.[0]?.aw || 0; } catch { return null; }
+}
+export function eveilDe(S, G = null, L = null) {
+  const awP = G && L?.force ? awDuPalier(G, S, L.rb) : null;
+  const aw = awP != null ? awP : +S?.eveil?.aw || 0, ev = new Set((S?.eveil?.cartes || []).map(Number));
   const champs = id => ({ ...(aw ? { aw } : {}), ...(aw && ev.has(+id) ? { awakened: true } : {}) });
   return { aw, eveillee: id => ev.has(+id), champs, niveauMax: id => ev.has(+id) ? 100 : 99, cle: id => (aw ? `a${aw}${ev.has(+id) ? 'e' : ''}` : '') };
 }
