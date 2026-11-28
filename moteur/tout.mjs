@@ -11,6 +11,7 @@ import { W_DEFAUT } from './lib/sim.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { reglagesAnalyse } from './lib/historique.mjs';
 import { makeTour } from './lib/tour.mjs';
+import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const T0 = Date.now(), log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
@@ -35,8 +36,10 @@ const saveCache = () => writeFileSync(cacheFile, JSON.stringify(Object.fromEntri
 const shuffle = (a, s = 7) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { s = (s * 1103515245 + 12345) & 0x7fffffff; const j = s % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // ---------- evaluation avec cache ----------
 let LVF = null; // fonction niveau (actuel ou 99)
-const mkTeam = (t, lk = {}) => t.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LVF(id), stars: SAVE.stars?.[id] || 0, ...(l ? { lk: l } : {}) }; }); // avec les collectifs choisis
-const tkey = t => t.map(id => id + ':' + LVF(id) + ':' + (SAVE.stars?.[id] || 0) + ':' + (SAVE.lk?.[id] || []).join('+')).sort().join(',');
+// 5.62 : limite de puissance (V2) sur tous les trios, Eveil (aw / awakened, niveau 100) sur chaque carte.
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE), okT = t => LIM.ok(t);
+const mkTeam = (t, lk = {}) => t.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LVF(id), stars: SAVE.stars?.[id] || 0, ...(l ? { lk: l } : {}), ...EV.champs(id) }; }); // avec les collectifs choisis
+const tkey = t => t.map(id => id + ':' + LVF(id) + ':' + (SAVE.stars?.[id] || 0) + ':' + (SAVE.lk?.[id] || []).join('+') + (EV.cle(id) ? ':' + EV.cle(id) : '')).sort().join(',');
 async function evalUnit(cat, teams, chunkIdx, fl, seed) {
   const out = new Array(teams.length), todo = [];
   teams.forEach((t, i) => { const k = `${cat}|${chunkIdx}|${seed}|${tkey(t)}`; const c = cache.get(k); if (c) { out[i] = c; cacheHits++; } else todo.push([i, k]); });
@@ -73,7 +76,7 @@ async function candidates(cat, fights) {
   IDS.filter(id => id !== b1 && id !== b2).forEach((id, i) => rep.set(id, rr[i][2] + 0.25 * rr[i][3]));
   const byRep = [...rep.keys()].sort((a, b) => rep.get(b) - rep.get(a));
   const pick = [...new Set([...bySolo.slice(0, NCARDS - 6), b1, b2, ...byRep.slice(0, 6), ...(SAVE.team || []).map(Number).filter(id => IDS.includes(id))])];
-  const tr = []; for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) tr.push([pick[a], pick[b], pick[c]]);
+  const tr = []; for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) if (okT([pick[a], pick[b], pick[c]])) tr.push([pick[a], pick[b], pick[c]]);
   return { tr, solo: bySolo.slice(0, 10) };
 }
 // ---------- categories de combats ----------
@@ -99,7 +102,7 @@ const pct = x => (100 * x).toFixed(1) + ' %';
 const niveaux = String(arg('niveaux', 'actuel,99')).split(',');
 log(`moteur ${version}, ${IDS.length} cartes LR/UR/SSR, ${pool.n} fils, ${SEEDS} tirages, cache ${cache.size} resultats`);
 for (const nv of niveaux) {
-  LVF = nv === '99' ? () => 99 : id => SAVE.lv?.[id]?.l || 1;
+  LVF = nv === '99' ? id => EV.niveauMax(id) : id => SAVE.lv?.[id]?.l || 1;
   const R0 = report.modes[nv] = {};
   console.log(`\n================ Niveaux : ${nv === '99' ? 'tout au niveau 99' : 'tes niveaux actuels'} ================`);
   for (const [cat, titre, fights0] of CATS) {
@@ -115,7 +118,7 @@ for (const nv of niveaux) {
   }
   // Tour de l'infini : trio cherche pour la Tour (lib/tour.mjs), montees completes sur plusieurs tirages.
   if ((SAVE.acct?.lv || 25) >= 25 && G.setupTower) {
-    const t1 = Date.now(), T = makeTour({ G, B, pool, W, ids: IDS, mk: mkTeam, actuelle: (SAVE.team || []).map(Number).filter(id => IDS.includes(id)) });
+    const t1 = Date.now(), T = makeTour({ G, B, pool, W, ids: IDS, mk: mkTeam, ok: okT, actuelle: (SAVE.team || []).map(Number).filter(id => IDS.includes(id)) });
     const { fin, essais } = await T.trios({ cartes: 22, tirages: Math.max(20, SEEDS * 5) });
     R0.tour = { titre: "Tour de l'infini", trios: essais, top: fin.slice(0, 5).map(x => ({ equipe: x.t.map(short), ids: x.t, etageMoyen: +x.moy.toFixed(1), etageMin: x.min, p10: x.p10, max: x.max })), murs: T.murs(fin[0]) };
     console.log(`
@@ -125,7 +128,7 @@ Tour de l'infini (${essais} trios, ${((Date.now() - t1) / 1000).toFixed(0)} s)`)
   // Boss de guilde de la semaine et Pain (evenement de guilde) : trios qui font le plus de degats en N cycles.
   const bossGuilde = async (cle, titre, gb, minLv) => {
     const t1 = Date.now(), el = IDS.filter(id => LVF(id) >= minLv), tr = []; const pick = el.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 20);
-    for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) tr.push([pick[a], pick[b], pick[c]]);
+    for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) if (okT([pick[a], pick[b], pick[c]])) tr.push([pick[a], pick[b], pick[c]]);
     if (!tr.length) return;
     const r1 = await pool.runAll(tr.map(t => ({ type: 'gw', team: mkTeam(t), seeds: [1, 2], boss: gb })), W, {}, 8);
     const s1 = tr.map((t, i) => ({ t, d: r1[i].dmg.reduce((a, b) => a + b, 0) / 2 })).sort((a, b) => b.d - a.d).slice(0, 15);

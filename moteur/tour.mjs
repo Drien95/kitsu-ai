@@ -15,19 +15,22 @@ import { makeSim } from './lib/sim.mjs';
 import { shuffle } from './lib/commun.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal, nettoyerAnciens } from './lib/journal.mjs';
 import { garderEveille } from './lib/eveil.mjs';
+import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
-const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? () => 99 : lvOf;
+// 5.62 : Eveil (V2) : carte eveillee au niveau 100 en mode 99, aw / awakened dans l'equipe ; limite de puissance sur les trios.
+const EV = eveilDe(SAVE), LIM = limitePuissance(G, SAVE);
+const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? id => EV.niveauMax(id) : lvOf;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // 5.44 : raretes essayees (--raretes LR,UR,SSR) et pause au bout d'un temps de travail (--pause-apres minutes), comme la Campagne.
 const RAR = { LR: 'M', UR: 'L', SSR: 'E' }, RARETES = String(arg('raretes', 'LR,UR,SSR')).split(',').filter(r => RAR[r]), CODES = RARETES.map(r => RAR[r]);
 const PAUSE = Math.max(0, +arg('pause-apres', 0) || 0);
 const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => CODES.includes(CH[id]?.r));
 if (!IDS.length) { console.log('Aucune carte LR, UR ou SSR dans la sauvegarde exportee.'); process.exit(1); }
-const mk = (ids, lk = {}) => ids.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LV(id), stars: stOf(id), ...(l ? { lk: l } : {}) }; });
+const mk = (ids, lk = {}) => ids.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LV(id), stars: stOf(id), ...(l ? { lk: l } : {}), ...EV.champs(id) }; });
 const actuelle = (SAVE.team || []).map(Number).filter(id => IDS.includes(id));
-const T = makeTour({ G, B, pool, W: WA, ids: IDS, mk, actuelle, log });
+const T = makeTour({ G, B, pool, W: WA, ids: IDS, mk, actuelle, log, ok: LIM.ok });
 log(`moteur ${version}, ${IDS.length} cartes LR/UR/SSR, niveaux ${NIV}, ${pool.n} fils`);
 
 // Signatures du journal : code de combat, etages de la Tour (ennemis de quelques etages), IA, chaque carte.
@@ -39,6 +42,11 @@ const cleCarte = id => cleCarteTour(mk([id])[0], sigCarte);
 // pour 348 cartes, 2,6 Go des la 1re manche). tr[t] et l'ordre des trios sont inchanges.
 const S_ = [...IDS].sort((a, b) => a - b), NS = S_.length;
 let TRI = new Uint16Array(3 * (NS * (NS - 1) * (NS - 2) / 6)); { let k = 0; for (let a = 0; a < NS; a++) for (let b = a + 1; b < NS; b++) for (let c = b + 1; c < NS; c++) { TRI[k++] = a; TRI[k++] = b; TRI[k++] = c; } }
+const NTOT = TRI.length / 3;
+if (LIM.actif) { // 5.62 : seuls les trios que le jeu accepte (limite de puissance)
+  const okP = LIM.okPositions(S_); let n = 0; for (let r = 0; r < NTOT; r++) if (okP(TRI[3 * r], TRI[3 * r + 1], TRI[3 * r + 2])) { if (n !== r) TRI.copyWithin(3 * n, 3 * r, 3 * r + 3); n++; }
+  TRI = TRI.slice(0, 3 * n); log(`${decrireLimite(LIM)} : ${n} trios acceptes par le jeu sur ${NTOT}`);
+}
 if (arg('max-trios')) { const pris = shuffle([...Array(TRI.length / 3).keys()], 5).slice(0, +arg('max-trios')), t2 = new Uint16Array(3 * pris.length); pris.forEach((r, i) => t2.set(TRI.subarray(3 * r, 3 * r + 3), 3 * i)); TRI = t2; }
 const NTR = TRI.length / 3, estIndex = k => typeof k === 'string' && k.length > 0 && k.charCodeAt(0) >= 48 && k.charCodeAt(0) <= 57;
 const tr = new Proxy([], { get: (o, k) => k === 'length' ? NTR : estIndex(k) && +k < NTR ? [S_[TRI[3 * k]], S_[TRI[3 * k + 1]], S_[TRI[3 * k + 2]]] : undefined });
@@ -65,13 +73,14 @@ const etatJournal = () => { const f = D('cache', 'tour-etat.json'), e = readJ(f)
 if (!arg('max-trios')) try { const { f, e } = etatJournal(); e.fichier = path.basename(FJ); e.version = version; e.wKey = wKey; e[NIV] = { gen: J.generation, cles: IDS.map(cleCarte) }; writeFileSync(f, JSON.stringify(e)); } catch {}
 // Finale : les meilleurs (et ton trio actuel) font beaucoup de montees de plus, sur d'autres graines.
 const top = C.classement.slice(0, +arg('finale', 20)).map(x => x.t);
-if (actuelle.length === 3 && !top.some(t => t.slice().sort().join() === actuelle.slice().sort().join())) top.push(actuelle);
+if (actuelle.length === 3 && LIM.ok(actuelle) && !top.some(t => t.slice().sort().join() === actuelle.slice().sort().join())) top.push(actuelle);
 const r2 = await T.climb(top.map(t => mk(t)), Array.from({ length: +arg('tirages', 30) }, (_, i) => 101 + i), 1);
 const fin = top.map((t, i) => ({ t, fl: r2[i], ...statsEtages(r2[i]) })).sort((a, b) => b.moy - a.moy), essais = tr.length;
 const act = actuelle.length === 3 ? fin.find(x => x.t.slice().sort().join() === actuelle.slice().sort().join()) || null : null;
 log(`finale : ${top.length} trios, ${+arg('tirages', 30)} montees chacun`);
 const ligne = x => ({ equipe: x.t.map(nom), ids: x.t, etageMoyen: +x.moy.toFixed(1), marge: +(2 * x.se).toFixed(1), min: x.min, p10: x.p10, mediane: x.med, max: x.max });
 const out = { version, date: new Date().toISOString(), niveaux: NIV, record: SAVE.tower?.best ?? null, triosEssayes: essais, cartes: IDS.length, raretes: RARETES,
+  puissance: LIM.actif ? { plafond: LIM.plafond, transcendances: LIM.rb, palierChoisi: LIM.force, triosTotal: NTOT } : null, eveil: EV.aw || 0,
   methode: 'course', entonnoir: C.entonnoir, monteesSimulees: C.montees, reprisesJournal: C.repris, duree: Math.round((Date.now() - T0) / 1000), vitesse: Math.round(C.montees / Math.max(1, C.duree)),
   classement: C.classement.slice(0, 200).map(x => ({ ids: x.t, etageMoyen: +x.moy.toFixed(1), montees: x.n })),
   // Suite du classement (trios en course apres les 200 premiers, puis les mieux places des ecartes) : prefiltre du departage exact.

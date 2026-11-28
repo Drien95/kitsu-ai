@@ -13,6 +13,7 @@ import { W_DEFAUT } from './lib/sim.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { identite } from './lib/partage.mjs';
 import { spawnSync } from 'node:child_process';
+import { limitePuissance, eveilDe } from './lib/puissance.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : process.argv[i + 1]; };
 const T0 = Date.now(), log = (...a) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)).padStart(5)} s]`, ...a);
@@ -23,11 +24,13 @@ const pp = D('data', 'poids.json');
 let W = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')).W : (SAVE.W?.nm ? SAVE.W : W_DEFAUT);
 W = { ...W_DEFAUT, ...W };
 const lv = id => SAVE.lv?.[id]?.l || 99, st = id => SAVE.stars?.[id] || 0;
-const mkT = t => t.map(id => ({ id, lv: lv(id), stars: st(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}) })); // avec les collectifs choisis
+// 5.62 : Eveil (V2) sur chaque carte, et seulement des equipes que la limite de puissance accepte.
+const EV = eveilDe(SAVE), LIM = limitePuissance(G, SAVE);
+const mkT = t => t.map(id => ({ id, lv: lv(id), stars: st(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}), ...EV.champs(id) })); // avec les collectifs choisis
 // Equipes : les meilleures de la derniere analyse complete, sinon l'equipe actuelle.
 const dp = D('resultats', 'dernier.json');
 const DER = existsSync(dp) ? JSON.parse(readFileSync(dp, 'utf8')) : null;
-const teamsFor = cats => { const m = DER?.modes?.actuel || DER?.modes?.['99'] || {}; const out = new Map(); for (const c of cats) for (const x of (m[c]?.top || []).slice(0, 3)) out.set(x.ids.slice().sort().join(), x.ids); if (!out.size && SAVE.team?.length === 3) out.set('a', SAVE.team.map(Number)); return [...out.values()].slice(0, 4); };
+const teamsFor = cats => { const m = DER?.modes?.actuel || DER?.modes?.['99'] || {}; const out = new Map(); for (const c of cats) for (const x of (m[c]?.top || []).filter(x => LIM.ok(x.ids)).slice(0, 3)) out.set(x.ids.slice().sort().join(), x.ids); if (!out.size && SAVE.team?.length === 3) out.set('a', SAVE.team.map(Number)); return [...out.values()].slice(0, 4); };
 const shuffle = (a, s = 11) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { s = (s * 1103515245 + 12345) & 0x7fffffff; const j = s % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const all = [], bosses = []; for (const w of G.ALL_WORLDS) for (const f of w.fights) { all.push(f.id); if (f.boss) bosses.push(f.id); }
 const TYPES = { nm: { fights: all.map(f => f + '@xn'), cats: ['cauchemar', 'cauchemar_multi', 'cauchemar_boss'] }, boss: { fights: bosses.map(f => f + '@x'), cats: ['boss_extreme'] }, norm: { fights: all.filter(f => !bosses.includes(f)).map(f => f + '@x'), cats: ['campagne_extreme'] } };
@@ -125,8 +128,8 @@ const NE = +arg('par-equipe', 0), PLAN = arg('trios') === 'plan';
 function triosPlan() {
   const c3 = (() => { try { return JSON.parse(readFileSync(D('resultats', 'cauchemar3.json'), 'utf8')); } catch { return null; } })(), e = c3?.etages;
   if (!e?.plan?.length) return null;
-  const lvC = id => c3.niveaux === '99' ? 99 : lv(id), mk = t => t.map(id => ({ id, lv: lvC(id), stars: st(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}) }));
-  return e.plan.map(p => ({ ids: e.trios[p.trio], team: mk(e.trios[p.trio]), fights: e.combats.filter(c => c[1] < 3 && (c[4] === p.trio || c[2] === p.trio)).map(c => c[0]) })).filter(x => x.ids?.length === 3);
+  const lvC = id => c3.niveaux === '99' ? EV.niveauMax(id) : lv(id), mk = t => t.map(id => ({ id, lv: lvC(id), stars: st(id), ...(SAVE.lk?.[id] ? { lk: SAVE.lk[id] } : {}), ...EV.champs(id) }));
+  return e.plan.map(p => ({ ids: e.trios[p.trio], team: mk(e.trios[p.trio]), fights: e.combats.filter(c => c[1] < 3 && (c[4] === p.trio || c[2] === p.trio)).map(c => c[0]) })).filter(x => x.ids?.length === 3 && LIM.ok(x.ids));
 }
 if (NE > 0 || PLAN) {
   const old = existsSync(pp) ? JSON.parse(readFileSync(pp, 'utf8')) : {}, equipes = old.equipes || {};

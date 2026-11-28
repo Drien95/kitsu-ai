@@ -4,6 +4,19 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.62.0
+
+V2 du jeu, suite : les calculs et le script ne proposent plus que des équipes que le jeu accepte.
+
+- **Limite de puissance** (règle lue dans le moteur du jeu le 28/11) : une équipe est valide si la somme des coûts de ses cartes (SSR 5, UR 8, LR 12 et +4 dès la 3e LR, MR 16 et +12 par MR en plus ; SSR-X 7, UR-X 11, LR-X 15) ne dépasse pas le plafond du compte : 28 sans Transcendance, puis 36, 44, 48, 52, 56, puis +2 par Transcendance, 64 au plus. Le calcul vient du jeu lui-même (`G.teamPowerSum`, `G.powerCap`), dans `moteur/lib/puissance.mjs`. Un moteur d'avant la V2 n'a pas de limite, comme avant.
+- **Moteur local** : Campagne (`cauchemar3.mjs`), Tour (`tour.mjs`, `lib/tour.mjs`), analyse complète (`tout.mjs`, boss de guilde compris), raid, conseils (XP, bannières, marché, duos), entraînement et plan d'XP n'essaient plus que les trios acceptés. Le journal indique combien de trios restent. Sur 7 M trios, le tri se fait par classes de cartes : quelques appels au jeu seulement.
+- **Paliers** : `--transcendance N` (ou `KITSU_TRANSCENDANCE=N`) calcule comme si le compte avait N Transcendances, pour préparer chaque palier. `--sans-limite` garde l'ancien comportement.
+- **Résultats d'avant la V2** : le serveur ne renvoie plus au script un trio que la limite refuse (`/equipes {conseil}`, conseil exact privé, raid en salon), et le plan d'XP les ignore.
+- **Script** : trios essayés filtrés par la limite (équipes conseillées, Campagne, Tour, boss de guilde, Pain), et parmi tes cartes les plus fortes au moins la moitié d'UR / SSR (sinon il ne resterait presque aucun trio). Même choix dans `cauchemar3.mjs` pour les trios du script.
+- **Éveil** : chaque équipe simulée reçoit `aw` et `awakened` comme dans le jeu (`G.withAwOf`) ; une carte éveillée est jouée au niveau 100 en mode « niveau 99 ». Les clés des journaux et de la base commune ne changent pas pour une carte non éveillée. Les trios avec une carte éveillée ne sont pas envoyés à la base commune (format à étendre).
+- **Export** (menu Santé et synchro du PC) : Transcendances (`rb`), Ki dépensés (`kiSpent`), Éveil du compte et cartes éveillées (`eveil`), plafond de puissance. La sauvegarde du PC est réécrite quand ils changent.
+- **Tests** : `moteur/tests-puissance.mjs` (sans le moteur du jeu, lancé par la vérification GitHub, 16 tests) et 3 tests de plus dans `tests.mjs` (même coût et même verdict que le jeu sur 3000 trios au hasard).
+
 ## 5.61.0
 
 Réparation après la V2 du jeu (constatée le 28/11) : le script et le moteur local ne trouvaient plus le moteur du jeu.

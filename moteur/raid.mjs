@@ -7,23 +7,28 @@ import { makePool } from './lib/pool.mjs';
 import { arg, log, SAVE, lvOf, stOf, ecrire } from './lib/commun.mjs';
 import { GROUPES, tirages } from './lib/raid.mjs';
 import { garderEveille } from './lib/eveil.mjs';
+import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
 
 const { G, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
-const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? () => 99 : lvOf, MIN = +arg('min-niveau', 60);
+// 5.62 : limite de puissance (V2) sur les trios et Eveil (aw / awakened, niveau 100) sur les cartes.
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE);
+const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? id => EV.niveauMax(id) : lvOf, MIN = +arg('min-niveau', 60);
 const nom = id => CH[id]?.n || String(id);
 let IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => CH[id] && !CH[id].raidExclusive && ['M', 'L', 'E'].includes(CH[id].r) && (NIV === '99' || lvOf(id) >= MIN));
 const actuelle = (SAVE.team || []).map(Number).filter(id => CH[id]);
 // Trop de cartes : on garde les plus fortes (niveau, puis puissance de la carte), plus ton equipe actuelle.
 const MAXC = +arg('max-cartes', 16);
-if (IDS.length > MAXC) IDS = [...new Set([...actuelle.filter(id => IDS.includes(id)), ...IDS.sort((a, b) => LV(b) - LV(a) || (CH[b].pw || 0) - (CH[a].pw || 0))])].slice(0, MAXC);
+// 5.62 : avec la limite de puissance, une LR ne va plus avec deux LR : au moins la moitie des places pour des UR / SSR.
+if (IDS.length > MAXC) { const tri = IDS.sort((a, b) => LV(b) - LV(a) || (CH[b].pw || 0) - (CH[a].pw || 0)), moitie = LIM.actif ? tri.filter(id => CH[id].r !== 'M').slice(0, MAXC >> 1) : []; IDS = [...new Set([...actuelle.filter(id => IDS.includes(id)), ...moitie, ...tri])].slice(0, MAXC); }
 if (IDS.length < 3) { console.log(`Moins de 3 cartes LR, UR ou SSR ${NIV === '99' ? '' : `au niveau ${MIN} ou plus `}dans la sauvegarde exportee.`); process.exit(1); }
-const mk = ids => ids.map(id => ({ id, lv: LV(id), stars: stOf(id) }));
+const mk = ids => ids.map(id => ({ id, lv: LV(id), stars: stOf(id), ...EV.champs(id) }));
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
 const N = +arg('tirages', 8), TAILLES = [3, 2];
+log(`${decrireLimite(LIM)}`);
 log(`moteur ${version}, ${IDS.length} cartes (${NIV === '99' ? 'niveau 99' : 'niveau ' + MIN + ' ou plus'}), ${pool.n} fils`);
-const tr = []; const S_ = [...IDS].sort((a, b) => a - b); for (let a = 0; a < S_.length; a++) for (let b = a + 1; b < S_.length; b++) for (let c = b + 1; c < S_.length; c++) tr.push([S_[a], S_[b], S_[c]]);
+const tr = []; const S_ = [...IDS].sort((a, b) => a - b); for (let a = 0; a < S_.length; a++) for (let b = a + 1; b < S_.length; b++) for (let c = b + 1; c < S_.length; c++) if (LIM.ok([S_[a], S_[b], S_[c]])) tr.push([S_[a], S_[b], S_[c]]);
 const cle = t => t.slice().sort((a, b) => a - b).join('-');
-if (actuelle.length === 3 && !tr.some(t => cle(t) === cle(actuelle))) tr.push(actuelle);
+if (actuelle.length === 3 && LIM.ok(actuelle) && !tr.some(t => cle(t) === cle(actuelle))) tr.push(actuelle);
 // Cases : groupe de coequipiers x nombre de joueurs. Memes coequipiers pour tous les trios (comparaison juste).
 const cases = (n, graine) => GROUPES.flatMap((g, gi) => TAILLES.map(t => ({ id: `${g.id}-${t}`, groupe: g.id, joueurs: t, autres: tirages(G, g, n, t - 1, graine + gi * 101 + t) })));
 const eveil = garderEveille(), T0 = Date.now();
