@@ -50,6 +50,11 @@ t('Eveil : rien sans Eveil (cles de journal inchangees)', JSON.stringify(E0.cham
   t('guide : Tour d avant la V2 ignoree, Campagne du palier lue', g0.tour === null && g0.campagne?.difficultes[0].surs === 4 && g0.manque.includes('tour'));
   t('guide : palier suivant compare (+3 combats surs)', g0.suivant?.palier === 1 && g0.suivant.campagne?.plus === 3 && g1.campagne?.difficultes[0].surs === 7);
   t('guide : remboursement 25 % des Ki depenses', g0.transcendance.gemmesRendues === 1000);
+  // 5.65 : rush niveau 100 (acctNeed) et boost (Eveil : 7 etoiles, niveau 99).
+  { const S2 = { ...S, acct: { lv: 99, xp: 0 }, tower: { best: 60 }, stars: { [P[0]]: 7 }, lv: { [P[0]]: { l: 99 } } }, fic2 = { ...fic, 'cauchemar3-p1.json': { ...fic['cauchemar3-p1.json'], etages: { ...fic['cauchemar3-p1.json'].etages, plan: [{ trio: 0, combats: 3 }], trios: [[P[0], P[1], P[2]]] } } };
+    const r = guidePalier({ G, S: S2, n: 1, R: f => fic2[f] || null });
+    t('guide : rush 100 (XP du dernier niveau, Tour meilleure par energie, total apres Transcendance)', r.rush.restant === 2000 && r.rush.sources[0].source.startsWith('Montée de Tour') && r.rush.sources[0].parEnergie === 126 && r.rush.apresTranscendance === 261381, JSON.stringify(r.rush.sources[0]));
+    t('guide : boost (carte 7 etoiles niveau 99 prete, essences de la classe)', r.boost.cartes[0]?.id === P[0] && r.boost.cartes[0].pret && Number.isFinite(r.boost.cartes[0].essences) && r.boost.debloque); }
 }
 // 5.63 : base commune, cartes eveillees (6e champ de la carte d'un lot).
 { const { verifierLot, cleCarteDe, eveilDeCarte, avecEveil } = await import('./lib/partage-format.mjs');

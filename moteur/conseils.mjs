@@ -119,9 +119,18 @@ if (PARTS.includes('marche') && SAVE.market) {
     const r = (await evalTeams([mk(cand[i], o)]))[0], v = { ids: cand[i], gain: +(100 * (r.v - base.v)).toFixed(1), s2: pct(r.s2) }; memo.set(k, v); return v;
   };
   const utiles = new Set(TEAMS.flat()), M = SAVE.market;
-  const vus = new Map(); for (const l of M.lots || []) { const c = CH[l.card]; if (!c || !['M', 'L', 'E'].includes(c.r) || SAVE.owned?.[l.card]) continue; const lv = l.lv || 1; if (!vus.has(l.card) || vus.get(l.card) < lv) vus.set(l.card, lv); }
+  // 5.65 : marche V2 (ventes a prix fixe, encheres, echanges) : pour chaque carte, le lot le moins cher en Ki (prix fixe ou
+  // enchere en cours), sinon le meilleur niveau en echange. Prix compares a la banniere : une LR garantie par le pity coute 2 500 Ki.
+  const vus = new Map(), lotDe = new Map();
+  for (const l of M.lots || []) { const c = CH[l.card]; if (!c || !['M', 'L', 'E'].includes(c.r) || SAVE.owned?.[l.card]) continue; const lv = l.lv || 1;
+    if (!vus.has(l.card) || vus.get(l.card) < lv) vus.set(l.card, lv);
+    const p = l.mode !== 'exchange' && Number.isFinite(l.price) ? l.price : null, b = lotDe.get(l.card);
+    if (p != null && (!b || b.prix == null || p < b.prix)) lotDe.set(l.card, { prix: p, mode: l.mode, niveau: lv, etoiles: l.st || 0, fin: l.ends || null });
+    else if (!b) lotDe.set(l.card, { prix: null, mode: l.mode || 'exchange', niveau: lv, etoiles: l.st || 0, fin: l.ends || null }); }
   const cand = [...vus.keys()].sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 25);
-  const lots = []; for (const id of cand) { const v = await valeur(id, vus.get(id)); lots.push({ carte: nom(id), id, rarete: R[CH[id].r], niveau: vus.get(id), ...v }); }
+  const lots = []; for (const id of cand) { const L = lotDe.get(id), lv = L?.prix != null ? L.niveau : vus.get(id), v = await valeur(id, lv);
+    lots.push({ carte: nom(id), id, rarete: R[CH[id].r], niveau: lv, prix: L?.prix ?? null, mode: L?.mode || null, etoiles: L?.etoiles || 0, fin: L?.fin || null,
+      parMilleKi: L?.prix && v.gain != null ? +(1000 * v.gain / L.prix).toFixed(2) : null, ...v }); }
   lots.sort((a, b) => b.gain - a.gain);
   // A proposer en echange : tes cartes de meme rarete qui ne sont dans aucune de tes meilleures equipes.
   const aDonner = r => own.filter(id => CH[id].r === r && !utiles.has(id)).sort((a, b) => (CH[a].atk + CH[a].def) - (CH[b].atk + CH[b].def)).slice(0, 3).map(nom);
@@ -130,7 +139,7 @@ if (PARTS.includes('marche') && SAVE.market) {
     if (!CH[f.card]) continue; const v = await valeur(f.card, f.lv || 1), garde = utiles.has(lot.card);
     offres.push({ donnes: nom(lot.card), donnesId: lot.card, recois: nom(f.card), recoisId: f.card, niveau: f.lv || 1, gain: v.gain, ids: v.ids, verdict: garde ? 'refuser : ta carte est dans une de tes meilleures equipes' : v.gain > 0.5 ? 'accepter' : 'sans interet pour tes equipes' });
   }
-  out.marche = { reference: { ids: baseTeam || null, equipe: baseTeam ? noms(baseTeam) : null, s2: pct(base.s2) }, lots: lots.map(l => ({ ...l, proposer: aDonner(CH[l.id].r) })), offres, total: (M.lots || []).length };
+  out.marche = { reference: { ids: baseTeam || null, equipe: baseTeam ? noms(baseTeam) : null, s2: pct(base.s2) }, lots: lots.map(l => ({ ...l, proposer: aDonner(CH[l.id].r) })), offres, total: (M.lots || []).length, pity: { ki: 2500, note: 'LR de la banniere garantie par le pity (50 tirages x10 a 50 Ki)' } };
   log(`marche : ${(M.lots || []).length} lots, ${lots.length} cartes evaluees, meilleure ${lots[0]?.carte} (${lots[0]?.gain > 0 ? "+" : ""}${lots[0]?.gain}), ${offres.length} offre(s) recue(s)`);
 }
 // ---------- 4. Duos ----------

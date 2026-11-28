@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.64.1
+// @version      5.65.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.64.1') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.65.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -685,7 +685,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.64.1',
+          __v: '5.65.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1028,7 +1028,7 @@
           },
           // Export pour l'outil local (dossier moteur/) : cartes, niveaux, etoiles et reglages de l'IA. Aucun jeton de connexion.
           async exportData() {
-            const S = save(), data = { t: Date.now(), script: this.__v, owned: S.owned || {}, lv: S.lv || {}, stars: S.stars || {}, team: S.pve?.team || [], acct: { lv: S.acct?.lv || 1 }, W: this.W };
+            const S = save(), data = { t: Date.now(), script: this.__v, owned: S.owned || {}, lv: S.lv || {}, stars: S.stars || {}, team: S.pve?.team || [], acct: { lv: S.acct?.lv || 1, xp: +S.acct?.xp || 0 }, W: this.W };
             // 5.40.3 : liens actifs choisis dans le jeu (6 max par carte, S.lk[id] = cles « serie|nom »), pour que les calculs jouent ton vrai reglage.
             if (S.lk && Object.keys(S.lk).length) data.lk = S.lk;
             // 5.45.0 : etoiles gagnees par combat (carte des mondes du panneau, couche « acquis dans le jeu ») et record de la Tour (tour de l'infini et reactions de Kiko).
@@ -1046,7 +1046,7 @@
             // Boss de guilde de la semaine (pour l'analyse locale), sans aucun jeton dans le fichier.
             try { const r = await fetch('/api/guilds/week', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.boss) data.guild = { boss: { id: g.boss.id, name: g.boss.name, lv: g.boss.lv, hp: g.boss.hp, turns: g.week?.turns || 12 }, minLv: g.week?.minLv || 15 }; } } catch {}
             // Marche (echanges) : lots ouverts et offres recues sur tes lots, lus comme le fait la page du marche.
-            try { const H = { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }; const [a, b] = await Promise.all([fetch('/api/market', H), fetch('/api/market/mine', H)]); if (a.ok) { const m = await a.json(), mi = b.ok ? await b.json() : { open: [] }; data.market = { t: Date.now(), lots: (m.lots || []).slice(0, 400).map(l => ({ card: +l.card, lv: +l.lv || null })), mine: (mi.open || []).map(o => ({ card: +o.card, offers: (o.offers || []).map(f => ({ card: +f.card, lv: +f.lv || null })) })) }; } } catch {}
+            try { const H = { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }; const [a, b] = await Promise.all([fetch('/api/market', H), fetch('/api/market/mine', H)]); if (a.ok) { const m = await a.json(), mi = b.ok ? await b.json() : { open: [] }; data.market = { t: Date.now(), lots: (m.lots || []).slice(0, 400).map(l => ({ card: +l.card, lv: +l.lv || null, st: +l.st || 0, mode: l.mode || null, price: Number.isFinite(+l.price) ? +l.price : null, ends: l.ends || null })), mine: (mi.open || []).map(o => ({ card: +o.card, offers: (o.offers || []).map(f => ({ card: +f.card, lv: +f.lv || null })) })) }; } } catch {}
             // Pain (evenement de guilde) : son niveau, pour que le moteur local cherche le trio qui fait le plus de degats.
             try { const r = await fetch('/api/guilds/pain', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.event?.open && g.boss) data.pain = { lv: g.boss.lv, hp: g.boss.hp }; } } catch {}
             return data;
