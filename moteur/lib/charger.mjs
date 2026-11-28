@@ -51,7 +51,9 @@ export async function loadEngine(ver) {
   const memo = fichierMemo(dir, man.dom); let m = null, avecMemo = null;
   if (memo) try { m = await import(pathToFileURL(path.join(dir, 'assets', memo)).href); avecMemo = memo; } catch { m = null; }
   if (!m) m = await import(pathToFileURL(path.join(dir, 'assets', man.dom)).href);
-  const G = m.g, B = globalThis.BattleCore || Object.values(m).find(v => v && typeof v === 'object' && 'act' in v && 'enemyAct' in v);
+  // 5.61 : depuis la maj du 28/11, le moteur n'exporte plus G sous le nom « g » (noms minifies) : on prend l'objet qui a setupBattle et ALL_WORLDS.
+  const vals = Object.values(m), estG = v => !!v && typeof v === 'object' && typeof v.setupBattle === 'function' && Array.isArray(v.ALL_WORLDS);
+  const G = estG(m.g) ? m.g : vals.find(estG), B = globalThis.BattleCore || vals.find(v => v && typeof v === 'object' && 'act' in v && 'enemyAct' in v);
   if (!G || !B) throw new Error('moteur introuvable dans ' + man.dom);
   return { G, B, version: man.version, mod: m, memoCollectifs: avecMemo };
 }
