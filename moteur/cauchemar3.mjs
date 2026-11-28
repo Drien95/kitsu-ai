@@ -25,6 +25,7 @@ import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
 import { diagnostiquer } from './lib/diagnostic.mjs';
 import { chercherLiens, ciblesDuPlan } from './lib/liens.mjs';
+import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, SIM = makeSim(G, B);
 const NIV = String(arg('niveaux', '99')), K = +arg('garder', 30), Z = +arg('z', 3), PAQ = +arg('paquet', 16);
@@ -35,7 +36,9 @@ const DIFF = [['normal', '@n'], ['difficile', '@hn'], ['extreme', '@xn'], ...(TO
 const OBJS = [{ k: 'Normal', d: [0], e: 1 }, { k: 'Difficile', d: [1], e: 1 }, { k: 'Extreme', d: [2], e: 1 }, { k: 'Moyenne', d: [0, 1, 2], e: 1 },
   ...(TOUTES ? [{ k: 'CampNormal', d: [3] }, { k: 'CampDifficile', d: [4] }, { k: 'CampExtreme', d: [5] }, { k: 'Les6', d: [0, 1, 2, 3, 4, 5] }] : [])], OBJ = OBJS.map(o => o.k), IMOY = 3;
 const DIS_TOUTES = DIFF.map((_, i) => i), DIS_ELIM = DIS_TOUTES.filter(i => i < 3), DIS_CAMP = DIS_TOUTES.filter(i => i >= 3);
-const LV = id => NIV === '99' ? 99 : (SAVE.lv?.[id]?.l || 1), ET = id => SAVE.stars?.[id] || 0, LK = id => SAVE.lk?.[id] || null;
+// 5.62 : Eveil (V2) : une carte eveillee monte au niveau 100 et joue avec aw / awakened (lus par setupBattle).
+const EV = eveilDe(SAVE);
+const LV = id => NIV === '99' ? EV.niveauMax(id) : (SAVE.lv?.[id]?.l || 1), ET = id => SAVE.stars?.[id] || 0, LK = id => SAVE.lk?.[id] || null;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // Partage des calculs (Reglages > Partage, coupe par defaut) : seulement avec les reglages standard du calcul,
 // et toujours avec l'IA commune (poids-communs.json), sinon les resultats ne se recoupent pas d'un PC a l'autre.
@@ -59,8 +62,9 @@ if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la s
 
 // ---------- trios, combats, cles du journal ----------
 const sigCarte = makeSigCarte(G, B), sigG = signatureCombat(G, B, SIM, WA), wKey = h53(JSON.stringify(WA));
-const carte = (id, lk = LK(id)) => ({ id, lv: LV(id), stars: ET(id), ...(lk ? { lk } : {}) });
-const cleCarte = (id, lk = LK(id)) => `${id}:${LV(id)}:${ET(id)}:${(lk || []).join('+')}:${sigCarte(id)}`;
+const carte = (id, lk = LK(id)) => ({ id, lv: LV(id), stars: ET(id), ...(lk ? { lk } : {}), ...EV.champs(id) });
+// Cle inchangee pour une carte non eveillee (journaux et base commune gardes) ; Eveil du compte et de la carte ajoutes sinon.
+const cleCarte = (id, lk = LK(id)) => { const e = EV.cle(id); return `${id}:${LV(id)}:${ET(id)}:${(lk || []).join('+')}:${sigCarte(id)}${e ? ':' + e : ''}`; };
 // 5.42.1 : trios ranges en tableau compact (3 x 16 bits par trio : place des cartes dans IDS) au lieu de 7 M petits tableaux, et
 // cles de journal calculees a la demande depuis la cle de chaque carte (avant : 7 M chaines gardees en memoire).
 // trios[t] et cleTrio[t] s'utilisent comme avant (meme ordre, memes valeurs).
@@ -68,15 +72,25 @@ const NI = IDS.length, POS = new Map(IDS.map((id, i) => [id, i]));
 const C2 = k => k * (k - 1) / 2, debutA = new Float64Array(NI + 1); for (let a = 0; a < NI; a++) debutA[a + 1] = debutA[a] + C2(NI - 1 - a);
 const rangDe = (a, b, c) => debutA[a] + (b - a - 1) * (NI - 2 - a) - C2(b - a - 1) + (c - b - 1); // trio a < b < c dans l'ordre lexicographique
 let TRI = new Uint16Array(3 * debutA[NI]); { let k = 0; for (let a = 0; a < NI; a++) for (let b = a + 1; b < NI; b++) for (let c = b + 1; c < NI; c++) { TRI[k++] = a; TRI[k++] = b; TRI[k++] = c; } }
-let rangMelange = null; // --max-trios : trios tires au hasard (tests), retrouves par une table
-if (arg('max-trios')) {
-  const tous = [...Array(debutA[NI]).keys()], pris = shuffle(tous, 5).slice(0, +arg('max-trios')), t2 = new Uint16Array(3 * pris.length);
-  pris.forEach((r, i) => t2.set(TRI.subarray(3 * r, 3 * r + 3), 3 * i)); TRI = t2; rangMelange = new Map(pris.map((r, i) => [r, i]));
+// 5.62 : limite de puissance (V2) : seuls les trios que le jeu accepte sont joues (plafond selon tes Transcendances,
+// ou --transcendance N pour calculer un autre palier). rangVers : rang lexicographique d'un trio -> sa place dans TRI (-1 : absent).
+const LIM = limitePuissance(G, SAVE), NTOT = debutA[NI];
+let rangVers = null, rangs = null;
+if (LIM.actif) {
+  const okP = LIM.okPositions(IDS); let n = 0; const okR = new Uint8Array(NTOT); for (let r = 0; r < NTOT; r++) if (okP(TRI[3 * r], TRI[3 * r + 1], TRI[3 * r + 2])) { okR[r] = 1; n++; }
+  rangs = new Int32Array(n); for (let r = 0, k = 0; r < NTOT; r++) if (okR[r]) rangs[k++] = r;
+  log(`${decrireLimite(LIM)} : ${n} trios acceptes par le jeu sur ${NTOT}`);
+}
+if (arg('max-trios')) rangs = shuffle(rangs ? Array.from(rangs) : [...Array(NTOT).keys()], 5).slice(0, +arg('max-trios')); // --max-trios : trios tires au hasard (tests)
+if (rangs) {
+  const t2 = new Uint16Array(3 * rangs.length); rangVers = new Int32Array(NTOT).fill(-1);
+  for (let i = 0; i < rangs.length; i++) { const r = rangs[i]; t2.set(TRI.subarray(3 * r, 3 * r + 3), 3 * i); rangVers[r] = i; }
+  TRI = t2;
 }
 const T = TRI.length / 3;
 const trios = new Proxy([], { get: (o, k) => { if (k === 'length') return T; if (typeof k === 'string' && k.length && k.charCodeAt(0) >= 48 && k.charCodeAt(0) <= 57) { const t = +k; return t < T ? [IDS[TRI[3 * t]], IDS[TRI[3 * t + 1]], IDS[TRI[3 * t + 2]]] : undefined; } return undefined; } });
 // Index d'un trio a partir de ses cartes (dans n'importe quel ordre), ou undefined.
-const indexDe = ids => { const p = ids.map(id => POS.get(id)); if (p.length !== 3 || p.some(x => x === undefined)) return undefined; p.sort((x, y) => x - y); if (p[0] === p[1] || p[1] === p[2]) return undefined; const r = rangDe(p[0], p[1], p[2]); return rangMelange ? rangMelange.get(r) : r; };
+const indexDe = ids => { const p = ids.map(id => POS.get(id)); if (p.length !== 3 || p.some(x => x === undefined)) return undefined; p.sort((x, y) => x - y); if (p[0] === p[1] || p[1] === p[2]) return undefined; const r = rangDe(p[0], p[1], p[2]); if (!rangVers) return r; const i = rangVers[r]; return i < 0 ? undefined : i; };
 const CLEC = IDS.map(id => cleCarte(id));
 const cleTrio = new Proxy([], { get: (o, k) => { if (k === 'length') return T; if (typeof k === 'string' && k.length && k.charCodeAt(0) >= 48 && k.charCodeAt(0) <= 57) { const t = +k; return [CLEC[TRI[3 * t]], CLEC[TRI[3 * t + 1]], CLEC[TRI[3 * t + 2]]].sort().join(','); } return undefined; } });
 // Signature d'un combat : les ennemis tels que le jeu les met en place (stats, niveau, boss).
@@ -385,7 +399,10 @@ if (!arg('sans-collectifs') && G.activeLinks && G.linkKey) for (const x of tops[
 // ---------- meilleur trio par combat (lib/etages.mjs) ----------
 // Trios que le script Tampermonkey essaie sur l'ecran d'equipe : ceux de tes 10 cartes les plus fortes (meme formule que pool(10)).
 const force = id => { const c = CH[id]; let st; try { st = G.statsAt(c, LVA(id), ET(id)); } catch { st = { atk: c.atk, def: c.def }; } return (st.atk + st.def) * (c.hpK || 1.1) * ({ M: 1.25, L: 1.15, E: 1.1 }[c.r] || 1); };
-const dix = new Set(IDS.slice().sort((a, b) => force(b) - force(a)).slice(0, 10)), indexTrio = { get: k => indexDe(String(k).split('-').map(Number)) };
+// 5.62 : comme le script, avec la limite de puissance : au moins 5 UR / SSR parmi les 10.
+const parForce = IDS.slice().sort((a, b) => force(b) - force(a)), dix0 = LIM.actif ? parForce.filter(id => CH[id].r !== 'M').slice(0, 5) : [];
+for (const id of parForce) { if (dix0.length >= 10) break; if (!dix0.includes(id)) dix0.push(id); }
+const dix = new Set(dix0.sort((a, b) => parForce.indexOf(a) - parForce.indexOf(b))), indexTrio = { get: k => indexDe(String(k).split('-').map(Number)) };
 const scriptSet = new Set((() => { const d = [...dix], L = []; for (let a = 0; a < d.length; a++) for (let b = a + 1; b < d.length; b++) for (let c = b + 1; c < d.length; c++) { const t = indexDe([d[a], d[b], d[c]]); if (t !== undefined) L.push(t); } return L.sort((x, y) => x - y); })()); // ordre des trios, comme avant (departage des egalites par combat)
 let etages = null;
 if (!arg('sans-etages')) {
@@ -439,7 +456,8 @@ if (!arg('sans-etages')) {
 }
 
 // ---------- resultats ----------
-const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, raretes: RARETES, trios: T, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
+const out = { version, signatureCombat: sigG, date: new Date().toISOString(), niveaux: NIV, cartes: IDS.length, raretes: RARETES, trios: T,
+  puissance: LIM.actif ? { plafond: LIM.plafond, transcendances: LIM.rb, palierChoisi: LIM.force, triosTotal: NTOT } : null, eveil: EV.aw || 0, combats: Object.fromEntries(DIFF.map(([d], i) => [d, NCOMB[i]])), difficultes: DIFF.map(d => d[0]),
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
   vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, demiPaquet: DEMI ? { ecartes: demiEcartes, combatsEvites: demiEconomie } : null, mondes: MONDES, repartition,
   // 5.51 : sans course, pas de nouveau classement global : celui du dernier calcul est garde.

@@ -10,6 +10,7 @@
 // Score = moyenne ponderee (Campagne 1, Tour 1, Arene 1, Raid 1/2) des modes disponibles.
 // Une « montee » = une carte (ou les 2-3 cartes qui ne servent qu'ensemble) a mettre au 99 ; points gagnes / XP = classement.
 
+import { limitePuissance } from './puissance.mjs';
 export const POIDS = { campagne: 1, tour: 1, arene: 1, raid: 0.5 };
 const CAUCHEMAR = ['normal', 'difficile', 'extreme'];
 
@@ -18,7 +19,7 @@ const cle = ids => [...ids].sort((a, b) => a - b).join('-');
 
 // Mode a partir d'une liste de trios notes ({ ids, v }), v plus grand = mieux.
 export function modeTrios({ cle: k, nom, unite, source = 'public', trios, niveaux = '99', poids }, C) {
-  const ok = (trios || []).filter(t => t.ids?.length === 3 && t.ids.every(C.possede) && Number.isFinite(t.v));
+  const ok = (trios || []).filter(t => t.ids?.length === 3 && t.ids.every(C.possede) && C.accepte(t.ids) && Number.isFinite(t.v));
   if (!ok.length) return null;
   const max = Math.max(...ok.map(t => t.v));
   const tous99 = niveaux !== '99'; // calcul fait a tes niveaux : pas de gain de niveau a lire
@@ -43,7 +44,7 @@ export function modeCampagne(c3, C) {
   const iA = (e.colonnes || []).indexOf('autres'), approx = iA < 0;
   // Ancien format : le trio du script (tes 10 cartes les plus fortes, deja au 99 en general) sert de base « deja sur ».
   const iS = (e.colonnes || []).indexOf('script3e');
-  const L = e.combats.filter(c => viseDi.has(c[1])).map(c => ({ di: c[1], base: approx && iS >= 0 && c[iS] >= seuil, l: (approx ? [[c[2], c[3]], [c[4], c[5]]] : c[iA] || []).filter(([t, p]) => t >= 0 && p >= seuil).map(([t]) => e.trios[t]).filter(t => t?.every(C.possede)) }));
+  const L = e.combats.filter(c => viseDi.has(c[1])).map(c => ({ di: c[1], base: approx && iS >= 0 && c[iS] >= seuil, l: (approx ? [[c[2], c[3]], [c[4], c[5]]] : c[iA] || []).filter(([t, p]) => t >= 0 && p >= seuil).map(([t]) => e.trios[t]).filter(t => t?.every(C.possede) && C.accepte(t)) }));
   if (!L.length) return null;
   const surAvec = M => L.map(f => f.base || f.l.some(t => t.every(id => tous99 || C.au99(id) || M.has(id))));
   const s0 = surAvec(new Set()), n0 = s0.filter(Boolean).length, total = L.length;
@@ -71,6 +72,8 @@ export function contexte(G, S) {
   const lv = id => S?.lv?.[id]?.l || 1;
   const C = {
     possede: id => !!S?.owned?.[id], lv, au99: id => lv(id) >= 99,
+    // 5.62 : trio accepte par la limite de puissance de la V2 (tes Transcendances) ; un calcul d'avant la V2 peut en proposer d'autres.
+    accepte: (() => { try { const L = G ? limitePuissance(G, S, { transcendance: null }) : null; return L ? L.ok : () => true; } catch { return () => true; } })(),
     nom: id => G?.CHAR_BY_ID?.[id]?.n || String(id), rarete: id => ({ M: 'LR', L: 'UR', E: 'SSR', R: 'SR', U: 'R', C: 'N' })[G?.CHAR_BY_ID?.[id]?.r] || '',
     xpNeuve: 0,
     xp99: id => { let x = 0; for (let k = lv(id); k < 99; k++) x += need(k); return Math.max(0, x - (S?.lv?.[id]?.xp || 0)); },

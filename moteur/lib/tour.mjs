@@ -12,11 +12,12 @@ export const statsEtages = fl => {
 };
 const comb = (arr, k) => { const r = []; const f = (s, c) => { if (c.length === k) { r.push(c); return; } for (let i = s; i < arr.length; i++) f(i + 1, [...c, arr[i]]); }; f(0, []); return r; };
 // Cle d'une carte dans le journal de la Tour (tour.mjs et la prevision du serveur doivent donner la meme).
-export const cleCarteTour = (c, sigCarte) => `${c.id}:${c.lv}:${c.stars}:${(c.lk || []).join('+')}:${sigCarte(c.id)}`;
+// 5.62 : Eveil (V2) ajoute a la fin seulement pour une carte qui l'a (cles des cartes non eveillees inchangees).
+export const cleCarteTour = (c, sigCarte) => `${c.id}:${c.lv}:${c.stars}:${(c.lk || []).join('+')}:${sigCarte(c.id)}${c.aw ? `:a${c.aw}${c.awakened ? 'e' : ''}` : ''}`;
 const memeTrio = (a, b) => a.slice().sort().join() === b.slice().sort().join();
 
-// ctx : { G, B, pool, W, ids (cartes candidates), mk(ids, lk) -> equipe, actuelle (trio joue), log }
-export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {} }) {
+// ctx : { G, B, pool, W, ids (cartes candidates), mk(ids, lk) -> equipe, actuelle (trio joue), log, ok (5.62 : trio accepte par la limite de puissance) }
+export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}, ok = () => true }) {
   const climb = async (teams, seeds, size = 4) => (await pool.runAll(teams.map(team => ({ type: 'tower', team, seeds, maxFl: MAXFL })), W, {}, size)).map(r => r.fl);
 
   // 1. chaque carte seule (la Tour accepte 1 carte), 2. tous les trios des meilleures, 3. les 20 meilleurs sur beaucoup de tirages.
@@ -24,10 +25,10 @@ export function makeTour({ G, B, pool, W, ids, mk, actuelle = [], log = () => {}
     const solo = await climb(ids.map(id => mk([id])), range(2), 16);
     const bySolo = ids.map((id, i) => ({ id, etage: (solo[i][0] + solo[i][1]) / 2 })).sort((a, b) => b.etage - a.etage);
     const pick = [...new Set([...bySolo.slice(0, cartes).map(x => x.id), ...actuelle.filter(id => ids.includes(id))])];
-    const tr = []; for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) tr.push([pick[a], pick[b], pick[c]]);
+    const tr = []; for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) if (ok([pick[a], pick[b], pick[c]])) tr.push([pick[a], pick[b], pick[c]]);
     const r1 = await climb(tr.map(t => mk(t)), range(2));
     const top = tr.map((t, i) => ({ t, v: r1[i][0] + r1[i][1] })).sort((a, b) => b.v - a.v).slice(0, garder).map(x => x.t);
-    if (actuelle.length && !top.some(t => memeTrio(t, actuelle))) top.push(actuelle);
+    if (actuelle.length && ok(actuelle) && !top.some(t => memeTrio(t, actuelle))) top.push(actuelle);
     log(`Tour : ${tr.length} trios essayes, ${top.length} gardes pour ${tirages} tirages`);
     const r2 = await climb(top.map(t => mk(t)), range(tirages, 101), 1);
     const fin = top.map((t, i) => ({ t, fl: r2[i], ...statsEtages(r2[i]) })).sort((a, b) => b.moy - a.moy);

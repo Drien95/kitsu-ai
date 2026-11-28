@@ -7,17 +7,21 @@ import { loadEngine } from './lib/charger.mjs';
 import { makePool } from './lib/pool.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { readJ, arg, log, SAVE, POIDS, W0, WA, DERNIER, lvOf, stOf, topTeams, fightSets, shuffle, ecrire } from './lib/commun.mjs';
+import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, R = { M: 'LR', L: 'UR', E: 'SSR' };
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
 const PARTS = String(arg('parties', 'collectifs,xp,tirage,duos,marche')).split(',');
 const sets = fightSets(G, B), BENCH = [...shuffle(sets.nmMulti, 3).slice(0, 70), ...shuffle(sets.nmBoss, 4).slice(0, 50)], QUICK = BENCH.filter((_, i) => i % 3 === 0);
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
-const mk = (ids, o = {}) => ids.map(id => ({ id, lv: o.lv?.[id] ?? lvOf(id), stars: o.stars?.[id] ?? stOf(id), ...((o.lk?.[id] || SAVE.lk?.[id]) ? { lk: o.lk?.[id] || SAVE.lk[id] } : {}) }));
+// 5.62 : limite de puissance (V2) sur tous les trios essayes, Eveil (aw / awakened) sur chaque carte.
+const LIM = limitePuissance(G, SAVE), EV = eveilDe(SAVE), okT = t => LIM.ok(t);
+const mk = (ids, o = {}) => ids.map(id => ({ id, lv: o.lv?.[id] ?? lvOf(id), stars: o.stars?.[id] ?? stOf(id), ...((o.lk?.[id] || SAVE.lk?.[id]) ? { lk: o.lk?.[id] || SAVE.lk[id] } : {}), ...EV.champs(id) }));
 const W = WA;
 const evalTeams = async (teams, fl = BENCH, seeds = [1, 2]) => { const r = await pool.runAll(teams.flatMap(t => fl.map(f => ({ team: t, fights: [f], seeds }))), W, { stop2: true }, 12); const per = fl.length; return teams.map((_, k) => { const x = r.slice(k * per, (k + 1) * per), n = x.reduce((a, y) => a + y.n, 0); const s2 = x.reduce((a, y) => a + y.s2, 0) / n, s3 = x.reduce((a, y) => a + y.s3, 0) / n; return { s2, s3, v: s3 + 0.25 * s2 }; }); };
 const pct = x => +(100 * x).toFixed(1);
-const out = { version, date: new Date().toISOString(), combats: BENCH.length };
-const TEAMS = topTeams(['cauchemar_multi', 'cauchemar_boss', 'cauchemar'], 3);
+const out = { version, date: new Date().toISOString(), combats: BENCH.length, puissance: LIM.actif ? { plafond: LIM.plafond, transcendances: LIM.rb } : null };
+const TEAMS = topTeams(['cauchemar_multi', 'cauchemar_boss', 'cauchemar'], 3).filter(okT);
+log(decrireLimite(LIM));
 const own = Object.keys(SAVE.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(CH[id]?.r));
 log(`moteur ${version}, ${pool.n} fils, ${BENCH.length} combats de reference (Cauchemar Extreme : plusieurs ennemis et boss)`);
 
@@ -58,7 +62,7 @@ if (PARTS.includes('xp')) {
   const combatsPour = xp => Math.ceil(xp / xpCombat);
   const rows = [];
   for (const id of cands) {
-    const trios = []; for (const t of TEAMS) for (let k = 0; k < 3; k++) if (!t.includes(id)) { const x = t.slice(); x[k] = id; trios.push(x); }
+    const trios = []; for (const t of TEAMS) for (let k = 0; k < 3; k++) if (!t.includes(id)) { const x = t.slice(); x[k] = id; if (okT(x)) trios.push(x); }
     if (!trios.length) continue;
     const q = await evalTeams(trios.map(t => mk(t, { lv: { [id]: 99 } })), QUICK, [1]), t = trios[q.map((r, i) => [r.v, i]).sort((x, y) => y[0] - x[0])[0][1]];
     const l0 = lvOf(id), paliers = [...new Set([l0, ...[l0 + 10, l0 + 25, 60, 80, 99].filter(x => x > l0 && x <= 99)])].sort((x, y) => x - y);
@@ -76,7 +80,9 @@ if (PARTS.includes('tirage')) {
   const now = Date.now(), bans = (G.BANNERS || []).filter(b => b.until > now && (b.opens || b.from || 0) <= now);
   const byName = n => Object.values(CH).find(c => c.n === n)?.id;
   const baseTeam = TEAMS[0], base = baseTeam ? (await evalTeams([mk(baseTeam)]))[0] : { v: 0, s2: 0, s3: 0 };
-  const top8 = [...new Set(TEAMS.flat())].concat(own.sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def))).filter((x, i, a) => a.indexOf(x) === i).slice(0, 8);
+  const top8 = [...new Set(TEAMS.flat())].concat(own.sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def))).filter((x, i, a) => a.indexOf(x) === i).slice(0, 8)
+  // 5.62 : avec la limite de puissance, une LR ne va plus avec deux LR : on ajoute tes 4 meilleures UR / SSR pour les paires.
+  if (LIM.actif) top8.push(...own.filter(id => CH[id].r !== 'M' && !top8.includes(id)).sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 4));
   const pairs = []; for (let a = 0; a < top8.length; a++) for (let b = a + 1; b < top8.length; b++) pairs.push([top8[a], top8[b]]);
   out.tirage = [];
   for (const b of bans) {
@@ -84,10 +90,10 @@ if (PARTS.includes('tirage')) {
     const lignes = [];
     for (const c of cartes) {
       const deja = !!SAVE.owned?.[c.id];
-      const cand = deja ? [] : pairs.map(p => [c.id, ...p]);
+      const cand = deja ? [] : pairs.map(p => [c.id, ...p]).filter(okT);
       let best = null;
       if (deja) { const t = TEAMS.find(t => t.includes(c.id)); if (t) { const r = (await evalTeams([mk(t, { stars: { [c.id]: stOf(c.id) + 1 } })]))[0]; best = { t, ...r }; } }
-      else { const q = await evalTeams(cand.map(t => mk(t, { lv: { [c.id]: 99 } })), QUICK, [1]); const k = q.map((r, i) => ({ i, v: r.v })).sort((a, b2) => b2.v - a.v)[0]; const t = cand[k.i]; const r = (await evalTeams([mk(t, { lv: { [c.id]: 99 } })]))[0]; best = { t, ...r }; }
+      else if (cand.length) { const q = await evalTeams(cand.map(t => mk(t, { lv: { [c.id]: 99 } })), QUICK, [1]); const k = q.map((r, i) => ({ i, v: r.v })).sort((a, b2) => b2.v - a.v)[0]; const t = cand[k.i]; const r = (await evalTeams([mk(t, { lv: { [c.id]: 99 } })]))[0]; best = { t, ...r }; }
       lignes.push({ carte: c.n, id: c.id, ids: best ? best.t : null, rarete: c.r, possedee: deja, equipe: best ? noms(best.t) : null, s2: best ? pct(best.s2) : null, s3: best ? pct(best.s3) : null, gain: best ? +(100 * (best.v - base.v)).toFixed(1) : null });
     }
     lignes.sort((a, b2) => (b2.gain ?? -99) - (a.gain ?? -99));
@@ -100,12 +106,15 @@ if (PARTS.includes('tirage')) {
 // Valeur d'une carte pour toi : gain de ton meilleur trio quand elle y entre (a son niveau), sur les combats de reference.
 if (PARTS.includes('marche') && SAVE.market) {
   const baseTeam = TEAMS[0], base = baseTeam ? (await evalTeams([mk(baseTeam)]))[0] : { v: 0, s2: 0, s3: 0 };
-  const top8 = [...new Set(TEAMS.flat())].concat(own.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def))).filter((x, i, a) => a.indexOf(x) === i).slice(0, 8);
+  const top8 = [...new Set(TEAMS.flat())].concat(own.slice().sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def))).filter((x, i, a) => a.indexOf(x) === i).slice(0, 8)
+  // 5.62 : avec la limite de puissance, une LR ne va plus avec deux LR : on ajoute tes 4 meilleures UR / SSR pour les paires.
+  if (LIM.actif) top8.push(...own.filter(id => CH[id].r !== 'M' && !top8.includes(id)).sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def)).slice(0, 4));
   const pairs = []; for (let a = 0; a < top8.length; a++) for (let b = a + 1; b < top8.length; b++) pairs.push([top8[a], top8[b]]);
   const memo = new Map();
   const valeur = async (id, lv) => {
     const k = id + ':' + lv; if (memo.has(k)) return memo.get(k);
-    const cand = pairs.filter(p => !p.includes(id)).map(p => [id, ...p]), o = { lv: { [id]: lv }, stars: { [id]: 0 } };
+    const cand = pairs.filter(p => !p.includes(id)).map(p => [id, ...p]).filter(okT), o = { lv: { [id]: lv }, stars: { [id]: 0 } };
+    if (!cand.length) { const v = { ids: null, gain: null, s2: null, horsLimite: true }; memo.set(k, v); return v; }
     const q = await evalTeams(cand.map(t => mk(t, o)), QUICK, [1]), i = q.map((r, j) => [r.v, j]).sort((x, y) => y[0] - x[0])[0][1];
     const r = (await evalTeams([mk(cand[i], o)]))[0], v = { ids: cand[i], gain: +(100 * (r.v - base.v)).toFixed(1), s2: pct(r.s2) }; memo.set(k, v); return v;
   };
@@ -129,7 +138,7 @@ if (PARTS.includes('duos')) {
   const m = DERNIER?.modes?.actuel || {}, freq = {};
   for (const c of Object.values(m)) for (const x of c.top || []) for (const id of x.ids) freq[id] = (freq[id] || 0) + 1;
   const pick = [...new Set([...Object.keys(freq).map(Number).sort((a, b) => freq[b] - freq[a]), ...own.sort((a, b) => (CH[b].atk + CH[b].def) - (CH[a].atk + CH[a].def))])].filter(id => SAVE.owned?.[id] || !SAVE.owned).slice(0, 14);
-  const tr = []; for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) tr.push([pick[a], pick[b], pick[c]]);
+  const tr = []; for (let a = 0; a < pick.length; a++) for (let b = a + 1; b < pick.length; b++) for (let c = b + 1; c < pick.length; c++) if (okT([pick[a], pick[b], pick[c]])) tr.push([pick[a], pick[b], pick[c]]);
   const r = await evalTeams(tr.map(t => mk(t)), QUICK, [1]);
   const sc = tr.map((t, i) => ({ t, v: r[i].v })), moy = sc.reduce((a, x) => a + x.v, 0) / sc.length, pairs = {};
   for (const x of sc) for (const [a, b] of [[x.t[0], x.t[1]], [x.t[0], x.t[2]], [x.t[1], x.t[2]]]) { const k = a + '-' + b; (pairs[k] ||= { a, b, vs: [] }).vs.push(x.v); }

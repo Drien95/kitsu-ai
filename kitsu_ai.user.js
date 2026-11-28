@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.61.0
+// @version      5.62.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.61.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.62.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -132,7 +132,12 @@
         const sameVer = (a, b) => a && b && a.dom === b.dom && a.app === b.app && a.fights === b.fights && a.chars === b.chars;
 
         // ---------- Simulation ----------
-        const teamOf = (ids, S = save(), opt = {}) => ids.map(id => ({ id: +id, lv: (S.owned?.[id] ? (S.lv?.[id]?.l || 1) : (opt.newLv || 1)) + (opt.bump === +id ? 5 : 0), stars: S.stars?.[id] || 0 }));
+        // 5.62 : Eveil (V2) : le jeu ajoute aw (Eveil du compte) et awakened (carte eveillee) a chaque carte de l'equipe (G.withAwOf).
+        const avecEveil = (team, S = save()) => { try { return typeof G?.withAwOf === 'function' ? G.withAwOf(S, team) : team; } catch { return team; } };
+        // 5.62 : limite de puissance (V2) : une equipe est valide si G.teamPowerSum(ids) <= G.powerCap(S) (plafond selon tes Transcendances).
+        const powCap = (S = save()) => { try { return typeof G?.powerCap === 'function' && typeof G?.teamPowerSum === 'function' ? G.powerCap(S) : Infinity; } catch { return Infinity; } };
+        const powOk = (ids, S = save(), cap = powCap(S)) => { if (!Number.isFinite(cap)) return true; try { return G.teamPowerSum(ids) <= cap; } catch { return true; } };
+        const teamOf = (ids, S = save(), opt = {}) => avecEveil(ids.map(id => ({ id: +id, lv: (S.owned?.[id] ? (S.lv?.[id]?.l || 1) : (opt.newLv || 1)) + (opt.bump === +id ? 5 : 0), stars: S.stars?.[id] || 0 })), S);
         const mk = (fightId, ids, seed, S, opt) => G.setupBattle(G.findFight(fightId), teamOf(ids, S, opt), seed).st;
         const step = st => {
           for (let i = 0; i < 300; i++) {
@@ -496,7 +501,10 @@
           const c = window.CHAR_BY_ID[id], lv = S.lv?.[id]?.l || 1, st = S.stars?.[id] || 0;
           let s; try { s = G.statsAt(c, lv, st); } catch { s = { atk: c.atk, def: c.def }; }
           return { id, v: (s.atk + s.def) * (c.hpK || 1.1) * ({ M: 1.25, L: 1.15, E: 1.1 }[c.r] || 1) };
-        }).sort((a, b) => b.v - a.v).slice(0, n).map(x => x.id);
+        }).sort((a, b) => b.v - a.v).reduce((o, x, i, all) => {
+          // 5.62 : avec la limite de puissance, une LR ne va plus avec deux LR : la moitie des places au moins pour des UR / SSR
+          // (les plus fortes), le reste aux plus fortes cartes. Meme choix dans moteur/cauchemar3.mjs (trios essayes par le script).
+          if (i === 0) { const lim = Number.isFinite(powCap(S)), nonLR = lim ? all.filter(y => window.CHAR_BY_ID[y.id]?.r !== 'M').slice(0, n >> 1).map(y => y.id) : []; o.push(...nonLR); for (const y of all) { if (o.length >= n) break; if (!o.includes(y.id)) o.push(y.id); } o.sort((p, q) => all.findIndex(y => y.id === p) - all.findIndex(y => y.id === q)); } return o; }, []);
         // Interet d'un trio pour la progression : il contient des cartes du plan d'entrainement.
         // 5.37 : toutes les cartes du plan d'XP du PC (pas seulement la 1re : plan global Campagne, Tour, Raid, Arene) et celles des prochains murs
         // comptent ; une carte au 99 ne gagne plus d'XP, elle ne compte jamais. Le farm prend le trio qui en fait monter le plus a 3 etoiles.
@@ -605,7 +613,8 @@
         };
         // Selecteurs dont le guide depend : verifies dans le code du jeu a chaque nouvelle version.
         const SELECTORS = ['data-result-next', 'data-result-close', 'data-unslot', 'data-pick', 'data-en-refill', 'data-ds-buy', 'data-qclaim-all', 'data-claim-streak', 'data-pass-claim', 'data-evp-diff', 'data-evp-go', 'data-evp-feat', 'data-salle-fight', 'data-ev-buy', 'data-ev-use', 'data-ev-size', 'data-sbc-open', 'data-sbc-auto', 'data-sbc-ok', 'data-ev-bells', 'data-goto', 'data-arc-mode', 'data-arc-nm', 'data-fight', 'data-world', 'data-back-worlds', 'data-open', 'data-act', 'data-unit', 'data-dl-skip', 'data-skip-dlg', 'data-close-prep', 'data-gtab', 'data-gw', 'data-pain', 'data-tw', 'data-claim-album', 'data-qpage', 'data-yes', 'data-ev-fight', 'data-sc-use', 'data-sc-size', 'data-sc-q', 'data-reopen', 'data-close-op', 'data-stab', 'navShop', 'play-card'];
-        const trios = ids => { const t = []; for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) for (let k = j + 1; k < ids.length; k++) t.push([ids[i], ids[j], ids[k]]); return t; };
+        // 5.62 : seulement les trios que la limite de puissance accepte.
+        const trios = (ids, S = save()) => { const t = [], cap = powCap(S); for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) for (let k = j + 1; k < ids.length; k++) { const x = [ids[i], ids[j], ids[k]]; if (powOk(x, S, cap)) t.push(x); } return t; };
 
         // Banc de test : combats de la frontiere (normaux) et boss accessibles, recalcules par version.
         let benchCache = null;
@@ -676,7 +685,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.61.0',
+          __v: '5.62.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -859,7 +868,7 @@
           // Echantillon de reference : boss de milieu de campagne (les murs a venir), un essai chacun.
           _refFights() { const out = []; for (const w of G.ALL_WORLDS) w.fights.forEach((f, i) => { if (f.boss && i > 15 && i < 130) out.push(f.id); }); return out; },
           async _wins(t, S, lvMap = {}, fights = this._refFights()) {
-            const team = t.map(id => ({ id, lv: lvMap[id] ?? (S.owned?.[id] ? (S.lv?.[id]?.l || 1) : 22), stars: S.stars?.[id] || 0 }));
+            const team = avecEveil(t.map(id => ({ id, lv: lvMap[id] ?? (S.owned?.[id] ? (S.lv?.[id]?.l || 1) : 22), stars: S.stars?.[id] || 0 })), S);
             const out = await simBatch(fights.map(fid => ({ fid, team, seeds: [1] })), this.W);
             return out.reduce((a, r) => a + r.w, 0);
           },
@@ -899,7 +908,7 @@
               let ob = null;
               const need = t => t.reduce((x, id) => x + xpTo(id, L), 0);
               const hard2 = [...hard, ...hard]; // 2 passages (graines differentes) pour limiter le bruit
-              const all = []; for (const t of trios(pot)) { const tm = t.map(id => ({ id, lv: lmOf(t)[id], stars: S.stars?.[id] || 0 })); const o = await simBatch(hard.map(fid => ({ fid, team: tm, seeds: [1, 2] })), this.W); all.push({ t, w: o.reduce((a, r) => a + r.w, 0) }); await idle(); }
+              const all = []; for (const t of trios(pot)) { const tm = avecEveil(t.map(id => ({ id, lv: lmOf(t)[id], stars: S.stars?.[id] || 0 })), S); const o = await simBatch(hard.map(fid => ({ fid, team: tm, seeds: [1, 2] })), this.W); all.push({ t, w: o.reduce((a, r) => a + r.w, 0) }); await idle(); }
               // A 2 victoires pres (bruit de simulation), on prend le trio qui demande le moins d'XP.
               const wMax = Math.max(...all.map(x => x.w)); ob = all.filter(x => x.w >= wMax - 4).sort((a, b) => need(a.t) - need(b.t) || b.w - a.w)[0];
               // Stabilite : on garde l'ancienne equipe cible tant qu'elle reste a 4 victoires de la meilleure.
@@ -1026,6 +1035,12 @@
             const pv = {}; for (const [f, n] of Object.entries(S.pve?.stars || {})) if (+n > 0) pv[f] = +n;
             if (Object.keys(pv).length) data.pve = { stars: pv };
             if (S.tower?.best != null) data.tower = { best: +S.tower.best || 0 };
+            // 5.62 : V2 du jeu. Transcendances (plafond de puissance des equipes), Ki depenses (gemmes rendues a la Transcendance),
+            // Eveil du compte et cartes eveillees (lus par le jeu lui-meme avec G.withAwOf : +10 %, niveau 100).
+            if (S.rb) data.rb = { n: Number.isInteger(+S.rb.n) && +S.rb.n > 0 ? +S.rb.n : 0, spent: +S.rb.spent || 0 };
+            if (S.stats?.kiSpent != null) data.kiSpent = +S.stats.kiSpent || 0;
+            try { if (typeof G?.withAwOf === 'function') { const t = G.withAwOf(S, Object.keys(S.owned || {}).map(id => ({ id: +id }))), aw = t.find(x => x.aw)?.aw || 0, ev = t.filter(x => x.awakened).map(x => x.id); if (aw || ev.length) data.eveil = { aw, cartes: ev }; } } catch {}
+            try { const cap = powCap(S); if (Number.isFinite(cap)) data.puissance = { plafond: cap }; } catch {}
             // Boss de guilde de la semaine (pour l'analyse locale), sans aucun jeton dans le fichier.
             try { const r = await fetch('/api/guilds/week', { credentials: 'include', headers: { Authorization: 'Bearer ' + (localStorage.getItem('kitsu_token') || '') } }); if (r.ok) { const g = await r.json(); if (g.boss) data.guild = { boss: { id: g.boss.id, name: g.boss.name, lv: g.boss.lv, hp: g.boss.hp, turns: g.week?.turns || 12 }, minLv: g.week?.minLv || 15 }; } } catch {}
             // Marche (echanges) : lots ouverts et offres recues sur tes lots, lus comme le fait la page du marche.
@@ -1725,7 +1740,7 @@
                   for (const t of trios(elig.slice(0, 12))) {
                     let d = 0;
                     for (const sd of [1, 2]) {
-                      const { st, hp0 } = G.setupPain(g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd);
+                      const { st, hp0 } = G.setupPain(g.boss.lv, g.boss.hp, avecEveil(t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), S), sd);
                       for (let i = 0; i < 400 && st.cycle <= (g.event.turns || 12); i++) { const u = step(st); if (!u || st.cycle > (g.event.turns || 12)) break; doAct(st, u, pol(st, u)); }
                       d += hp0 - B.enemies(st)[0].hp;
                     }
@@ -1780,7 +1795,7 @@
                   for (const t of trios(elig.slice(0, 10))) {
                     let d = 0;
                     for (const sd of [1, 2, 3]) {
-                      const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd);
+                      const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, avecEveil(t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), S), sd);
                       for (let i = 0; i < 500 && st.cycle <= turns; i++) { const u = step(st); if (!u || st.cycle > turns) break; doAct(st, u, pol(st, u)); }
                       d += hp0 - B.enemies(st)[0].hp;
                     }
@@ -1855,7 +1870,7 @@
             await loadModules();
             const S = save(), pol = smartPol(this.W), TW = G.TOWER || { HEAL: 0.12, BOSS_HEAL: 0.3 };
             const climb = (ids, seed) => {
-              let team = ids.map(id => ({ id, lv: S.lv?.[id]?.l || 1, stars: S.stars?.[id] || 0, ...(S.lk?.[id] ? { lk: S.lk[id] } : {}) })); // avec tes collectifs
+              let team = avecEveil(ids.map(id => ({ id, lv: S.lv?.[id]?.l || 1, stars: S.stars?.[id] || 0, ...(S.lk?.[id] ? { lk: S.lk[id] } : {}) })), S); // avec tes collectifs
               for (let fl = 1; fl <= 400; fl++) {
                 const { st } = G.setupTower(fl, team, seed * 1000 + fl); st.__tower = 1;
                 playOut(st, pol);
@@ -2146,7 +2161,7 @@
                     // trios confirmes sur 40 graines (les degats varient beaucoup d'un combat a l'autre). Plafond 300 000.
                     const minLv = g.week?.minLv || 15, CAP = 300000;
                     const elig = Object.keys(S.owned || {}).map(Number).filter(id => window.CHAR_BY_ID?.[id] && lvOf(id) >= minLv).sort((a, b) => lvOf(b) - lvOf(a)).slice(0, 24);
-                    const gdmg = (t, sd) => { const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), sd); for (let i = 0; i < 600 && st.cycle <= turns; i++) { const u = step(st); if (!u || st.cycle > turns) break; doAct(st, u, pol(st, u)); } return Math.min(CAP, hp0 - B.enemies(st)[0].hp); };
+                    const gdmg = (t, sd) => { const { st, hp0 } = G.setupGwBoss(g.boss.id, g.boss.lv, g.boss.hp, avecEveil(t.map(id => ({ id, lv: lvOf(id), stars: S.stars?.[id] || 0 })), S), sd); for (let i = 0; i < 600 && st.cycle <= turns; i++) { const u = step(st); if (!u || st.cycle > turns) break; doAct(st, u, pol(st, u)); } return Math.min(CAP, hp0 - B.enemies(st)[0].hp); };
                     const scan = []; let n = 0;
                     for (const t of trios(elig)) { let d = 0; for (const sd of [1, 2, 3, 4]) d += gdmg(t, sd); scan.push({ t, d: d / 4 }); if (++n % 25 === 0) await idle(); }
                     scan.sort((a, b) => b.d - a.d);

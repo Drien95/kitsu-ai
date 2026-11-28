@@ -24,6 +24,7 @@ import * as MODELE from './lib/modele.mjs';
 import * as PARTAGE from './lib/partage.mjs';
 import { VERSION_SERVEUR } from './lib/partage-format.mjs';
 import { construireWC, cleIA } from './lib/ia-commune.mjs';
+import { limitePuissance, eveilDe } from './lib/puissance.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
@@ -126,8 +127,8 @@ function previsionTour(niv) {
       if (e.version !== VER) etat = 'patch'; else if (e.wKey !== wKey) etat = 'ia'; else if (!e[mode]) etat = 'autreMode';
       else {
         if (SIGC.v !== VER) SIGC = { v: VER, f: makeSigCarte(G, ENG.B) };
-        const vu = new Set(e[mode].cles), lv = id => mode === '99' ? 99 : sv.lv?.[id]?.l || 1;
-        const dans = ids.filter(id => { const l = sv.lk?.[id]; return vu.has(cleCarteTour({ id, lv: lv(id), stars: sv.stars?.[id] || 0, ...(l ? { lk: l } : {}) }, SIGC.f)); }), k = dans.length;
+        const EV = eveilDe(sv), vu = new Set(e[mode].cles), lv = id => mode === '99' ? EV.niveauMax(id) : sv.lv?.[id]?.l || 1; // 5.62 : memes cles que tour.mjs (Eveil)
+        const dans = ids.filter(id => { const l = sv.lk?.[id]; return vu.has(cleCarteTour({ id, lv: lv(id), stars: sv.stars?.[id] || 0, ...(l ? { lk: l } : {}), ...EV.champs(id) }, SIGC.f)); }), k = dans.length;
         repRarete = parRarete(G, dans); // 5.44 : cartes reprises par rarete, pour recompter les reprises selon les raretes cochees
         reprises = C3(k); etat = 'ok';
       }
@@ -161,7 +162,8 @@ setInterval(verifierAlertes, 30000);
 // 5.40.3 : les liens choisis (lk) comptent aussi ; sans lk, meme empreinte qu'avant (pas de fausse alerte « collection changee »).
 const hashSave = sv => sv ? JSON.stringify([Object.keys(sv.owned || {}).sort(), Object.entries(sv.lv || {}).map(([k, v]) => k + ':' + (v?.l || v)).sort(), Object.entries(sv.stars || {}).sort(), ...(sv.lk && Object.keys(sv.lk).length ? [Object.entries(sv.lk).map(([k, v]) => k + ':' + [].concat(v || []).join('+')).sort()] : [])]).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0) : 0;
 // 5.45 : etoiles gagnees par combat et record de la Tour. Hors de hashSave : elles ne changent pas les calculs, seulement l'affichage.
-const hashJeu = sv => JSON.stringify([sv?.pve?.stars || {}, sv?.tower?.best ?? null]);
+// 5.62 : Transcendances et Eveil (V2) comptent aussi : un changement reecrit la sauvegarde.
+const hashJeu = sv => JSON.stringify([sv?.pve?.stars || {}, sv?.tower?.best ?? null, ...(sv?.rb || sv?.eveil ? [sv?.rb || null, sv?.eveil || null] : [])]);
 // 5.45 : fiche de carte. Stats d'une carte seule (sans collectif) a son niveau et au 99, lues dans le moteur du jeu via
 // setupBattle, echelle = meilleure valeur de chaque stat parmi les cartes SSR, UR et LR au niveau 99 (calculee une fois par
 // version du jeu), et liens actifs du trio donne (G.activeLinks, 6 gardes par carte selon tes choix lk).
@@ -221,10 +223,11 @@ async function raidConseil(q) {
     const sv = readJ(D('data', 'sauvegarde.json')) || {}, lv = id => sv.lv?.[id]?.l || 1, st = id => sv.stars?.[id] || 0, R = readJ(D('resultats', 'raid.json'));
     let cand = R ? [...(R.classement || []).map(x => x.ids), ...(R.premierTour || []).map(x => x.ids)] : [];
     if (!cand.length) { const ids = Object.keys(sv.owned || {}).map(Number).filter(id => ['M', 'L', 'E'].includes(G.CHAR_BY_ID[id]?.r) && lv(id) >= 60).sort((a, b) => lv(b) - lv(a)).slice(0, 10); for (let a = 0; a < ids.length; a++) for (let b = a + 1; b < ids.length; b++) for (let c = b + 1; c < ids.length; c++) cand.push([ids[a], ids[b], ids[c]]); }
-    const vus = new Set(); cand = cand.filter(t => { const k = t.slice().sort().join(); if (vus.has(k)) return false; vus.add(k); return t.every(id => sv.owned?.[id]); }).slice(0, 60);
+    const L = limitePuissance(G, sv, { transcendance: null, sansLimite: false }), EV = eveilDe(sv); // 5.62 : limite de puissance et Eveil (V2)
+    const vus = new Set(); cand = cand.filter(t => { const k = t.slice().sort().join(); if (vus.has(k)) return false; vus.add(k); return t.every(id => sv.owned?.[id]) && L.ok(t); }).slice(0, 60);
     if (!cand.length) return { trios: [], ms: 0 };
     const autres = part.flat().slice(0, 6).map(id => ({ id: +id, lv: 99, stars: 0 })), N = 6;
-    const r = await avecPool(pool => pool.runAll(cand.map(t => ({ type: 'raid', moi: t.map(id => ({ id, lv: lv(id), stars: st(id) })), autres: Array.from({ length: N }, () => autres), graine: 7919 })), {}, {}, 2));
+    const r = await avecPool(pool => pool.runAll(cand.map(t => ({ type: 'raid', moi: t.map(id => ({ id, lv: lv(id), stars: st(id), ...EV.champs(id) })), autres: Array.from({ length: N }, () => autres), graine: 7919 })), {}, {}, 2));
     const trios = cand.map((t, i) => ({ ids: t, equipe: t.map(id => G.CHAR_BY_ID[id]?.n || String(id)), victoire: Math.round(100 * r[i].win / r[i].n), part: Math.round(100 * r[i].part / r[i].n) })).sort((a, b) => b.victoire - a.victoire || b.part - a.part).slice(0, 5);
     const out = { ms: Date.now() - t0, joueurs: part.length + 1, trios, raids: cand.length * N }; RAID_SALON.set(cle, { t: Date.now(), r: out }); if (RAID_SALON.size > 20) RAID_SALON.delete(RAID_SALON.keys().next().value);
     return out;
@@ -374,7 +377,11 @@ http.createServer(async (req, res) => {
         const c3 = readJ(D('resultats', 'cauchemar3.json')), e = c3?.etages, row = e?.combats?.find(c => c[0] === String(q.fid));
         // 5.28 : avec l'extension privee, trio du calcul Campagne exact pour ce combat (sinon null : public seul).
         let exact = null; try { exact = EXT?.trioExact ? EXT.trioExact({ D, readJ, fid: String(q.fid) }) : null; } catch {}
-        return send(res, 200, { trios: row ? [...new Set([row[2], row[4]])].filter(i => i >= 0).map(i => e.trios[i]) : [], niveaux: c3?.niveaux ?? null, exact }, 'application/json', CORS);
+        // 5.62 : un calcul fait avant la V2 peut proposer un trio que la limite de puissance refuse : on ne le renvoie pas.
+        let L = null; try { L = ENG?.G ? limitePuissance(ENG.G, readJ(D('data', 'sauvegarde.json')) || {}, { transcendance: null, sansLimite: false }) : null; } catch {}
+        const okT = t => !L || L.ok(t);
+        if (exact?.ids && !okT(exact.ids)) exact = null;
+        return send(res, 200, { trios: row ? [...new Set([row[2], row[4]])].filter(i => i >= 0).map(i => e.trios[i]).filter(t => Array.isArray(t) && okT(t)) : [], niveaux: c3?.niveaux ?? null, exact, plafond: L?.actif ? L.plafond : null }, 'application/json', CORS);
       }
       if (q.dom && q.dom !== MAN.dom) return send(res, 409, { err: 'version' }, 'application/json', CORS);
       const t0 = Date.now(), seeds = Array.from({ length: q.seeds || 24 }, (_, i) => i + 1);

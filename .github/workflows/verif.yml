@@ -22,6 +22,8 @@ jobs:
         run: node --no-warnings partage/tests.mjs
         env:
           KITSU_DATA: ${{ runner.temp }}/kitsu-partage
+      - name: Limite de puissance et Eveil (sans le moteur du jeu)
+        run: node moteur/tests-puissance.mjs
       - name: Version coherente (en-tete, README, CHANGELOG)
         run: |
           V=$(grep -m1 '@version' kitsu_ai.user.js | awk '{print $3}')

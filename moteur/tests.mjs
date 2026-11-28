@@ -148,4 +148,16 @@ if (up) {
   t('fiche : /api/carte-stats (actuel, 99, echelle, liens)', !cs.err && cs.actuel?.hp > 0 && cs.max?.hp >= cs.actuel.hp && cs.echelle?.hp >= cs.max.hp && Array.isArray(cs.liens), JSON.stringify(cs).slice(0, 300));
 }
 srv.kill();
+// 5.62 : limite de puissance (V2). Le raccourci par classes de cartes de lib/puissance.mjs doit donner exactement le cout du jeu.
+if (typeof G.teamPowerSum === 'function' && typeof G.powerCap === 'function') {
+  const { limitePuissance } = await import('./lib/puissance.mjs');
+  const L0 = limitePuissance(G, {}, { transcendance: 0, sansLimite: false }), L2 = limitePuissance(G, {}, { transcendance: 2, sansLimite: false });
+  t('puissance : plafond 28 sans Transcendance, 44 a 2', !L0.actif || (L0.plafond === 28 && L2.plafond === 44), `${L0.plafond} / ${L2.plafond}`);
+  const P = Object.values(G.CHAR_BY_ID).filter(c => ['M', 'L', 'E'].includes(c.r)).map(c => c.id); let ecart = 0, n = 0, s = 9;
+  const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  for (let i = 0; i < 3000; i++) { const tr = [0, 1, 2].map(() => P[Math.floor(rnd() * P.length)]); if (new Set(tr).size < 3) continue; n++; if (L0.cout(tr) !== G.teamPowerSum(tr) || L0.ok(tr) !== (G.teamPowerSum(tr) <= G.powerCap({ rb: { n: 0 } }))) ecart++; }
+  t('puissance : meme cout et meme verdict que le jeu sur 3000 trios au hasard', n > 2000 && ecart === 0, `${ecart} ecarts sur ${n}`);
+  const lr = P.filter(id => G.CHAR_BY_ID[id].r === 'M' && G.CHAR_BY_ID[id].appearanceRarity !== 'MR' && !G.CHAR_BY_ID[id].awakenX && G.CHAR_BY_ID[id].appearanceRarity !== 'LR-X').slice(0, 3);
+  t('puissance : 3 LR refusees a 0 Transcendance', !L0.actif || (lr.length === 3 && !L0.ok(lr)), lr.length === 3 ? String(L0.cout(lr)) : 'pas 3 LR');
+}
 console.log(`\n${ok} reussi(s), ${ko} echec(s)`); process.exit(ko ? 1 : 0);
