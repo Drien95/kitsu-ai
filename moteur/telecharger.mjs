@@ -94,3 +94,5 @@ if (avant && avant !== ver) try {
   for (const d of readdirSync(D('engine'), { withFileTypes: true })) if (d.isDirectory() && d.name !== ver && d.name !== avant && existsSync(D('engine', d.name, 'manifest.json'))) { o += taille(D('engine', d.name)); rmSync(D('engine', d.name), { recursive: true, force: true }); n++; }
   if (n) console.log(`${n} ancien(s) moteur(s) supprime(s) (${(o / 1048576).toFixed(0)} Mo), ${avant} garde pour la comparaison`);
 } catch (e) { console.log('anciens moteurs gardes (' + e.message + ')'); }
+// 5.61 : fin explicite, au cas ou le moteur charge laisserait un minuteur actif.
+process.exit(0);

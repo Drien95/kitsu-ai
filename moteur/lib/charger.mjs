@@ -16,7 +16,7 @@ function shim() {
   g.location = { href: 'https://kitsu.games/', search: '', pathname: '/', hash: '', origin: 'https://kitsu.games', replace() {}, reload() {} };
   g.addEventListener = () => {}; g.removeEventListener = () => {}; g.dispatchEvent = () => true;
   g.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
-  g.requestAnimationFrame = f => setTimeout(f, 16); g.cancelAnimationFrame = clearTimeout;
+  g.requestAnimationFrame = f => { const t = setTimeout(f, 16); t?.unref?.(); return t; }; g.cancelAnimationFrame = clearTimeout;
   g.Image = function () { return el(); }; g.Audio = function () { return el(); };
   g.CustomEvent = class { constructor(t, o) { this.type = t; this.detail = o?.detail; } };
 }
@@ -49,8 +49,14 @@ export async function loadEngine(ver) {
   shim();
   const dir = engineDir(ver), man = JSON.parse(readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
   const memo = fichierMemo(dir, man.dom); let m = null, avecMemo = null;
-  if (memo) try { m = await import(pathToFileURL(path.join(dir, 'assets', memo)).href); avecMemo = memo; } catch { m = null; }
-  if (!m) m = await import(pathToFileURL(path.join(dir, 'assets', man.dom)).href);
+  // 5.61 : le moteur clock-*.js (28/11) lance un minuteur a son chargement, qui empechait les scripts Node de se terminer
+  // (telecharger.mjs restait ouvert). Les minuteurs crees pendant l'import ne gardent plus le processus en vie.
+  const st = globalThis.setTimeout, si = globalThis.setInterval, nonBloquant = f => (...a) => { const t = f(...a); t?.unref?.(); return t; };
+  globalThis.setTimeout = nonBloquant(st); globalThis.setInterval = nonBloquant(si);
+  try {
+    if (memo) try { m = await import(pathToFileURL(path.join(dir, 'assets', memo)).href); avecMemo = memo; } catch { m = null; }
+    if (!m) m = await import(pathToFileURL(path.join(dir, 'assets', man.dom)).href);
+  } finally { globalThis.setTimeout = st; globalThis.setInterval = si; }
   // 5.61 : depuis la maj du 28/11, le moteur n'exporte plus G sous le nom « g » (noms minifies) : on prend l'objet qui a setupBattle et ALL_WORLDS.
   const vals = Object.values(m), estG = v => !!v && typeof v === 'object' && typeof v.setupBattle === 'function' && Array.isArray(v.ALL_WORLDS);
   const G = estG(m.g) ? m.g : vals.find(estG), B = globalThis.BattleCore || vals.find(v => v && typeof v === 'object' && 'act' in v && 'enemyAct' in v);
