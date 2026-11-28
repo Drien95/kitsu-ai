@@ -115,7 +115,7 @@
   .rar { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line2); background: var(--panel2); font-weight: 800; font-size: 13px; cursor: pointer; user-select: none; color: var(--mute); }
   .rar b { font: 400 16px var(--head); letter-spacing: .5px; } .rar i { font-style: normal; font-weight: 600; font-size: 12px; }
   .rar.on { color: var(--txt); border-color: var(--acc2); background: rgba(255,122,61,.10); } .rar.on::before { content: "✓"; color: var(--acc2); }
-  .rar.LR.on b { color: var(--gold); } .rar.UR.on b { color: #c9a2ff; } .rar.SSR.on b { color: #6fc3ff; } .rar.vide { opacity: .45; cursor: default; }
+  .rar.LR.on b { color: var(--gold); } .rar.UR.on b { color: #c9a2ff; } .rar.SSR.on b { color: #6fc3ff; } .rar.MR.on b { color: #fff27a; } .rar.LR-X.on b, .rar.UR-X.on b, .rar.SSR-X.on b { color: #ffb35c; } .rar.vide { opacity: .45; cursor: default; }
   .risk { margin-top: 10px; border-radius: 10px; padding: 11px 14px; font-size: 13px; line-height: 1.5; }
   .risk.ok { background: rgba(47,210,122,.07); border: 1px solid rgba(47,210,122,.35); } .risk.warn { background: rgba(245,165,36,.08); border: 1px solid rgba(245,165,36,.45); } .risk.bad { background: rgba(255,75,62,.09); border: 1px solid rgba(255,75,62,.5); }
   .risk b { color: var(--txt); }
@@ -1783,8 +1783,11 @@ async function partager(act, id = 'c3share') {
 
 // ---------- ce que fera le calcul (avant le lancement) et ou il en est (pendant) ----------
 // ---------- 5.44 : choix avant le lancement (Campagne c3, Tour tw) : raretes essayees et temps de travail ----------
-const RARS = ['LR', 'UR', 'SSR'];
-const CHX = (() => { const d = () => ({ on: { LR: 1, UR: 1, SSR: 1 }, t: 0 }); try { const x = JSON.parse(localStorage.getItem('kitsu-choix-calcul') || 'null'); if (x?.c3?.on && x?.tw?.on) return x; } catch {} return { c3: d(), tw: d() }; })();
+const RARS = ['MR', 'LR-X', 'LR', 'UR-X', 'UR', 'SSR-X', 'SSR']; // 5.64 : classes de coût de la V2
+const CHX = (() => { const d = () => ({ on: Object.fromEntries(RARS.map(r => [r, 1])), t: 0 });
+  // 5.64 : un ancien choix LR / UR / SSR s'etend a leurs classes (LR : MR, LR-X, LR ; UR : UR-X, UR ; SSR : SSR-X, SSR).
+  const ext = { MR: 'LR', 'LR-X': 'LR', 'UR-X': 'UR', 'SSR-X': 'SSR' }, maj = c => { for (const r of RARS) if (c.on[r] == null) c.on[r] = c.on[ext[r]] ?? 1; return c; };
+  try { const x = JSON.parse(localStorage.getItem('kitsu-choix-calcul') || 'null'); if (x?.c3?.on && x?.tw?.on) { maj(x.c3); maj(x.tw); return x; } } catch {} return { c3: d(), tw: d() }; })();
 const chxSave = () => { try { localStorage.setItem('kitsu-choix-calcul', JSON.stringify(CHX)); } catch {} };
 const C3n = n => n < 3 ? 0 : n * (n - 1) * (n - 2) / 6;
 const chxPrev = k => k === 'c3' ? CP.prev : TW.prev, chxMaj = k => k === 'c3' ? campPrev(true) : twPrev(true);

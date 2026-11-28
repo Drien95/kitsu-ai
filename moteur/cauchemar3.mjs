@@ -25,7 +25,7 @@ import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
 import { diagnostiquer } from './lib/diagnostic.mjs';
 import { chercherLiens, ciblesDuPlan } from './lib/liens.mjs';
-import { limitePuissance, decrireLimite, eveilDe, nomResultat } from './lib/puissance.mjs';
+import { limitePuissance, decrireLimite, eveilDe, nomResultat, classeRarete, raretesChoisies } from './lib/puissance.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, SIM = makeSim(G, B);
 const NIV = String(arg('niveaux', '99')), K = +arg('garder', 30), Z = +arg('z', 3), PAQ = +arg('paquet', 16);
@@ -55,9 +55,9 @@ const WA = PARTAGE_OK ? WCX : WA_PC;
 const COUPE = PARTAGE_OK ? null : arg('sans-partage') ? 'lance sans partage' : !PART_ON ? 'base commune coupee au lancement du calcul (Reglages)' : MIENNE ? 'ton IA est nettement meilleure que l IA commune : calcul avec la tienne' : !WCX ? 'IA commune absente' : 'reglages de test ou paquet non standard';
 // 5.44 : raretes essayees (--raretes LR,UR,SSR, toutes par defaut ; codes du jeu M = LR, L = UR, E = SSR) et pause au bout d'un temps
 // de travail (--pause-apres minutes, 0 = jusqu'au bout) : le travail fait reste dans le journal, la relance reprend sans rien refaire.
-const RAR = { LR: 'M', UR: 'L', SSR: 'E' }, RARETES = String(arg('raretes', 'LR,UR,SSR')).split(',').filter(r => RAR[r]), CODES = RARETES.map(r => RAR[r]);
+const RARETES = raretesChoisies(arg('raretes', '')); // 5.64 : MR, LR-X, LR, UR-X, UR, SSR-X, SSR (classes de cout de la V2)
 const PAUSE = Math.max(0, +arg('pause-apres', 0) || 0);
-const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => CODES.includes(CH[id]?.r)).sort((a, b) => a - b);
+const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => RARETES.includes(classeRarete(CH[id]))).sort((a, b) => a - b);
 if (IDS.length < 3) { console.log('Il faut au moins 3 cartes SSR/UR/LR dans la sauvegarde exportee.'); process.exit(1); }
 
 // ---------- trios, combats, cles du journal ----------

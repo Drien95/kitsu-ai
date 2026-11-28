@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.64.0
+
+Choix des raretés par classe de la V2.
+
+- **Calculs Campagne et Tour** : les 3 cases LR / UR / SSR deviennent 7 cases, une par classe de coût de la V2 : MR, LR-X, LR, UR-X, UR, SSR-X, SSR. Chaque case montre tes cartes de la classe ; une classe sans carte est grisée. Le choix vaut pour le palier choisi (ton palier ou un autre).
+- **Trios autorisés sur total** : comptés pour chaque choix de classes et chaque palier, exactement (plafond de puissance du palier).
+- **Risques** : « Sans MR », « Sans LR-X »… dit ce que la classe pesait dans ton dernier calcul.
+- **Ligne de commande** : `--raretes MR,LR-X,LR,UR-X,UR,SSR-X,SSR` ; l'ancien `--raretes LR,UR,SSR` garde son sens (LR = MR, LR-X et LR, etc.). Un ancien choix enregistré dans le panneau s'étend de la même façon.
+- **Tests** : `tests-puissance.mjs` passe à 29 tests.
+
 ## 5.63.0
 
 Guides V2 par palier de Transcendance.
