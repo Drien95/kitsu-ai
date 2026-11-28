@@ -4,6 +4,16 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.61.0
+
+Réparation après la V2 du jeu (constatée le 28/11) : le script et le moteur local ne trouvaient plus le moteur du jeu.
+
+- **Cause** (mesurée sur kitsu.games le 28/11) : `dom-*.js` n'est plus le moteur du jeu, c'est devenu un petit module graphique (13 exports). Le moteur (G avec `setupBattle`, `ALL_WORLDS`… et BattleCore) est passé dans un autre fichier (`clock-*.js` ce jour-là) et n'est plus exporté sous le nom `g` (noms minifiés). Le script cherchait `dom-*.js` puis `.g` : il s'arrêtait sur « modules du jeu introuvables », et son fil de calcul aussi.
+- **Script** : le moteur du jeu est trouvé d'après son contenu (un export qui a `setupBattle` et `ALL_WORLDS`, un autre qui a `act` et `enemyAct`), en essayant `dom-*.js` puis seulement les modules déjà chargés par la page au démarrage. Même chose dans le fil de calcul. Le script n'attend plus `dom-*.js` pour démarrer.
+- **Moteur local** : `telecharger.mjs` reconnaît le fichier du moteur d'après son contenu, la version du moteur devient l'empreinte de CE fichier (elle change à chaque patch des règles, plus à chaque retouche graphique), le manifeste garde la liste des fichiers de départ pour savoir si le jeu a changé. `charger.mjs` lit G même s'il n'est plus nommé `g`. Les moteurs déjà téléchargés restent lisibles.
+- **Scripts Node qui ne s'arrêtaient plus** (mesuré sur le PC d'Adrien le 28/11) : le nouveau moteur lance un minuteur à son chargement, et `telecharger.mjs` restait ouvert après un premier téléchargement (arrêté à la main après 5 min). Les minuteurs créés par le moteur à son chargement ne gardent plus le processus en vie, et `telecharger.mjs` se termine explicitement.
+- Rien ne change à l'écran. Les règles de la V2 (limite de puissance d'équipe, MR, LR-X, cartes X, Éveil, Transcendance) ne sont pas encore dans les calculs : versions suivantes.
+
 ## 5.60.2
 
 Retour d'Adrien sur la 5.60.0 (22/11) : le gros bloc pour lancer le calcul, avec toutes ses options, lui manquait en Campagne et en Tour.

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.60.2
+// @version      5.61.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -17,8 +17,8 @@
 (function () {
   function kitsuMain() {
     console.log('KitsuAI : script charge, attente du jeu...');
+    // 5.61 : le moteur du jeu n'est plus forcement dans dom-*.js (maj du 28/11 : clock-*.js) : on attend seulement app-*.js.
     const ready = () => window.BattleCore && window.CHAR_BY_ID
-      && performance.getEntriesByType('resource').some(r => /\/assets\/dom-[^/]+\.js$/.test(r.name))
       && performance.getEntriesByType('resource').some(r => /\/assets\/app-[^/]+\.js$/.test(r.name));
     const boot = () => {
       // KitsuAI v5.17.0 : conseiller de combat, d'equipe et de tirage pour kitsu.games
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.60.2') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.61.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -86,8 +86,27 @@
         let svRaw = null, svObj = {};
         const save = () => { try { const r = localStorage.getItem('shokan_save_v1'); if (r !== svRaw) { svObj = (r && JSON.parse(r)) || {}; svRaw = r; } return svObj; } catch { return {}; } };
         const assetUrl = re => performance.getEntriesByType('resource').map(r => r.name).find(n => re.test(n));
+        // 5.61 : fichier du moteur du jeu trouve d'apres son CONTENU (un export avec setupBattle + ALL_WORLDS, un autre avec act + enemyAct),
+        // plus d'apres son nom : la maj du 28/11 l'a sorti de dom-*.js (devenu un petit module graphique) vers clock-*.js, et les noms
+        // d'export sont minifies. On essaie dom-*.js d'abord (anciennes versions), puis seulement les modules charges au demarrage par
+        // la page (script et modulepreload du HTML) : ils ont deja tourne, les importer rend le meme module sans rien relancer.
+        const estG = v => !!v && typeof v === 'object' && typeof v.setupBattle === 'function' && Array.isArray(v.ALL_WORLDS);
+        const estB = v => !!v && typeof v === 'object' && 'act' in v && 'enemyAct' in v;
+        let MOTEUR = null;
+        const trouveMoteur = async () => {
+          if (MOTEUR) return MOTEUR;
+          const urls = [...new Set(performance.getEntriesByType('resource').map(r => r.name).filter(n => /\/assets\/[^/]+\.js$/.test(n)))];
+          const page = new Set([...document.querySelectorAll('script[type="module"][src], link[rel="modulepreload"][href]')].map(e => e.src || e.href));
+          const ordre = [...urls.filter(u => /\/dom-[^/]+\.js$/.test(u)), ...urls.filter(u => page.has(u) && !/\/(dom|app)-[^/]+\.js$/.test(u))];
+          for (const u of ordre) {
+            let m, vals; try { m = await import(u); vals = Object.values(m); } catch { continue; }
+            const g = estG(m.g) ? m.g : vals.find(estG);
+            if (g && vals.some(estB)) return (MOTEUR = { url: u, file: u.split('/').pop(), mod: m, g });
+          }
+          return null;
+        };
         const loadModules = async () => {
-          if (!G) { const u = assetUrl(/\/assets\/dom-[^/]+\.js$/); DOMM = u ? await import(u) : null; G = DOMM ? DOMM.g : null; }
+          if (!G) { const M = await trouveMoteur(); DOMM = M ? M.mod : null; G = M ? M.g : null; }
           if (!APP) { const u = assetUrl(/\/assets\/app-[^/]+\.js$/); APP = u ? await import(u) : null; }
           if (!G || !APP) throw new Error('modules du jeu introuvables : recharge la page');
         };
@@ -108,7 +127,7 @@
         const versionSig = () => {
           const file = re => (assetUrl(re) || '').split('/').pop();
           let fights = 0; try { for (const w of G.ALL_WORLDS) fights += w.fights.length; } catch {}
-          return { dom: file(/\/assets\/dom-[^/]+\.js$/), app: file(/\/assets\/app-[^/]+\.js$/), fights, chars: Object.keys(window.CHAR_BY_ID || {}).length, banners: (G.ACTIVE_BANNERS || []).join(',') };
+          return { dom: MOTEUR?.file || file(/\/assets\/dom-[^/]+\.js$/), app: file(/\/assets\/app-[^/]+\.js$/), fights, chars: Object.keys(window.CHAR_BY_ID || {}).length, banners: (G.ACTIVE_BANNERS || []).join(',') };
         };
         const sameVer = (a, b) => a && b && a.dom === b.dom && a.app === b.app && a.fights === b.fights && a.chars === b.chars;
 
@@ -185,6 +204,8 @@
         let worker = null, wSeq = 0; const wWait = {};
         const workerSrc = () => {
           const B0 = `const NS = Object.values(m).find(v => v && typeof v === 'object' && 'act' in v && 'enemyAct' in v);`;
+          // 5.61 : G n'est plus forcement l'export « g » (nom minifie) : on prend l'objet qui a setupBattle et ALL_WORLDS.
+          const G0 = `G = (m.g && typeof m.g.setupBattle === 'function') ? m.g : Object.values(m).find(v => v && typeof v === 'object' && typeof v.setupBattle === 'function' && Array.isArray(v.ALL_WORLDS));`;
           return `let B, G; const COST = ${JSON.stringify(COST)};
       const step = ${step.toString()};
       const doAct = ${doAct.toString()};
@@ -202,7 +223,7 @@
       self.onmessage = async e => {
         const d = e.data;
         try {
-          if (d.init) { const m = await import(d.init); G = m.g; ${B0} B = NS; postMessage({ id: d.id, ok: true }); return; }
+          if (d.init) { const m = await import(d.init); ${G0} ${B0} B = NS; if (!G || !B) throw new Error('moteur introuvable'); postMessage({ id: d.id, ok: true }); return; }
           if (d.live) { const res = evalLive(d.live.st, d.live.key, smartPol(d.W)); postMessage({ id: d.id, ok: true, out: res.map(r => ({ kind: r.c.kind, tgt: r.c.target?.key ?? null, n: r.n, v: r.v, w: r.w, s3n: r.s3n, mean: r.mean, win: r.win })) }); return; }
           const pol = smartPol(d.W), out = []; let tP = performance.now();
           for (const j of d.jobs) {
@@ -222,7 +243,7 @@
           if (worker === false) return null;
           if (worker) return worker;
           try {
-            const url = assetUrl(/\/assets\/dom-[^/]+\.js$/);
+            const url = (await trouveMoteur())?.url; if (!url) throw new Error('moteur introuvable');
             const w = new Worker(URL.createObjectURL(new Blob([workerSrc()], { type: 'text/javascript' })), { type: 'module' });
             w.onmessage = e => { const r = wWait[e.data.id]; if (r) { delete wWait[e.data.id]; r(e.data); } };
             const id = ++wSeq; const ok = await new Promise(r => { wWait[id] = r; w.postMessage({ id, init: url }); setTimeout(() => r({ ok: false }), 10000); });
@@ -262,8 +283,10 @@
         let localSeq = 0; const localWait = {};
         window.addEventListener('message', e => { const d = e.data; if (!d || !d.kitsuLocalRes) return; const w = localWait[d.kitsuLocalRes]; if (w) { delete localWait[d.kitsuLocalRes]; w(d.ok ? d.data : null); } });
         const localAsk = (path, body, timeout = 3000) => new Promise(res => { const id = ++localSeq; localWait[id] = res; window.postMessage({ kitsuLocalReq: { id, path, body, timeout } }, '*'); setTimeout(() => { if (localWait[id]) { delete localWait[id]; res(null); } }, timeout + 500); });
-        const domFile = () => (assetUrl(/\/assets\/dom-[^/]+\.js$/) || '').split('/').pop();
+        // Nom du fichier du moteur du jeu (comme le manifeste du moteur local depuis 5.61), compare par le serveur du PC.
+        const domFile = () => MOTEUR?.file || (assetUrl(/\/assets\/dom-[^/]+\.js$/) || '').split('/').pop();
         const localPing = async () => {
+          try { await trouveMoteur(); } catch {}
           const r = await localAsk('/ping?v=' + encodeURIComponent(window.KitsuAI?.__v || ''), null, 1500); localPC.t = Date.now(); localPC.ok = !!r?.ok && (!r.dom || r.dom === domFile()); localPC.fils = r?.fils || 0;
           localPC.msg = r?.ok && r.dom && r.dom !== domFile() ? 'moteur du PC pas a jour : panneau KitsuAI, « Mettre a jour » puis « Recharger le moteur »' : r?.ok ? '' : 'non lance';
           // Reglages de l'IA entraines sur le PC (panneau local) : adoptes s'ils sont plus recents.
@@ -653,7 +676,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.60.2',
+          __v: '5.61.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
