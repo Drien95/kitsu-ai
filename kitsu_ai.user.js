@@ -136,6 +136,30 @@
         const avecEveil = (team, S = save()) => { try { return typeof G?.withAwOf === 'function' ? G.withAwOf(S, team) : team; } catch { return team; } };
         // 5.62 : limite de puissance (V2) : une equipe est valide si G.teamPowerSum(ids) <= G.powerCap(S) (plafond selon tes Transcendances).
         const powCap = (S = save()) => { try { return typeof G?.powerCap === 'function' && typeof G?.teamPowerSum === 'function' ? G.powerCap(S) : Infinity; } catch { return Infinity; } };
+        // 5.65 : etapes V2 du guide (Transcendance, rush niveau 100, Souvenirs, Eveil des cartes, marche, essences), lues dans le jeu.
+        const v2 = {
+          rb: S => { try { return typeof G?.rebirthsOf === 'function' ? G.rebirthsOf(S) : (Number.isInteger(S?.rb?.n) && S.rb.n > 0 ? S.rb.n : 0); } catch { return 0; } },
+          on: () => G?.REBIRTH_ON ? G.REBIRTH_ON.on !== false : typeof G?.rebirthPlan === 'function',
+          besoin: (lv, n) => Math.round(Math.min(2000, 150 + 75 * (lv - 1)) * Math.min(3, 1 + 0.5 * n)),
+          resteXp: S => { const lv = S.acct?.lv || 1; if (lv >= 100) return 0; let x = 0; for (let l = lv; l < 100; l++) x += v2.besoin(l, v2.rb(S)); return Math.max(0, x - (+S.acct?.xp || 0)); },
+          rembourse: S => { try { return typeof G?.rebirthRefund === 'function' ? G.rebirthRefund(S) : Math.floor(0.25 * Math.max(0, (+S.stats?.kiSpent || 0) - (+S.rb?.spent || 0))); } catch { return 0; } },
+          memFin: S => { try { return typeof G?.memoryEnd === 'function' ? G.memoryEnd(S) : 0; } catch { return 0; } },
+          memOuvert: (S, now = Date.now()) => { try { return typeof G?.memoriesOpen === 'function' && !!G.memoriesOpen(S, now); } catch { return false; } },
+          // Banniere Souvenirs conseillee : celle ou ton pity est le plus avance (une LR de la banniere a 50), parmi les ouvertes.
+          memConseil: (S, now = Date.now()) => { try { const L = (G.MEMORY_BANNERS || []).filter(b => typeof G.memoryBannerOpen !== 'function' || G.memoryBannerOpen(S, now, b));
+            const pity = b => { try { return typeof G.pityOf === 'function' ? G.pityOf(S, b) : (S.pity?.[b.series] || 0); } catch { return 0; } }, max = b => { try { return typeof G.pityMax === 'function' ? G.pityMax(b) : (b.pity || 50); } catch { return 50; } };
+            return L.map(b => ({ b, serie: b.series || b.s?.name || '?', pity: pity(b), max: max(b) })).sort((x, y) => y.pity / y.max - x.pity / x.max)[0] || null; } catch { return null; } },
+          // Cartes pretes a eveiller (cardAwakeningStatus du jeu), celles de tes meilleurs trios d'abord.
+          // Gardees 10 s : le guide repasse souvent, et une collection compte ~2 000 cartes.
+          eveils: (S, now = Date.now()) => { if (v2._ev && now - v2._ev.t < 10000) return v2._ev.l; const l = v2._eveils(S, now); v2._ev = { t: now, l }; return l; },
+          _eveils: (S, now) => { if (typeof G?.cardAwakeningStatus !== 'function' || !v2.rb(S)) return [];
+            const utiles = new Set([...(lsGet('kitsu_ai_planxp', null)?.suite || []).flat(), ...(S.pve?.team || [])].map(Number)), out = [];
+            for (const id of Object.keys(S.owned || {}).map(Number)) { if (id >= 5e7) continue; const c = window.CHAR_BY_ID?.[id]; if (!c || !['M', 'L', 'E'].includes(c.r) && c.appearanceRarity !== 'MR') continue;
+              let st = null; try { st = G.cardAwakeningStatus(S, id, now); } catch {} if (st?.ready) out.push({ id, cost: st.cost, balance: st.balance, utile: utiles.has(id) }); }
+            return out.sort((a, b) => b.utile - a.utile || ({ M: 3, L: 2, E: 1 })[window.CHAR_BY_ID[b.id].r] - ({ M: 3, L: 2, E: 1 })[window.CHAR_BY_ID[a.id].r]); },
+          essences: S => { const a = S.awakening; return a ? { balance: +a.balance || 0, earned: +a.earned || 0 } : null; },
+          marche: () => { const p = lsGet('kitsu_ai_planxp', null); return p && Date.now() - p.t < 6 * 3600000 ? (p.marche || []) : []; },
+        };
         const powOk = (ids, S = save(), cap = powCap(S)) => { if (!Number.isFinite(cap)) return true; try { return G.teamPowerSum(ids) <= cap; } catch { return true; } };
         const teamOf = (ids, S = save(), opt = {}) => avecEveil(ids.map(id => ({ id: +id, lv: (S.owned?.[id] ? (S.lv?.[id]?.l || 1) : (opt.newLv || 1)) + (opt.bump === +id ? 5 : 0), stars: S.stars?.[id] || 0 })), S);
         const mk = (fightId, ids, seed, S, opt) => G.setupBattle(G.findFight(fightId), teamOf(ids, S, opt), seed).st;
@@ -318,7 +342,7 @@
             const bans = (G.BANNERS || []).filter(b => b.until && b.until > now && (b.opens || b.from || 0) <= now).map(b => ({ serie: b.series, fin: b.until, pity: `${S.pity?.[b.series] || 0}/${(() => { try { return G.pityMax ? G.pityMax(b) : 50; } catch { return 50; } })()}` }));
             await localAsk('/jeu', { energie: en, guilde: gd ? { boss: gd.boss?.left || 0, raid: gd.pain?.left || 0 } : null, evenements: evs, bannieres: bans }, 3000);
             // Plan d'XP du PC (5.21) : tous les modes (Campagne, Tour, Raid, Arene en prive). Relu toutes les 10 min.
-            if (Date.now() - (lsGet('kitsu_ai_planxp', null)?.t || 0) > 10 * 60000) { const p = await localAsk('/plan', null, 4000); if (p && !p.err) lsSet('kitsu_ai_planxp', { t: Date.now(), cible: p.cible || null, suite: Array.isArray(p.suite) ? p.suite : [] }); }
+            if (Date.now() - (lsGet('kitsu_ai_planxp', null)?.t || 0) > 10 * 60000) { const p = await localAsk('/plan', null, 4000); if (p && !p.err) lsSet('kitsu_ai_planxp', { t: Date.now(), cible: p.cible || null, suite: Array.isArray(p.suite) ? p.suite : [], marche: Array.isArray(p.marche) ? p.marche : [] }); }
           } catch (e) { health.err('synchro PC : ' + e.message); }
         };
         setTimeout(() => { localPing().then(localSync); setInterval(() => localPing().then(localSync), 60000); }, 5000);
@@ -1268,7 +1292,7 @@
                   return mark(srch || null, trg.length ? `cherche « ${short(trg[0]).split(' ')[0]} » et donne-lui le parchemin` : 'choisis la carte de ton equipe la plus basse', 'scq');
                 }
                 // Fenetre de confirmation ouverte apres un achat ou une recuperation conseillee.
-                if (/^(eco|refill|cl|bells|packs|sbc|sc|zeni|shop|pull|gw|ev|salle|feat|diff)/.test(lastKey)) {
+                if (/^(eco|refill|cl|bells|packs|sbc|sc|zeni|shop|pull|gw|ev|salle|feat|diff|awk|mem)/.test(lastKey)) {
                   // Fenetre de confirmation du jeu : .ask avec les boutons [data-yes] / [data-no].
                   const box = [...document.querySelectorAll('.ask')].filter(vis).pop() || [...document.querySelectorAll('[role="dialog"],dialog[open],.confirm')].filter(e => vis(e) && e.querySelector('[data-yes]')).pop();
                   const yes = box && ([...box.querySelectorAll('[data-yes]')].find(b => vis(b) && !b.disabled) || [...box.querySelectorAll('button')].find(b => vis(b) && !b.disabled && /acheter|remplir|recharger|confirmer|valider|oui|echanger|échanger|d[ée]poser|utiliser|r[ée]cup[ée]rer/i.test(b.innerText || '')));
@@ -1277,6 +1301,24 @@
                 // Fenetre « defi de doublons » : Remplir, puis valider.
                 const sbcOk = [...document.querySelectorAll('[data-sbc-ok]')].find(vis);
                 if (sbcOk) { const auto = [...document.querySelectorAll('[data-sbc-auto]')].find(b => vis(b) && !b.disabled); if (auto && sbcOk.disabled) return mark(auto, 'defi de doublons : clique sur Remplir', 'sbca'); if (!sbcOk.disabled) return mark(sbcOk, 'defi de doublons : valide', 'sbcok'); }
+                // 5.65 : ecrans V2 (Eveil, Souvenirs, Transcendance, Marche). Le guide encadre, tu cliques toi-meme.
+                { const S1 = save(), now1 = Date.now();
+                  const aw = [...document.querySelectorAll('[data-awaken-card]')].filter(vis);
+                  if (aw.length) { const ev = v2.eveils(S1, now1), b = ev.map(x => aw.find(e => +e.getAttribute('data-awaken-card') === x.id && !e.disabled)).find(Boolean);
+                    if (b) { const id = +b.getAttribute('data-awaken-card'), x = ev.find(y => y.id === id); return mark(b, `Eveil : eveille ${short(id)} (${x.cost} essences)${x.utile ? ', elle est dans tes meilleurs trios' : ''}`, 'awk' + id); }
+                    const f = [...document.querySelectorAll('[data-awakening-ready]')].find(vis); if (ev.length && f) return mark(f, 'Eveil : coche « Pretes a eveiller »', 'awkf'); }
+                  const memOpen = [...document.querySelectorAll('button.banner-summon[data-open]')].filter(vis), memSec = location.hash.startsWith('#invocation/memory/');
+                  if (memSec || [...document.querySelectorAll('#banner-memories')].some(vis)) { const m = v2.memConseil(S1, now1);
+                    if (m) { const slug = location.hash.split('/')[2] || '', bon = memSec && (decodeURIComponent(slug).toLowerCase().includes(String(m.serie).toLowerCase().slice(0, 5)) || [...document.querySelectorAll('h1,h2,h3')].some(e => vis(e) && (e.innerText || '').toLowerCase().includes(String(m.serie).toLowerCase())));
+                      if (!bon) { const a = [...document.querySelectorAll('a[href^="#invocation/memory/"]')].filter(vis).find(e => (e.closest('article,section,div')?.innerText || '').toLowerCase().includes(String(m.serie).toLowerCase())); if (a) return mark(a, `Souvenirs : ouvre ${m.serie} (pity ${m.pity}/${m.max})`, 'mem' + m.serie); }
+                      else { const x10 = memOpen.find(e => e.dataset.open === '10' && e.dataset.ticket === 'multi') || ((+S1.ki || 0) >= 50 ? memOpen.find(e => e.dataset.open === '10') : null); if (x10) return mark(x10, `Souvenirs ${m.serie} : x10 (pity ${m.pity}/${m.max}, la LR de la banniere a ${m.max})`, 'mem10' + m.serie); } } }
+                  const rbt = [...document.querySelectorAll('.rbt-go[data-rbt-go]')].find(vis);
+                  if (rbt) { const ki = +S1.ki || 0, n5 = document.querySelectorAll('[data-rbt-card].sel').length;
+                    if (ki > 0) return mark(null, `Transcendance : depense d'abord tes ${ki} Ki, ils seront perdus (tu recuperes ${v2.rembourse(S1)} Ki)`, 'rbtki');
+                    if (n5 < 5) return mark([...document.querySelectorAll('.rbt-search')].find(vis) || null, `Transcendance : choisis tes 5 cartes (${n5}/5), puis 1 UR ou SSR en bonus. Le guide du palier du launcher dit lesquelles`, 'rbtsel' + n5);
+                    if (!rbt.disabled) return mark(rbt, 'Transcendance : verifie tes cartes, puis clique (le jeu demande deux confirmations)', 'rbtgo'); }
+                  if (location.hash.split('/')[0] === '#market') { const mk = v2.marche()[0]; if (mk) return mark(null, `Marche : cherche ${short(mk.id)}, a acheter jusqu'a ${mk.prix} Ki (+${mk.gain} pts)`, 'mkt' + mk.id); }
+                }
                 // 5.19.1 : avec le script prive, l'ecran de choix de la compo de la Tour suit son trio (html[data-kar-tour]),
                 // meme si d'autres combats restent au plan. Le reste des conseils ne change pas.
                 const karT = KitsuAI._karTour(), pkT = karT ? [...document.querySelectorAll('[data-tw="pickc"]')].filter(vis) : [];
@@ -1838,6 +1880,18 @@
             } catch {}
             if (wall) add(9, `Prochain mur : ${wall.monde} « ${wall.nom} » (${wall.niveauxEnPlus ? `+${wall.niveauxEnPlus} niveaux pour ${wall.equipe.map(short).join(', ')}${eta}` : 'hors de portee'})`);
             if ((S.acct?.lv || 1) < 25) add(10, `Tour de l'infini au niveau de compte 25 (tu es niveau ${S.acct?.lv || 1})`);
+            // 5.65 : V2 (regles du jeu : Transcendance au niveau 100, Souvenirs 7 jours, Eveil a 7 etoiles et niveau 99).
+            try {
+              if (v2.on()) {
+                const lv = S.acct?.lv || 1, ki = +S.ki || 0, n = v2.rb(S);
+                if (lv >= 100) add(3, `Transcendance possible (niveau ${lv}) : ${ki > 0 ? `depense d'abord tes ${ki} Ki (la reserve est perdue), ` : ''}${S.tower?.run ? 'termine ta montee de Tour, ' : ''}tu recuperes ${v2.rembourse(S)} Ki. Collection, onglet Transcendance`);
+                else add(7, `Rush niveau 100 : il te reste ${v2.resteXp(S).toLocaleString('fr-FR')} XP de compte (niveau ${lv}). La Tour rapporte le plus par energie (+6 XP par etage, 30 au boss)`);
+                if (v2.memOuvert(S, now)) { const f = v2.memFin(S) - now, m = v2.memConseil(S, now); add(2, `Souvenirs : ${Math.floor(f / 86400000)} j ${Math.floor(f % 86400000 / 3600000)} h restants.${m ? ` Banniere conseillee : ${m.serie} (pity ${m.pity}/${m.max}, une LR de la banniere au bout)` : ''} La MR sort a 0,01 % : ne la vise pas`); }
+                const ev = v2.eveils(S, now); if (ev.length) add(ev[0].utile ? 3 : 6, `Eveil possible : ${short(ev[0].id)} (${ev[0].cost} essences sur ${ev[0].balance})${ev.length > 1 ? `, et ${ev.length - 1} autre${ev.length > 2 ? 's' : ''}` : ''}. Collection, onglet Eveil`);
+                const es = v2.essences(S); if (n > 0 && es) add(9, `Essences : ${es.balance} en reserve, ${es.earned}/130 cette semaine (guilde et autres ; Tour, Cauchemar et raid sans plafond)`);
+                const mk = v2.marche()[0]; if (mk) add(5, `Marche : ${short(mk.id)} a ${mk.prix} Ki (+${mk.gain} pts dans ton meilleur trio), moins cher que le pity d'une banniere`);
+              }
+            } catch {}
             items.sort((a, b) => a.prio - b.prio);
             const res = { t: now, energie: en, gemmes: gems, items };
             lsSet('kitsu_ai_road', res);

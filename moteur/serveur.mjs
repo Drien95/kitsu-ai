@@ -260,6 +260,12 @@ function puissanceTable(G, sv, ids) {
     return { palier: L0.reel, plafond: L0.plafond, paliers };
   } catch { return null; }
 }
+// 5.65 : lots du marche a acheter (calcul conseils.mjs, partie marche) pour le guide du script : gain dans ton meilleur trio,
+// prix au plus le pity d'une banniere (LR garantie pour 2 500 Ki).
+function marcheConseil() {
+  try { const M = readJ(D('resultats', 'conseils-ia.json'))?.marche; if (!M?.lots) return [];
+    const max = M.pity?.ki || 2500; return M.lots.filter(l => l.prix != null && l.gain > 0.5 && l.prix <= max).slice(0, 5).map(l => ({ id: l.id, prix: l.prix, gain: l.gain, mode: l.mode })); } catch { return []; }
+}
 function puissanceInfo(raretes) {
   const G = ENG?.G, sv = readJ(D('data', 'sauvegarde.json')); if (!G || !sv?.owned) return { err: 'moteur ou sauvegarde absents' };
   const choix = raretesChoisies(raretes);
@@ -417,7 +423,7 @@ http.createServer(async (req, res) => {
     }
     // Carte qui recoit les parchemins d'XP, pour le script (le moteur du jeu n'est pas charge pour ca : noms lus dans la page).
     // suite (5.37) : 6 premieres montees du plan global (Campagne, Tour, Raid, Arene en prive), dans son ordre : poids d'XP du farm.
-    if (u.pathname === '/plan' && req.method === 'GET') { const p = await planCalcule(ENG?.G || null); return send(res, 200, p.err ? p : { t: p.t, score: p.score, cible: p.cible && { id: p.cible.id, niveau: p.cible.niveau, xp: p.cible.xp, raison: p.cible.raison }, suite: (p.cartes || []).slice(0, 6).map(c => c.ids) }, 'application/json', CORS); }
+    if (u.pathname === '/plan' && req.method === 'GET') { const p = await planCalcule(ENG?.G || null); return send(res, 200, p.err ? p : { t: p.t, score: p.score, cible: p.cible && { id: p.cible.id, niveau: p.cible.niveau, xp: p.cible.xp, raison: p.cible.raison }, suite: (p.cartes || []).slice(0, 6).map(c => c.ids), marche: marcheConseil() }, 'application/json', CORS); }
     if (u.pathname === '/raid' && req.method === 'POST') return send(res, 200, await raidConseil(JSON.parse(await body(req))), 'application/json', CORS);
     if (u.pathname === '/conseil' && req.method === 'POST') {
       const q = JSON.parse(await body(req));
