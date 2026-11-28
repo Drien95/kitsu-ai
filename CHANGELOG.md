@@ -4,6 +4,20 @@ Les versions les plus récentes en premier. Les versions 1.x à 3.x sont résum�
 
 ---
 
+## 5.63.0
+
+Guides V2 par palier de Transcendance.
+
+- **Page Guide du palier** (panneau, groupe Calculs) : pour chaque palier (0 à 5, puis 9 où le plafond atteint 64), plafond de puissance, compositions d'équipe acceptées par le jeu, trios autorisés parmi tes cartes, Campagne et Tour calculées à ce palier, plan d'XP sur ces résultats, Souvenirs, et comparaison avec le palier suivant. Un chiffre absent dit quel calcul lancer.
+- **Choix du palier** dans Calculs (Campagne et Tour) : par défaut ton palier réel ; un autre palier écrit `cauchemar3-pN.json` / `tour-pN.json` sans toucher à tes résultats.
+- **Trios autorisés sur total** : avant le calcul (compteur exact par classes de cartes, sans énumérer) et sur les résultats Campagne et Tour. Les estimations de durée comptent les trios autorisés.
+- **Souvenirs** (`conseils.mjs --parties souvenirs`, bouton « Mesurer les Souvenirs ») : chaque carte des bannières Souvenirs est mesurée dans ton meilleur trio au plafond du palier visé. Règle du jeu : MR à 0,01 % par carte, une LR sur deux vient de la bannière, pity 50 (x10 à 50 Ki) donne une LR de la bannière ; les bannières sont donc classées par leur meilleure LR, la MR est montrée à part.
+- **Transcender ou pas** (règles lues dans le moteur du jeu) : cartes gardées d'office (MR, LR-X), 5 au choix + 1 UR ou SSR, cartes et Ki en réserve perdus, Ki rendus (25 % des Ki dépensés), XP des cartes multipliée, XP de compte pour revenir au 100.
+- **Export** : Ki en réserve (`ki`).
+- **Base commune** : les trios avec une carte éveillée sont partagés (6e champ facultatif de la carte, lots à part, lisibles par les anciens clients qui les ignorent).
+- **API** : `/api/puissance`, `/api/guide?palier=N`, prévisions Campagne et Tour avec la table de puissance.
+- **Tests** : `tests-puissance.mjs` passe à 27 tests (format de la base commune avec Éveil, compteur, guide).
+
 ## 5.62.0
 
 V2 du jeu, suite : les calculs et le script ne proposent plus que des équipes que le jeu accepte.

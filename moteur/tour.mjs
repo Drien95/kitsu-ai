@@ -15,12 +15,13 @@ import { makeSim } from './lib/sim.mjs';
 import { shuffle } from './lib/commun.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal, nettoyerAnciens } from './lib/journal.mjs';
 import { garderEveille } from './lib/eveil.mjs';
-import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
+import { limitePuissance, decrireLimite, eveilDe, nomResultat } from './lib/puissance.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
 // 5.62 : Eveil (V2) : carte eveillee au niveau 100 en mode 99, aw / awakened dans l'equipe ; limite de puissance sur les trios.
 const EV = eveilDe(SAVE), LIM = limitePuissance(G, SAVE);
+const FT = nomResultat('tour', LIM), AUTRE_PALIER = FT !== 'tour.json'; // 5.63 : autre palier = tour-pN.json
 const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? id => EV.niveauMax(id) : lvOf;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // 5.44 : raretes essayees (--raretes LR,UR,SSR) et pause au bout d'un temps de travail (--pause-apres minutes), comme la Campagne.
@@ -58,7 +59,7 @@ const solo = IDS.map((id, i) => ({ id, etage: (solo0[i][0] + solo0[i][1]) / 2 })
 // 5.42.1 : travail prevu = montees a simuler de la 1re manche (les reprises du journal ne coutent rien) + manches suivantes,
 // estimees sur l'entonnoir du calcul precedent (trios encore en course avant chaque manche ; tous si rien n'avait ete elimine)
 // au prorata des trios a simuler.
-const PREC = readJ(D('resultats', 'tour.json')), MANCHES = +arg('manches', 10); let PREVU = 0;
+const PREC = readJ(D('resultats', FT)), MANCHES = +arg('manches', 10); let PREVU = 0;
 const arret = async () => { if (!PAUSE || Date.now() - T0 < PAUSE * 60000) return; log(`pause apres ${PAUSE} min de travail : montees gardees dans le journal, relance le calcul pour finir (rien n est refait)`); eveil.fin(); await pool.close(); process.exit(0); };
 const C = await T.course({ trios: tr, cle: cles, J, arret, garder: +arg('garder', 200), z: +arg('z', 3), manches: MANCHES, onManche: x => {
   if (x.debut) {
@@ -99,9 +100,9 @@ if (!arg('max-trios') && !arg('garder-journal')) try {
   // Un mode de niveaux dont les montees viennent d'un calcul trop ancien n'est plus dans le journal.
   try { const { f, e } = etatJournal(); for (const k of ['actuel', '99']) if (e[k] && e[k].gen < c.generation - (+arg('journal-calculs', 2)) + 1) delete e[k]; writeFileSync(f, JSON.stringify(e)); } catch {}
 } catch (e) { log('journal : nettoyage reporte (' + e.message + ')'); }
-ecrire('tour.json', out);
+ecrire(FT, out);
 // Le panneau affiche la categorie « tour » de la derniere analyse : on la remplace par ce resultat plus complet.
-const prec = readJ(D('resultats', 'dernier.json'));
+const prec = AUTRE_PALIER ? null : readJ(D('resultats', 'dernier.json'));
 if (prec?.modes) { prec.modes[NIV] ??= {}; prec.modes[NIV].tour = { titre: "Tour de l'infini", trios: essais, date: out.date, top: fin.slice(0, 5).map(x => ({ equipe: x.t.map(nom), ids: x.t, etageMoyen: +x.moy.toFixed(1), etageMin: x.min, p10: x.p10, max: x.max })), murs: out.murs, collectifs: out.collectifs }; writeFileSync(D('resultats', 'dernier.json'), JSON.stringify(prec)); }
-log('termine : resultats\\tour.json');
+log(`termine : resultats\\${FT}`);
 eveil.fin(); await pool.close(); process.exit(0);

@@ -24,7 +24,8 @@ import * as MODELE from './lib/modele.mjs';
 import * as PARTAGE from './lib/partage.mjs';
 import { VERSION_SERVEUR } from './lib/partage-format.mjs';
 import { construireWC, cleIA } from './lib/ia-commune.mjs';
-import { limitePuissance, eveilDe } from './lib/puissance.mjs';
+import { limitePuissance, eveilDe, PALIERS } from './lib/puissance.mjs';
+import { guidePalier } from './lib/guide.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
 let FICHE = { v: null };
@@ -106,7 +107,7 @@ function prevision() {
   const SUFK = { normal: '@n', difficile: '@hn', extreme: '@xn', campNormal: '', campDifficile: '@h', campExtreme: '@x' }, valides = {};
   for (const k of Object.keys(SUFK)) valides[k] = 0;
   for (const [f, v] of Object.entries(sv?.pve?.stars || {})) if (v >= 3) { const m = /(@xn|@hn|@n|@x|@h)?$/.exec(f)[0] || '', k = Object.keys(SUFK).find(x => SUFK[x] === m); if (k) valides[k]++; }
-  return { valides, cartes, parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d, false), raretesDernier: d?.raretes || null, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
+  return { valides, cartes, puissance: puissanceTable(G, sv, ids), parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d, false), raretesDernier: d?.raretes || null, trios: cartes * (cartes - 1) * (cartes - 2) / 6, combats: COMBATS_DIFF.c, carte: COMBATS_DIFF.carte, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal,
     dernier: d ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.trios, combatsSimules: d.combatsSimules, cartes: d.cartes, entonnoir: d.entonnoir || null, combats: d.combats || null,
       campSous100: d.etages?.specialistes?.campagneSous100 ?? null, minParCombat: d.etages?.specialistes?.minutesParCombat ?? null, dureeParCombat: d.etages?.duree ?? null } : null };
 }
@@ -135,7 +136,7 @@ function previsionTour(niv) {
     }
   } catch {}
   const d = readJ(D('resultats', 'tour.json'));
-  return { cartes, parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d?.methode === 'course' ? d : null, true), raretesDernier: d?.raretes || null, repRarete, trios, aSimuler: trios - reprises, reprises, etatJournal: etat, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal, record: sv?.tower?.best ?? null,
+  return { cartes, puissance: puissanceTable(G, sv, ids), parRarete: parRarete(G, ids), poidsRaretes: poidsRaretes(G, d?.methode === 'course' ? d : null, true), raretesDernier: d?.raretes || null, repRarete, trios, aSimuler: trios - reprises, reprises, etatJournal: etat, fils: Math.max(1, NCPU - Math.max(1, reglages().filsReserves)), journalOctets: journal, record: sv?.tower?.best ?? null,
     dernier: d?.methode === 'course' ? { date: d.date, vitesse: d.vitesse, duree: d.duree, trios: d.triosEssayes, montees: d.monteesSimulees, entonnoir: d.entonnoir } : null };
 }
 // ---------- reglages (onglet Reglages du panneau) ----------
@@ -245,11 +246,32 @@ async function infoIA() {
   const cmp = readJ(D('resultats', 'comparaison-ia.json')), poids = readJ(D('data', 'poids.json'));
   return { ia: { source: c?.source || 'appli', t: c?.p?.t || null, cle: cleIA(W) }, comparaison: cmp ? { ...cmp, aJour: cmp.commune === cleIA(W) && (cmp.poidsT || null) === (poids?.t || null) } : null };
 }
+// 5.63 : trios acceptes par la limite de puissance, pour chaque choix de raretes (LR, UR, SSR et leurs combinaisons) et chaque
+// palier (« reel » = ton palier, puis 0 a 5 et 9), compte par classes de cartes (instantane meme pour 7 M trios).
+function puissanceTable(G, sv, ids) {
+  try {
+    if (!G || !sv?.owned) return null; const L0 = limitePuissance(G, sv, { transcendance: null, sansLimite: false }); if (!L0.actif) return null;
+    const code = { LR: 'M', UR: 'L', SSR: 'E' }, subs = [['LR'], ['UR'], ['SSR'], ['LR', 'UR'], ['LR', 'SSR'], ['UR', 'SSR'], ['LR', 'UR', 'SSR']];
+    const ligne = L => Object.fromEntries(subs.map(sb => [sb.join(','), L.compter(ids.filter(id => sb.some(r => code[r] === G.CHAR_BY_ID[id]?.r))).ok]));
+    const paliers = {}; for (const n of [...new Set([...PALIERS, L0.reel])]) { const L = limitePuissance(G, sv, { transcendance: n, sansLimite: false }); paliers[n] = { plafond: L.plafond, ok: ligne(L) }; }
+    return { palier: L0.reel, plafond: L0.plafond, paliers };
+  } catch { return null; }
+}
+function puissanceInfo(raretes) {
+  const G = ENG?.G, sv = readJ(D('data', 'sauvegarde.json')); if (!G || !sv?.owned) return { err: 'moteur ou sauvegarde absents' };
+  const codes = String(raretes || 'LR,UR,SSR').split(',').map(r => ({ LR: 'M', UR: 'L', SSR: 'E' })[r]).filter(Boolean);
+  const ids = Object.keys(sv.owned).map(Number).filter(id => codes.includes(G.CHAR_BY_ID[id]?.r));
+  const L0 = limitePuissance(G, sv, { transcendance: null, sansLimite: false }), c0 = L0.compter(ids);
+  const paliers = PALIERS.map(n => { const L = limitePuissance(G, sv, { transcendance: n, sansLimite: false }), c = L.compter(ids); return { palier: n, plafond: L.actif ? L.plafond : null, trios: c.ok }; });
+  return { actif: L0.actif, palier: L0.reel, plafond: L0.actif ? L0.plafond : null, cartes: ids.length, triosTotal: c0.total, triosAcceptes: c0.ok, paliers };
+}
 const logs = []; const say = m => { const l = `[${new Date().toLocaleTimeString('fr-FR')}] ${m}`; logs.push(l); if (logs.length > 300) logs.shift(); console.log(l); };
 // ---------- taches (une a la fois : elles utilisent tout le processeur) ----------
 // 5.44 : choix avant le lancement (Campagne et Tour) : raretes essayees et pause au bout d'un temps de travail (0 = jusqu'au bout).
 const choixCalcul = o => { const r = String(o.raretes || '').split(',').filter(x => ['LR', 'UR', 'SSR'].includes(x)), p = Math.max(0, Math.min(10080, Math.round(+o.pause) || 0));
-  return [...(r.length && r.length < 3 ? ['--raretes', r.join(',')] : []), ...(p ? ['--pause-apres', String(p)] : [])]; };
+  // 5.63 : palier de Transcendance du calcul (vide : ton palier reel, lu dans la sauvegarde).
+  const pal = o.palier === '' || o.palier == null ? null : Math.round(+o.palier);
+  return [...(r.length && r.length < 3 ? ['--raretes', r.join(',')] : []), ...(p ? ['--pause-apres', String(p)] : []), ...(Number.isInteger(pal) && pal >= 0 && pal <= 20 ? ['--transcendance', String(pal)] : [])]; };
 const ACTIONS = {
   telecharger: { nom: 'Mettre a jour le moteur du jeu', cmd: ['telecharger.mjs'] },
   tout: { nom: 'Analyse complete', cmd: ['tout.mjs'], opts: o => [...(o.niveaux ? ['--niveaux', o.niveaux] : []), ...(o.tirages ? ['--tirages', String(o.tirages)] : []), ...(o.cartes ? ['--cartes', String(o.cartes)] : []), ...(o.max ? ['--max', String(o.max)] : [])] },
@@ -267,6 +289,8 @@ const ACTIONS = {
   comparerIA: { nom: "Comparer ton IA a l'IA commune", cmd: ['comparer-ia.mjs'], admin: true },
   deployerPartage: { nom: 'Mettre a jour le serveur de la base commune', cmd: ['partage-deployer.mjs'], admin: true },
   conseils: { nom: 'Conseils de cartes', cmd: ['conseils.mjs'], opts: o => ['--parties', o.parties || 'collectifs,xp,tirage,duos,marche'] },
+  // 5.63 : MR des Souvenirs (7 jours apres une Transcendance) mesurees au palier vise (1 par defaut : apres ta 1re Transcendance).
+  souvenirs: { nom: 'Souvenirs : MR a viser', cmd: ['conseils.mjs'], opts: o => ['--parties', 'souvenirs', '--transcendance', String(Number.isInteger(+o.palier) && +o.palier >= 0 ? +o.palier : 1)] },
 };
 // Chaine complete : moteur a jour, entrainement de l'IA, puis analyse complete avec les nouveaux reglages.
 const CHAINES = { complet: { nom: "Mettre a jour l'IA", etapes: [['telecharger', {}], ['entrainer', { types: 'nm,boss,norm', generations: 40 }], ['tout', { niveaux: 'actuel,99' }], ['entrainer', { types: 'tour', generations: 20 }], ['equipes', { n: 3 }], ['conseils', {}]] } };
@@ -291,7 +315,7 @@ function lancerEtape(action, o = {}, apres = null, chaine = null) {
   const A = ACTIONS[action]; if (!A) throw new Error('action inconnue');
   if (A.admin && !PARTAGE.identite().admin) throw new Error('reserve au PC validateur');
   const fils = Math.max(1, NCPU - Math.max(1, reglages().filsReserves)); // des fils restent libres pour le conseil en combat
-  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'tour', 'cauchemar3', 'tourExact', 'comparerIA'].includes(action) ? ['--fils', String(fils)] : [])];
+  const args = [...A.cmd, ...(A.opts ? A.opts(o) : []), ...(['tout', 'mode', 'entrainer', 'imitation', 'equipes', 'conseils', 'souvenirs', 'tour', 'cauchemar3', 'tourExact', 'comparerIA'].includes(action) ? ['--fils', String(fils)] : [])];
   const p = spawn(process.execPath, args, { cwd: here, env: { ...process.env, KITSU_MOTEUR: here } });
   // Priorite « inactive » pour tout calcul (prive compris) : YouTube, le jeu et le conseil en combat passent devant, sans perte quand le PC est libre.
   try { os.setPriority(p.pid, os.constants.priority.PRIORITY_LOW); } catch {}
@@ -412,6 +436,13 @@ http.createServer(async (req, res) => {
       if (u.pathname === '/api/reglages' && req.method === 'POST') { const r = { ...reglages(), ...JSON.parse(await body(req)) }; mkdirSync(D('data'), { recursive: true }); writeFileSync(D('data', 'reglages.json'), JSON.stringify(r, null, 1)); say('reglages enregistres'); return send(res, 200, r); }
       // Fiches des cartes pour l'affichage (nom, rarete, serie, adresse du portrait). Les portraits ne sont pas copies :
       // le panneau les affiche depuis leur adresse d'origine, comme le jeu.
+      // 5.63 : limite de puissance (V2) : trios acceptes sur le total, pour ton palier et pour chaque palier du guide.
+      // 5.63 : guide d'un palier de Transcendance (resultats deja calcules, sans simulation).
+      if (u.pathname === '/api/guide') { const S = readJc(D('data', 'sauvegarde.json')); if (!S?.owned) return send(res, 404, { err: 'aucune sauvegarde' });
+        let prive = null; if (EXT?.planPrive) { try { prive = await EXT.planPrive({ D, readJ: readJc, S }); } catch {} }
+        const reel = Number.isInteger(S?.rb?.n) && S.rb.n > 0 ? S.rb.n : 0, n = u.searchParams.get('palier'), p = n == null || n === '' ? reel : Math.max(0, Math.min(20, Math.round(+n) || 0));
+        return send(res, 200, guidePalier({ G: ENG.G, S, n: p, R: f => readJc(D('resultats', f)), jeu, prive })); }
+      if (u.pathname === '/api/puissance') return send(res, 200, puissanceInfo(u.searchParams.get('raretes')));
       if (u.pathname === '/api/collection') { const sv = readJ(D('data', 'sauvegarde.json')); if (!sv?.owned) return send(res, 404, { err: 'aucune sauvegarde' }); return send(res, 200, { t: sv.t || null, owned: sv.owned, lv: Object.fromEntries(Object.entries(sv.lv || {}).map(([k, v]) => [k, v?.l || 1])), stars: sv.stars || {}, team: sv.team || [], pve: sv.pve?.stars || null, tour: sv.tower?.best ?? null }); }
       if (u.pathname === '/api/campagne/prevision') return send(res, 200, prevision());
       if (u.pathname === '/api/tour/prevision') return send(res, 200, previsionTour(u.searchParams.get('niveaux')));

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KitsuAI - conseiller de combat, d'equipe et de tirage
 // @namespace    kitsu-ai
-// @version      5.62.0
+// @version      5.63.0
 // @description  Conseiller en direct pour kitsu.games (lecture seule, ne clique rien, desactive en arene)
 // @match        https://kitsu.games/*
 // @match        https://*.kitsu.games/*
@@ -45,7 +45,7 @@
       //   Alt+K                      replie / deplie le dock (deplacable a la souris par sa barre)
 
       (() => {
-        if (window.KitsuAI && window.KitsuAI.__v === '5.62.0') return;
+        if (window.KitsuAI && window.KitsuAI.__v === '5.63.0') return;
         try { window.KitsuAI?.stop?.(); } catch {}
         const B = window.BattleCore;
         const COST = { basic: 10, skill: 25, ult: 20, rest: -45 };
@@ -685,7 +685,7 @@
         };
         const evScrolls = S => { const sc = S.ev?.sc || {}; return { n: (sc.s || 0) + (sc.m || 0) + (sc.l || 0), xp: (sc.s || 0) * 500 + (sc.m || 0) * 2500 + (sc.l || 0) * 10000, sc }; };
         const KitsuAI = {
-          __v: '5.62.0',
+          __v: '5.63.0',
           W: (() => { const d = { norm: W_NORM, boss: W_BOSS, nm: W_NM, tower: W_TOWER }, w = lsGet(LS.w, null); if (!w) return d; for (const k of Object.keys(d)) if (w[k]?.length === NF) d[k] = w[k]; return d; })(),
           _train: null,
 
@@ -1039,6 +1039,8 @@
             // Eveil du compte et cartes eveillees (lus par le jeu lui-meme avec G.withAwOf : +10 %, niveau 100).
             if (S.rb) data.rb = { n: Number.isInteger(+S.rb.n) && +S.rb.n > 0 ? +S.rb.n : 0, spent: +S.rb.spent || 0 };
             if (S.stats?.kiSpent != null) data.kiSpent = +S.stats.kiSpent || 0;
+            // 5.63 : Ki en reserve, perdus a la Transcendance (ki = min(ki, 0) + remboursement) : le guide dit combien depenser avant.
+            if (S.ki != null) data.ki = +S.ki || 0;
             try { if (typeof G?.withAwOf === 'function') { const t = G.withAwOf(S, Object.keys(S.owned || {}).map(id => ({ id: +id }))), aw = t.find(x => x.aw)?.aw || 0, ev = t.filter(x => x.awakened).map(x => x.id); if (aw || ev.length) data.eveil = { aw, cartes: ev }; } } catch {}
             try { const cap = powCap(S); if (Number.isFinite(cap)) data.puissance = { plafond: cap }; } catch {}
             // Boss de guilde de la semaine (pour l'analyse locale), sans aucun jeton dans le fichier.

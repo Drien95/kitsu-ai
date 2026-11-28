@@ -254,6 +254,7 @@
   .mbmaj { display: none; align-items: center; gap: 10px; margin: -6px 0 16px; padding: 11px 13px; border-radius: 12px; background: linear-gradient(135deg, #ff4b3e, #ff8a3d); font-weight: 800; font-size: 13px; cursor: pointer; }
   .mbmaj button { margin-left: auto; padding: 7px 11px; background: #07080c; box-shadow: none; font-size: 11px; }
   .seg { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); gap: 4px; margin-bottom: 18px; flex-wrap: wrap; }
+  .gpr { display: inline-block; border-radius: 6px; padding: 1px 7px; font-size: 11px; font-weight: 800; margin-right: 3px; } .gpr.SSR { background: #20315a; color: #8fb4ff; } .gpr.UR { background: #3a1f55; color: #d7a8ff; } .gpr.LR { background: #4d1612; color: #ff9a8f; } .gpr.X { background: #4d3b0d; color: var(--gold); } .gpr.MR { background: #3d3a10; color: #fff27a; }
   .seg a { padding: 8px 14px; border-radius: 9px; font-weight: 800; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; color: #bdb7ad; cursor: pointer; text-decoration: none; white-space: nowrap; }
   .seg a.on { background: linear-gradient(135deg, var(--acc), var(--acc2)); color: #fff; } .seg a.nm.on { background: linear-gradient(135deg, #7c3aed, #b35cff); } .seg a.nm { color: #c9b8f5; }
   .seg .sep { width: 1px; background: var(--line2); margin: 4px 6px; }
@@ -555,6 +556,7 @@
     <div class="grp">Modes de jeu</div>
     <a href="#campagne" data-p="campagne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg><span>Campagne</span><span class="b" id="nbCamp"></span></a>
     <a href="#tour" data-p="tour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V9h10v12M5 9h14M7 9V5h2v2h2V5h2v2h2V5h2v4M10 21v-5h4v5"/></svg><span>Tour de l'infini</span><span class="b" id="nbTour"></span></a>
+    <a href="#palier" data-p="palier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4v-5h4v-5h4V5h4"/></svg><span>Guide du palier</span></a>
     <a href="#raid" data-p="raid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span>Raids</span><span class="b" id="nbRaid"></span></a>
     <a href="#arene0" data-p="arene0" id="navArene0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4M5 21l-2-2"/></svg><span>Arène</span><span class="b p">privé</span></a>
     <a href="#event" data-p="event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span>Événements et guilde</span></a>
@@ -598,6 +600,15 @@
     </div>
   </section>
 
+  <!-- ===================== GUIDE DU PALIER (5.63) ===================== -->
+  <section class="page" id="p-palier">
+    <div class="eyebrow">Modes de jeu</div>
+    <h1>Guide du palier</h1>
+    <p class="lead">Pour chaque palier de Transcendance : les équipes que le jeu accepte, ce que tes calculs donnent, les cartes à monter et à viser, et ce que rapporte le palier suivant. Tout vient de tes calculs, rien n’est estimé.</p>
+    <div class="seg" id="gpTabs"></div>
+    <div id="gpBox"><div class="muted">Chargement…</div></div>
+  </section>
+
   <!-- ===================== TOUR ===================== -->
   <section class="page" id="p-tour">
     <div class="eyebrow">Modes de jeu</div>
@@ -609,6 +620,7 @@
       <h2>Lancer le calcul <span class="r"><button class="ghost" onclick="planche('#p-tour', 'tw-planche')">Exporter la planche PNG</button></span></h2>
       <p class="muted" style="margin:0 0 14px;font-size:13px">Tous les trios de tes cartes SSR, UR et LR montent sur les vrais étages (les PV sont gardés d'un étage à l'autre), les plus faibles sont écartés manche après manche, puis les meilleurs refont 30 montées.</p>
       <div class="row"><label>Niveaux <select id="o_twniv" onchange="twPrev()"><option value="actuel">Tes niveaux actuels</option><option value="99">Toutes au niveau 99 (potentiel)</option></select></label></div>
+      <div class="opt"><div class="lab">Palier de Transcendance</div><div><div class="seg" id="twpal"></div><div class="risk" id="twriskPal"></div></div></div>
       <div class="opt"><div class="lab">Cartes essayées</div><div><div class="row" id="twrar"></div><div class="risk" id="twriskRar"></div></div></div>
       <div class="opt"><div class="lab">Temps de travail</div><div><div class="seg" id="twtps"><a data-t="0" onclick="chxTps('tw',0)">Jusqu'au bout</a><a data-t="2" onclick="chxTps('tw',2)">2 h puis pause</a><a data-t="8" onclick="chxTps('tw',8)">Une nuit (8 h) puis pause</a></div><div class="risk" id="twriskTps"></div></div></div>
       <div id="twPrev" class="grid g5" style="margin-top:18px"></div>
@@ -814,6 +826,7 @@
         <label>Difficultés <select id="o_c3dif" onchange="campPrev()"><option value="toutes">Les 6 (Campagne et Cauchemar)</option><option value="cauchemar">Cauchemar seulement (plus rapide)</option></select></label>
         <label title="Combats sans trio sûr : recherche sur tous tes trios, par priorité. Le journal garde ce qui est fait, la nuit suivante reprend.">Spécialistes par combat <select id="o_c3spec" onchange="campPrev()"><option value="60">1 h</option><option value="0">Pas de recherche</option><option value="180">3 h</option><option value="360">6 h (nuit)</option><option value="600">10 h</option></select></label>
       </div>
+      <div class="opt"><div class="lab">Palier de Transcendance</div><div><div class="seg" id="c3pal"></div><div class="risk" id="c3riskPal"></div></div></div>
       <div class="opt"><div class="lab">Cartes essayées</div><div><div class="row" id="c3rar"></div><div class="risk" id="c3riskRar"></div></div></div>
       <div class="opt"><div class="lab">Temps de travail</div><div><div class="seg" id="c3tps"><a data-t="0" onclick="chxTps('c3',0)">Jusqu'au bout</a><a data-t="2" onclick="chxTps('c3',2)">2 h puis pause</a><a data-t="8" onclick="chxTps('c3',8)">Une nuit (8 h) puis pause</a></div><div class="risk" id="c3riskTps"></div></div></div>
       <div id="c3prev" class="grid g5" style="margin-top:18px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
@@ -1375,8 +1388,10 @@ async function lancer(action, confirme) {
     const k = action === 'tour' ? 'tw' : 'c3', P = chxPrev(k), est = k === 'tw' ? TW.est : CP.est;
     if (P?.parRarete) { const r = chxRaretes(k, P); if (C3n(chxCartes(k, P)) < 1) return toast('Il faut au moins 3 cartes : coche une autre rareté'); o.raretes = r.join(','); }
     o.pause = CHX[k].t * 60;
+    if (CHX[k].pal !== '' && CHX[k].pal != null) o.palier = CHX[k].pal; // 5.63 : autre palier de Transcendance
     if (!confirme && est && est.total >= 3 * 3600) return avantLancer(action, est, k);
   }
+  if (action === 'souvenirs' && GP?.palSouv != null) o.palier = GP.palSouv;
   if (action === 'raid') o.niveaux = $('o_rdniv').value;
   if (action === 'imitation') o.combats = +$('o_nim').value;
   if (action === 'complet' && !E?.sauvegarde && !confirm("Aucune sauvegarde importée : l'analyse portera sur toutes les cartes du jeu. Continuer ?")) return;
@@ -1596,6 +1611,37 @@ function planRender() {
     <div class="card"><h2>3. À guetter</h2>${gt.length ? gt.map(g => `<div class="sy-row">${g.ids ? g.ids.map(x => pf(x)).join('') : ''}<div><b>${esc(g.titre)}</b><div class="x">${esc(g.texte || '')}</div></div></div>`).join('') : '<div class="muted">Rien à guetter pour l’instant.</div>'}</div></div>`;
   setH('syProg', p);
 }
+// ---------- 5.63 : guide du palier de Transcendance (/api/guide) ----------
+const GP = { n: null, j: null };
+async function gpCharger(n = GP.n) { try { GP.j = await api('/api/guide' + (n == null ? '' : '?palier=' + n)); GP.n = GP.j.palier; } catch (e) { GP.j = { err: e.message }; } gpRender(); }
+function gpLancer(k, n) { CHX[k].pal = n === GP.j?.reel ? '' : String(n); chxSave(); go(k === 'c3' ? 'campagne' : 'tour'); }
+function gpRender() {
+  const j = GP.j, box = $('gpBox'); if (!box) return;
+  if (!j) return setH('gpBox', '<div class="muted">Chargement…</div>');
+  if (j.err) return setH('gpBox', `<div class="card muted">${esc(j.err)}</div>`);
+  const n = x => Math.round(x).toLocaleString('fr-FR'), pal = x => x === 9 ? '9+' : String(x), tag = c => `<span class="gpr ${c.startsWith('MR') ? 'MR' : c.endsWith('-X') ? 'X' : c}">${c}</span>`;
+  const ps = [...new Set([...(j.paliers || []), j.reel])].sort((a, b) => a - b);
+  setH('gpTabs', ps.map(x => `<a class="${x === j.palier ? 'on' : ''}" onclick="gpCharger(${x})">Palier ${pal(x)}${x === j.reel ? ' · le tien' : ''}</a>`).join(''));
+  const tile = (k, v, sub) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  const okC = j.compositions.filter(c => c.ok);
+  let h = `<div class="grid g3">${tile('Plafond de puissance', j.plafond + ' pts', j.palier === j.reel ? 'ton palier actuel' : `si tu avais ${j.palier} Transcendance${j.palier > 1 ? 's' : ''}`)}${tile('Trios autorisés', n(j.trios.autorises), `sur ${n(j.trios.total)} avec tes ${j.trios.cartes} cartes SSR, UR, LR`)}${tile('Compositions acceptées', okC.length + ' sur ' + j.compositions.length, 'combinaisons de raretés')}</div>`;
+  h += `<div class="grid gc" style="margin-top:18px"><div class="card"><h3>Équipes les plus fortes possibles</h3><table><tr><th>Composition</th><th class="n">Points</th></tr>${okC.slice(0, 6).map(c => `<tr><td>${c.cartes.map(tag).join(' ')}</td><td class="n">${c.cout}</td></tr>`).join('')}</table><p class="muted" style="font-size:12px;margin:8px 0 0">Coûts lus dans le jeu : SSR 5, UR 8, LR 12 (+4 dès la 3e LR), MR 16 (+12 par MR en plus), versions X : SSR 7, UR 11, LR 15.</p></div>`;
+  const lance = (k, txt) => `<div class="muted" style="margin:6px 0 10px">${txt}</div><button class="btn" onclick="gpLancer('${k}', ${j.palier})">Lancer ${k === 'c3' ? 'la Campagne' : 'la Tour'} à ce palier</button>`;
+  const C = j.campagne;
+  h += `<div class="card"><h3>Campagne</h3>${C ? `<table><tr><th>Difficulté</th><th class="n">Sûrs à 3★</th></tr>${C.difficultes.map(d => `<tr><td>${esc(({normal:'Cauchemar Normal',difficile:'Cauchemar Difficile',extreme:'Cauchemar Extrême',campNormal:'Campagne Normal',campDifficile:'Campagne Difficile',campExtreme:'Campagne Extrême'})[d.difficulte] || d.difficulte)}</td><td class="n">${n(d.surs)} / ${n(d.combats)}</td></tr>`).join('')}</table>${C.plan[0] ? `<div style="margin-top:10px"><div class="muted" style="font-size:12px">Trio qui couvre le plus de combats</div>${equipeHTML(C.plan[0].ids, 1)}</div>` : ''}<p class="muted" style="font-size:12px;margin:8px 0 0">Calcul du ${new Date(C.date).toLocaleDateString('fr-FR')}, ${n(C.trios)} trios.</p>` : lance('c3', 'Pas encore de calcul Campagne à ce palier.')}</div></div>`;
+  const T = j.tour;
+  h += `<div class="grid gc" style="margin-top:18px"><div class="card"><h3>Tour de l’infini</h3>${T?.meilleur ? `<div class="v" style="font-size:28px">Étage ${String(T.meilleur.etageMoyen).replace('.', ',')}</div><div class="muted" style="font-size:12px">étage moyen du meilleur trio</div><div style="margin-top:8px">${equipeHTML(T.meilleur.ids, 1)}</div>${T.murs?.length ? `<p class="muted" style="font-size:12px">Bloque surtout à l’étage ${T.murs.map(m => m.etage).join(', ')}.</p>` : ''}` : lance('tw', 'Pas encore de calcul Tour à ce palier.')}</div>`;
+  const P = j.plan;
+  h += `<div class="card"><h3>Plan d’XP de ce palier</h3>${P?.cartes?.length ? `<table><tr><th>#</th><th>Cartes à monter</th><th>Pourquoi</th></tr>${P.cartes.map((c, i) => `<tr><td>${i + 1}</td><td>${equipeHTML(c.ids, 1)}</td><td class="muted" style="font-size:12px">${(c.gains || []).map(g => esc(`${g.nom} +${g.plus ?? g.gain ?? ''}`)).join(', ')}</td></tr>`).join('')}</table>` : '<div class="muted">Le plan vient des calculs Campagne et Tour de ce palier : lance-les d’abord.</div>'}</div></div>`;
+  const S = j.souvenirs;
+  h += `<div class="card" style="margin-top:18px"><h3>Souvenirs : quoi viser pendant les 7 jours</h3>${S ? `<p class="muted" style="font-size:12px;margin:0 0 8px">Mesuré au palier ${S.palier} (plafond ${S.plafond} pts) sur ${S.combats} combats Cauchemar. Gain = points de ton meilleur trio avec la carte au niveau 99, comparé à ${esc(S.reference?.equipe || 'ton meilleur trio')}. Règle du jeu : la MR sort à ${String(S.tauxMR).replace('.', ',')} % par carte, presque jamais ; une LR sur deux vient de la bannière et le pity (${S.pity || 50} tirages x10, ${n((S.pity || 50) * (S.coutX10 || 50))} Ki) donne une LR de la bannière. Classement par la meilleure LR.</p><table><tr><th>Bannière</th><th>Meilleure LR</th><th class="n">Gain</th><th>MR (rare)</th><th class="n">Gain MR</th></tr>${S.bannieres.map(b => `<tr><td>${esc(b.serie)}</td><td>${b.meilleureLR ? carteHTML(b.meilleureLR.id) : '-'}</td><td class="n">${b.meilleureLR?.gain ?? '-'}</td><td>${b.meilleureMR ? carteHTML(b.meilleureMR.id) : '-'}</td><td class="n">${b.meilleureMR?.gain ?? 'hors limite'}</td></tr>`).join('')}</table>` : `<div class="muted" style="margin-bottom:10px">Pas encore mesuré. Le calcul simule chaque carte des bannières Souvenirs dans ton meilleur trio, au plafond du palier qui suit ta Transcendance.</div><button class="btn" onclick="GP.palSouv=${j.palier === j.reel ? (j.suivant?.palier ?? j.palier) : j.palier};lancer('souvenirs')">Mesurer les Souvenirs</button>`}</div>`;
+  const N = j.suivant, tr = j.transcendance || {};
+  if (N) h += `<div class="card" style="margin-top:18px"><h3>Passer au palier ${pal(N.palier)} ?</h3><div class="grid g3">${tile('Plafond', N.plafond + ' pts', `+${N.plafond - j.plafond} points`)}${tile('Trios autorisés', n(N.trios), `+${n(N.trios - j.trios.autorises)}`)}${tile('Campagne', N.campagne ? `${N.campagne.plus >= 0 ? '+' : ''}${N.campagne.plus ?? '?'} combats` : '-', N.campagne ? `${n(N.campagne.surs)} combats sûrs au palier ${pal(N.palier)}` : 'calcul du palier suivant à lancer')}</div>${N.tour ? `<p class="muted">Tour : étage ${String(N.tour.etage).replace('.', ',')} (${N.tour.plus >= 0 ? '+' : ''}${N.tour.plus ?? '?'}).</p>` : ''}<p class="muted" style="font-size:12px;margin:10px 0 0">${tr.gemmesRendues != null && j.palier === j.reel ? `Une Transcendance maintenant te rendrait ${n(tr.gemmesRendues)} (25 % des Ki dépensés depuis la dernière). ` : ''}Niveau du compte : ${tr.niveauCompte ?? '?'} (100 requis).</p>${tr.regles ? (R => `<table style="margin-top:10px"><tr><th>Transcender</th><th>Détail (règle du jeu)</th></tr><tr><td>Tu gardes</td><td>${n(R.gardeesOffice)} cartes d'office (MR, LR-X, éditions, exclusives de raid) + 5 au choix + 1 UR ou SSR ; une LR choisie passe en LR-X au hasard</td></tr><tr><td>Tu perds</td><td>${R.perdues ? n(R.perdues) + ' cartes, ' : ''}${R.kiPerdus != null ? n(R.kiPerdus) + ' Ki en réserve (dépense-les avant), ' : 'les Ki en réserve (dépense-les avant), '}${R.remiseAZero.join(', ')}, niveau de compte</td></tr><tr><td>Tu gagnes</td><td>${tr.gemmesRendues != null ? n(tr.gemmesRendues) + ' Ki rendus, ' : ''}XP des cartes x${String(R.xpCartes.apres).replace('.', ',')} (au lieu de x${String(R.xpCartes.avant).replace('.', ',')}), +${R.energie} énergie max, 7 jours de Souvenirs</td></tr><tr><td>Pour revenir au 100</td><td>${n(R.xpCompte100)} XP de compte</td></tr></table>`)(tr.regles) : ''}</div>`;
+  if (j.manque?.length) h += `<p class="muted" style="font-size:12px;margin-top:14px">Manque pour ce palier : ${j.manque.map(m => ({ campagne: 'calcul Campagne', tour: 'calcul Tour', souvenirs: 'mesure des Souvenirs' })[m]).join(', ')}.</p>`;
+  setH('gpBox', h);
+}
+addEventListener('hashchange', () => { if (pageAct() === 'palier') gpCharger(); });
+if (location.hash === '#palier') setTimeout(() => gpCharger(), 0);
 addEventListener('hashchange', () => { if (location.hash === '#resultats') planCharger(true); });
 addEventListener('hashchange', () => { if (location.hash === '#regles' && !RG.j) rgCharger(); });
 if (location.hash === '#regles') rgCharger();
@@ -1744,15 +1790,25 @@ const C3n = n => n < 3 ? 0 : n * (n - 1) * (n - 2) / 6;
 const chxPrev = k => k === 'c3' ? CP.prev : TW.prev, chxMaj = k => k === 'c3' ? campPrev(true) : twPrev(true);
 function chxRar(k, r) { if (!chxPrev(k)?.parRarete?.[r]) return; CHX[k].on[r] = CHX[k].on[r] ? 0 : 1; chxSave(); chxMaj(k); }
 function chxTps(k, t) { CHX[k].t = t; chxSave(); chxMaj(k); }
+// 5.63 : palier de Transcendance du calcul ('' = ton palier, lu dans ta sauvegarde) et trios que la limite de puissance accepte.
+function chxPal(k, v) { CHX[k].pal = v; chxSave(); chxMaj(k); }
+const chxPalier = (k, P) => { const pu = P?.puissance; if (!pu) return null; const v = CHX[k].pal; return v === '' || v == null ? pu.palier : +v; };
+const chxTriosOk = (k, P) => { const pu = P?.puissance, n = chxPalier(k, P), key = chxRaretes(k, P).join(','); const v = pu?.paliers?.[n]?.ok?.[key]; return Number.isFinite(v) ? v : C3n(chxCartes(k, P)); };
 const chxRaretes = (k, P) => RARS.filter(r => CHX[k].on[r] && P?.parRarete?.[r]);
 const chxCartes = (k, P) => chxRaretes(k, P).reduce((a, r) => a + P.parRarete[r], 0);
 const hFin = s => new Date(Date.now() + s * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 const dCourt = s => s < 60 ? '< 1 min' : '≈ ' + dur(Math.round(s)).replace(/ \d+ s$/, '');
 // Raretes, risques et temps de travail. total : duree prevue en secondes. Retourne { pause, fin }.
 function chxRender(k, P, total) {
-  const C = CHX[k], T = C3n(chxCartes(k, P)), tout = C3n(RARS.reduce((a, r) => a + (P.parRarete?.[r] || 0), 0)), n = x => Math.round(x).toLocaleString('fr-FR');
+  const C = CHX[k], T0 = C3n(chxCartes(k, P)), T = chxTriosOk(k, P), tout = C3n(RARS.reduce((a, r) => a + (P.parRarete?.[r] || 0), 0)), n = x => Math.round(x).toLocaleString('fr-FR');
+  // 5.63 : palier (limite de puissance de la V2) : trios autorises sur le total, pour ton palier ou un autre.
+  const pu = P.puissance, pn = chxPalier(k, P);
+  if (pu) { const ps = Object.keys(pu.paliers).map(Number).sort((a, b) => a - b);
+    setH(k + 'pal', `<a data-p="" class="${C.pal === '' || C.pal == null ? 'on' : ''}" onclick="chxPal('${k}','')">Le tien (${pu.palier}) · ${pu.plafond} pts</a>` + ps.filter(x => x !== pu.palier).map(x => `<a class="${String(C.pal) === String(x) ? 'on' : ''}" onclick="chxPal('${k}','${x}')">${x === 9 ? '9+' : x} · ${pu.paliers[x].plafond} pts</a>`).join(''));
+    const rp = $(k + 'riskPal'); if (rp) { rp.className = 'risk ' + (pn === pu.palier ? 'ok' : 'warn'); rp.innerHTML = `<b>${n(T)} trios autorisés</b> sur ${n(T0)} (plafond ${pu.paliers[pn]?.plafond ?? pu.plafond} points). ` + (pn === pu.palier ? 'Résultats rangés comme d’habitude.' : `Calcul « comme si » tu avais ${pn} Transcendance${pn > 1 ? 's' : ''} : résultats à part, pour le guide de ce palier. Les tiens ne bougent pas.`); } }
+  else { setH(k + 'pal', ''); const rp = $(k + 'riskPal'); if (rp) { rp.className = 'risk ok'; rp.innerHTML = 'Moteur du jeu sans limite de puissance : tous les trios sont essayés.'; } }
   setH(k + 'rar', RARS.map(r => { const c = P.parRarete?.[r] || 0; return `<span class="rar ${r} ${c && C.on[r] ? 'on' : ''} ${c ? '' : 'vide'}" onclick="chxRar('${k}','${r}')"><b>${r}</b><i>${c} carte${c > 1 ? 's' : ''}</i></span>`; }).join('')
-    + `<span class="muted" style="font-size:12px">${n(T)} trios${T < tout ? ` au lieu de ${n(tout)}` : ''}</span>`);
+    + `<span class="muted" style="font-size:12px">${n(T)} trios autorisés${T < tout ? ` sur ${n(tout)}` : ''}</span>`);
   const off = RARS.filter(r => !C.on[r] && P.parRarete?.[r]), W = P.poidsRaretes || {}, rk = $(k + 'riskRar');
   const txt = r => { const w = W[r], c = P.parRarete[r];
     if (k === 'c3') return w ? `<b>Sans ${r}</b> : sur ton dernier calcul, ${w.trios} des ${w.sur} trios de ton plan par combat ont une ${r}, ils couvrent <b>${String(w.part).replace('.', ',')} %</b> des combats. Ils ne seraient plus essayés${w.ex?.length ? ` (ex. ${esc(w.ex.join(' + '))})` : ''}.` : `<b>Sans ${r}</b> : ${c} cartes écartées d’avance. Pas encore de calcul pour dire ce qu’elles apportent.`;
@@ -1781,7 +1837,7 @@ async function campPrev(local) {
   const parTrio = cles.reduce((a, k) => a + reste(k), 0), nd = cles.length, nCamp = parTrio - ['normal', 'difficile', 'extreme'].reduce((a, k) => a + reste(k), 0), nCau = parTrio - nCamp;
   // Vitesse : celle du dernier vrai calcul sur ce PC, sinon environ 650 combats par seconde et par fil (mesure du 17/11/2026).
   const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 650 * P.fils;
-  const T = C3n(chxCartes('c3', P)), D = P.dernier;
+  const T = chxTriosOk('c3', P), D = P.dernier; // 5.63 : seulement les trios que la limite de puissance accepte
   // 1er tour : chaque trio joue 16 combats de chaque difficulte de Cauchemar (la Campagne n'elimine pas : seuls les finalistes la jouent).
   const s1 = T * 3 * 16 / vit;
   // Tours suivants et finale : part des trios encore en course a chaque tour sur l'entonnoir du dernier calcul (sinon 1er tour = 70 %
@@ -1979,7 +2035,7 @@ function campRender() {
   const objNom = CP.obj === 'Les6' ? 'moyenne des 6 difficultés' : CP.obj === 'Moyenne' ? 'moyenne des trois Cauchemar' : objLib.replace('☾ ', '');
   const tile = (k, v, s, c = '') => `<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
   const nC = Object.values(j.combats || {}).reduce((a, v) => a + (+v || 0), 0);
-  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile('Trios testés', (j.trios || 0).toLocaleString('fr-FR'), (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), nDiff() + ' difficultés')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div><div id="cmBox"></div><div id="tcBox"></div>`;
+  let h = `<div class="grid g5">${tile('Meilleur trio', b0 ? fmt(b0.troisEtoiles) + ' %' : '-', b0 ? '3 étoiles, ' + objNom : '', 'ok')}${tile(j.puissance ? 'Trios autorisés' : 'Trios testés', (j.trios || 0).toLocaleString('fr-FR'), j.puissance ? `sur ${(j.puissance.triosTotal || 0).toLocaleString('fr-FR')}, plafond ${j.puissance.plafond} pts (palier ${j.puissance.transcendances})` : (j.cartes || 0) + ' cartes SSR, UR, LR')}${tile('Combats', nC.toLocaleString('fr-FR'), nDiff() + ' difficultés')}${tile('Simulés cette fois', (j.combatsSimules || 0).toLocaleString('fr-FR'), (j.paquetsRepris || 0).toLocaleString('fr-FR') + ' paquets repris du journal')}${tile('Durée', dur(j.duree || 0), (j.vitesse || 0).toLocaleString('fr-FR') + ' combats par seconde')}</div><div class="sp"></div><div id="cmBox"></div><div id="tcBox"></div>`;
   // podium et carte a partager
   if (L.length >= 3) h += `<div class="card"><h2>Podium <span class="r">${esc(objNom)} · ${esc(nivTxt)}</span></h2><div class="sp"></div><div class="podium">${L.slice(0, 3).map((l, i) => `<div class="pod ${['first', 'second', 'third'][i]}"><div class="rk">${i + 1}</div><div class="trio">${l.ids.map(id => pf(id, i ? 'lg' : 'xl')).join('')}</div><div class="nm">${esc(l.equipe.join(' · '))}</div><div class="sc">${fmt(l.troisEtoiles)} %</div><div class="muted" style="font-size:12px">en 3 étoiles · ± ${fmt(l.marge)}</div><div class="pills">${VIS.map(([d, , c, n]) => `<span class="pill" style="color:${c}">${n} ${fmt(pdVal(l.parDifficulte, [d]))}</span>`).join('')}</div></div>`).join('')}</div></div><div class="sp"></div>`;
   if (b0) h += `<div class="card"><h2>Carte à partager <span class="r"><button class="ghost" onclick="partager('copier')">Copier</button><button onclick="partager('png')">Télécharger PNG</button></span></h2><div class="share"><canvas id="c3share" width="1200" height="630"></canvas><div class="muted" style="font-size:13px">Ton meilleur trio en image, avec les portraits des cartes, prête à envoyer à ta guilde. Les portraits viennent de leur adresse d'origine ; si une adresse refuse, ses initiales les remplacent.</div></div></div><div class="sp"></div>`;
@@ -2022,7 +2078,7 @@ addEventListener('hashchange', () => { if (location.hash === '#campagne' && !CP.
 campCharger();
 
 // ---------- refonte 5.13 : navigation, fond, mise a jour, tableau de bord, Tour, evenements, collection, fiche, recherche ----------
-const PAGES = { regles: ['Outils', 'Règles et effets'], guides: ['Outils', 'Guides'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Progresser'], modele: ['Analyses', 'Le modèle'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
+const PAGES = { palier: ['Modes de jeu', 'Guide du palier'], regles: ['Outils', 'Règles et effets'], guides: ['Outils', 'Guides'], accueil: ['Accueil', 'Tableau de bord'], campagne: ['Modes de jeu', 'Campagne'], tour: ['Modes de jeu', "Tour de l'infini"], raid: ['Modes de jeu', 'Raids'], arene: ['Modes de jeu', 'Arène'], arene0: ['Modes de jeu', 'Arène'], event: ['Modes de jeu', 'Événements et guilde'], calculs: ['Analyses', 'Calculs'], resultats: ['Analyses', 'Progresser'], modele: ['Analyses', 'Le modèle'], script: ['Outils', 'Script'], sauvegarde: ['Outils', 'Sauvegarde'], journal: ['Outils', 'Journal'], nouveautes: ['Outils', 'Nouveautés et patchs'], reglages: ['Outils', 'Réglages'] };
 const NAV_DE = { nouveautes: 'journal' };
 const pageAct = () => (location.hash || '#accueil').slice(1);
 function route() {
@@ -2277,7 +2333,7 @@ async function twPrev(local) {
   // 5.44 : trios et reprises recomptes sur les raretes cochees (cartes reprises du journal par rarete : repRarete).
   // Vitesse : celle du dernier calcul complet sur ce PC, sinon environ 100 montees par seconde et par fil (mesure du 17/11/2026).
   const vit = P.dernier?.vitesse && P.dernier.trios >= 1000 ? P.dernier.vitesse : 100 * P.fils, n = x => Math.round(x).toLocaleString('fr-FR');
-  const T = C3n(chxCartes('tw', P)), reprises = P.etatJournal === 'ok' && P.repRarete ? C3n(chxRaretes('tw', P).reduce((a, r) => a + (P.repRarete[r] || 0), 0)) : 0, aSim = Math.max(0, T - reprises);
+  const T = chxTriosOk('tw', P), Tt = C3n(chxCartes('tw', P)), reprises = P.etatJournal === 'ok' && P.repRarete ? Math.round(C3n(chxRaretes('tw', P).reduce((a, r) => a + (P.repRarete[r] || 0), 0)) * (Tt ? T / Tt : 1)) : 0, aSim = Math.max(0, T - reprises);
   const ent = P.dernier?.entonnoir, suite = ent?.length ? ent.slice(0, -1).reduce((a, b) => a + (b >= P.dernier.trios ? T : Math.min(b, T)), 0) * aSim / Math.max(1, T) : 0;
   const s1 = aSim / vit, sSuite = suite / vit, total = s1 + sSuite, R = chxRender('tw', P, total);
   TW.est = { total, fin: R.fin, T, pause: R.pause };
@@ -2326,7 +2382,7 @@ function twRender() {
   let h = `<div class="card hero"><div class="bgimg">${imgsTrio(t0.ids)}</div><div class="trio">${eqList(t0.ids || t0.equipe).map(x => pf(x, 'xl')).join('')}</div><div class="txt"><div class="k">Meilleur trio · ${nivTxt}${j?.date ? ' · ' + quand(j.date) : ''}</div><div class="bigv">Étage ${fmt(t0.etageMoyen)}</div><div class="s">${esc(eqList(t0.equipe).join(' · '))}${t0.marge ? ` · ± ${fmt(t0.marge)}` : ''} · étage moyen atteint</div><div class="pills">${t0.min ?? t0.etageMin ? `<span class="pill e">pire ${t0.min ?? t0.etageMin}</span>` : ''}${t0.p10 ? `<span class="pill d">9 fois sur 10 : ${t0.p10}+</span>` : ''}${t0.mediane ? `<span class="pill">médiane ${t0.mediane}</span>` : ''}${t0.max ? `<span class="pill n">record ${t0.max}</span>` : ''}${ea ? `<span class="pill p">ton équipe : ${fmt(ea.etageMoyen)}</span>` : ''}${j?.record ? `<span class="pill">ton record en jeu : ${j.record}</span>` : ''}</div></div></div><div class="sp"></div>`;
   h += twTour(j, tr); // 5.45 : la tour verticale
   // resume du calcul
-  if (j) h += `<div class="grid g5">${tuile('Meilleur trio', 'Étage ' + fmt(t0.etageMoyen), esc(trioCourt(eqList(t0.equipe))))}${tuile('Trios testés', (j.triosEssayes || 0).toLocaleString('fr-FR'), course ? `${j.cartes || '?'} cartes SSR, UR, LR` : 'ancienne méthode : les 26 meilleures cartes seules')}${tuile('Montées simulées', course ? (j.monteesSimulees || 0).toLocaleString('fr-FR') : '-', course ? `${(j.entonnoir || []).length} manches puis la finale` : 'relance pour la nouvelle méthode')}${tuile('Repris du journal', course ? (j.reprisesJournal || 0).toLocaleString('fr-FR') : '-', 'montées déjà faites, pas refaites')}${tuile('Durée', j.duree ? dur(j.duree).replace(/ \d+ s$/, '') : '-', j.vitesse ? `${j.vitesse.toLocaleString('fr-FR')} montées par seconde` : '')}</div><div class="sp"></div>`;
+  if (j) h += `<div class="grid g5">${tuile('Meilleur trio', 'Étage ' + fmt(t0.etageMoyen), esc(trioCourt(eqList(t0.equipe))))}${tuile(j.puissance ? 'Trios autorisés' : 'Trios testés', (j.triosEssayes || 0).toLocaleString('fr-FR'), j.puissance ? `sur ${(j.puissance.triosTotal || 0).toLocaleString('fr-FR')}, plafond ${j.puissance.plafond} pts (palier ${j.puissance.transcendances})` : course ? `${j.cartes || '?'} cartes SSR, UR, LR` : 'ancienne méthode : les 26 meilleures cartes seules')}${tuile('Montées simulées', course ? (j.monteesSimulees || 0).toLocaleString('fr-FR') : '-', course ? `${(j.entonnoir || []).length} manches puis la finale` : 'relance pour la nouvelle méthode')}${tuile('Repris du journal', course ? (j.reprisesJournal || 0).toLocaleString('fr-FR') : '-', 'montées déjà faites, pas refaites')}${tuile('Durée', j.duree ? dur(j.duree).replace(/ \d+ s$/, '') : '-', j.vitesse ? `${j.vitesse.toLocaleString('fr-FR')} montées par seconde` : '')}</div><div class="sp"></div>`;
   // podium
   if (tr.length >= 3) h += `<div class="card"><h2>Podium <span class="r">étage moyen · ${esc(nivTxt)}</span></h2><div class="sp"></div><div class="podium">${tr.slice(0, 3).map((l, i) => `<div class="pod ${['first', 'second', 'third'][i]}"><div class="rk">${i + 1}</div><div class="trio">${eqList(l.ids || l.equipe).map(id => pf(id, i ? 'lg' : 'xl')).join('')}</div><div class="nm">${esc(eqList(l.equipe).join(' · '))}</div><div class="sc">Étage ${fmt(l.etageMoyen)}</div><div class="muted" style="font-size:12px">${l.marge ? '± ' + fmt(l.marge) : ''}</div><div class="pills">${l.p10 ? `<span class="pill d">9/10 : ${l.p10}+</span>` : ''}${l.max ? `<span class="pill n">record ${l.max}</span>` : ''}</div></div>`).join('')}</div></div><div class="sp"></div>`;
   h += '<div id="twExt"></div>'; // place pour une extension locale (window.twApres)

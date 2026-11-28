@@ -19,13 +19,13 @@ import { arg, log, SAVE, WA as WA_PC, WC, shuffle } from './lib/commun.mjs';
 import * as PARTAGE from './lib/partage.mjs';
 import { dir as D } from './lib/chemins.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal, nettoyerAnciens } from './lib/journal.mjs';
-import { cleTrioDe } from './lib/partage-format.mjs';
+import { cleTrioDe, eveilDeCarte, avecEveil } from './lib/partage-format.mjs';
 import { construireWC, iaPersoMeilleure } from './lib/ia-commune.mjs';
 import { garderEveille } from './lib/eveil.mjs';
 import { parCombat } from './lib/etages.mjs';
 import { diagnostiquer } from './lib/diagnostic.mjs';
 import { chercherLiens, ciblesDuPlan } from './lib/liens.mjs';
-import { limitePuissance, decrireLimite, eveilDe } from './lib/puissance.mjs';
+import { limitePuissance, decrireLimite, eveilDe, nomResultat } from './lib/puissance.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID, SIM = makeSim(G, B);
 const NIV = String(arg('niveaux', '99')), K = +arg('garder', 30), Z = +arg('z', 3), PAQ = +arg('paquet', 16);
@@ -75,11 +75,13 @@ let TRI = new Uint16Array(3 * debutA[NI]); { let k = 0; for (let a = 0; a < NI; 
 // 5.62 : limite de puissance (V2) : seuls les trios que le jeu accepte sont joues (plafond selon tes Transcendances,
 // ou --transcendance N pour calculer un autre palier). rangVers : rang lexicographique d'un trio -> sa place dans TRI (-1 : absent).
 const LIM = limitePuissance(G, SAVE), NTOT = debutA[NI];
+// 5.63 : un autre palier que le tien (--transcendance N) a son propre fichier de resultats (cauchemar3-pN.json).
+const F3 = nomResultat('cauchemar3', LIM);
 let rangVers = null, rangs = null;
 if (LIM.actif) {
   const okP = LIM.okPositions(IDS); let n = 0; const okR = new Uint8Array(NTOT); for (let r = 0; r < NTOT; r++) if (okP(TRI[3 * r], TRI[3 * r + 1], TRI[3 * r + 2])) { okR[r] = 1; n++; }
   rangs = new Int32Array(n); for (let r = 0, k = 0; r < NTOT; r++) if (okR[r]) rangs[k++] = r;
-  log(`${decrireLimite(LIM)} : ${n} trios acceptes par le jeu sur ${NTOT}`);
+  log(`${decrireLimite(LIM)} : ${n} trios acceptes par le jeu sur ${NTOT}${F3 !== 'cauchemar3.json' ? `, resultats dans ${F3}` : ''}`);
 }
 if (arg('max-trios')) rangs = shuffle(rangs ? Array.from(rangs) : [...Array(NTOT).keys()], 5).slice(0, +arg('max-trios')); // --max-trios : trios tires au hasard (tests)
 if (rangs) {
@@ -120,12 +122,15 @@ const ANCIENS = nettoyerAnciens(D('cache'), 'cauchemar3-', FJ);
 const cle = (di, pi, seed, ck) => h53(`${sigG}|${wKey}|${paquets[di][pi].cle}|${seed}|${ck}`);
 
 // ---------- base commune : recuperer, envoyer, controler ----------
-const carteLot = (c) => [c.id, c.lv, c.stars, c.lk || [], sigCarte(c.id)];
+// 5.63 : une carte eveillee porte son Eveil (6e champ, meme suffixe que cleCarte) : partagee seulement avec les memes Eveils.
+const carteLot = (c) => { const e = EV.cle(c.id); return [c.id, c.lv, c.stars, c.lk || [], sigCarte(c.id), ...(e ? [e] : [])]; };
 let aEnvoyer = [], envoyes = 0, recus = 0;
 const versionPartage = { sigG, wKey, moteur: String(version) };
 function versFile(tout = false) {
   if (!PARTAGE_OK || !PART.envoyer) { aEnvoyer = []; return; }
-  while (aEnvoyer.length >= PARTAGE.LIGNES_PAR_LOT || (tout && aEnvoyer.length)) { const part = aEnvoyer.splice(0, PARTAGE.LIGNES_PAR_LOT); PARTAGE.mettreEnFile(PARTAGE.construireLot(versionPartage, part)); envoyes += part.length; }
+  // 5.63 : les trios avec une carte eveillee partent dans des lots a part : les versions d'avant (qui refusent un lot entier
+  // s'il contient une carte eveillee) gardent tous les autres.
+  while (aEnvoyer.length >= PARTAGE.LIGNES_PAR_LOT || (tout && aEnvoyer.length)) { const part = aEnvoyer.splice(0, PARTAGE.LIGNES_PAR_LOT); for (const g of [part.filter(x => !avecEveil(x.cartes)), part.filter(x => avecEveil(x.cartes))]) if (g.length) PARTAGE.mettreEnFile(PARTAGE.construireLot(versionPartage, g)); envoyes += part.length; }
 }
 // Rejoue des lignes du lot d'un autre joueur (controle). null si ce PC ne peut pas : carte ou combats differents (autre version).
 async function rejouerLignes(lot, lignes) {
@@ -133,7 +138,7 @@ async function rejouerLignes(lot, lignes) {
   for (const [ti, pj, g] of lignes) {
     const tr = lot.t[ti], [di, pi, cp] = lot.p[pj];
     if (paquets[di]?.[pi]?.cle !== cp || !tr.every(c => CH[c[0]] && sigCarte(c[0]) === c[4])) return null;
-    jobs.push({ team: tr.map(([id, lv, stars, lk]) => ({ id, lv, stars, ...(lk.length ? { lk } : {}) })), fights: paquets[di][pi].f, seeds: [g] });
+    jobs.push({ team: tr.map(([id, lv, stars, lk, , ev]) => ({ id, lv, stars, ...(lk.length ? { lk } : {}), ...eveilDeCarte(ev) })), fights: paquets[di][pi].f, seeds: [g] });
   }
   return (await pool.runAll(jobs, WA, { stop3: true }, 8)).map(x => [x.n, x.s3]);
 }
@@ -428,7 +433,7 @@ if (!arg('sans-etages')) {
   const NPL = 64, essais = new Map(), tousF = new Set(paquets.flatMap(ps => ps.flatMap(p => p.f)));
   const pst = arg('sans-acquis-jeu') ? {} : SAVE.pve?.stars || {}, acquisJeu = new Set(Object.keys(pst).filter(f => pst[f] >= 3 && tousF.has(f)));
   if (!arg('sans-plancher')) {
-    let prec = null; try { prec = JSON.parse(readFileSync(D('resultats', 'cauchemar3.json'), 'utf8')).etages; } catch {}
+    let prec = null; try { prec = JSON.parse(readFileSync(D('resultats', F3), 'utf8')).etages; } catch {}
     const aTester = []; for (const c of prec?.combats || []) { const ids = prec.trios?.[c[2]], t = ids ? indexDe(ids) : undefined; if (tousF.has(c[0]) && t != null) aTester.push({ f: c[0], t }); }
     const cleA = x => h53(`P${NPL}|${sigG}|${wKey}|${sigCombat(x.f)}|${cleTrio[x.t]}`), seeds = Array.from({ length: NPL }, (_, i) => 1 + i), t0 = Date.now();
     const poser = (x, st) => { let k = 0; for (let c = 0; c < st.length; c++) if (st[c] === '3') k++; essais.set(x.f, { t: x.t, p: k / st.length, n: st.length }); };
@@ -461,7 +466,7 @@ const out = { version, signatureCombat: sigG, date: new Date().toISOString(), ni
   finalistes: alive.length, combatsSimules: simules, paquetsRepris: repris, duree: Math.round((Date.now() - T0) / 1000),
   vitesse: Math.round(simules / Math.max(1, (Date.now() - T0) / 1000)), entonnoir, demiPaquet: DEMI ? { ecartes: demiEcartes, combatsEvites: demiEconomie } : null, mondes: MONDES, repartition,
   // 5.51 : sans course, pas de nouveau classement global : celui du dernier calcul est garde.
-  meilleurs: DIRECT ? (() => { try { return JSON.parse(readFileSync(D('resultats', 'cauchemar3.json'), 'utf8')).meilleurs || {}; } catch { return {}; } })() : Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), mode: DIRECT ? 'direct' : 'course', valides: VALIDES.size, equipeActuelle, maintenant, cartesCles, collectifs, etages };
+  meilleurs: DIRECT ? (() => { try { return JSON.parse(readFileSync(D('resultats', F3), 'utf8')).meilleurs || {}; } catch { return {}; } })() : Object.fromEntries(OBJ.map((o, i) => [o, tops[i].map(x => ligne(x, i))])), mode: DIRECT ? 'direct' : 'course', valides: VALIDES.size, equipeActuelle, maintenant, cartesCles, collectifs, etages };
 // Base commune : envoi de ce qui reste, puis quelques controles du travail des autres.
 if (PARTAGE_OK) {
   versFile(true);
@@ -478,7 +483,7 @@ if (!arg('max-trios') && !arg('max-combats') && !arg('garder-journal')) try {
   out.journal = { ...c, anciens: ANCIENS };
   log(`journal : ${c.avant} -> ${c.apres} lignes (${Mo(c.octetsAvant)} -> ${Mo(c.octetsApres)} Mo), ${c.apres < c.avant ? 'lignes inutilisees par les 2 derniers calculs retirees' : 'rien a retirer'}${ANCIENS.length ? ` ; ${ANCIENS.length} ancien(s) journal(aux) supprime(s), ${Mo(ANCIENS.reduce((a, x) => a + x.octets, 0))} Mo` : ''}`);
 } catch (e) { log('journal : nettoyage reporte (' + e.message + ')'); }
-mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', 'cauchemar3.json'), JSON.stringify(out, null, 1));
+mkdirSync(D('resultats'), { recursive: true }); writeFileSync(D('resultats', F3), JSON.stringify(out, null, 1));
 for (const [o, l] of Object.entries(out.meilleurs)) { log(`== 3 etoiles, ${o} ==`); l.slice(0, 5).forEach((x, i) => log(`  ${i + 1}. ${x.equipe.join(' / ')} : ${x.troisEtoiles} % (+/- ${x.marge}) | ${x.parDifficulte.map(d => `${d.difficulte} ${d.troisEtoiles} / 2* ${d.deuxEtoiles}`).join(', ')}`)); }
 for (const c of collectifs) for (const l of c.cartes) log(`collectifs ${c.equipe.join(' / ')}, ${l.carte} : 3 etoiles ${l.avant} -> ${l.apres} %${l.utile ? ' : ' + l.conseil.join(', ') : ' (pas mieux que les tiens)'}`);
 log(`termine en ${out.duree} s : resultats\\cauchemar3.json`);

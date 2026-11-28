@@ -16,7 +16,8 @@ export function limitePuissance(G, S, opts = {}) {
   const dispo = typeof G?.teamPowerSum === 'function' && typeof G?.powerCap === 'function';
   const actif = dispo && !sans && G.POWER_LIMIT?.on !== false;
   const plafond = actif ? G.powerCap({ ...(S || {}), rb: { ...(S?.rb || {}), n: rb } }) : Infinity;
-  if (!actif || !Number.isFinite(plafond)) return { actif: false, rb, plafond: Infinity, cout: ids => (dispo ? G.teamPowerSum(ids) : 0), ok: () => true, okPositions: () => () => true, force: force !== undefined };
+  const reel = transcendancesDe(S);
+  if (!actif || !Number.isFinite(plafond)) return { actif: false, rb, reel, plafond: Infinity, cout: ids => (dispo ? G.teamPowerSum(ids) : 0), ok: () => true, okPositions: () => () => true, compter: l => { const n = l.length; return { total: n * (n - 1) * (n - 2) / 6, ok: n * (n - 1) * (n - 2) / 6 }; }, force: force !== undefined };
   // Le cout d'une equipe ne depend que du cout de chaque carte et de sa rarete (LR comptees a part, MR a part) : on le
   // calcule une fois par combinaison de classes avec des cartes representatives (7 M trios : quelques classes seulement).
   const CH = G.CHAR_BY_ID || {}, classe = new Map(), reps = new Map(), cache = new Map();
@@ -33,7 +34,19 @@ export function limitePuissance(G, S, opts = {}) {
     const ks = liste.map(classeDe), u = [...new Set(ks)], NC = u.length, ci = Int32Array.from(ks.map(k => u.indexOf(k))), tab = new Int8Array(NC * NC * NC).fill(-1);
     return (a, b, c) => { const k = (ci[a] * NC + ci[b]) * NC + ci[c]; let v = tab[k]; if (v < 0) tab[k] = v = ok([liste[a], liste[b], liste[c]]) ? 1 : 0; return v === 1; };
   };
-  return { actif: true, rb, plafond, cout, ok, okPositions, force: force !== undefined };
+  // 5.63 : nombre de trios acceptes parmi des cartes, sans les enumerer : par classes de cartes (combinaisons exactes).
+  const compter = liste => {
+    const n = new Map(); for (const id of liste) { const k = classeDe(id); n.set(k, (n.get(k) || 0) + 1); }
+    const ks = [...n.keys()], C = (a, b) => b === 1 ? a : b === 2 ? a * (a - 1) / 2 : a * (a - 1) * (a - 2) / 6; let total = 0, okN = 0;
+    for (let i = 0; i < ks.length; i++) for (let j = i; j < ks.length; j++) for (let k = j; k < ks.length; k++) {
+      const m = new Map(); for (const x of [ks[i], ks[j], ks[k]]) m.set(x, (m.get(x) || 0) + 1);
+      let nb = 1; for (const [x, c] of m) nb *= n.get(x) >= c ? C(n.get(x), c) : 0; if (!nb) continue;
+      total += nb; const vus = new Map(), rep = [ks[i], ks[j], ks[k]].map(x => { const v = vus.get(x) || 0; vus.set(x, v + 1); return reps.get(x)[v]; });
+      if (cout(rep) <= plafond) okN += nb;
+    }
+    return { total, ok: okN };
+  };
+  return { actif: true, rb, reel, plafond, cout, ok, okPositions, compter, force: force !== undefined };
 }
 
 // Texte court pour les journaux et les resultats.
@@ -46,3 +59,10 @@ export function eveilDe(S) {
   const champs = id => ({ ...(aw ? { aw } : {}), ...(aw && ev.has(+id) ? { awakened: true } : {}) });
   return { aw, eveillee: id => ev.has(+id), champs, niveauMax: id => ev.has(+id) ? 100 : 99, cle: id => (aw ? `a${aw}${ev.has(+id) ? 'e' : ''}` : '') };
 }
+
+// 5.63 : resultats par palier. Le calcul de ton palier reel garde les noms habituels (cauchemar3.json, tour.json) ;
+// un autre palier (--transcendance N) ecrit cauchemar3-pN.json, tour-pN.json, sans toucher aux resultats de ton palier.
+export const fichierDuPalier = (base, n, reel) => n == null || n === reel ? `${base}.json` : `${base}-p${n}.json`;
+export const nomResultat = (base, L) => fichierDuPalier(base, L.force ? L.rb : null, L.reel);
+// Paliers montres dans le guide : 0 a 5, puis le palier ou le plafond atteint 64.
+export const PALIERS = [0, 1, 2, 3, 4, 5, 9];
