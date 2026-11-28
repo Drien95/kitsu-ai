@@ -24,7 +24,7 @@ import * as MODELE from './lib/modele.mjs';
 import * as PARTAGE from './lib/partage.mjs';
 import { VERSION_SERVEUR } from './lib/partage-format.mjs';
 import { construireWC, cleIA } from './lib/ia-commune.mjs';
-import { limitePuissance, eveilDe, PALIERS } from './lib/puissance.mjs';
+import { limitePuissance, eveilDe, PALIERS, RARETES_V2, classeRarete, raretesChoisies } from './lib/puissance.mjs';
 import { guidePalier } from './lib/guide.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.KITSU_PORT || 47123), TOKEN = randomBytes(16).toString('hex');
@@ -76,11 +76,11 @@ let COMBATS_DIFF = null;
 // 5.44 : cartes par rarete (codes du jeu M = LR, L = UR, E = SSR) et ce que chaque rarete pese dans le dernier resultat, pour le
 // choix des raretes avant le lancement. Campagne : trios du plan par combat qui en ont une et part des combats qu'ils couvrent.
 // Tour : finalistes qui en ont une, et le meilleur.
-const RAR_NOM = { M: 'LR', L: 'UR', E: 'SSR' };
-function parRarete(G, ids) { const n = { LR: 0, UR: 0, SSR: 0 }; for (const id of ids) { const r = RAR_NOM[G.CHAR_BY_ID[id]?.r]; if (r) n[r]++; } return n; }
+// 5.64 : 7 classes de la V2 (MR, LR-X, LR, UR-X, UR, SSR-X, SSR) au lieu de LR / UR / SSR.
+function parRarete(G, ids) { const n = Object.fromEntries(RARETES_V2.map(r => [r, 0])); for (const id of ids) { const r = classeRarete(G.CHAR_BY_ID[id]); if (r) n[r]++; } return n; }
 function poidsRaretes(G, d, tour) {
-  const rar = id => RAR_NOM[G.CHAR_BY_ID[id]?.r], nom = id => G.CHAR_BY_ID[id]?.n || String(id), out = {};
-  for (const r of ['LR', 'UR', 'SSR']) {
+  const rar = id => classeRarete(G.CHAR_BY_ID[id]), nom = id => G.CHAR_BY_ID[id]?.n || String(id), out = {};
+  for (const r of RARETES_V2) {
     if (tour) { const L = d?.trios || []; if (!L.length) continue; const avec = L.filter(x => x.ids.some(id => rar(id) === r));
       out[r] = { finalistes: avec.length, sur: L.length, meilleur: L[0].ids.some(id => rar(id) === r), ex: avec[0] ? { equipe: avec[0].ids.map(nom), etage: avec[0].etageMoyen } : null }; continue; }
     const e = d?.etages; if (!e?.plan?.length) continue;
@@ -102,7 +102,7 @@ function prevision() {
   }
   let journal = 0; try { const f = readdirSync(D('cache')).filter(x => /^cauchemar3-.*\.jsonl$/.test(x)).map(x => D('cache', x)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]; if (f) journal = statSync(f).size; } catch {}
   const d = readJ(D('resultats', 'cauchemar3.json'));
-  const ids = Object.keys(sv?.owned || {}).map(Number).filter(id => RAR_NOM[G.CHAR_BY_ID[id]?.r]);
+  const ids = Object.keys(sv?.owned || {}).map(Number).filter(id => classeRarete(G.CHAR_BY_ID[id]));
   // 5.51 : combats deja a 3 etoiles dans ta partie (pve.stars), par difficulte : cauchemar3 ne les rejoue pas.
   const SUFK = { normal: '@n', difficile: '@hn', extreme: '@xn', campNormal: '', campDifficile: '@h', campExtreme: '@x' }, valides = {};
   for (const k of Object.keys(SUFK)) valides[k] = 0;
@@ -251,16 +251,19 @@ async function infoIA() {
 function puissanceTable(G, sv, ids) {
   try {
     if (!G || !sv?.owned) return null; const L0 = limitePuissance(G, sv, { transcendance: null, sansLimite: false }); if (!L0.actif) return null;
-    const code = { LR: 'M', UR: 'L', SSR: 'E' }, subs = [['LR'], ['UR'], ['SSR'], ['LR', 'UR'], ['LR', 'SSR'], ['UR', 'SSR'], ['LR', 'UR', 'SSR']];
-    const ligne = L => Object.fromEntries(subs.map(sb => [sb.join(','), L.compter(ids.filter(id => sb.some(r => code[r] === G.CHAR_BY_ID[id]?.r))).ok]));
+    // 5.64 : une ligne par choix de classes (127 choix sur 7 classes, seules les classes que tu as comptent), cle = classes dans l'ordre de RARETES_V2.
+    const par = new Map(); for (const id of ids) { const r = classeRarete(G.CHAR_BY_ID[id]); if (r) { if (!par.has(r)) par.set(r, []); par.get(r).push(id); } }
+    const dispo = RARETES_V2.filter(r => par.has(r)), subs = [];
+    for (let m = 1; m < 1 << dispo.length; m++) subs.push(dispo.filter((_, i) => m & (1 << i)));
+    const ligne = L => Object.fromEntries(subs.map(sb => [sb.join(','), L.compter(sb.flatMap(r => par.get(r))).ok]));
     const paliers = {}; for (const n of [...new Set([...PALIERS, L0.reel])]) { const L = limitePuissance(G, sv, { transcendance: n, sansLimite: false }); paliers[n] = { plafond: L.plafond, ok: ligne(L) }; }
     return { palier: L0.reel, plafond: L0.plafond, paliers };
   } catch { return null; }
 }
 function puissanceInfo(raretes) {
   const G = ENG?.G, sv = readJ(D('data', 'sauvegarde.json')); if (!G || !sv?.owned) return { err: 'moteur ou sauvegarde absents' };
-  const codes = String(raretes || 'LR,UR,SSR').split(',').map(r => ({ LR: 'M', UR: 'L', SSR: 'E' })[r]).filter(Boolean);
-  const ids = Object.keys(sv.owned).map(Number).filter(id => codes.includes(G.CHAR_BY_ID[id]?.r));
+  const choix = raretesChoisies(raretes);
+  const ids = Object.keys(sv.owned).map(Number).filter(id => choix.includes(classeRarete(G.CHAR_BY_ID[id])));
   const L0 = limitePuissance(G, sv, { transcendance: null, sansLimite: false }), c0 = L0.compter(ids);
   const paliers = PALIERS.map(n => { const L = limitePuissance(G, sv, { transcendance: n, sansLimite: false }), c = L.compter(ids); return { palier: n, plafond: L.actif ? L.plafond : null, trios: c.ok }; });
   return { actif: L0.actif, palier: L0.reel, plafond: L0.actif ? L0.plafond : null, cartes: ids.length, triosTotal: c0.total, triosAcceptes: c0.ok, paliers };
@@ -268,10 +271,10 @@ function puissanceInfo(raretes) {
 const logs = []; const say = m => { const l = `[${new Date().toLocaleTimeString('fr-FR')}] ${m}`; logs.push(l); if (logs.length > 300) logs.shift(); console.log(l); };
 // ---------- taches (une a la fois : elles utilisent tout le processeur) ----------
 // 5.44 : choix avant le lancement (Campagne et Tour) : raretes essayees et pause au bout d'un temps de travail (0 = jusqu'au bout).
-const choixCalcul = o => { const r = String(o.raretes || '').split(',').filter(x => ['LR', 'UR', 'SSR'].includes(x)), p = Math.max(0, Math.min(10080, Math.round(+o.pause) || 0));
+const choixCalcul = o => { const r = String(o.raretes || '').split(',').filter(x => RARETES_V2.includes(x)), p = Math.max(0, Math.min(10080, Math.round(+o.pause) || 0));
   // 5.63 : palier de Transcendance du calcul (vide : ton palier reel, lu dans la sauvegarde).
   const pal = o.palier === '' || o.palier == null ? null : Math.round(+o.palier);
-  return [...(r.length && r.length < 3 ? ['--raretes', r.join(',')] : []), ...(p ? ['--pause-apres', String(p)] : []), ...(Number.isInteger(pal) && pal >= 0 && pal <= 20 ? ['--transcendance', String(pal)] : [])]; };
+  return [...(r.length && r.length < RARETES_V2.length ? ['--raretes', r.join(',')] : []), ...(p ? ['--pause-apres', String(p)] : []), ...(Number.isInteger(pal) && pal >= 0 && pal <= 20 ? ['--transcendance', String(pal)] : [])]; };
 const ACTIONS = {
   telecharger: { nom: 'Mettre a jour le moteur du jeu', cmd: ['telecharger.mjs'] },
   tout: { nom: 'Analyse complete', cmd: ['tout.mjs'], opts: o => [...(o.niveaux ? ['--niveaux', o.niveaux] : []), ...(o.tirages ? ['--tirages', String(o.tirages)] : []), ...(o.cartes ? ['--cartes', String(o.cartes)] : []), ...(o.max ? ['--max', String(o.max)] : [])] },

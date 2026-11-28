@@ -15,7 +15,7 @@ import { makeSim } from './lib/sim.mjs';
 import { shuffle } from './lib/commun.mjs';
 import { h53, signatureCombat, makeSigCarte, ouvrirJournal, nettoyerAnciens } from './lib/journal.mjs';
 import { garderEveille } from './lib/eveil.mjs';
-import { limitePuissance, decrireLimite, eveilDe, nomResultat } from './lib/puissance.mjs';
+import { limitePuissance, decrireLimite, eveilDe, nomResultat, classeRarete, raretesChoisies } from './lib/puissance.mjs';
 
 const { G, B, version } = await loadEngine(); const CH = G.CHAR_BY_ID;
 const pool = await makePool(arg('fils') ? +arg('fils') : undefined);
@@ -25,9 +25,9 @@ const FT = nomResultat('tour', LIM), AUTRE_PALIER = FT !== 'tour.json'; // 5.63 
 const NIV = arg('niveaux', 'actuel'), LV = NIV === '99' ? id => EV.niveauMax(id) : lvOf;
 const nom = id => CH[id]?.n || String(id), noms = t => t.map(nom).join(' / ');
 // 5.44 : raretes essayees (--raretes LR,UR,SSR) et pause au bout d'un temps de travail (--pause-apres minutes), comme la Campagne.
-const RAR = { LR: 'M', UR: 'L', SSR: 'E' }, RARETES = String(arg('raretes', 'LR,UR,SSR')).split(',').filter(r => RAR[r]), CODES = RARETES.map(r => RAR[r]);
+const RARETES = raretesChoisies(arg('raretes', '')); // 5.64 : MR, LR-X, LR, UR-X, UR, SSR-X, SSR (classes de cout de la V2)
 const PAUSE = Math.max(0, +arg('pause-apres', 0) || 0);
-const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => CODES.includes(CH[id]?.r));
+const IDS = Object.keys(SAVE.owned || {}).map(Number).filter(id => RARETES.includes(classeRarete(CH[id])));
 if (!IDS.length) { console.log('Aucune carte LR, UR ou SSR dans la sauvegarde exportee.'); process.exit(1); }
 const mk = (ids, lk = {}) => ids.map(id => { const l = lk[id] || SAVE.lk?.[id]; return { id, lv: LV(id), stars: stOf(id), ...(l ? { lk: l } : {}), ...EV.champs(id) }; });
 const actuelle = (SAVE.team || []).map(Number).filter(id => IDS.includes(id));

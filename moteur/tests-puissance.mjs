@@ -1,7 +1,7 @@
 // Tests sans le moteur du jeu (lances par la verification GitHub) : limite de puissance et Eveil (lib/puissance.mjs, 5.62).
 // Faux moteur qui suit la regle lue dans le jeu le 28/11/2026 : SSR 5, UR 8, LR 12, MR 16, X : SSR 7, UR 11, LR 15 ;
 // +4 par LR des la 3e, +12 par MR en plus ; plafond 28, puis +8, +8, +4, +4, +4, puis +2, max 64.
-import { limitePuissance, eveilDe, transcendancesDe } from './lib/puissance.mjs';
+import { limitePuissance, eveilDe, transcendancesDe, classeRarete, raretesChoisies, RARETES_V2 } from './lib/puissance.mjs';
 let ok = 0, ko = 0; const t = (nom, c, info = '') => { if (c) { ok++; console.log('  OK   ' + nom); } else { ko++; console.log('  ECHEC ' + nom + (info ? ' : ' + info : '')); } };
 const CH = {}; let id = 1; const ajoute = (r, o = {}, n = 6) => Array.from({ length: n }, () => { CH[id] = { id, r, ...o }; return id++; });
 const SSR = ajoute('E'), UR = ajoute('L'), LR = ajoute('M'), MR = ajoute('M', { appearanceRarity: 'MR' }), LRX = ajoute('M', { appearanceRarity: 'LR-X' }), URX = ajoute('L', { awakenX: true }), SSRX = ajoute('E', { awakenX: true });
@@ -60,4 +60,7 @@ t('Eveil : rien sans Eveil (cles de journal inchangees)', JSON.stringify(E0.cham
   t('cle de carte du lot = cle du calcul (Eveil compris)', cleCarteDe([1, 100, 0, [], 's1', E2.cle(1)]) === '1:100:0::s1:a2e' && cleCarteDe(c5[0]) === '1:99:0::s1');
   t('Eveil du lot rendu a l equipe', JSON.stringify(eveilDeCarte('a2e')) === '{"aw":2,"awakened":true}' && JSON.stringify(eveilDeCarte(undefined)) === '{}' && avecEveil(c6) && !avecEveil(c5));
 }
+// 5.64 : raretes du choix des calculs (7 classes de cout).
+t('classes MR, LR-X, LR, UR-X, UR, SSR-X, SSR', [{ r: 'M', appearanceRarity: 'MR' }, { r: 'M', appearanceRarity: 'LR-X' }, { r: 'M' }, { r: 'L', awakenX: 1 }, { r: 'L' }, { r: 'E', awakenX: 1 }, { r: 'E' }, { r: 'R' }].map(classeRarete).join() === 'MR,LR-X,LR,UR-X,UR,SSR-X,SSR,');
+t('--raretes : noms V2, ancien LR,UR,SSR et vide', raretesChoisies('SSR,MR').join() === 'MR,SSR' && raretesChoisies('LR').join() === 'MR,LR-X,LR' && raretesChoisies('').length === RARETES_V2.length && raretesChoisies('UR,SSR').join() === 'UR-X,UR,SSR-X,SSR');
 console.log(`\n${ok} reussi(s), ${ko} echec(s)`); process.exit(ko ? 1 : 0);

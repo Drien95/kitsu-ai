@@ -66,3 +66,20 @@ export const fichierDuPalier = (base, n, reel) => n == null || n === reel ? `${b
 export const nomResultat = (base, L) => fichierDuPalier(base, L.force ? L.rb : null, L.reel);
 // Paliers montres dans le guide : 0 a 5, puis le palier ou le plafond atteint 64.
 export const PALIERS = [0, 1, 2, 3, 4, 5, 9];
+
+// 5.64 : raretes du choix des calculs (Campagne, Tour) : les 7 classes de cout de la V2, lues sur la fiche de la carte.
+// MR, LR-X, LR, UR-X, UR, SSR-X, SSR (les MR et LR-X sont des cartes M du jeu, les X ont awakenX).
+export const RARETES_V2 = ['MR', 'LR-X', 'LR', 'UR-X', 'UR', 'SSR-X', 'SSR'];
+export function classeRarete(c) {
+  if (!c || !['M', 'L', 'E'].includes(c.r)) return null;
+  if (c.appearanceRarity === 'MR') return 'MR';
+  if (c.appearanceRarity === 'LR-X') return 'LR-X';
+  return ({ M: 'LR', L: 'UR', E: 'SSR' })[c.r] + (c.awakenX ? '-X' : '');
+}
+// Liste --raretes : noms V2 ; « LR,UR,SSR » d'avant 5.64 garde son sens (toutes les cartes M, L ou E).
+export function raretesChoisies(txt) {
+  const l = String(txt || '').split(',').map(x => x.trim()).filter(Boolean), ancien = { LR: ['MR', 'LR-X', 'LR'], UR: ['UR-X', 'UR'], SSR: ['SSR-X', 'SSR'] };
+  const v2 = l.some(x => x.endsWith('-X') || x === 'MR') || l.length === 0 ? l : l.flatMap(x => ancien[x] || []);
+  const r = RARETES_V2.filter(x => v2.includes(x));
+  return r.length ? r : RARETES_V2.slice();
+}
